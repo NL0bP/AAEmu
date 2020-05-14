@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -12,7 +12,9 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Debug("QuestActObjCompleteQuest");
+            _log.Debug("QuestActObjCompleteQuest QuestId {0}, AcceptWith {1}, UseAlias {2}, QuestActObjAliasId {3}",
+                QuestId, AcceptWith, UseAlias, QuestActObjAliasId);
+
             return character.Quests.IsQuestComplete(QuestId) == AcceptWith;
         }
     }

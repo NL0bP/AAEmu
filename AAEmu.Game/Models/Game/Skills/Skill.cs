@@ -697,7 +697,7 @@ namespace AAEmu.Game.Models.Game.Skills
                 }
             }
 
-            var time = (ushort)(step.Flag != 0 ? step.Delay / 10 : 0);
+            var time = (ushort)(step.Flag != 0 ? step.Delay / 10 + 10 : 0);
             var objId = step.Casting || step.Channeling ? caster.ObjId : 0;
             var casterPlotObj = new PlotObject(caster);
             var targetPlotObj = new PlotObject(target);

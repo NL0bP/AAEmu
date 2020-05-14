@@ -59,7 +59,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             //var item = character.Inventory.GetItem(itm.ItemId);
             character.Inventory.RemoveItem(itm.ItemTemplateId, 1, ItemTaskType.Destroy);
 
-            var time2 = (ushort)(caster.Step.Flag != 0 ? caster.Step.Delay / 10 : 0);
+            var time2 = (ushort)(caster.Step.Flag != 0 ? caster.Step.Delay / 10 + 10 : 0);
             var objId = caster.Step.Casting || caster.Step.Channeling ? caster.ObjId : 0;
             caster.Step.Flag = 6;
             caster.BroadcastPacket(new SCPlotEventPacket(caster.TlId, caster.Step.Event.Id, caster.SkillId, _casterPlotObj, _targetPlotObj, objId, time2, caster.Step.Flag, itm.ItemId, 0), true);

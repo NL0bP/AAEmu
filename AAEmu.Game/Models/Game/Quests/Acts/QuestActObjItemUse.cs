@@ -15,11 +15,11 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Warn("QuestActObjItemUse");
-            if (objective >= Count)
-                return true;
-            else
-                return false;
+            _log.Debug("QuestActObjItemUse QuestId {0}, ItemId {1}, Count {2}, HighlightDoodadId {3}, HighlightDoodadPhase {4}," +
+                       " UseAlias {5}, QuestActObjAliasId {6}, objective {7}",
+                quest.TemplateId, ItemId, Count, HighlightDoodadId, HighlightDoodadPhase, UseAlias, QuestActObjAliasId, objective);
+
+            return objective >= Count;
         }
     }
 }

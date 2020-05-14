@@ -16,7 +16,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public override uint BuffId => Buff.BuffId;
         public override bool OnActionTime => Buff.Tick > 0;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj, Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
+            Skill skill, SkillObject skillObject, DateTime time)
         {
             if (Buff.RequireBuffId > 0 && !target.Effects.CheckBuff(Buff.RequireBuffId))
                 return; // TODO send error?
@@ -74,7 +75,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override void WriteData(PacketStream stream)
         {
-            stream.WritePisc(0, Buff.Duration / 10, 0, (long)(Buff.Tick / 10)); // TODO unk, Duration / 10, unk / 10, Tick / 10
+            stream.WritePisc(0, Buff.Duration / 10 + 10, 0, (long)(Buff.Tick / 10 + 10)); // TODO unk, Duration / 10, unk / 10, Tick / 10
         }
 
         public override int GetDuration()

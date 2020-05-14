@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -10,8 +10,10 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Warn("QuestActSupplyRemoveItem");
-            return false;
+            _log.Warn("QuestActSupplyRemoveItem QuestId {0}, ItemId {1}, Count {2}, objective {3}",
+                quest.TemplateId, ItemId, Count, objective);
+
+            return Count >= objective;
         }
     }
 }

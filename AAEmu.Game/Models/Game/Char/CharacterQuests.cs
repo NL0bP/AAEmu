@@ -118,20 +118,15 @@ namespace AAEmu.Game.Models.Game.Char
                 complete.Body.Set((int)(quest.TemplateId - completeId * 64), true);
                 var body = new byte[8];
                 complete.Body.CopyTo(body, 0);
+                Drop(questId);
                 Owner.SendPacket(new SCQuestContextCompletedPacket(quest.TemplateId, body, res));
-                quest.RemoveQuestItems();
-                //Quests.Remove(questId); // TODO убрал из-за возникновения ошибки "изменение коллекции"
-                _removed.Add(questId);
                 OnQuestComplete(questId);
             }
         }
 
         public void Drop(uint questId)
         {
-            if (!Quests.ContainsKey(questId))
-            {
-                return;
-            }
+            if (!Quests.ContainsKey(questId)) { return; }
 
             var quest = Quests[questId];
             quest.Drop();
@@ -141,18 +136,13 @@ namespace AAEmu.Game.Models.Game.Char
 
         public void OnKill(Npc npc)
         {
-            foreach (var quest in Quests.Values)
-            {
+            foreach (var quest in Quests.Values.ToList())
                 quest.OnKill(npc);
-            }
         }
 
         public void OnItemGather(Item item, int count)
         {
-            if (!Quests.ContainsKey(item.Template.LootQuestId))
-            {
-                return;
-            }
+            if (!Quests.ContainsKey(item.Template.LootQuestId)) { return; }
 
             var quest = Quests[item.Template.LootQuestId];
             quest.OnItemGather(item, count);

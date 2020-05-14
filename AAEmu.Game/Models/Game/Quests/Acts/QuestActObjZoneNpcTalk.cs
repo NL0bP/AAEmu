@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -11,7 +11,9 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Warn("QuestActObjZoneNpcTalk");
+            _log.Warn("QuestActObjZoneNpcTalk QuestId {0}, NpcId {1}, UseAlias {2}, QuestActObjAliasId {3}, objective {4}",
+                quest.TemplateId, NpcId, UseAlias, QuestActObjAliasId, objective);
+
             return false;
         }
     }

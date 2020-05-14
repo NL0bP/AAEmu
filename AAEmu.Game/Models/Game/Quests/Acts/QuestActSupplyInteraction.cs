@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -9,7 +9,9 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Warn("QuestActSupplyInteraction: WorldInteractionId {0}", WorldInteractionId);
+            _log.Warn("QuestActSupplyInteraction QuestId {0}, WorldInteractionId {1}, objective {2}",
+                quest.TemplateId, WorldInteractionId, objective);
+
             return false;
         }
     }

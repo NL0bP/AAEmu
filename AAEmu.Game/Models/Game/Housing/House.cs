@@ -36,7 +36,7 @@ namespace AAEmu.Game.Models.Game.Housing
         public uint Id { get; set; }
         public uint AccountId { get; set; }
         public uint CoOwnerId { get; set; }
-        public new ushort TlId { get; set; }
+        //public new ushort TlId { get; set; }
         public uint TemplateId { get; set; }
         public HousingTemplate Template
         {

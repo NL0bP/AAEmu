@@ -11,11 +11,12 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
+using AAEmu.Game.Core.Packets.G2C;
 using NLog;
 using InstanceWorld = AAEmu.Game.Models.Game.World.World;
+using AAEmu.Game.Models.Game.Housing;
 
 namespace AAEmu.Game.Core.Managers.World
 {
@@ -26,7 +27,7 @@ namespace AAEmu.Game.Core.Managers.World
         private Dictionary<uint, InstanceWorld> _worlds;
         private Dictionary<uint, uint> _worldIdByZoneId;
         private Dictionary<uint, WorldInteractionGroup> _worldInteractionGroups;
-
+        public bool IsSnowing = false;
         private readonly ConcurrentDictionary<uint, GameObject> _objects;
         private readonly ConcurrentDictionary<uint, BaseUnit> _baseUnits;
         private readonly ConcurrentDictionary<uint, Unit> _units;
@@ -36,6 +37,12 @@ namespace AAEmu.Game.Core.Managers.World
 
         public const int REGION_SIZE = 64;
         public const int CELL_SIZE = 1024 / REGION_SIZE;
+        /*
+        REGION_NEIGHBORHOOD_SIZE (cell sector size) used for polling objects in your proximity
+        Was originally set to 1, recommended 3 and max 5
+        anything higher is overkill as you can't target it anymore in the client at that distance
+        */
+        public const sbyte REGION_NEIGHBORHOOD_SIZE = 3;
 
         public WorldManager()
         {
@@ -252,8 +259,8 @@ namespace AAEmu.Game.Core.Managers.World
             var world = _worlds[worldId];
 
             var result = new List<Region>();
-            for (var a = -1; a <= 1; a++)
-                for (var b = -1; b <= 1; b++)
+            for (var a = -REGION_NEIGHBORHOOD_SIZE; a <= REGION_NEIGHBORHOOD_SIZE; a++)
+                for (var b = -REGION_NEIGHBORHOOD_SIZE; b <= REGION_NEIGHBORHOOD_SIZE; b++)
                     if (ValidRegion(world.Id, x + a, y + b) && world.Regions[x + a, y + b] != null)
                         result.Add(world.Regions[x + a, y + b]);
 
@@ -465,21 +472,6 @@ namespace AAEmu.Game.Core.Managers.World
             return result;
         }
 
-        public List<T> GetAround<T>(GameObject obj, float radius, int limit) where T : class
-        {
-            var result = new List<T>();
-            if (obj.Region == null)
-                return result;
-
-            foreach (var neighbor in obj.Region.GetNeighbors())
-                neighbor.GetList(result, obj.ObjId, obj.Position.X, obj.Position.Y, radius * radius);
-
-            if (result.Count > limit)
-                result.RemoveRange(limit - 1, result.Count - limit - 1);
-
-            return result;
-        }
-
         public List<T> GetInCell<T>(uint worldId, int x, int y) where T : class
         {
             var result = new List<T>();
@@ -543,6 +535,48 @@ namespace AAEmu.Game.Core.Managers.World
         {
             var world = _worlds[worldId];
             return world.ValidRegion(x, y);
+        }
+
+        public void OnPlayerJoin(Character character)
+        {
+            //turn snow on off 
+            Snow(character);
+           
+            //family stuff
+            if (character.Family > 0)
+            {
+                FamilyManager.Instance.OnCharacterLogin(character);
+            }
+        }
+        
+        public void Snow(Character character)
+        {
+            //send the char the packet
+            character.SendPacket(new SCOnOffSnowPacket(IsSnowing));
+
+        }
+
+        public void ResendVisibleObjectsToCharacter(Character character)
+        {
+            // Re-send visible flags to character getting out of cinema
+            var stuffs = WorldManager.Instance.GetAround<Unit>(character, 1000f);
+            foreach (var stuff in stuffs)
+            {
+                if (stuff is House)
+                    character.SendPacket(new SCHouseStatePacket((House)stuff));
+                else
+                if (stuff is Unit)
+                    character.SendPacket(new SCUnitStatePacket((Unit)stuff));
+            }
+
+            var doodads = WorldManager.Instance.GetAround<Doodad>(character, 1000f).ToArray();
+            for (var i = 0; i < doodads.Length; i += 30)
+            {
+                var count = doodads.Length - i;
+                var temp = new Doodad[count <= 30 ? count : 30];
+                Array.Copy(doodads, i, temp, 0, temp.Length);
+                character.SendPacket(new SCDoodadsCreatedPacket(temp));
+            }
         }
     }
 }

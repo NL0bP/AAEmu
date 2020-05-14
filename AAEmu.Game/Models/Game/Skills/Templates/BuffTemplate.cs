@@ -218,7 +218,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
 
         public override void WriteData(PacketStream stream)
         {
-            stream.WritePisc(0, Duration / 10, 0, (long) (Tick / 10)); // unk, Duration, unk / 10, Tick
+            stream.WritePisc(0, Duration / 10 + 10, 0, (long) (Tick / 10 + 10)); // unk, Duration, unk / 10, Tick
         }
 
         public override int GetDuration()

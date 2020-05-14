@@ -32,8 +32,8 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_target);
             stream.Write(_skillObject);
 
-            stream.Write((short)(_skill.Template.CastingTime / 10u));
-            stream.Write((short)(_skill.Template.CastingTime / 10u));
+            stream.Write((short)(_skill.Template.CastingTime / 10u + 10));
+            stream.Write((short)(_skill.Template.CastingTime / 10u + 10));
             stream.Write(false); // castSynergy
             stream.Write((byte)0); // f
             return stream;

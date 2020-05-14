@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -9,7 +9,8 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Debug("QuestActSupplyAppellation");
+            _log.Warn("QuestActSupplyAppellation QuestId {0}, AppellationId {1}, objective {2}",
+                quest.TemplateId, AppellationId, objective);
             
             character.Appellations.Add(AppellationId);
             return true;
