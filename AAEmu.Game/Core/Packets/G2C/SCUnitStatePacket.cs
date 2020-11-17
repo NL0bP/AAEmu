@@ -21,7 +21,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         private byte _modelPostureType;
         private ushort _tlId;
         private uint _objId;
-        private uint _attachPoint;
+        private byte _attachPoint;
 
         public SCUnitStatePacket(ushort tlId, uint objId, Unit unit, byte attachPoint) : base(SCOffsets.SCUnitStatePacket, 1)
         {

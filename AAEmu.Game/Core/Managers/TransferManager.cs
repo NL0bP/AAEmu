@@ -149,9 +149,11 @@ namespace AAEmu.Game.Core.Managers
         public Transfer Create(uint objectId, uint templateId)
         {
             /*
-            * Последовательность пакетов при появлении повозки:
-            * (сама повозка состоит из двух частей и двух скамеек для сидения персонажей)
+            * A sequence of packets when a cart appears:
+            * (the wagon itself consists of two parts and two benches for the characters)
+            * "Salislead Peninsula ~ Liriot Hillside Loop Carriage"
             * SCUnitStatePacket(tlId0=GetNextId(), objId0=GetNextId(), templateId = 6, modelId = 654, attachPoint=255)
+            * "The wagon boarding part"
             * SCUnitStatePacket(tlId2= tlId0, objId2=GetNextId(), templateId = 46, modelId = 653, attachPoint=30, objId=objId0)
             * SCDoodadCreatedPacket(templateId = 5890, attachPoint=2, objId=objId2, x1y1z1)
             * SCDoodadCreatedPacket(templateId = 5890, attachPoint=3, objId=objId2, x2y2z2)
@@ -205,7 +207,7 @@ namespace AAEmu.Game.Core.Managers
 
             //_activeTransfers.Add(objId, transfer);
             //TODO  создаем boardingPart и указываем, что прикрепляем к Carriage объекту 
-            //owner.SendPacket(new SCUnitStatePacket(tlId, objId, transfer, (byte)transfer.Template.TransferBindings[0].AttachPointId));
+            owner.SendPacket(new SCUnitStatePacket(tlId, objId, transfer, (byte)transfer.Template.TransferBindings[0].AttachPointId));
 
             foreach (var doodadBinding in owner.Template.TransferBindingDoodads)
             {
@@ -253,7 +255,7 @@ namespace AAEmu.Game.Core.Managers
                         {
                             var template = new TransferTemplate
                             {
-                                Id = reader.GetUInt32("id"),
+                                Id = reader.GetUInt32("id"), // OwnerId
                                 Name = LocalizationManager.Instance.GetEnglishLocalizedText("transfer", "comment", reader.GetUInt32("id")),
                                 ModelId = reader.GetUInt32("model_id"),
                                 WaitTime = reader.GetFloat("wait_time"),
@@ -307,17 +309,21 @@ namespace AAEmu.Game.Core.Managers
                                 AttachPointId = reader.GetInt32("attach_point_id"),
                                 DoodadId = reader.GetUInt32("doodad_id"),
                             };
-
-                            foreach (var tmp in _templates)
+                            if (_templates.ContainsKey(template.OwnerId))
                             {
-                                foreach (var tmp2 in tmp.Value.TransferBindings)
-                                {
-                                    if (_templates.ContainsKey(tmp2.TransferId))
-                                    {
-                                        _templates[tmp2.TransferId].TransferBindingDoodads.Add(template);
-                                    }
-                                }
+                                _templates[template.OwnerId].TransferBindingDoodads.Add(template);
                             }
+
+                            //foreach (var tmp in _templates)
+                            //{
+                            //    foreach (var tmp2 in tmp.Value.TransferBindings)
+                            //    {
+                            //        if (_templates.ContainsKey(tmp2.TransferId))
+                            //        {
+                            //            _templates[tmp2.TransferId].TransferBindingDoodads.Add(template);
+                            //        }
+                            //    }
+                            //}
                         }
                     }
                 }

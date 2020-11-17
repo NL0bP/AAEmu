@@ -1,6 +1,7 @@
 ﻿using System;
 
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 
@@ -24,9 +25,9 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
             _log.Debug("InteractionEffect, Action: {0}", classType); // TODO help to debug...
 
             var action = (IWorldInteraction)Activator.CreateInstance(classType);
-            //var casterType = SkillCaster.GetByType((SkillCasterType)SkillCastTargetType.Unit);
-            //var targetType = SkillCastTarget.GetByType((SkillCastTargetType)SkillCastTargetType.Item);
-            //action.Execute(caster, casterType, owner, targetType, skillId, QuestId);
+            var casterType = SkillCaster.GetByType((SkillCasterType)SkillCastTargetType.Unit);
+            var targetType = SkillCastTarget.GetByType((SkillCastTargetType)SkillCastTargetType.Item);
+            action.Execute(caster, casterType, owner, targetType, skillId, QuestId);
         }
     }
 }

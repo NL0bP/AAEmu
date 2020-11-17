@@ -27,7 +27,7 @@ namespace AAEmu.Game.Models.Tasks.Skills
         public override void Execute()
         {
             _skill.TlId = (ushort)TlIdManager.Instance.GetNextId();
-            Skill.Cast(_caster, _casterCaster, _target, _targetCaster, _skillObject);
+            _skill.Cast(_caster, _casterCaster, _target, _targetCaster, _skillObject);
         }
     }
 }

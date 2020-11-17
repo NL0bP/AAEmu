@@ -127,7 +127,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                 var funcGroups = new DoodadFuncGroups
                                 {
                                     Id = reader.GetUInt32("id"),
-                                    GroupKindId = reader.GetUInt32("doodad_func_group_kind_id"),
+                                    GroupKindId = (DoodadFuncGroups.DoodadFuncGroupKind)reader.GetUInt32("doodad_func_group_kind_id"),
                                     SoundId = reader.IsDBNull("sound_id") ? 0 : reader.GetUInt32("sound_id")
                                 };
                                 funcGroups.Name = LocalizationManager.Instance.GetEnglishLocalizedText("doodad_func_groups", "name", funcGroups.Id);

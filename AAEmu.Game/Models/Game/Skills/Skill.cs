@@ -558,11 +558,9 @@ namespace AAEmu.Game.Models.Game.Skills
             if (Template.Plot != null)
             {
                 var eventTemplate = Template.Plot.EventTemplate;
-                caster.Step = new PlotStep
-                {
-                    Event = eventTemplate,
-                    Flag = 2
-                };
+                caster.Step = new PlotStep();
+                caster.Step.Event = eventTemplate;
+                caster.Step.Flag = 2;
                 if (!eventTemplate.СheckСonditions(caster, casterType, target, targetType, skillObject))
                 {
                     caster.Step.Flag = 0;
@@ -577,10 +575,12 @@ namespace AAEmu.Game.Models.Game.Skills
                     }
                 }
                 ParsePlot(caster, casterType, target, targetType, skillObject, caster.Step);
+                //caster.BroadcastPacket(new SCPlotEndedPacket(TlId), true);
+                //caster.SkillTask = null;
                 //if (!res)
                 //    return;
-                StopPlotEvent(caster);
-                Cast(caster, casterType, target, targetType, skillObject);
+                //StopPlotEvent(caster);
+                //Cast(caster, casterType, target, targetType, skillObject);
             }
             else
             {
@@ -668,7 +668,8 @@ namespace AAEmu.Game.Models.Game.Skills
 
         public void ParsePlot(Unit caster, SkillCaster casterType, BaseUnit target, SkillCastTarget targetType, SkillObject skillObject, PlotStep step)
         {
-            _log.Debug("Plot: StepId {0}, Flsg {1}", step.Event.Id, step.Flag);
+            _log.Warn("Plot: StepId {0}, Flag {1}, Delay {2}", step.Event.Id, step.Flag, step.Delay);
+
             caster.Step = step;
             if (step.Flag != 0)
             {
@@ -697,7 +698,7 @@ namespace AAEmu.Game.Models.Game.Skills
                 }
             }
 
-            var time = (ushort)(step.Flag != 0 ? step.Delay / 10 + 10 : 0);
+            var time = (ushort)(step.Flag != 0 ? step.Delay / 10 + 1 : 0);
             var objId = step.Casting || step.Channeling ? caster.ObjId : 0;
             var casterPlotObj = new PlotObject(caster);
             var targetPlotObj = new PlotObject(target);
@@ -969,12 +970,12 @@ namespace AAEmu.Game.Models.Game.Skills
             TlId = 0;
         }
 
-        public void StopPlotEvent(Unit caster)
+        public async void StopPlotEvent(Unit caster)
         {
             caster.BroadcastPacket(new SCPlotEndedPacket(TlId), true);
             caster.SkillTask = null;
-            TlIdManager.Instance.ReleaseId(TlId);
-            TlId = 0;
+            //TlIdManager.Instance.ReleaseId(TlId);
+            //TlId = 0;
         }
 
         private async void StopSkill(Unit caster)

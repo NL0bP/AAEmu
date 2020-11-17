@@ -18,7 +18,8 @@ namespace AAEmu.Game.Models.Tasks.Skills
         private readonly SkillObject _skillObject;
         private readonly Dictionary<uint, int> _counter;
 
-        public PlotTask(Skill skill, Unit caster, SkillCaster casterCaster, BaseUnit target, SkillCastTarget targetCaster, SkillObject skillObject, PlotNextEvent nextEvent, Dictionary<uint, int> counter) : base(skill)
+        public PlotTask(Skill skill, Unit caster, SkillCaster casterCaster, BaseUnit target, SkillCastTarget targetCaster,
+            SkillObject skillObject, PlotNextEvent nextEvent, Dictionary<uint, int> counter) : base(skill)
         {
             _skill = skill;
             _caster = caster;
@@ -54,19 +55,17 @@ namespace AAEmu.Game.Models.Tasks.Skills
             {
                 foreach (var evnt in _nextEvent.Event.NextEvents)
                 {
-                    res = res && Skill.BuildPlot(_caster, _casterCaster, _target, _targetCaster, _skillObject, evnt, step, _counter);
+                    res = res && _skill.BuildPlot(_caster, _casterCaster, _target, _targetCaster, _skillObject, evnt, step, _counter);
                 }
             }
-            Skill.ParsePlot(_caster, _casterCaster, _target, _targetCaster, _skillObject, step);
+            _skill.ParsePlot(_caster, _casterCaster, _target, _targetCaster, _skillObject, step);
             if (!res)
             {
                 return;
             }
             _caster.BroadcastPacket(new SCPlotEndedPacket(_skill.TlId), true);
-
-            //_skill.StopPlotEvent(_caster);
-            //TlIdManager.Instance.ReleaseId(_skill.TlId);
-            //_skill.TlId = 0;
+            TlIdManager.Instance.ReleaseId(_skill.TlId);
+            _skill.TlId = 0;
         }
     }
 }

@@ -77,7 +77,7 @@ namespace AAEmu.Game
             NpcManager.Instance.Load();
             DoodadManager.Instance.Load();
             HousingManager.Instance.Load();
-            //TransferManager.Instance.Load();
+            TransferManager.Instance.Load();
 
             SpawnManager.Instance.Load();
             SpawnManager.Instance.SpawnAll();

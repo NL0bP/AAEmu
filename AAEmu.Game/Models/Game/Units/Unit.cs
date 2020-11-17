@@ -66,6 +66,12 @@ namespace AAEmu.Game.Models.Game.Units
         public bool IsInPatrol { get; set; }
         public List<int> SummarizeDamage { get; set; }
         public bool IsAutoAttack { get; set; }
+
+        //X2::DescType<X2::SkillIdTag,unsigned int,X2::DS2> castingSkillId;
+        //X2::DescType<X2::PlotIdTag,unsigned int,X2::DS2> castingPlotId;
+        //X2::DescType<X2::SkillIdTag,unsigned int,X2::DS2> channelingSkillId;
+        //X2::DescType<X2::PlotIdTag,unsigned int,X2::DS2> channelingPlotId;
+
         public uint SkillId { get; set; }
         public ushort TlId { get; set; }
         public PlotStep Step { get; set; }

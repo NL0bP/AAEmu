@@ -11,7 +11,7 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("test_slave", this);
+            CommandManager.Instance.Register("testslave", this);
         }
 
         public string GetCommandLineHelp()
