@@ -28,15 +28,15 @@ namespace AAEmu.Game.Core.Network.Game
                     .Write(TypeId)
                     .Write(this);
 
-                if (Level == 1)
-                {
-                    packet
-                        .Write((byte)0) // hash
-                        .Write((byte)0); // count
-                }
+                //if (Level == 1)
+                //{
+                //    packet
+                //        .Write((byte)0) // hash
+                //        .Write((byte)0); // count
+                //}
 
                 packet.Write(body, false);
-                
+
                 ps.Write(packet);
             }
             catch (Exception ex)
@@ -45,7 +45,7 @@ namespace AAEmu.Game.Core.Network.Game
                 throw;
             }
 
-            // SC здесь можно установит фильтр на скрытие пакетов
+            // SC here you can set the filter to hide packets
             if (!(TypeId == 0x013 && Level == 2) && // Pong
                 !(TypeId == 0x016 && Level == 2) && // FastPong
                 !(TypeId == 0x06B && Level == 1) && // SCUnitMovements
@@ -53,14 +53,14 @@ namespace AAEmu.Game.Core.Network.Game
             {
                 //_log.Debug("GamePacket: S->C type {0:X} {2}\n{1}", TypeId, ps, this.ToString().Substring(23));
                 _log.Debug("GamePacket: S->C type {0:X3} {1}", TypeId, this.ToString().Substring(23));
-            }
 
+            }
             return ps;
         }
 
         public override PacketBase<GameConnection> Decode(PacketStream ps)
         {
-            // CS здесь можно установит фильтр на скрытие пакетов
+            // CS here you can set the filter to hide packets
             if (!(TypeId == 0x012 && Level == 2) && // Ping
                 !(TypeId == 0x015 && Level == 2) && // FastPing
                 !(TypeId == 0x089 && Level == 1)) // CSMoveUnit
@@ -68,7 +68,6 @@ namespace AAEmu.Game.Core.Network.Game
                 //_log.Debug("GamePacket: C->S type {0:X} {2}\n{1}", TypeId, ps, this.ToString().Substring(23));
                 _log.Debug("GamePacket: C->S type {0:X3} {1}", TypeId, this.ToString().Substring(23));
             }
-
             try
             {
                 Read(ps);

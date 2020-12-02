@@ -23,7 +23,7 @@ namespace AAEmu.Game.Models.Game.Units.Movements
         public override void Read(PacketStream stream)
         {
             base.Read(stream);
-            (X, Y, Z) = stream.ReadPosition();
+            (X, Y, Z) = stream.ReadPositionBc();
             VelX = stream.ReadInt16();
             VelY = stream.ReadInt16();
             VelZ = stream.ReadInt16();
@@ -34,18 +34,18 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             AngVelX = stream.ReadSingle();
             AngVelY = stream.ReadSingle();
             AngVelZ = stream.ReadSingle();
-            Steering = stream.ReadSingle();
-            var wheelAngs = stream.ReadByte();
-            for (var i = 0; i < wheelAngs; i++)
-            {
-                WheelAngVel.Add(stream.ReadSingle());
-            }
+            //Steering = stream.ReadSingle();
+            //var wheelAngs = stream.ReadByte();
+            //for (var i = 0; i < wheelAngs; i++)
+            //{
+            //    WheelAngVel.Add(stream.ReadSingle());
+            //}
         }
 
         public override PacketStream Write(PacketStream stream)
         {
             base.Write(stream);
-            stream.WritePosition(X, Y, Z);
+            stream.WritePositionBc(X, Y, Z);
             stream.Write(VelX);
             stream.Write(VelY);
             stream.Write(VelZ);
@@ -56,12 +56,12 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             stream.Write(AngVelX);
             stream.Write(AngVelY);
             stream.Write(AngVelZ);
-            stream.Write(Steering);
-            stream.Write((byte)WheelAngVel.Count);
-            foreach (var f in WheelAngVel)
-            {
-                stream.Write(f);
-            }
+            //stream.Write(Steering);
+            //stream.Write((byte)WheelAngVel.Count);
+            //foreach (var f in WheelAngVel)
+            //{
+            //    stream.Write(f);
+            //}
 
             return stream;
         }

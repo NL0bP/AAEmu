@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.World;
-
 using NLog;
 
 namespace AAEmu.Game.Models.Game.NPChar
@@ -34,9 +32,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             {
                 var npc = Spawn(0);
                 if (npc != null)
-                {
                     list.Add(npc);
-                }
             }
 
             return list;
@@ -50,7 +46,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                 _log.Warn("Npc {0}, from spawn not exist at db", UnitId);
                 return null;
             }
-
+            
             npc.Spawner = this;
             npc.Position = Position.Clone();
             if (npc.Position == null)
@@ -79,9 +75,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             }
 
             if (_lastSpawn == null || _lastSpawn.ObjId == npc.ObjId)
-            {
                 _lastSpawn = _spawned.Count != 0 ? _spawned[_spawned.Count - 1] : null;
-            }
         }
 
         public void DecreaseCount(Npc npc)
@@ -90,12 +84,12 @@ namespace AAEmu.Game.Models.Game.NPChar
             _spawned.Remove(npc);
             if (RespawnTime > 0 && (_spawnCount + _scheduledCount) < Count)
             {
-                npc.Respawn = DateTime.Now.AddSeconds(RespawnTime);
+                npc.Respawn = DateTime.UtcNow.AddSeconds(RespawnTime);
                 SpawnManager.Instance.AddRespawn(npc);
                 _scheduledCount++;
             }
 
-            npc.Despawn = DateTime.Now.AddSeconds(DespawnTime);
+            npc.Despawn = DateTime.UtcNow.AddSeconds(DespawnTime);
             SpawnManager.Instance.AddDespawn(npc);
         }
     }

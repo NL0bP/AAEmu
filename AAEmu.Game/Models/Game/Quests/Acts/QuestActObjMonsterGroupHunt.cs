@@ -9,14 +9,31 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
         public int Count { get; set; }
         public bool UseAlias { get; set; }
         public uint QuestActObjAliasId { get; set; }
-        public uint HighlightDoodadId { get; set; }
-        public int HighlightDoodadPhase { get; set; }
+        //public uint HighlightDoodadId { get; set; } // отсутствует в 0.5.101.406
+        //public int HighlightDoodadPhase { get; set; } // отсутствует в 0.5.101.406
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Debug("QuestActObjMonsterGroupHunt: QuestMonsterGroupId {0}, Count {1}, UseAlias {2}, QuestActObjAliasId {3}, HighlightDoodadId {4}, HighlightDoodadPhase {5}, quest {6}, objective {7}",
-                QuestMonsterGroupId, Count, UseAlias, QuestActObjAliasId, HighlightDoodadId, HighlightDoodadPhase, quest.TemplateId, objective);
-
+            _log.Trace(
+                "QuestActObjMonsterGroupHunt: Score {6} QuestMonsterGroupId {0}," +
+                " Count {1}, UseAlias {2}, QuestActObjAliasId {3}," +
+                //" HighlightDoodadId {4}," +
+                //" HighlightDoodadPhase {5}," +
+                " quest {4}, objective {5}",
+                QuestMonsterGroupId,
+                Count,
+                UseAlias,
+                QuestActObjAliasId,
+                //HighlightDoodadId,
+                //HighlightDoodadPhase,
+                quest.TemplateId,
+                objective,
+                quest.Template.Score);
+            var tempScore = objective * Count;
+            if(tempScore >= quest.Template.Score)
+            {
+                return true;
+            }
             return objective >= Count;
         }
     }

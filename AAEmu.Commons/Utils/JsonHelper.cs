@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Newtonsoft.Json;
 
 namespace AAEmu.Commons.Utils
@@ -9,7 +9,7 @@ namespace AAEmu.Commons.Utils
 
         public static bool TryDeserializeObject<T>(string json, out T result, out Exception error)
         {
-            result = default;
+            result = default(T);
 
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -23,13 +23,13 @@ namespace AAEmu.Commons.Utils
             }
             catch (Exception e)
             {
-                result = default;
+                result = default(T);
                 error = e;
                 return false;
             }
 
             error = null;
-            return result != null; // TODO Checking value of 'result' for null will always return false when generic type is instantiated with a value type.
+            return result != null;
         }
     }
 }

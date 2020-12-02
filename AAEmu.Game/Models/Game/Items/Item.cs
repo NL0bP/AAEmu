@@ -1,115 +1,143 @@
 ﻿using System;
+
 using AAEmu.Commons.Network;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items.Templates;
 
 namespace AAEmu.Game.Models.Game.Items
 {
     [Flags]
-    public enum ItemFlag
+    public enum ItemFlag : byte
     {
-        None = 0x0,
-        SoulBound = 0x1,
-        HasUcc = 0x2,
-        Secure = 0x4,
-        Skinized = 0x8,
+        None = 0x00,
+        SoulBound = 0x01,
+        HasUCC = 0x02,
+        Secure = 0x04,
+        Skinized = 0x08,
         Unpacked = 0x10,
         AuctionWin = 0x20
     }
 
-    public class Item : PacketMarshaler
+    public enum ShopCurrencyType : byte
     {
-        public byte WorldId { get; set; }
-        public ulong Id { get; set; }
-        public uint TemplateId { get; set; }
-        public ItemTemplate Template { get; set; }
-        public SlotType SlotType { get; set; }
-        public int Slot { get; set; }
-        public byte Grade { get; set; }
-        public int Count { get; set; }
-        public int LifespanMins { get; set; }
-        public uint MadeUnitId { get; set; }
-        public DateTime CreateTime { get; set; }
-        public DateTime UnsecureTime { get; set; }
-        public DateTime UnpackTime { get; set; }
-        public byte Flags { get; set; }
-        public uint ImageItemTemplateId { get; set; }
-        public int CategoryId { get; set; }
-        public string Description { get; set; }
-        public int Price { get; set; }
-        public int Refund { get; set; }
-        public int BindId { get; set; }
-        public int PickupLimit { get; set; }
-        public int MaxStackSize { get; set; }
-        public uint IconId { get; set; }
-        public string Sellable { get; set; }
-        public int UseSkillId { get; set; }
-        public string UseSkillAsReagent { get; set; }
-        public int ImplId { get; set; }
-        public int PickupSoundId { get; set; }
-        public int MilestoneId { get; set; }
-        public int BuffId { get; set; }
-        public string Gradable { get; set; }
-        public string LootMulti { get; set; }
-        public int LootQuestId { get; set; }
-        public string NotifyUi { get; set; }
-        public int UseOrEquipmentSoundId { get; set; }
-        public int HonorPrice { get; set; }
-        public int ExpAbsLifetime { get; set; }
-        public int ExpOnlineLifetime { get; set; }
-        public string ExpDate { get; set; }
-        public int SpecialtyZoneId { get; set; }
-        public int LevelRequirement { get; set; }
-        public string Comment { get; set; }
-        public int AuctionACategoryId { get; set; }
-        public int SuctionBCategoryId { get; set; }
-        public int SuctionCCategoryId { get; set; }
-        public int LevelLimit { get; set; }
-        public int FixedGrade { get; set; }
-        public string Disenchantable { get; set; }
-        public int LivingPointPrice { get; set; }
-        public int ActabilityGroupId { get; set; }
-        public string ActabilityRequirement { get; set; }
-        public string GradeEnchantable { get; set; }
-        public int CharGenderId { get; set; }
-        public string OneTimeSale { get; set; }
-        public int LimitedSaleCount { get; set; }
-        public int MaleIconId { get; set; }
-        public int OverIconId { get; set; }
-        public string Translate { get; set; }
-        public string AutoRegisterToActionbar { get; set; }
+        Money = 0,
+        Honor = 1,
+        SiegeShop = 2,
+        VocationBadges = 3,
+    }
 
-        public virtual byte DetailType => 0; // TODO 1.0 max type: 8, at 1.2 max type 9 (size: 9 bytes)
+    public struct ItemLocation
+    {
+        public SlotType slotType;
+        public byte Slot;
+    }
+
+    public struct ItemIdAndLocation
+    {
+        public ulong Id;
+        public SlotType SlotType;
+        public byte Slot;
+    }
+
+
+    public class Item : PacketMarshaler, IComparable<Item>
+    {
+        private byte _worldId;
+        private ulong _ownerId;
+        private ulong _id;
+        private uint _templateId;
+        private SlotType _slotType;
+        private int _slot;
+        private ItemGrade _grade;
+        private ItemFlag _itemFlags;
+        private int _count;
+        private int _lifespanMins;
+        private uint _madeUnitId;
+        private DateTime _createTime;
+        private DateTime _unsecureTime;
+        private DateTime _unpackTime;
+        private uint _imageItemTemplateId;
+        private bool _isDirty;
+
+        public bool IsDirty { get => _isDirty; set => _isDirty = value; }
+        public byte WorldId { get => _worldId; set { _worldId = value; _isDirty = true; } }
+        public ulong OwnerId { get => _ownerId; set { _ownerId = value; _isDirty = true; } }
+        public ulong Id { get => _id; set { _id = value; _isDirty = true; } }
+        public uint TemplateId { get => _templateId; set { _templateId = value; _isDirty = true; } }
+        public ItemTemplate Template { get; set; }
+        public SlotType SlotType { get => _slotType; set { _slotType = value; _isDirty = true; } }
+        public int Slot { get => _slot; set { _slot = value; _isDirty = true; } }
+        public ItemGrade Grade { get => _grade; set { _grade = value; _isDirty = true; } }
+        public ItemFlag ItemFlags { get => _itemFlags; set { _itemFlags = value; _isDirty = true; } }
+        public int Count { get => _count; set { _count = value; _isDirty = true; } }
+        public int LifespanMins { get => _lifespanMins; set { _lifespanMins = value; _isDirty = true; } }
+        public uint MadeUnitId { get => _madeUnitId; set { _madeUnitId = value; _isDirty = true; } }
+        public DateTime CreateTime { get => _createTime; set { _createTime = value; _isDirty = true; } }
+        public DateTime UnsecureTime { get => _unsecureTime; set { _unsecureTime = value; _isDirty = true; } }
+        public DateTime UnpackTime { get => _unpackTime; set { _unpackTime = value; _isDirty = true; } }
+        public uint ImageItemTemplateId { get => _imageItemTemplateId; set { _imageItemTemplateId = value; _isDirty = true; } }
+        public byte[] Detail { get; set; }
+
+
+        public virtual byte DetailType => 0; // TODO 0.5.101.406 max type: 6, 1.0 max type: 8, at 1.2 max type 9 (size: 9 bytes)
+
+        // Helper
+        public ItemContainer _holdingContainer { get; set; }
+        public static uint Coins = 500;
+
+        /// <summary>
+        /// Sort will use itemSlot numbers
+        /// </summary>
+        /// <param name="otherItem"></param>
+        /// <returns></returns>
+        public int CompareTo(Item otherItem)
+        {
+            if (otherItem == null) return 1;
+            return this.Slot.CompareTo(otherItem.Slot);
+        }
 
         public Item()
         {
             WorldId = AppConfiguration.Instance.Id;
+            OwnerId = 0;
             Slot = -1;
+            _holdingContainer = null;
+            _isDirty = true;
         }
 
         public Item(byte worldId)
         {
             WorldId = worldId;
+            OwnerId = 0;
             Slot = -1;
+            _holdingContainer = null;
+            _isDirty = true;
         }
 
         public Item(ulong id, ItemTemplate template, int count)
         {
             WorldId = AppConfiguration.Instance.Id;
+            OwnerId = 0;
             Id = id;
             TemplateId = template.Id;
             Template = template;
             Count = count;
             Slot = -1;
+            _holdingContainer = null;
+            _isDirty = true;
         }
 
         public Item(byte worldId, ulong id, ItemTemplate template, int count)
         {
             WorldId = worldId;
+            OwnerId = 0;
             Id = id;
             TemplateId = template.Id;
             Template = template;
             Count = count;
             Slot = -1;
+            _holdingContainer = null;
+            _isDirty = true;
         }
 
         public override void Read(PacketStream stream)
@@ -119,61 +147,98 @@ namespace AAEmu.Game.Models.Game.Items
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write(TemplateId);
-            // TODO ...
-            // if (TemplateId == 0)
-            //     return stream;
             stream.Write(Id);
-            stream.Write(Grade);
-            stream.Write(Flags); // flags
+            stream.Write((sbyte)Grade);
+            stream.Write((byte)ItemFlags); //bounded
             stream.Write(Count);
-            stream.Write(DetailType);
 
+            stream.Write(DetailType);
             WriteDetails(stream);
 
             stream.Write(CreateTime);
             stream.Write(LifespanMins);
             stream.Write(MadeUnitId);
             stream.Write(WorldId);
-            stream.Write(UnsecureTime);
-            stream.Write(UnpackTime);
+
             return stream;
         }
 
         public virtual void ReadDetails(PacketStream stream)
         {
+//            var mDetailLength = 0;
+//            switch (DetailType)
+//            {
+//                case 1:
+//                    mDetailLength = 20; //55; // 20
+//                    goto Label_32;
+//                case 2:
+//                    mDetailLength = 30;
+//                    goto Label_32;
+//                case 3:
+//                    mDetailLength = 7;
+//                    goto Label_32;
+//                case 4:
+//                    mDetailLength = 9;
+//                    goto Label_32;
+//                case 5:
+//                    mDetailLength = 25;
+//                    goto Label_32;
+//                case 6:
+//                    mDetailLength = 8;
+//Label_32:
+//                    mDetailLength -= 1;
+//                    Detail = stream.ReadBytes(mDetailLength);
+//                    break;
+//                default:
+//                    break;
+//            }
         }
 
         public virtual void WriteDetails(PacketStream stream)
         {
+//            var mDetailLength = 0;
+//            switch (DetailType)
+//            {
+//                case 1:
+//                    mDetailLength = 55; // 20
+//                    goto Label_32;
+//                case 2:
+//                    mDetailLength = 30;
+//                    goto Label_32;
+//                case 3:
+//                    mDetailLength = 7;
+//                    goto Label_32;
+//                case 4:
+//                    mDetailLength = 9;
+//                    goto Label_32;
+//                case 5:
+//                    mDetailLength = 25;
+//                    goto Label_32;
+//                case 6:
+//                    mDetailLength = 8;
+//Label_32:
+//                    mDetailLength -= 1;
+//                    //stream.Write(Detail);
+//                    stream.Write(new byte[mDetailLength]);
+//                    break;
+//                default:
+//                    break;
+//            }
         }
+
         public virtual bool HasFlag(ItemFlag flag)
         {
-            return (Flags & (byte)flag) == (byte)flag;
+            return (ItemFlags & flag) == flag;
         }
 
         public virtual void SetFlag(ItemFlag flag)
         {
-            Flags |= (byte)flag;
+            ItemFlags |= flag;
         }
 
         public virtual void RemoveFlag(ItemFlag flag)
         {
-            Flags &= (byte)~flag;
-        }
-
-        public bool CanStackInto(Item stackIntoItem)
-        {
-            //TODO: make sure cases where items shouldn't be stackable with each other are covered 
-            if (
-                stackIntoItem == null ||
-                stackIntoItem.Template.MaxCount == stackIntoItem.Count ||
-                TemplateId != stackIntoItem.TemplateId ||
-                LifespanMins != stackIntoItem.LifespanMins ||
-                Flags != stackIntoItem.Flags ||
-                Grade != stackIntoItem.Grade
-            )
-                return false;
-            return true;
+            ItemFlags &= ~flag;
         }
     }
 }

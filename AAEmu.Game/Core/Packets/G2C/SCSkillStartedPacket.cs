@@ -31,14 +31,14 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_caster);
             stream.Write(_target);
             stream.Write(_skillObject);
-
-            stream.Write((short)(_skill.Template.CastingTime / 10u + 10));
-            stream.Write((short)(_skill.Template.CastingTime / 10u + 10));
-            stream.Write(false); // castSynergy
+            
+            stream.Write((short)(_skill.Template.CastingTime / 10));
+            stream.Write((short)(_skill.Template.CastingTime / 10));
+            stream.Write(false); // castSynergy // (short)0
             stream.Write((byte)0); // f
             return stream;
         }
-
+        
         // TODO block with f flag
         /*
               a2->Reader->ReadByte("f", (unsigned __int8 *)&v5, 0);

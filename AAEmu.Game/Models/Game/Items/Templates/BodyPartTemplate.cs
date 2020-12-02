@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using AAEmu.Commons.Network;
 
 namespace AAEmu.Game.Models.Game.Items.Templates
 {
@@ -8,6 +9,6 @@ namespace AAEmu.Game.Models.Game.Items.Templates
 
         public uint ModelId { get; set; }
         public bool NpcOnly { get; set; }
-        public bool BeautyShopOnly { get; set; }
+        //public bool BeautyShopOnly { get; set; } // отсутствует в 0.5.101.406
     }
 }

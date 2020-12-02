@@ -10,7 +10,7 @@ namespace AAEmu.Game.Models.Game.Items
         public int MinAmount { get; set; }
         public int MaxAmount { get; set; }
         public uint LootPackId { get; set; }
-        public byte GradeId { get; set; }
+        public ItemGrade GradeId { get; set; }
         public bool AlwaysDrop { get; set; }
 
         /*

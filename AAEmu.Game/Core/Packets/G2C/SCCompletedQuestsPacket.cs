@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Quests;
 
@@ -22,7 +22,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 quest.Body.CopyTo(body, 0);
 
                 stream.Write(quest.Id); // idx
-                stream.Write(body); // body
+                stream.Write(body);     // body
             }
             return stream;
         }

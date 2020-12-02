@@ -1,4 +1,4 @@
-using AAEmu.Game.Core.Network.Game;
+﻿using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.Proxy
 {

@@ -10,7 +10,8 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("house_binding_move", this);
+            string[] name = { "housebindingmove", "house_binding_move" };
+            CommandManager.Instance.Register(name, this);
         }
 
         public string GetCommandLineHelp()
@@ -20,7 +21,7 @@ namespace AAEmu.Game.Scripts.Commands
 
         public string GetCommandHelpText()
         {
-            return "";
+            return "Command used for testing and moving house binding points";
         }
 
         public void Execute(Character character, string[] args)
@@ -29,7 +30,7 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 if (args.Length < 4)
                 {
-                    character.SendMessage("[HouseBindings] /house_binding_move <AttachPointId> <X> <Y> <Z>");
+                    character.SendMessage("[HouseBindings] " + CommandManager.CommandPrefix + "house_binding_move <AttachPointId> <X> <Y> <Z>");
                     return;
                 }
                 if (uint.TryParse(args[0], out var attachPointId) &&
@@ -47,20 +48,17 @@ namespace AAEmu.Game.Scripts.Commands
                         attachPointObj.Position.Z = z;
 
                         house.Spawn();
-
+                        
                         character.CurrentTarget = house;
 
                         character
                             .BroadcastPacket(
                                 new SCTargetChangedPacket(character.ObjId, character.CurrentTarget?.ObjId ?? 0), true);
-                    }
-                    else
+                    } else
                         character.SendMessage("|cFFFF0000[HouseBindings] Not found this attach doodad|r");
-                }
-                else
+                } else
                     character.SendMessage("|cFFFF0000[HouseBindings] Throw parse args|r");
-            }
-            else
+            } else
                 character.SendMessage("|cFFFF0000[HouseBindings] First select house|r");
         }
     }

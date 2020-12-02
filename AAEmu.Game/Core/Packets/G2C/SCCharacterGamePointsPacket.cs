@@ -15,23 +15,14 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write(_character.HonorPoint);
-            stream.Write(_character.VocationPoint);
+            for (var i = 0; i < 6; i++)
+                stream.Write(_character.HonorPoint);    // uint honor
+            
+            //stream.Write(_character.VocationPoint);
 
-            for (var i = 0; i < 8; i++)
-                stream.Write(0); // point
+            for (var i = 0; i < 3; i++)
+                stream.Write(0u); // uint living
             return stream;
         }
     }
-
-    /*
-    v3 = 10;
-    do
-    {
-    result = a2->Reader->ReadUInt32("p", v2, 0);
-    v2 += 4;
-    --v3;
-    }
-    while ( v3 );
-    */
 }

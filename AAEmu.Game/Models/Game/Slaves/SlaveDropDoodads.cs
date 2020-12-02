@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Slaves{    public class SlaveDropDoodads    {        public uint Id { get; set; }        public int OwnerId { get; set; }		public string OwnerType { get; set; }		public int DoodadId { get; set; }		public uint Count { get; set; }		public uint Radius { get; set; }		public float OnWater { get; set; }	}}

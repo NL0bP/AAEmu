@@ -18,12 +18,12 @@ namespace AAEmu.Game.Models.Game.Items
         public Formula FormulaDps { get; set; }
         public Formula FormulaMDps { get; set; }
         public Formula FormulaArmor { get; set; }
+        //public Formula FormulaHDps { get; set; } // отсутствует в 0.5.101.406
         public int MinRange { get; set; }
         public int SheathePriority { get; set; }
         public float DurabilityRatio { get; set; }
         public int RenewCategory { get; set; }
         public int ItemProcId { get; set; }
         public int StatMultiplier { get; set; }
-        public string Name { get; set; }
     }
 }

@@ -11,11 +11,11 @@ namespace AAEmu.Game.Core.Managers.World
     public class StreamManager : Singleton<StreamManager>
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-        private readonly Dictionary<uint, ulong> _accounts;
+        private readonly Dictionary<uint, uint> _accounts;
 
         protected StreamManager()
         {
-            _accounts = new Dictionary<uint, ulong>();
+            _accounts = new Dictionary<uint, uint>();
         }
 
         public void Load()
@@ -23,7 +23,7 @@ namespace AAEmu.Game.Core.Managers.World
             // TODO ...
         }
 
-        public void AddToken(ulong accountId, uint connectionId)
+        public void AddToken(uint accountId, uint connectionId)
         {
             _accounts.Add(connectionId, accountId);
         }

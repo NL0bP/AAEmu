@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Net;
+
 using AAEmu.Commons.Network.Type;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Packets.C2G;
 using AAEmu.Game.Core.Packets.Proxy;
 using AAEmu.Game.Models;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Network.Game
@@ -20,282 +22,250 @@ namespace AAEmu.Game.Core.Network.Game
             _handler = new GameProtocolHandler();
 
             // World
-            RegisterPacket(0x000, 1, typeof(X2EnterWorldPacket));
-            RegisterPacket(0x001, 1, typeof(CSLeaveWorldPacket));
-            RegisterPacket(0x002, 1, typeof(CSCancelLeaveWorldPacket));
-            RegisterPacket(0x004, 1, typeof(CSCreateExpeditionPacket));
-            //RegisterPacket(0x005, 1, typeof(CSChangeExpeditionSponsorPacket)); TODO : this packet seems like it has been removed.
-            RegisterPacket(0x006, 1, typeof(CSChangeExpeditionRolePolicyPacket));
-            RegisterPacket(0x007, 1, typeof(CSChangeExpeditionMemberRolePacket));
-            RegisterPacket(0x008, 1, typeof(CSChangeExpeditionOwnerPacket));
-            RegisterPacket(0x009, 1, typeof(CSRenameExpeditionPacket));
-            RegisterPacket(0x00b, 1, typeof(CSDismissExpeditionPacket));
-            RegisterPacket(0x00c, 1, typeof(CSInviteToExpeditionPacket));
-            RegisterPacket(0x00d, 1, typeof(CSReplyExpeditionInvitationPacket));
-            RegisterPacket(0x00e, 1, typeof(CSLeaveExpeditionPacket));
-            RegisterPacket(0x00f, 1, typeof(CSKickFromExpeditionPacket));
-            // 0x10 unk packet
-            RegisterPacket(0x012, 1, typeof(CSUpdateDominionTaxRatePacket));
-
-            RegisterPacket(0x015, 1, typeof(CSFactionImmigrationInvitePacket));
-            RegisterPacket(0x016, 1, typeof(CSFactionImmigrationInviteReplyPacket));
-            RegisterPacket(0x017, 1, typeof(CSFactionImmigrateToOriginPacket));
-            RegisterPacket(0x018, 1, typeof(CSFactionKickToOriginPacket));
-            RegisterPacket(0x019, 1, typeof(CSFactionDeclareHostilePacket));
-            RegisterPacket(0x01a, 1, typeof(CSFamilyInviteMemberPacket));
-            RegisterPacket(0x01b, 1, typeof(CSFamilyReplyInvitationPacket));
-            RegisterPacket(0x01c, 1, typeof(CSFamilyLeavePacket));
-            RegisterPacket(0x01d, 1, typeof(CSFamilyKickPacket));
-            RegisterPacket(0x01e, 1, typeof(CSFamilyChangeTitlePacket));
-            RegisterPacket(0x01f, 1, typeof(CSFamilyChangeOwnerPacket));
-            RegisterPacket(0x020, 1, typeof(CSListCharacterPacket));
-            RegisterPacket(0x021, 1, typeof(CSRefreshInCharacterListPacket));
-            RegisterPacket(0x022, 1, typeof(CSCreateCharacterPacket));
-            RegisterPacket(0x023, 1, typeof(CSEditCharacterPacket));
-            RegisterPacket(0x024, 1, typeof(CSDeleteCharacterPacket));
-            RegisterPacket(0x025, 1, typeof(CSSelectCharacterPacket));
-            RegisterPacket(0x026, 1, typeof(CSSpawnCharacterPacket));
-            RegisterPacket(0x027, 1, typeof(CSCancelCharacterDeletePacket));
-            RegisterPacket(0x029, 1, typeof(CSNotifyInGamePacket));
-            RegisterPacket(0x02a, 1, typeof(CSNotifyInGameCompletedPacket));
-            RegisterPacket(0x02b, 1, typeof(CSEditorGameModePacket));
-            RegisterPacket(0x02c, 1, typeof(CSChangeTargetPacket));
-            RegisterPacket(0x02d, 1, typeof(CSRequestCharBriefPacket));
-            RegisterPacket(0x02e, 1, typeof(CSSpawnSlavePacket));
-            RegisterPacket(0x02f, 1, typeof(CSDespawnSlavePacket));
-            RegisterPacket(0x030, 1, typeof(CSDestroySlavePacket));
-            RegisterPacket(0x031, 1, typeof(CSBindSlavePacket));
-            RegisterPacket(0x032, 1, typeof(CSDiscardSlavePacket));
-            //RegisterPacket(0x031, 1, typeof(CSChangeSlaveTargetPacket)); TODO: this packet is not in the offsets
-            RegisterPacket(0x034, 1, typeof(CSChangeSlaveNamePacket));
-            RegisterPacket(0x035, 1, typeof(CSRepairSlaveItemsPacket));
-            RegisterPacket(0x036, 1, typeof(CSTurretStatePacket));
-            RegisterPacket(0x037, 1, typeof(CSChangeSlaveEquipmentPacket));
-            RegisterPacket(0x038, 1, typeof(CSDestroyItemPacket));
-            RegisterPacket(0x039, 1, typeof(CSSplitBagItemPacket));
-            RegisterPacket(0x03a, 1, typeof(CSSwapItemsPacket));
-            RegisterPacket(0x03c, 1, typeof(CSRepairSingleEquipmentPacket));
-            RegisterPacket(0x03d, 1, typeof(CSRepairAllEquipmentsPacket));
-            RegisterPacket(0x03f, 1, typeof(CSSplitCofferItemPacket));
-            RegisterPacket(0x040, 1, typeof(CSSwapCofferItemsPacket));
-            RegisterPacket(0x041, 1, typeof(CSExpandSlotsPacket));
-            RegisterPacket(0x042, 1, typeof(CSSellBackpackGoodsPacket));
-            RegisterPacket(0x043, 1, typeof(CSSpecialtyRatioPacket));
-            RegisterPacket(0x044, 1, typeof(CSListSpecialtyGoodsPacket));
-            //RegisterPacket(0x043, 1, typeof(CSBuySpecialtyItemPacket)); TODO: this packet is not in the offsets
-            //RegisterPacket(0x044, 1, typeof(CSSpecialtyRecordLoadPacket)); TODO: this packet is not in the offsets
-            RegisterPacket(0x047, 1, typeof(CSDepositMoneyPacket));
-            RegisterPacket(0x048, 1, typeof(CSWithdrawMoneyPacket));
-            RegisterPacket(0x049, 1, typeof(CSConvertItemLookPacket));
-            RegisterPacket(0x04a, 1, typeof(CSItemSecurePacket));
-            RegisterPacket(0x04b, 1, typeof(CSItemUnsecurePacket));
-            RegisterPacket(0x04c, 1, typeof(CSEquipmentsSecurePacket));
-            RegisterPacket(0x04d, 1, typeof(CSEquipmentsUnsecurePacket));
-            RegisterPacket(0x04e, 1, typeof(CSResurrectCharacterPacket));
-            RegisterPacket(0x04f, 1, typeof(CSSetForceAttackPacket));
-            RegisterPacket(0x050, 1, typeof(CSChallengeDuelPacket));
-            RegisterPacket(0x051, 1, typeof(CSStartDuelPacket));
-            RegisterPacket(0x052, 1, typeof(CSStartSkillPacket));
-            RegisterPacket(0x054, 1, typeof(CSStopCastingPacket));
-            RegisterPacket(0x055, 1, typeof(CSRemoveBuffPacket));
-            RegisterPacket(0x056, 1, typeof(CSConstructHouseTaxPacket));
-            RegisterPacket(0x057, 1, typeof(CSCreateHousePacket));
-            RegisterPacket(0x058, 1, typeof(CSDecorateHousePacket));
-            RegisterPacket(0x059, 1, typeof(CSChangeHouseNamePacket));
-            RegisterPacket(0x05a, 1, typeof(CSChangeHousePermissionPacket));
-            //RegisterPacket(0x05b, 1, typeof(CSChangeHousePayPacket)); TODO: this packet is not in the offsets
-            RegisterPacket(0x05c, 1, typeof(CSRequestHouseTaxPacket));
-            // 0x5c unk packet
-            RegisterPacket(0x05d, 1, typeof(CSAllowHousingRecoverPacket));
-            RegisterPacket(0x05e, 1, typeof(CSSellHousePacket));
-            RegisterPacket(0x05f, 1, typeof(CSSellHouseCancelPacket));
-            RegisterPacket(0x060, 1, typeof(CSBuyHousePacket));
-            RegisterPacket(0x061, 1, typeof(CSJoinUserChatChannelPacket));
-            RegisterPacket(0x062, 1, typeof(CSLeaveChatChannelPacket));
-            RegisterPacket(0x063, 1, typeof(CSSendChatMessagePacket));
-            RegisterPacket(0x064, 1, typeof(CSConsoleCmdUsedPacket));
-            RegisterPacket(0x065, 1, typeof(CSInteractNPCPacket));
-            RegisterPacket(0x066, 1, typeof(CSInteractNPCEndPacket));
-            RegisterPacket(0x067, 1, typeof(CSBoardingTransferPacket));
-            RegisterPacket(0x068, 1, typeof(CSStartInteractionPacket));
-            RegisterPacket(0x06b, 1, typeof(CSSelectInteractionExPacket));
-            RegisterPacket(0x06c, 1, typeof(CSCofferInteractionPacket));
-            RegisterPacket(0x06e, 1, typeof(CSCriminalLockedPacket));
-            RegisterPacket(0x06f, 1, typeof(CSReplyImprisonOrTrialPacket));
-            RegisterPacket(0x070, 1, typeof(CSSkipFinalStatementPacket));
-            RegisterPacket(0x071, 1, typeof(CSReplyInviteJuryPacket));
-            RegisterPacket(0x072, 1, typeof(CSJurySummonedPacket));
-            RegisterPacket(0x073, 1, typeof(CSJuryEndTestimonyPacket));
-            RegisterPacket(0x074, 1, typeof(CSCancelTrialPacket));
-            RegisterPacket(0x075, 1, typeof(CSJuryVerdictPacket));
-            RegisterPacket(0x076, 1, typeof(CSReportCrimePacket));
-            RegisterPacket(0x077, 1, typeof(CSJoinTrialAudiencePacket));
-            RegisterPacket(0x078, 1, typeof(CSLeaveTrialAudiencePacket));
-            RegisterPacket(0x079, 1, typeof(CSRequestJuryWaitingNumberPacket));
-            RegisterPacket(0x07a, 1, typeof(CSInviteToTeamPacket));
-            RegisterPacket(0x07b, 1, typeof(CSInviteAreaToTeamPacket));
-            RegisterPacket(0x07c, 1, typeof(CSReplyToJoinTeamPacket));
-            RegisterPacket(0x07d, 1, typeof(CSLeaveTeamPacket));
-            RegisterPacket(0x07e, 1, typeof(CSKickTeamMemberPacket));
-            RegisterPacket(0x07f, 1, typeof(CSMakeTeamOwnerPacket));
-            //RegisterPacket(0x07e, 1, typeof(CSSetTeamOfficerPacket)); TODO: this packet is not in the offsets 
-            RegisterPacket(0x080, 1, typeof(CSConvertToRaidTeamPacket));
-            RegisterPacket(0x081, 1, typeof(CSMoveTeamMemberPacket));
-            RegisterPacket(0x083, 1, typeof(CSChangeLootingRulePacket));
-            RegisterPacket(0x084, 1, typeof(CSDismissTeamPacket));
-            RegisterPacket(0x085, 1, typeof(CSSetTeamMemberRolePacket));
-            RegisterPacket(0x086, 1, typeof(CSSetOverHeadMarkerPacket));
-            RegisterPacket(0x087, 1, typeof(CSSetPingPosPacket));
-            RegisterPacket(0x088, 1, typeof(CSAskRiskyTeamActionPacket));
-            RegisterPacket(0x089, 1, typeof(CSMoveUnitPacket));
-            RegisterPacket(0x08a, 1, typeof(CSSkillControllerStatePacket));
-            RegisterPacket(0x08b, 1, typeof(CSCreateSkillControllerPacket));
-            RegisterPacket(0x08c, 1, typeof(CSActiveWeaponChangedPacket));
-
-            //RegisterPacket(0x08d, 1, typeof(CSChangeItemLookPacket)); TODO: this packet is not in the offsets 
-            RegisterPacket(0x08e, 1, typeof(CSLootOpenBagPacket));
-            RegisterPacket(0x08f, 1, typeof(CSLootItemPacket));
-
-            RegisterPacket(0x090, 1, typeof(CSLootCloseBagPacket));
-            RegisterPacket(0x091, 1, typeof(CSLootDicePacket));
-            RegisterPacket(0x092, 1, typeof(CSLearnSkillPacket));
-            RegisterPacket(0x093, 1, typeof(CSLearnBuffPacket));
-            RegisterPacket(0x094, 1, typeof(CSResetSkillsPacket));
-            RegisterPacket(0x096, 1, typeof(CSSwapAbilityPacket));
-            RegisterPacket(0x098, 1, typeof(CSSendMailPacket));
-            RegisterPacket(0x09a, 1, typeof(CSListMailPacket));
-            RegisterPacket(0x09b, 1, typeof(CSListMailContinuePacket));
-            RegisterPacket(0x09c, 1, typeof(CSReadMailPacket));
-            RegisterPacket(0x09d, 1, typeof(CSTakeAttachmentItemPacket));
-            RegisterPacket(0x09e, 1, typeof(CSTakeAttachmentMoneyPacket));
-            RegisterPacket(0x09f, 1, typeof(CSTakeAllSelectedAttachmentPacket));
-            // 0x9f unk packet
-            RegisterPacket(0x0a0, 1, typeof(CSPayChargeMoneyPacket));
-            RegisterPacket(0x0a1, 1, typeof(CSDeleteMailPacket));
-            RegisterPacket(0x0a3, 1, typeof(CSReportSpamPacket));
-            //RegisterPacket(0x0a1, 1, typeof(CSReturnMailPacket)); TODO: this packet is not in the offsets 
-            RegisterPacket(0x0a4, 1, typeof(CSRemoveMatePacket));
-            RegisterPacket(0x0a5, 1, typeof(CSChangeMateTargetPacket));
-            RegisterPacket(0x0a6, 1, typeof(CSChangeMateNamePacket));
-            RegisterPacket(0x0a7, 1, typeof(CSMountMatePacket));
-            RegisterPacket(0x0a8, 1, typeof(CSUnMountMatePacket));
-            RegisterPacket(0x0a9, 1, typeof(CSChangeMateEquipmentPacket));
-            RegisterPacket(0x0aa, 1, typeof(CSChangeMateUserStatePacket));
-            // 0xab unk packet
-            // 0xac unk packet
-            RegisterPacket(0x0ad, 1, typeof(CSExpressEmotionPacket));
-            RegisterPacket(0x0ae, 1, typeof(CSBuyItemsPacket));
-            RegisterPacket(0x0af, 1, typeof(CSBuyCoinItemPacket));
-            RegisterPacket(0x0b0, 1, typeof(CSSellItemsPacket));
-            RegisterPacket(0x0b1, 1, typeof(CSListSoldItemPacket));
-            RegisterPacket(0x0b2, 1, typeof(CSBuyPriestBuffPacket));
-            RegisterPacket(0x0b3, 1, typeof(CSUseTeleportPacket));
-            RegisterPacket(0x0b4, 1, typeof(CSTeleportEndedPacket));
-            RegisterPacket(0x0b5, 1, typeof(CSRepairPetItemsPacket));
-            RegisterPacket(0x0b6, 1, typeof(CSUpdateActionSlotPacket));
-            RegisterPacket(0x0b7, 1, typeof(CSAuctionPostPacket));
-            RegisterPacket(0x0b8, 1, typeof(CSAuctionSearchPacket));
-            RegisterPacket(0x0b9, 1, typeof(CSBidAuctionPacket));
-            RegisterPacket(0x0ba, 1, typeof(CSCancelAuctionPacket));
-            RegisterPacket(0x0bb, 1, typeof(CSAuctionMyBidListPacket));
-            RegisterPacket(0x0bc, 1, typeof(CSAuctionLowestPricePacket));
-            RegisterPacket(0x0bd, 1, typeof(CSRollDicePacket));
-            //0xbf CSRequestNpcSpawnerList
-
-            //0xc8 CSRemoveAllFieldSlaves
-            //0xc9 CSAddFieldSlave
-            RegisterPacket(0x0cb, 1, typeof(CSHangPacket));
-            RegisterPacket(0x0cc, 1, typeof(CSUnhangPacket));
-            RegisterPacket(0x0cd, 1, typeof(CSUnbondDoodadPacket));
-
-            RegisterPacket(0x0ce, 1, typeof(CSCompletedCinemaPacket));
-            RegisterPacket(0x0cf, 1, typeof(CSStartedCinemaPacket));
-            //0xd0 CSRequestPermissionToPlayCinemaForDirectingMode
-            //0xd1 CSEditorRemoveGimmickPacket
-            //0xd2 CSEditorAddGimmickPacket
-            //0xd3 CSInteractGimmickPacket
-            //0xd4 CSWorldRayCastingPacket
-            RegisterPacket(0x0d5, 1, typeof(CSStartQuestContextPacket));
-            RegisterPacket(0x0d6, 1, typeof(CSCompleteQuestContextPacket));
-            RegisterPacket(0x0d7, 1, typeof(CSDropQuestContextPacket));
-            //RegisterPacket(0x0d4, 1, typeof(CSResetQuestContextPacket)); TODO: this packet is not in the offsets 
-            //RegisterPacket(0x0d5, 1, typeof(CSAcceptCheatQuestContextPacket)); TODO: this packet is not in the offsets 
-            RegisterPacket(0x0da, 1, typeof(CSQuestTalkMadePacket));
-            RegisterPacket(0x0db, 1, typeof(CSQuestStartWithPacket));
-            RegisterPacket(0x0dd, 1, typeof(CSTryQuestCompleteAsLetItDonePacket));
-            RegisterPacket(0x0de, 1, typeof(CSUsePortalPacket));
-            RegisterPacket(0x0df, 1, typeof(CSDeletePortalPacket));
-            RegisterPacket(0x0e0, 1, typeof(CSInstanceLoadedPacket));
-            RegisterPacket(0x0e1, 1, typeof(CSApplyToInstantGamePacket));
-            RegisterPacket(0x0e2, 1, typeof(CSCancelInstantGamePacket));
-            RegisterPacket(0x0e3, 1, typeof(CSJoinInstantGamePacket));
-            RegisterPacket(0x0e4, 1, typeof(CSEnteredInstantGameWorldPacket));
-            RegisterPacket(0x0e5, 1, typeof(CSLeaveInstantGamePacket));
-            RegisterPacket(0x0e6, 1, typeof(CSCreateDoodadPacket));
-            //RegisterPacket(0x0e3, 1, typeof(CSSaveDoodadUccStringPacket)); TODO: this packet is not in the offsets 
-            RegisterPacket(0x0e7, 1, typeof(CSNaviTeleportPacket));
-            RegisterPacket(0x0e8, 1, typeof(CSNaviOpenPortalPacket));
-            RegisterPacket(0x0e9, 1, typeof(CSChangeDoodadPhasePacket));
-            RegisterPacket(0x0ea, 1, typeof(CSNaviOpenBountyPacket));
-            RegisterPacket(0x0eb, 1, typeof(CSChangeDoodadDataPacket));
-            RegisterPacket(0x0ec, 1, typeof(CSStartTradePacket));
-            RegisterPacket(0x0ed, 1, typeof(CSCanStartTradePacket));
-            RegisterPacket(0x0ee, 1, typeof(CSCannotStartTradePacket));
-            RegisterPacket(0x0ef, 1, typeof(CSCancelTradePacket));
-            RegisterPacket(0x0f0, 1, typeof(CSPutupTradeItemPacket));
-            RegisterPacket(0x0f1, 1, typeof(CSPutupTradeMoneyPacket));
-            RegisterPacket(0x0f2, 1, typeof(CSTakedownTradeItemPacket));
-            RegisterPacket(0x0f3, 1, typeof(CSTradeLockPacket));
-            RegisterPacket(0x0f4, 1, typeof(CSTradeOkPacket));
-            RegisterPacket(0x0f5, 1, typeof(CSSaveTutorialPacket));
-            RegisterPacket(0x0f6, 1, typeof(CSSetLogicDoodadPacket));
-            RegisterPacket(0x0f7, 1, typeof(CSCleanupLogicLinkPacket));
-            RegisterPacket(0x0f8, 1, typeof(CSExecuteCraft));
-            RegisterPacket(0x0f9, 1, typeof(CSChangeAppellationPacket));
-            RegisterPacket(0x0fc, 1, typeof(CSCreateShipyardPacket));
-            RegisterPacket(0x0fd, 1, typeof(CSRestartMainQuestPacket));
-            RegisterPacket(0x0fe, 1, typeof(CSSetLpManageCharacterPacket));
-            RegisterPacket(0x0ff, 1, typeof(CSUpgradeExpertLimitPacket));
-            RegisterPacket(0x100, 1, typeof(CSDowngradeExpertLimitPacket));
-            RegisterPacket(0x101, 1, typeof(CSExpandExpertPacket));
-            //RegisterPacket(0x100, 1, typeof(CSSearchListPacket)); TODO: this packet is not in the offsets 
-            RegisterPacket(0x104, 1, typeof(CSAddFriendPacket));
-            RegisterPacket(0x105, 1, typeof(CSDeleteFriendPacket));
-            RegisterPacket(0x106, 1, typeof(CSCharDetailPacket));
-            RegisterPacket(0x107, 1, typeof(CSAddBlockedUserPacket));
-            RegisterPacket(0x108, 1, typeof(CSDeleteBlockedUserPacket));
-            RegisterPacket(0x112, 1, typeof(CSNotifySubZonePacket));
-            RegisterPacket(0x115, 1, typeof(CSResturnAddrsPacket));
-            RegisterPacket(0x117, 1, typeof(CSRequestUIDataPacket));
-            RegisterPacket(0x118, 1, typeof(CSSaveUIDataPacket));
-            RegisterPacket(0x119, 1, typeof(CSBroadcastVisualOptionPacket));
-            RegisterPacket(0x11a, 1, typeof(CSRestrictCheckPacket));
-            RegisterPacket(0x11b, 1, typeof(CSICSMenuListPacket));
-            RegisterPacket(0x11c, 1, typeof(CSICSGoodsListPacket));
-            RegisterPacket(0x11d, 1, typeof(CSICSBuyGoodPacket));
-            RegisterPacket(0x11e, 1, typeof(CSICSMoneyRequestPacket));
-            // 0x12e CSEnterBeautySalonPacket
-            RegisterPacket(0x12F, 1, typeof(CSRankCharacterPacket));
-            RegisterPacket(0x125, 1, typeof(CSRequestSecondPasswordKeyTablesPacket));
-            // 0x130 CSRankSnapshotPacket
-            // 0x131 unk packet
-            RegisterPacket(0x132, 1, typeof(CSIdleStatusPacket));
-            // 0x133 CSChangeAutoUseAAPointPacket
-            RegisterPacket(0x134, 1, typeof(CSThisTimeUnpackItemPacket));
-            RegisterPacket(0x135, 1, typeof(CSPremiumServiceBuyPacket));
-            RegisterPacket(0x136, 1, typeof(CSPremiumServiceListPacket));
-            // 0x137 CSICSBuyAAPointPacket
-            // 0x138 CSRequestTencentFatigueInfoPacket
-            // 0x139 CSTakeAllAttachmentItemPacket
-            // 0x13a unk packet
-            // 0x13b unk packet
-            RegisterPacket(0x13c, 1, typeof(CSPremiumServieceMsgPacket));
-            // 0x13d unk packet
-            // 0x13e unk packet
-            // 0x13f unk packet
-            RegisterPacket(0x140, 1, typeof(CSSetupSecondPassword));
-            // 0x141 unk packet
-            // 0x142 unk packet
+            RegisterPacket(CSOffsets.X2ClientToWorldPacket, 1, typeof(X2ClientToWorldPacket));
+            RegisterPacket(CSOffsets.CSCofferInteractionPacket, 1, typeof(CSCofferInteractionPacket));
+            //RegisterPacket(CSOffsets.CSRemoveAllDoodadFromCellPacket, 1, typeof(CSRemoveAllDoodadFromCellPacket));
+            //RegisterPacket(CSOffsets.CSAddDoodadToCellEndedPacket, 1, typeof(CSAddDoodadToCellEndedPacket));
+            //RegisterPacket(CSOffsets.CSRemoveCommonFarmsPacket, 1, typeof(CSRemoveCommonFarmsPacket));
+            //RegisterPacket(CSOffsets.CSAddDoodadToCellPacket, 1, typeof(CSAddDoodadToCellPacket));
+            //RegisterPacket(CSOffsets.CSPlaceCommonFarmPacket, 1, typeof(CSPlaceCommonFarmPacket));
+            //RegisterPacket(CSOffsets.CSSetDoodadTimeAccelPacket, 1, typeof(CSSetDoodadTimeAccelPacket));
+            //RegisterPacket(CSOffsets.CSRequestCommonFarmListPacket, 1, typeof(CSRequestCommonFarmListPacket));
+            RegisterPacket(CSOffsets.CSChallengeDuelPacket, 1, typeof(CSChallengeDuelPacket));
+            RegisterPacket(CSOffsets.CSStartDuelPacket, 1, typeof(CSStartDuelPacket));
+            RegisterPacket(CSOffsets.CSSetPingPosPacket, 1, typeof(CSSetPingPosPacket));
+            RegisterPacket(CSOffsets.CSChangeMateNamePacket, 1, typeof(CSChangeMateNamePacket));
+            //RegisterPacket(CSOffsets.CSSendUserMusicPacket, 1, typeof(CSSendUserMusicPacket));
+            RegisterPacket(CSOffsets.CSReplyImprisonOrTrialPacket, 1, typeof(CSReplyImprisonOrTrialPacket));
+            RegisterPacket(CSOffsets.CSReplyInviteJuryPacket, 1, typeof(CSReplyInviteJuryPacket));
+            RegisterPacket(CSOffsets.CSJurySummonedPacket, 1, typeof(CSJurySummonedPacket));
+            RegisterPacket(CSOffsets.CSJuryEndTestimonyPacket, 1, typeof(CSJuryEndTestimonyPacket));
+            RegisterPacket(CSOffsets.CSCancelTrialPacket, 1, typeof(CSCancelTrialPacket));
+            RegisterPacket(CSOffsets.CSJuryVerdictPacket, 1, typeof(CSJuryVerdictPacket));
+            RegisterPacket(CSOffsets.CSReportCrimePacket, 1, typeof(CSReportCrimePacket));
+            RegisterPacket(CSOffsets.CSRequestJuryWaitingNumberPacket, 1, typeof(CSRequestJuryWaitingNumberPacket));
+            //RegisterPacket(CSOffsets.CSRequestSetBountyMoneyPacket, 1, typeof(CSRequestSetBountyMoneyPacket));
+            //RegisterPacket(CSOffsets.CSUpdateBountyPacket, 1, typeof(CSUpdateBountyPacket));
+            RegisterPacket(CSOffsets.CSSkillControllerStatePacket, 1, typeof(CSSkillControllerStatePacket));
+            RegisterPacket(CSOffsets.CSMountMatePacket, 1, typeof(CSMountMatePacket));
+            RegisterPacket(CSOffsets.CSMoveUnitPacket, 1, typeof(CSMoveUnitPacket));
+            RegisterPacket(CSOffsets.CSCompletedCinemaPacket, 1, typeof(CSCompletedCinemaPacket));
+            //RegisterPacket(CSOffsets.CSCheckDemoModePacket, 1, typeof(CSCheckDemoModePacket));
+            //RegisterPacket(CSOffsets.CSResetDemoCharPacket, 1, typeof(CSResetDemoCharPacket));
+            RegisterPacket(CSOffsets.CSConsoleCmdUsedPacket, 1, typeof(CSConsoleCmdUsedPacket));
+            RegisterPacket(CSOffsets.CSEditorGameModePacket, 1, typeof(CSEditorGameModePacket));
+            RegisterPacket(CSOffsets.CSEditorRemoveGimmickPacket, 1, typeof(CSEditorRemoveGimmickPacket));
+            RegisterPacket(CSOffsets.CSInteractGimmickPacket, 1, typeof(CSInteractGimmickPacket));
+            RegisterPacket(CSOffsets.CSEditorAddGimmickPacket, 1, typeof(CSEditorAddGimmickPacket));
+            RegisterPacket(CSOffsets.CSGmCommandPacket, 1, typeof(CSGmCommandPacket));
+            RegisterPacket(CSOffsets.CSWorldRayCastingPacket, 1, typeof(CSWorldRayCastingPacket));
+            RegisterPacket(CSOffsets.CSListCharacterPacket, 1, typeof(CSListCharacterPacket));
+            RegisterPacket(CSOffsets.CSRefreshInCharacterListPacket, 1, typeof(CSRefreshInCharacterListPacket));
+            RegisterPacket(CSOffsets.CSDeleteCharacterPacket, 1, typeof(CSDeleteCharacterPacket));
+            RegisterPacket(CSOffsets.CSCancelCharacterDeletePacket, 1, typeof(CSCancelCharacterDeletePacket));
+            RegisterPacket(CSOffsets.CSSelectCharacterPacket, 1, typeof(CSSelectCharacterPacket));
+            RegisterPacket(CSOffsets.CSNotifyInGamePacket, 1, typeof(CSNotifyInGamePacket));
+            RegisterPacket(CSOffsets.CSNotifyInGameCompletedPacket, 1, typeof(CSNotifyInGameCompletedPacket));
+            RegisterPacket(CSOffsets.CSChangeTargetPacket, 1, typeof(CSChangeTargetPacket));
+            RegisterPacket(CSOffsets.CSResurrectCharacterPacket, 1, typeof(CSResurrectCharacterPacket));
+            RegisterPacket(CSOffsets.CSCriminalLockedPacket, 1, typeof(CSCriminalLockedPacket));
+            RegisterPacket(CSOffsets.CSExpressEmotionPacket, 1, typeof(CSExpressEmotionPacket));
+            RegisterPacket(CSOffsets.CSUnhangPacket, 1, typeof(CSUnhangPacket));
+            RegisterPacket(CSOffsets.CSChangeAppellationPacket, 1, typeof(CSChangeAppellationPacket));
+            RegisterPacket(CSOffsets.CSStartedCinemaPacket, 1, typeof(CSStartedCinemaPacket));
+            //RegisterPacket(CSOffsets.CSHSResponsePacket, 1, typeof(CSHSResponsePacket));
+            RegisterPacket(CSOffsets.CSBroadcastVisualOptionPacket, 1, typeof(CSBroadcastVisualOptionPacket));
+            RegisterPacket(CSOffsets.CSRestrictCheckPacket, 1, typeof(CSRestrictCheckPacket));
+            RegisterPacket(CSOffsets.CSICSMenuListPacket, 1, typeof(CSICSMenuListPacket));
+            RegisterPacket(CSOffsets.CSICSGoodsListPacket, 1, typeof(CSICSGoodsListPacket));
+            RegisterPacket(CSOffsets.CSICSBuyGoodPacket, 1, typeof(CSICSBuyGoodPacket));
+            //RegisterPacket(CSOffsets.CSCharacterFindByNamePacket, 1, typeof(CSCharacterFindByNamePacket));
+            RegisterPacket(CSOffsets.CSSpawnCharacterPacket, 1, typeof(CSSpawnCharacterPacket));
+            RegisterPacket(CSOffsets.CSCreateCharacterPacket, 1, typeof(CSCreateCharacterPacket));
+            RegisterPacket(CSOffsets.CSEditCharacterPacket, 1, typeof(CSEditCharacterPacket));
+            RegisterPacket(CSOffsets.CSTeleportEndedPacket, 1, typeof(CSTeleportEndedPacket));
+            RegisterPacket(CSOffsets.CSNotifySubZonePacket, 1, typeof(CSNotifySubZonePacket));
+            RegisterPacket(CSOffsets.CSSaveTutorialPacket, 1, typeof(CSSaveTutorialPacket));
+            RegisterPacket(CSOffsets.CSRequestUIDataPacket, 1, typeof(CSRequestUIDataPacket));
+            RegisterPacket(CSOffsets.CSSaveUIDataPacket, 1, typeof(CSSaveUIDataPacket));
+            RegisterPacket(CSOffsets.CSUpdateDominionTaxRatePacket, 1, typeof(CSUpdateDominionTaxRatePacket));
+            RegisterPacket(CSOffsets.CSRequestCharBriefPacket, 1, typeof(CSRequestCharBriefPacket));
+            //RegisterPacket(CSOffsets.CSReloadFactionRelationsPacket, 1, typeof(CSReloadFactionRelationsPacket));
+            RegisterPacket(CSOffsets.CSCreateExpeditionPacket, 1, typeof(CSCreateExpeditionPacket));
+            RegisterPacket(CSOffsets.CSChangeExpeditionSponsorPacket, 1, typeof(CSChangeExpeditionSponsorPacket));
+            RegisterPacket(CSOffsets.CSChangeExpeditionRolePolicyPacket, 1, typeof(CSChangeExpeditionRolePolicyPacket));
+            RegisterPacket(CSOffsets.CSChangeExpeditionMemberRolePacket, 1, typeof(CSChangeExpeditionMemberRolePacket));
+            RegisterPacket(CSOffsets.CSChangeExpeditionOwnerPacket, 1, typeof(CSChangeExpeditionOwnerPacket));
+            RegisterPacket(CSOffsets.CSDismissExpeditionPacket, 1, typeof(CSDismissExpeditionPacket));
+            RegisterPacket(CSOffsets.CSInviteToExpeditionPacket, 1, typeof(CSInviteToExpeditionPacket));
+            RegisterPacket(CSOffsets.CSLeaveExpeditionPacket, 1, typeof(CSLeaveExpeditionPacket));
+            RegisterPacket(CSOffsets.CSKickFromExpeditionPacket, 1, typeof(CSKickFromExpeditionPacket));
+            RegisterPacket(CSOffsets.CSReplyExpeditionInvitationPacket, 1, typeof(CSReplyExpeditionInvitationPacket));
+            RegisterPacket(CSOffsets.CSFamilyInviteMemberPacket, 1, typeof(CSFamilyInviteMemberPacket));
+            RegisterPacket(CSOffsets.CSFamilyLeavePacket, 1, typeof(CSFamilyLeavePacket));
+            RegisterPacket(CSOffsets.CSFamilyKickPacket, 1, typeof(CSFamilyKickPacket));
+            RegisterPacket(CSOffsets.CSFamilyChangeTitlePacket, 1, typeof(CSFamilyChangeTitlePacket));
+            RegisterPacket(CSOffsets.CSFamilyChangeOwnerPacket, 1, typeof(CSFamilyChangeOwnerPacket));
+            RegisterPacket(CSOffsets.CSFamilyReplyInvitationPacket, 1, typeof(CSFamilyReplyInvitationPacket));
+            RegisterPacket(CSOffsets.CSSearchListPacket, 1, typeof(CSSearchListPacket));
+            RegisterPacket(CSOffsets.CSAddFriendPacket, 1, typeof(CSAddFriendPacket));
+            RegisterPacket(CSOffsets.CSDeleteFriendPacket, 1, typeof(CSDeleteFriendPacket));
+            RegisterPacket(CSOffsets.CSCharDetailPacket, 1, typeof(CSCharDetailPacket));
+            RegisterPacket(CSOffsets.CSAddBlockedUserPacket, 1, typeof(CSAddBlockedUserPacket));
+            RegisterPacket(CSOffsets.CSDeleteBlockedUserPacket, 1, typeof(CSDeleteBlockedUserPacket));
+            RegisterPacket(CSOffsets.CSInviteAreaToTeamPacket, 1, typeof(CSInviteAreaToTeamPacket));
+            RegisterPacket(CSOffsets.CSInviteToTeamPacket, 1, typeof(CSInviteToTeamPacket));
+            RegisterPacket(CSOffsets.CSReplyToJoinTeamPacket, 1, typeof(CSReplyToJoinTeamPacket));
+            RegisterPacket(CSOffsets.CSLeaveTeamPacket, 1, typeof(CSLeaveTeamPacket));
+            RegisterPacket(CSOffsets.CSKickTeamMemberPacket, 1, typeof(CSKickTeamMemberPacket));
+            RegisterPacket(CSOffsets.CSMakeTeamOwnerPacket, 1, typeof(CSMakeTeamOwnerPacket));
+            RegisterPacket(CSOffsets.CSSetTeamOfficerPacket, 1, typeof(CSSetTeamOfficerPacket));
+            RegisterPacket(CSOffsets.CSConvertToRaidTeamPacket, 1, typeof(CSConvertToRaidTeamPacket));
+            RegisterPacket(CSOffsets.CSMoveTeamMemberPacket, 1, typeof(CSMoveTeamMemberPacket));
+            RegisterPacket(CSOffsets.CSDismissTeamPacket, 1, typeof(CSDismissTeamPacket));
+            RegisterPacket(CSOffsets.CSSetTeamMemberRolePacket, 1, typeof(CSSetTeamMemberRolePacket));
+            RegisterPacket(CSOffsets.CSSetOverHeadMarkerPacket, 1, typeof(CSSetOverHeadMarkerPacket));
+            RegisterPacket(CSOffsets.CSChangeLootingRulePacket, 1, typeof(CSChangeLootingRulePacket));
+            RegisterPacket(CSOffsets.CSUpdateActionSlotPacket, 1, typeof(CSUpdateActionSlotPacket));
+            RegisterPacket(CSOffsets.CSUsePortalPacket, 1, typeof(CSUsePortalPacket));
+            RegisterPacket(CSOffsets.CSUpgradeExpertLimitPacket, 1, typeof(CSUpgradeExpertLimitPacket));
+            RegisterPacket(CSOffsets.CSDowngradeExpertLimitPacket, 1, typeof(CSDowngradeExpertLimitPacket));
+            RegisterPacket(CSOffsets.CSConstructHouseTaxPacket, 1, typeof(CSConstructHouseTaxPacket));
+            RegisterPacket(CSOffsets.CSChangeHouseNamePacket, 1, typeof(CSChangeHouseNamePacket));
+            RegisterPacket(CSOffsets.CSChangeHousePermissionPacket, 1, typeof(CSChangeHousePermissionPacket));
+            RegisterPacket(CSOffsets.CSDecorateHousePacket, 1, typeof(CSDecorateHousePacket));
+            RegisterPacket(CSOffsets.CSCreateHousePacket, 1, typeof(CSCreateHousePacket));
+            RegisterPacket(CSOffsets.CSChangeHousePayPacket, 1, typeof(CSChangeHousePayPacket));
+            //RegisterPacket(CSOffsets.CSHireEmployeePacket, 1, typeof(CSHireEmployeePacket));
+            //RegisterPacket(CSOffsets.CSFireEmployeePacket, 1, typeof(CSFireEmployeePacket));
+            RegisterPacket(CSOffsets.CSRemoveMatePacket, 1, typeof(CSRemoveMatePacket));
+            RegisterPacket(CSOffsets.CSChangeMateTargetPacket, 1, typeof(CSChangeMateTargetPacket));
+            RegisterPacket(CSOffsets.CSChangeMateUserStatePacket, 1, typeof(CSChangeMateUserStatePacket));
+            RegisterPacket(CSOffsets.CSRequestNpcSpawnerListPacket, 1, typeof(CSRequestNpcSpawnerListPacket));
+            RegisterPacket(CSOffsets.CSRemoveNpcSpawnerPacket, 1, typeof(CSRemoveNpcSpawnerPacket));
+            //RegisterPacket(CSOffsets.CSUpdateNpcSpawnerPacket, 1, typeof(CSUpdateNpcSpawnerPacket));
+            RegisterPacket(CSOffsets.CSSpawnSlavePacket, 1, typeof(CSSpawnSlavePacket));
+            RegisterPacket(CSOffsets.CSDespawnSlavePacket, 1, typeof(CSDespawnSlavePacket));
+            RegisterPacket(CSOffsets.CSDestroySlavePacket, 1, typeof(CSDestroySlavePacket));
+            RegisterPacket(CSOffsets.CSBindSlavePacket, 1, typeof(CSBindSlavePacket));
+            RegisterPacket(CSOffsets.CSDiscardSlavePacket, 1, typeof(CSDiscardSlavePacket));
+            RegisterPacket(CSOffsets.CSChangeSlaveTargetPacket, 1, typeof(CSChangeSlaveTargetPacket));
+            //RegisterPacket(CSOffsets.CSRemoveAllFieldSlavesPacket, 1, typeof(CSRemoveAllFieldSlavesPacket));
+            //RegisterPacket(CSOffsets.CSAddFieldSlavePacket, 1, typeof(CSAddFieldSlavePacket));
+            RegisterPacket(CSOffsets.CSBoardingTransferPacket, 1, typeof(CSBoardingTransferPacket));
+            RegisterPacket(CSOffsets.CSTurretStatePacket, 1, typeof(CSTurretStatePacket));
+            RegisterPacket(CSOffsets.CSCreateSkillControllerPacket, 1, typeof(CSCreateSkillControllerPacket));
+            RegisterPacket(CSOffsets.CSActiveWeaponChangedPacket, 1, typeof(CSActiveWeaponChangedPacket));
+            RegisterPacket(CSOffsets.CSJoinTrialAudiencePacket, 1, typeof(CSJoinTrialAudiencePacket));
+            RegisterPacket(CSOffsets.CSLeaveTrialAudiencePacket, 1, typeof(CSLeaveTrialAudiencePacket));
+            RegisterPacket(CSOffsets.CSUnMountMatePacket, 1, typeof(CSUnMountMatePacket));
+            RegisterPacket(CSOffsets.CSUnbondDoodadPacket, 1, typeof(CSUnbondDoodadPacket));
+            RegisterPacket(CSOffsets.CSInstanceLoadedPacket, 1, typeof(CSInstanceLoadedPacket));
+            RegisterPacket(CSOffsets.CSApplyToInstantGamePacket, 1, typeof(CSApplyToInstantGamePacket));
+            RegisterPacket(CSOffsets.CSCancelInstantGamePacket, 1, typeof(CSCancelInstantGamePacket));
+            RegisterPacket(CSOffsets.CSJoinInstantGamePacket, 1, typeof(CSJoinInstantGamePacket));
+            RegisterPacket(CSOffsets.CSEnteredInstantGameWorldPacket, 1, typeof(CSEnteredInstantGameWorldPacket));
+            //RegisterPacket(CSOffsets.CSRequestPermissionToPlayCinemaForDirectingModePacket, 1, typeof(CSRequestPermissionToPlayCinemaForDirectingModePacket));
+            RegisterPacket(CSOffsets.CSStartQuestContextPacket, 1, typeof(CSStartQuestContextPacket));
+            RegisterPacket(CSOffsets.CSCompleteQuestContextPacket, 1, typeof(CSCompleteQuestContextPacket));
+            RegisterPacket(CSOffsets.CSDropQuestContextPacket, 1, typeof(CSDropQuestContextPacket));
+            RegisterPacket(CSOffsets.CSResetQuestContextPacket, 1, typeof(CSResetQuestContextPacket));
+            RegisterPacket(CSOffsets.CSAcceptCheatQuestContextPacket, 1, typeof(CSAcceptCheatQuestContextPacket));
+            RegisterPacket(CSOffsets.CSQuestTalkMadePacket, 1, typeof(CSQuestTalkMadePacket));
+            RegisterPacket(CSOffsets.CSQuestStartWithPacket, 1, typeof(CSQuestStartWithPacket));
+            RegisterPacket(CSOffsets.CSTryQuestCompleteAsLetItDonePacket, 1, typeof(CSTryQuestCompleteAsLetItDonePacket));
+            RegisterPacket(CSOffsets.CSRestartMainQuestPacket, 1, typeof(CSRestartMainQuestPacket));
+            //RegisterPacket(CSOffsets.CSRemoveAreaSpheresPacket, 1, typeof(CSRemoveAreaSpheresPacket));
+            //RegisterPacket(CSOffsets.CSPlaceAreaSpheresPacket, 1, typeof(CSPlaceAreaSpheresPacket));
+            RegisterPacket(CSOffsets.CSLearnSkillPacket, 1, typeof(CSLearnSkillPacket));
+            RegisterPacket(CSOffsets.CSLearnBuffPacket, 1, typeof(CSLearnBuffPacket));
+            RegisterPacket(CSOffsets.CSResetSkillsPacket, 1, typeof(CSResetSkillsPacket));
+            RegisterPacket(CSOffsets.CSSwapAbilityPacket, 1, typeof(CSSwapAbilityPacket));
+            RegisterPacket(CSOffsets.CSRemoveBuffPacket, 1, typeof(CSRemoveBuffPacket));
+            RegisterPacket(CSOffsets.CSStopCastingPacket, 1, typeof(CSStopCastingPacket));
+            RegisterPacket(CSOffsets.CSDeletePortalPacket, 1, typeof(CSDeletePortalPacket));
+            RegisterPacket(CSOffsets.CSSetForceAttackPacket, 1, typeof(CSSetForceAttackPacket));
+            RegisterPacket(CSOffsets.CSStartSkillPacket, 1, typeof(CSStartSkillPacket));
+            RegisterPacket(CSOffsets.CSCreateDoodadPacket, 1, typeof(CSCreateDoodadPacket));
+            RegisterPacket(CSOffsets.CSNaviTeleportPacket, 1, typeof(CSNaviTeleportPacket));
+            RegisterPacket(CSOffsets.CSNaviOpenPortalPacket, 1, typeof(CSNaviOpenPortalPacket));
+            RegisterPacket(CSOffsets.CSNaviOpenBountyPacket, 1, typeof(CSNaviOpenBountyPacket));
+            RegisterPacket(CSOffsets.CSSetLogicDoodadPacket, 1, typeof(CSSetLogicDoodadPacket));
+            RegisterPacket(CSOffsets.CSCleanupLogicLinkPacket, 1, typeof(CSCleanupLogicLinkPacket));
+            RegisterPacket(CSOffsets.CSSelectInteractionExPacket, 1, typeof(CSSelectInteractionExPacket));
+            RegisterPacket(CSOffsets.CSBuyItemsPacket, 1, typeof(CSBuyItemsPacket));
+            RegisterPacket(CSOffsets.CSBuyCoinItemPacket, 1, typeof(CSBuyCoinItemPacket));
+            RegisterPacket(CSOffsets.CSChangeDoodadPhasePacket, 1, typeof(CSChangeDoodadPhasePacket));
+            RegisterPacket(CSOffsets.CSHangPacket, 1, typeof(CSHangPacket));
+            RegisterPacket(CSOffsets.CSInteractNPCPacket, 1, typeof(CSInteractNPCPacket));
+            RegisterPacket(CSOffsets.CSInteractNPCEndPacket, 1, typeof(CSInteractNPCEndPacket));
+            RegisterPacket(CSOffsets.CSStartInteractionPacket, 1, typeof(CSStartInteractionPacket));
+            //RegisterPacket(CSOffsets.CSFactionImmigratePacket, 1, typeof(CSFactionImmigratePacket));
+            RegisterPacket(CSOffsets.CSRequestHouseTaxPacket, 1, typeof(CSRequestHouseTaxPacket));
+            RegisterPacket(CSOffsets.CSSpecialtyRatioPacket, 1, typeof(CSSpecialtyRatioPacket));
+            RegisterPacket(CSOffsets.CSListSpecialtyGoodsPacket, 1, typeof(CSListSpecialtyGoodsPacket));
+            RegisterPacket(CSOffsets.CSJoinUserChatChannelPacket, 1, typeof(CSJoinUserChatChannelPacket));
+            RegisterPacket(CSOffsets.CSLeaveChatChannelPacket, 1, typeof(CSLeaveChatChannelPacket));
+            RegisterPacket(CSOffsets.CSSendChatMessagePacket, 1, typeof(CSSendChatMessagePacket));
+            RegisterPacket(CSOffsets.CSRollDicePacket, 1, typeof(CSRollDicePacket));
+            RegisterPacket(CSOffsets.CSSendMailPacket, 1, typeof(CSSendMailPacket));
+            RegisterPacket(CSOffsets.CSListMailPacket, 1, typeof(CSListMailPacket));
+            RegisterPacket(CSOffsets.CSListMailContinuePacket, 1, typeof(CSListMailContinuePacket));
+            RegisterPacket(CSOffsets.CSReadMailPacket, 1, typeof(CSReadMailPacket));
+            RegisterPacket(CSOffsets.CSTakeAttachmentMoneyPacket, 1, typeof(CSTakeAttachmentMoneyPacket));
+            RegisterPacket(CSOffsets.CSPayChargeMoneyPacket, 1, typeof(CSPayChargeMoneyPacket));
+            RegisterPacket(CSOffsets.CSDeleteMailPacket, 1, typeof(CSDeleteMailPacket));
+            RegisterPacket(CSOffsets.CSReportSpamPacket, 1, typeof(CSReportSpamPacket));
+            RegisterPacket(CSOffsets.CSReturnMailPacket, 1, typeof(CSReturnMailPacket));
+            RegisterPacket(CSOffsets.CSTakeAttachmentItemPacket, 1, typeof(CSTakeAttachmentItemPacket));
+            RegisterPacket(CSOffsets.CSRepairSlaveItemsPacket, 1, typeof(CSRepairSlaveItemsPacket));
+            RegisterPacket(CSOffsets.CSRepairPetItemsPacket, 1, typeof(CSRepairPetItemsPacket));
+            RegisterPacket(CSOffsets.CSSaveDoodadUccStringPacket, 1, typeof(CSSaveDoodadUccStringPacket));
+            RegisterPacket(CSOffsets.CSAllowHousingRecoverPacket, 1, typeof(CSAllowHousingRecoverPacket));
+            RegisterPacket(CSOffsets.CSBuyPriestBuffPacket, 1, typeof(CSBuyPriestBuffPacket));
+            RegisterPacket(CSOffsets.CSChangeSlaveNamePacket, 1, typeof(CSChangeSlaveNamePacket));
+            RegisterPacket(CSOffsets.CSUseTeleportPacket, 1, typeof(CSUseTeleportPacket));
+            RegisterPacket(CSOffsets.CSLeaveWorldPacket, 1, typeof(CSLeaveWorldPacket));
+            RegisterPacket(CSOffsets.CSCancelLeaveWorldPacket, 1, typeof(CSCancelLeaveWorldPacket));
+            RegisterPacket(CSOffsets.CSAuctionPostPacket, 1, typeof(CSAuctionPostPacket));
+            RegisterPacket(CSOffsets.CSAuctionSearchPacket, 1, typeof(CSAuctionSearchPacket));
+            RegisterPacket(CSOffsets.CSAuctionMyBidListPacket, 1, typeof(CSAuctionMyBidListPacket));
+            RegisterPacket(CSOffsets.CSCancelAuctionPacket, 1, typeof(CSCancelAuctionPacket));
+            RegisterPacket(CSOffsets.CSBidAuctionPacket, 1, typeof(CSBidAuctionPacket));
+            //RegisterPacket(CSOffsets.CSExecuteCraftPacket, 1, typeof(CSExecuteCraftPacket));
+            RegisterPacket(CSOffsets.CSSetLpManageCharacterPacket, 1, typeof(CSSetLpManageCharacterPacket));
+            RegisterPacket(CSOffsets.CSCreateShipyardPacket, 1, typeof(CSCreateShipyardPacket));
+            RegisterPacket(CSOffsets.CSSetCraftingPayPacket, 1, typeof(CSSetCraftingPayPacket));
+            RegisterPacket(CSOffsets.CSDestroyItemPacket, 1, typeof(CSDestroyItemPacket));
+            RegisterPacket(CSOffsets.CSSplitBagItemPacket, 1, typeof(CSSplitBagItemPacket));
+            RegisterPacket(CSOffsets.CSSwapItemsPacket, 1, typeof(CSSwapItemsPacket));
+            RegisterPacket(CSOffsets.CSSplitCofferItemPacket, 1, typeof(CSSplitCofferItemPacket));
+            RegisterPacket(CSOffsets.CSSwapCofferItemsPacket, 1, typeof(CSSwapCofferItemsPacket));
+            RegisterPacket(CSOffsets.CSExpandSlotsPacket, 1, typeof(CSExpandSlotsPacket));
+            RegisterPacket(CSOffsets.CSDepositMoneyPacket, 1, typeof(CSDepositMoneyPacket));
+            RegisterPacket(CSOffsets.CSWithdrawMoneyPacket, 1, typeof(CSWithdrawMoneyPacket));
+            RegisterPacket(CSOffsets.CSRepairSingleEquipmentPacket, 1, typeof(CSRepairSingleEquipmentPacket));
+            RegisterPacket(CSOffsets.CSRepairAllEquipmentsPacket, 1, typeof(CSRepairAllEquipmentsPacket));
+            RegisterPacket(CSOffsets.CSChangeItemLookPacket, 1, typeof(CSChangeItemLookPacket));
+            RegisterPacket(CSOffsets.CSChangeMateEquipmentPacket, 1, typeof(CSChangeMateEquipmentPacket));
+            RegisterPacket(CSOffsets.CSItemUccPacket, 1, typeof(CSItemUccPacket));
+            RegisterPacket(CSOffsets.CSLootOpenBagPacket, 1, typeof(CSLootOpenBagPacket));
+            RegisterPacket(CSOffsets.CSLootItemPacket, 1, typeof(CSLootItemPacket));
+            RegisterPacket(CSOffsets.CSLootCloseBagPacket, 1, typeof(CSLootCloseBagPacket));
+            RegisterPacket(CSOffsets.CSLootDicePacket, 1, typeof(CSLootDicePacket));
+            RegisterPacket(CSOffsets.CSSellBackpackGoodsPacket, 1, typeof(CSSellBackpackGoodsPacket));
+            RegisterPacket(CSOffsets.CSBuySpecialtyItemPacket, 1, typeof(CSBuySpecialtyItemPacket));
+            RegisterPacket(CSOffsets.CSSellItemsPacket, 1, typeof(CSSellItemsPacket));
+            RegisterPacket(CSOffsets.CSListSoldItemPacket, 1, typeof(CSListSoldItemPacket));
+            RegisterPacket(CSOffsets.CSStartTradePacket, 1, typeof(CSStartTradePacket));
+            RegisterPacket(CSOffsets.CSCanStartTradePacket, 1, typeof(CSCanStartTradePacket));
+            RegisterPacket(CSOffsets.CSCannotStartTradePacket, 1, typeof(CSCannotStartTradePacket));
+            RegisterPacket(CSOffsets.CSCancelTradePacket, 1, typeof(CSCancelTradePacket));
+            RegisterPacket(CSOffsets.CSPutupTradeItemPacket, 1, typeof(CSPutupTradeItemPacket));
+            RegisterPacket(CSOffsets.CSTakedownTradeItemPacket, 1, typeof(CSTakedownTradeItemPacket));
+            RegisterPacket(CSOffsets.CSTradeLockPacket, 1, typeof(CSTradeLockPacket));
+            RegisterPacket(CSOffsets.CSTradeOkPacket, 1, typeof(CSTradeOkPacket));
+            RegisterPacket(CSOffsets.CSPutupTradeMoneyPacket, 1, typeof(CSPutupTradeMoneyPacket));
 
             // Proxy
             RegisterPacket(0x000, 2, typeof(ChangeStatePacket));
@@ -325,12 +295,11 @@ namespace AAEmu.Game.Core.Network.Game
         public void Start()
         {
             var config = AppConfiguration.Instance.Network;
-            _server = new Server(new IPEndPoint(config.Host.Equals("*") ? IPAddress.Any : IPAddress.Parse(config.Host), config.Port),
-                config.NumConnections);
+            _server = new Server(new IPEndPoint(config.Host.Equals("*") ? IPAddress.Any : IPAddress.Parse(config.Host), config.Port), 10);
             _server.SetHandler(_handler);
             _server.Start();
 
-            _log.Info("Network started with Number Connections of: " + config.NumConnections);
+            _log.Info("Network started");
         }
 
         public void Stop()

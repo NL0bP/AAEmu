@@ -5,7 +5,7 @@ namespace AAEmu.Game.Models.Game.Units.Movements
 {
     public class UnitMoveType : MoveType
     {
-        public byte[] DeltaMovement { get; set; }
+        public sbyte[] DeltaMovement { get; set; }
         public sbyte Stance { get; set; }
         public sbyte Alertness { get; set; }
         public byte GcFlags { get; set; }
@@ -23,41 +23,41 @@ namespace AAEmu.Game.Models.Game.Units.Movements
         public override void Read(PacketStream stream)
         {
             base.Read(stream);
-            (X, Y, Z) = stream.ReadPosition();
+            (X, Y, Z) = stream.ReadPositionBc();
             VelX = stream.ReadInt16();
             VelY = stream.ReadInt16();
             VelZ = stream.ReadInt16();
             RotationX = stream.ReadSByte();
             RotationY = stream.ReadSByte();
             RotationZ = stream.ReadSByte();
-            DeltaMovement = new byte[3];
-            DeltaMovement[0] = stream.ReadByte();
-            DeltaMovement[1] = stream.ReadByte();
-            DeltaMovement[2] = stream.ReadByte();
-            Stance = stream.ReadSByte();
-            Alertness = stream.ReadSByte();
-            Flags = stream.ReadByte();
-            if((Flags & 0x20) == 0x20)
+            DeltaMovement = new sbyte[3];
+            DeltaMovement[0] = stream.ReadSByte();
+            DeltaMovement[1] = stream.ReadSByte();
+            DeltaMovement[2] = stream.ReadSByte();
+            Stance = stream.ReadSByte();           // actor.stance
+            //Alertness = stream.ReadSByte();
+            Flags = stream.ReadByte();             // actor.flags
+            if ((Flags & 0x80) == 0x80)
+                FallVel = stream.ReadUInt16();     // actor.fallVel
+            if ((Flags & 0x20) == 0x20)
             {
-                GcFlags = stream.ReadByte(); // actor.gcFlags
-                GcPartId = stream.ReadUInt16(); // actor.gcPartId
-                (X2, Y2, Z2) = stream.ReadPosition(); // ix, iy, iz
-                RotationX2 = stream.ReadSByte();
-                RotationY2 = stream.ReadSByte(); 
-                RotationZ2 = stream.ReadSByte();
+                GcFlags = stream.ReadByte();          // actor.gcFlags
+                GcPartId = stream.ReadUInt16();       // actor.gcPartId
+                (X2, Y2, Z2) = stream.ReadPositionBc(); // ix, iy, iz
+                RotationX2 = stream.ReadSByte();      // rot.x
+                RotationY2 = stream.ReadSByte();      // rot.y
+                RotationZ2 = stream.ReadSByte();      // rot.z
             }
-            if((Flags & 0x40) == 0x40)
+            if ((Flags & 0x60) == 0x60)
+                GcId = stream.ReadUInt32();      // actor.gcId
+            if ((Flags & 0x40) == 0x40)
                 ClimbData = stream.ReadUInt32(); // actor.climbData
-            if((Flags & 0x60) == 0x60)
-                GcId = stream.ReadUInt32(); // actor.gcId
-            if((Flags & 0x80) == 0x80)
-                FallVel = stream.ReadUInt16(); // actor.fallVel
         }
 
         public override PacketStream Write(PacketStream stream)
         {
             base.Write(stream);
-            stream.WritePosition(X, Y, Z);
+            stream.WritePositionBc(X, Y, Z);
             stream.Write(VelX);
             stream.Write(VelY);
             stream.Write(VelZ);
@@ -68,23 +68,23 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             stream.Write(DeltaMovement[1]);
             stream.Write(DeltaMovement[2]);
             stream.Write(Stance);
-            stream.Write(Alertness);
+            //stream.Write(Alertness);
             stream.Write(Flags);
-            if((Flags & 0x20) == 0x20)
+            if ((Flags & 0x80) == 0x80)
+                stream.Write(FallVel);
+            if ((Flags & 0x20) == 0x20)
             {
                 stream.Write(GcFlags);
                 stream.Write(GcPartId);
-                stream.WritePosition(X2, Y2, Z2);
+                stream.WritePositionBc(X2, Y2, Z2);
                 stream.Write(RotationX2);
                 stream.Write(RotationY2);
                 stream.Write(RotationZ2);
             }
-            if((Flags & 0x40) == 0x40)
-                stream.Write(ClimbData);
-            if((Flags & 0x60) == 0x60)
+            if ((Flags & 0x60) == 0x60)
                 stream.Write(GcId);
-            if((Flags & 0x80) == 0x80)
-                stream.Write(FallVel);
+            if ((Flags & 0x40) == 0x40)
+                stream.Write(ClimbData);
             return stream;
         }
     }

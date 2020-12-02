@@ -21,7 +21,7 @@ namespace AAEmu.Game.Models.Game.Items.Actions
 
             stream.Write(_item.Id);
             var details = new PacketStream();
-            details.Write(_item.DetailType);
+            details.Write(_item.DetailType); // DetailType => 9 нет в 0.5.101406
             _item.WriteDetails(details);
             stream.Write((short)128);
             stream.Write(details, false);

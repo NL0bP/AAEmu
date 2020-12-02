@@ -1,4 +1,4 @@
-﻿namespace AAEmu.Game.Models.Game.Items
+namespace AAEmu.Game.Models.Game.Items
 {
     public class ItemCapScale
     {
@@ -7,4 +7,4 @@
         public int ScaleMin { get; set; }
         public int ScaleMax { get; set; }
     }
-}
+}

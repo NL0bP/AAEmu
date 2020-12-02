@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -10,7 +10,7 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
         public bool UseAlias { get; set; }
         public uint QuestActObjAliasId { get; set; }
         public uint HighlightDoodadId { get; set; }
-        public int HighlightDoodadPhase { get; set; }
+        //public int HighlightDoodadPhase { get; set; } // отсутствует в 0.5.101.406
 
         public override bool Use(Character character, Quest quest, int objective)
         {

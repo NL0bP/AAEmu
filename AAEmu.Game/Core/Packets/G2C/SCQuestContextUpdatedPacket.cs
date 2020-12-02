@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Quests;
 
@@ -19,10 +19,11 @@ namespace AAEmu.Game.Core.Packets.G2C
         {
             stream.Write(_quest);
             stream.Write(_componentId); // componentId
-            stream.Write(0); // type
-            stream.Write(0); // type
-            stream.Write(0); // type
-            stream.Write(0); // type
+            stream.Write(0u); // type
+            stream.Write(0u); // type
+            stream.Write(0u); // type
+            stream.Write(0u); // type
+
             return stream;
         }
     }

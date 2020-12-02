@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 
@@ -24,9 +24,6 @@ namespace AAEmu.Game.Core.Packets.G2C
         {
             stream.Write(_payMethod);
             stream.Write(_payLocation);
-            stream.Write(_payStart);
-            stream.Write(_payEnd);
-            stream.Write((long)0); // realPayTime
             return stream;
         }
     }

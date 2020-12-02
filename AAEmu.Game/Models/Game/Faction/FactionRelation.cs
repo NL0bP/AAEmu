@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace AAEmu.Game.Models.Game.Faction
 {
@@ -6,7 +6,7 @@ namespace AAEmu.Game.Models.Game.Faction
     {
         public uint Id { get; set; }
         public uint Id2 { get; set; }
-        public RelationState State { get; set; }
+        public RelationState Friendship { get; set; }
         public DateTime ExpTime { get; set; }
     }
 }

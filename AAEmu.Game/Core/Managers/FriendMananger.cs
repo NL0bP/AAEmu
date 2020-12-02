@@ -169,9 +169,9 @@ namespace AAEmu.Game.Core.Managers
                 Level = friend.Level,
                 LastWorldLeaveTime = friend.LeaveTime,
                 Health = friend.Hp,
-                Ability1 = friend.SkillTreeOne,
-                Ability2 = friend.SkillTreeTwo,
-                Ability3 = friend.SkillTreeThree
+                Ability1 = friend.Ability1,
+                Ability2 = friend.Ability2,
+                Ability3 = friend.Ability3
             };
         }
     }

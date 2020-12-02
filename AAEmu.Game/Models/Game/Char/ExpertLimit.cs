@@ -7,10 +7,9 @@
         public byte ExpertLimitCount { get; set; }
         public int Advantage { get; set; }
         public int CastAdvantage { get; set; }
-        public uint UpCurrencyId { get; set; }
-        public int UpPrice { get; set; }
-        public uint DownCurrencyId { get; set; }
-        public int DownPrice { get; set; }
-        public string Name { get; set; }
+        //public uint UpCurrencyId { get; set; } // отсутствует в 0.5.101.406
+        //public int UpPrice { get; set; } // отсутствует в 0.5.101.406
+        //public uint DownCurrencyId { get; set; } // отсутствует в 0.5.101.406
+        //public int DownPrice { get; set; } // отсутствует в 0.5.101.406
     }
 }

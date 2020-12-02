@@ -1,4 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using AAEmu.Game.Models.Game.Items;
+using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.World;
 
 namespace AAEmu.Game.Models.Game.Char.Templates
@@ -18,11 +20,16 @@ namespace AAEmu.Game.Models.Game.Char.Templates
         public byte NumInventorySlot { get; set; }
         public short NumBankSlot { get; set; }
 
+        public BodyPart BodyItems { get; set; } // 7 items
+        public uint HairId { get; set; }
+
         public CharacterTemplate()
         {
             Position = new Point();
             Items = new uint[7];
             Buffs = new List<uint>();
+            
+            BodyItems = new BodyPart();
         }
     }
 }

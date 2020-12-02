@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -13,17 +14,18 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            Skill skill, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("DispelEffect");
+            _log.Debug("DispelEffect");
 
             if (BuffTagId > 0 && !target.Effects.CheckBuffs(SkillManager.Instance.GetBuffsByTagId(BuffTagId)))
                 return;
             if (DispelCount > 0)
-                target.Effects.RemoveBuffs(BuffKindType.Good, DispelCount); //TODO ....
+                target.Effects.RemoveBuffs(BuffKind.Good, DispelCount); //TODO ....
             if (CureCount > 0)
-                target.Effects.RemoveBuffs(BuffKindType.Bad, CureCount);
+                target.Effects.RemoveBuffs(BuffKind.Bad, CureCount);
         }
     }
 }

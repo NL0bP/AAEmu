@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
@@ -12,7 +12,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         public override PacketStream Write(PacketStream stream)
         {
             for (var i = 0; i < 9; i++)
-                stream.Write((byte) 0);
+                stream.Write((byte) 0); // con
             /*RACE_CONGESTION = {
                 LOW = 0,
                 MIDDLE = 1,

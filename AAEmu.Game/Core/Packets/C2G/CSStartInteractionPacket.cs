@@ -1,12 +1,11 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
-using AAEmu.Game.Core.Packets.G2C;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSStartInteractionPacket : GamePacket
     {
-        public CSStartInteractionPacket() : base(0x068, 1)
+        public CSStartInteractionPacket() : base(CSOffsets.CSStartInteractionPacket, 1)
         {
         }
 
@@ -20,8 +19,6 @@ namespace AAEmu.Game.Core.Packets.C2G
             var modifierKeys = stream.ReadInt32();
 
             _log.Warn("StartInteraction, NpcObjId: {0}", npcObjId);
-
-            Connection.SendPacket(new SCAiAggroPacket(objId, 0));
         }
     }
 }

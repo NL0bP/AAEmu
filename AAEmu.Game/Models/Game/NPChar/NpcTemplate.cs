@@ -102,6 +102,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         public bool Repairman { get; set; }
         public bool ActivateAiAlways { get; set; }
         public bool Specialty { get; set; }
+        public uint SpecialtyCoinId { get; set; }
         public bool UseRangeMod { get; set; }
         public int NpcPostureSetId { get; set; }
         public int MateEquipSlotPackId { get; set; }
@@ -113,9 +114,9 @@ namespace AAEmu.Game.Models.Game.NPChar
         public int NpcInteractionSetId { get; set; }
         public bool UseAbuserList { get; set; }
         public bool ReturnWhenEnterHousingArea { get; set; }
-        public bool LookConverter { get; set; }
-        public bool UseDDCMSMountSkill { get; set; }
-        public bool CrowdEffect { get; set; }
+        //public bool LookConverter { get; set; } // отсутствует в 0.5.101.406
+        //public bool UseDDCMSMountSkill { get; set; } // отсутствует в 0.5.101.406
+        //public bool CrowdEffect { get; set; } // отсутствует в 0.5.101.406
         public uint AnimActionId { get; set; }
         public byte Race { get; set; }
         public byte Gender { get; set; }
@@ -125,6 +126,8 @@ namespace AAEmu.Game.Models.Game.NPChar
         public UnitCustomModelParams ModelParams { get; set; }
         public EquipItemsTemplate Items { get; set; }
         public (uint ItemId, bool NpcOnly)[] BodyItems { get; set; }
+        //public BodyPart BodyItems { get; set; } // 7 items
+
         public List<uint> Buffs { get; set; }
         public List<BonusTemplate> Bonuses { get; set; }
 
@@ -136,6 +139,8 @@ namespace AAEmu.Game.Models.Game.NPChar
             BodyItems = new (uint, bool)[7];
             Buffs = new List<uint>();
             Bonuses = new List<BonusTemplate>();
+
+            //BodyItems = new BodyPart();
         }
     }
 }

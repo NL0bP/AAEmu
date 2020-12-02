@@ -37,13 +37,13 @@ namespace AAEmu.Game.Core.Managers.World
             }
         }
 
-        public void Login(GameConnection connection, uint accountId, uint token)
+        public void Login(GameConnection connection, uint accountId, int cookie)
         {
-            if (_accounts.ContainsKey(token))
+            if (_accounts.ContainsKey((uint)cookie))
             {
-                if (_accounts[token] == accountId)
+                if (_accounts[(uint)cookie] == accountId)
                 {
-                    _accounts.Remove(token);
+                    _accounts.Remove((uint)cookie);
 
                     connection.AccountId = accountId;
                     connection.State = GameState.Lobby;
@@ -53,7 +53,7 @@ namespace AAEmu.Game.Core.Managers.World
 
                     var port = AppConfiguration.Instance.StreamNetwork.Port;
                     var gm = connection.GetAttribute("gmFlag") != null;
-                    connection.SendPacket(new X2EnterWorldResponsePacket(0, gm, connection.Id, port));
+                    connection.SendPacket(new X2WorldToClientPacket(0, gm, connection.Id, port));
                     connection.SendPacket(new ChangeStatePacket(0));
                 }
                 else
@@ -75,14 +75,10 @@ namespace AAEmu.Game.Core.Managers.World
                 case 1: // выход к списку персонажей
                     if (connection.State == GameState.World)
                     {
-                        var delay = 10;
-                        if (connection.ActiveChar.IsInBattle)
-                            delay = 60;
-
-                        connection.SendPacket(new SCPrepareLeaveWorldPacket(delay * 1000, type, false));
+                        connection.SendPacket(new SCPrepareLeaveWorldPacket(10000, type, false));
 
                         connection.LeaveTask = new LeaveWorldTask(connection, type);
-                        TaskManager.Instance.Schedule(connection.LeaveTask, TimeSpan.FromSeconds(delay));
+                        TaskManager.Instance.Schedule(connection.LeaveTask, TimeSpan.FromSeconds(10));
                     }
 
                     break;

@@ -45,14 +45,14 @@ namespace AAEmu.Game.Utils
         }
         public static sbyte ConvertDegreeToDoodadDirection(double degree)
         {
-            if (degree < 0f)
+            while (degree < 0f)
                 degree += 360f;
             if ((degree > 90f) && (degree <= 180f))
-                return (sbyte)((((degree - 90f) / 90f * 37f) + 90f) * -1); // added the * - 1 to each return to adjust for counter clockwise degrees the game uses
+                return (sbyte)((((degree - 90f) / 90f * 37f) + 90f) * - 1); 
             if (degree > 180f)
                 return (sbyte)((((degree - 270f) / 90f * 37f) - 90f) * -1);
             // When range is between -90 and 90, no rotation scaling is applied for doodads
-            return (sbyte)(degree * -1);
+            return (sbyte)(degree * - 1);
         }
         public static bool IsFront(GameObject obj1, GameObject obj2)
         {
@@ -74,6 +74,14 @@ namespace AAEmu.Game.Utils
         public static (float, float) AddDistanceToFront(float distance, float x, float y, sbyte rotZ)
         {
             var rad = ConvertDirectionToRadian(rotZ);
+            var newX = (distance * (float)Math.Cos(rad)) + x;
+            var newY = (distance * (float)Math.Sin(rad)) + y;
+            return (newX, newY);
+        }
+
+        public static (float, float) AddDistanceToRight(float distance, float x, float y, sbyte rotZ)
+        {
+            var rad = ConvertDirectionToRadian(rotZ) - (Math.PI / 2);
             var newX = (distance * (float)Math.Cos(rad)) + x;
             var newY = (distance * (float)Math.Sin(rad)) + y;
             return (newX, newY);

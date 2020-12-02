@@ -1,15 +1,18 @@
 ﻿using System;
+
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class ExitArchemall : ISpecialEffect
+    public class ExitArchemall : SpecialEffectAction
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
+
+        public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
             SkillCastTarget targetObj,
@@ -23,6 +26,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value4)
         {
             _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
+
             if (caster is Character character)
             {
                 character.DisabledSetPosition = true;

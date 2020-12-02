@@ -1,5 +1,6 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Stream;
+using AAEmu.Game.Core.Packets.C2G;
 
 namespace AAEmu.Game.Core.Packets.C2S
 {

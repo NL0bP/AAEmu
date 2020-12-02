@@ -5,7 +5,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CAPcCertNumberPacket : LoginPacket
     {
-        public CAPcCertNumberPacket() : base(0x0a) // 0x09
+        public CAPcCertNumberPacket() : base(0x07) // в версии 0.5.1.101.406
         {
         }
 

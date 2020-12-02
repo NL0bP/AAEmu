@@ -1,4 +1,4 @@
-﻿namespace AAEmu.Game.Models.Game.World
+namespace AAEmu.Game.Models.Game.World
 {
     public class Point
     {
@@ -10,8 +10,7 @@
         public sbyte RotationX { get; set; }
         public sbyte RotationY { get; set; }
         public sbyte RotationZ { get; set; }
-        public bool Relative { get; set; }
-
+        
         public Point()
         {
         }
@@ -41,7 +40,8 @@
             Z = z;
         }
 
-        public Point(uint worldId, uint zoneId, float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
+        public Point(uint worldId, uint zoneId, float x, float y, float z,
+            sbyte rotationX, sbyte rotationY, sbyte rotationZ)
         {
             WorldId = worldId;
             ZoneId = zoneId;

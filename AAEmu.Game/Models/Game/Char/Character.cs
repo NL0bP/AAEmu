@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -10,17 +9,16 @@ using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
+using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
-
 using MySql.Data.MySqlClient;
-
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Char
@@ -40,19 +38,20 @@ namespace AAEmu.Game.Models.Game.Char
 
     public enum Gender : byte
     {
-        None = 0,
         Male = 1,
         Female = 2
     }
 
-    public sealed class Character : Unit
+    public class Character : Unit
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-        private Dictionary<ushort, string> _options;
+        //private Dictionary<ushort, string> _options; // in 1.2
+        private Dictionary<string, string> _options; // in 0.5.101405
         private bool _inParty;
         private bool _isOnline;
 
-        //public GameConnection Connection { get; set; }
+        public override UnitTypeFlag TypeFlag { get; } = UnitTypeFlag.Character;
+        public static Dictionary<uint, uint> _usedCharacterObjIds = new Dictionary<uint, uint>();
         public List<IDisposable> Subscribers { get; set; }
         public uint Id { get; set; }
         public uint AccountId { get; set; }
@@ -61,9 +60,9 @@ namespace AAEmu.Game.Models.Game.Char
         public short LaborPower { get; set; }
         public DateTime LaborPowerModified { get; set; }
         public int ConsumedLaborPower { get; set; }
-        public AbilityType SkillTreeOne { get; set; }
-        public AbilityType SkillTreeTwo { get; set; }
-        public AbilityType SkillTreeThree { get; set; }
+        public AbilityType Ability1 { get; set; }
+        public AbilityType Ability2 { get; set; }
+        public AbilityType Ability3 { get; set; }
         public string FactionName { get; set; }
         public uint Family { get; set; }
         public short DeadCount { get; set; }
@@ -86,12 +85,12 @@ namespace AAEmu.Game.Models.Game.Char
         public int PrevPoint { get; set; }
         public int Point { get; set; }
         public int Gift { get; set; }
-        public int Experience { get; set; }
+        public int Expirience { get; set; }
         public int RecoverableExp { get; set; }
         public DateTime Updated { get; set; }
         public uint ReturnDictrictId { get; set; }
         public uint ResurrectionDictrictId { get; set; }
-        public override UnitCustomModelParams ModelParams { get; set; }
+        public sealed override UnitCustomModelParams ModelParams { get; set; }
         public override float Scale => 1f;
         public override byte RaceGender => (byte)(16 * (byte)Gender + (byte)Race);
         public CharacterVisualOptions VisualOptions { get; set; }
@@ -99,7 +98,8 @@ namespace AAEmu.Game.Models.Game.Char
         public Inventory Inventory { get; set; }
         public byte NumInventorySlots { get; set; }
         public short NumBankSlots { get; set; }
-        public Item[] BuyBack { get; set; }
+        // public Item[] BuyBack { get; set; }
+        public ItemContainer BuyBackItems { get; set; }
         public BondDoodad Bonding { get; set; }
         public CharacterQuests Quests { get; set; }
         public CharacterMails Mails { get; set; }
@@ -113,9 +113,8 @@ namespace AAEmu.Game.Models.Game.Char
         public CharacterActability Actability { get; set; }
         public CharacterSkills Skills { get; set; }
         public CharacterCraft Craft { get; set; }
-        public int AccessLevel { get; set; }
+        public int AccessLevel { get; set;}
         public Point LocalPingPosition { get; set; } // added as a GM command helper
-        public Item Item { get; set; }  // Item который используется персонажем в каких либо действиях
         public uint WeaponTypeBuffId { get; set; }
         public uint WeaponEquipSetBuffId { get; set; }
         public uint ArmorKindBuffId { get; set; }
@@ -142,7 +141,7 @@ namespace AAEmu.Game.Models.Game.Char
                 if (_isOnline == value) return;
                 // TODO - GUILD STATUS CHANGE
                 FriendMananger.Instance.SendStatusChange(this, true, value);
-                if (!value) TeamManager.Instance.SetOffline(this);
+                if(!value) TeamManager.Instance.SetOffline(this);
                 _isOnline = value;
             }
         }
@@ -153,11 +152,11 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Str);
-                var parameters = new Dictionary<string, double> { ["level"] = Level };
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Str);
+                var parameters = new Dictionary<string, double> {["level"] = Level};
                 var result = formula.Evaluate(parameters);
                 var res = (int)result;
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                     if (item is EquipItem equip)
                         res += equip.Str;
                 foreach (var bonus in GetBonuses(UnitAttribute.Str))
@@ -176,10 +175,10 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Dex);
-                var parameters = new Dictionary<string, double> { ["level"] = Level };
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Dex);
+                var parameters = new Dictionary<string, double> {["level"] = Level};
                 var res = (int)formula.Evaluate(parameters);
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                     if (item is EquipItem equip)
                         res += equip.Dex;
                 foreach (var bonus in GetBonuses(UnitAttribute.Dex))
@@ -198,10 +197,10 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Sta);
-                var parameters = new Dictionary<string, double> { ["level"] = Level };
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Sta);
+                var parameters = new Dictionary<string, double> {["level"] = Level};
                 var res = (int)formula.Evaluate(parameters);
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                     if (item is EquipItem equip)
                         res += equip.Sta;
                 foreach (var bonus in GetBonuses(UnitAttribute.Sta))
@@ -220,10 +219,10 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Int);
-                var parameters = new Dictionary<string, double> { ["level"] = Level };
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Int);
+                var parameters = new Dictionary<string, double> {["level"] = Level};
                 var res = (int)formula.Evaluate(parameters);
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                     if (item is EquipItem equip)
                         res += equip.Int;
                 foreach (var bonus in GetBonuses(UnitAttribute.Int))
@@ -242,10 +241,10 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Spi);
-                var parameters = new Dictionary<string, double> { ["level"] = Level };
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Spi);
+                var parameters = new Dictionary<string, double> {["level"] = Level};
                 var res = (int)formula.Evaluate(parameters);
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                     if (item is EquipItem equip)
                         res += equip.Spi;
                 foreach (var bonus in GetBonuses(UnitAttribute.Spi))
@@ -264,8 +263,8 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Fai);
-                var parameters = new Dictionary<string, double> { ["level"] = Level };
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Fai);
+                var parameters = new Dictionary<string, double> {["level"] = Level};
                 var res = (int)formula.Evaluate(parameters);
                 foreach (var bonus in GetBonuses(UnitAttribute.Fai))
                 {
@@ -284,7 +283,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.MaxHealth);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.MaxHealth);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -311,7 +310,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.HealthRegen);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.HealthRegen);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -338,7 +337,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character,
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character,
                     UnitFormulaKind.PersistentHealthRegen);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
@@ -367,7 +366,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.MaxMana);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.MaxMana);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -394,7 +393,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.ManaRegen);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.ManaRegen);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -421,7 +420,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character,
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character,
                     UnitFormulaKind.PersistentManaRegen);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
@@ -450,7 +449,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.LevelDps);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.LevelDps);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -459,7 +458,7 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["int"] = Int;
                 parameters["spi"] = Spi;
                 parameters["fai"] = Fai;
-                parameters["ab_level"] = 0;
+                parameters["ab_level"] = Level; // TODO : Make AbilityLevel
                 var res = formula.Evaluate(parameters);
                 return (float)res;
             }
@@ -469,9 +468,9 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var weapon = (Weapon)Inventory.Equip[(int)EquipmentItemSlot.Mainhand];
+                var weapon = (Weapon)Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Mainhand);
                 var res = weapon?.Dps ?? 0;
-                res += Str / 10f;
+                res += Str / 5f;
                 foreach (var bonus in GetBonuses(UnitAttribute.MainhandDps))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
@@ -489,7 +488,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.MeleeDpsInc);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.MeleeDpsInc);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -515,9 +514,9 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var weapon = (Weapon)Inventory.Equip[(int)EquipmentItemSlot.Offhand];
+                var weapon = (Weapon)Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Offhand);
                 var res = weapon?.Dps ?? 0;
-                res += Str / 10f;
+                // res += Str / 10f;
                 foreach (var bonus in GetBonuses(UnitAttribute.OffhandDps))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
@@ -534,9 +533,9 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var weapon = (Weapon)Inventory.Equip[(int)EquipmentItemSlot.Ranged];
+                var weapon = (Weapon)Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Ranged);
                 var res = weapon?.Dps ?? 0;
-                res += Dex / 10f;
+                res += Dex / 5f;
                 foreach (var bonus in GetBonuses(UnitAttribute.RangedDps))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
@@ -554,7 +553,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.RangedDpsInc);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.RangedDpsInc);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -580,9 +579,9 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                var weapon = (Weapon)Inventory.Equip[(int)EquipmentItemSlot.Mainhand];
+                var weapon = (Weapon)Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Mainhand);
                 var res = weapon?.MDps ?? 0;
-                res += Int / 10f;
+                res += Int / 5f;
                 foreach (var bonus in GetBonuses(UnitAttribute.SpellDps))
                 {
                     if (bonus.Template.ModifierType == UnitModifierType.Percent)
@@ -600,7 +599,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.SpellDpsInc);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.SpellDpsInc);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -622,11 +621,55 @@ namespace AAEmu.Game.Models.Game.Char
             }
         }
 
+        //public override int HDps // TODO  // отсутствует в 0.5.101.406
+        //{
+        //    get
+        //    {
+        //        var weapon = (Weapon) Inventory.Equipment.GetItemBySlot((int) EquipmentItemSlot.Mainhand);
+        //        var res = weapon?.HDps ?? 0;
+        //        res += Spi / 5f;
+        //        foreach(var bonus in GetBonuses(UnitAttribute.HealDps))
+        //        {
+        //            if(bonus.Template.ModifierType == UnitModifierType.Percent)
+        //                res += (int)(res * bonus.Value / 100f);
+        //            else
+        //                res += bonus.Value;
+        //        }
+        //        return (int) (res * 1000);
+        //    }
+        //}
+
+        public override int HDpsInc
+        {
+            get
+            {
+                var formula =
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.HealDpsInc);
+                var parameters = new Dictionary<string, double>();
+                parameters["level"] = Level;
+                parameters["str"] = Str;
+                parameters["dex"] = Dex;
+                parameters["sta"] = Sta;
+                parameters["int"] = Int;
+                parameters["spi"] = Spi;
+                parameters["fai"] = Fai;
+                var res = formula.Evaluate(parameters);
+                foreach(var bonus in GetBonuses(UnitAttribute.SpellDpsInc))
+                {
+                    if(bonus.Template.ModifierType == UnitModifierType.Percent)
+                        res += (res * bonus.Value / 100f);
+                    else
+                        res += bonus.Value;
+                }
+                return (int) res;
+            }
+        }
+
         public override int Armor
         {
             get
             {
-                var formula = FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.Armor);
+                var formula = FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.Armor);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -636,7 +679,7 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["spi"] = Spi;
                 parameters["fai"] = Fai;
                 var res = (int)formula.Evaluate(parameters);
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                 {
                     switch (item)
                     {
@@ -669,7 +712,7 @@ namespace AAEmu.Game.Models.Game.Char
             get
             {
                 var formula =
-                    FormulaManager.Instance.GetUnitFormula(UnitOwnerType.Character, UnitFormulaKind.MagicResist);
+                    FormulaManager.Instance.GetUnitFormula(FormulaOwnerType.Character, UnitFormulaKind.MagicResist);
                 var parameters = new Dictionary<string, double>();
                 parameters["level"] = Level;
                 parameters["str"] = Str;
@@ -679,7 +722,7 @@ namespace AAEmu.Game.Models.Game.Char
                 parameters["spi"] = Spi;
                 parameters["fai"] = Fai;
                 var res = (int)formula.Evaluate(parameters);
-                foreach (var item in Inventory.Equip)
+                foreach (var item in Inventory.Equipment.Items)
                 {
                     switch (item)
                     {
@@ -708,44 +751,64 @@ namespace AAEmu.Game.Models.Game.Char
 
         public Character(UnitCustomModelParams modelParams)
         {
-            _options = new Dictionary<ushort, string>();
-
-            IsInBattle = false;
+            _options = new Dictionary<string, string>();
 
             ModelParams = modelParams;
             Subscribers = new List<IDisposable>();
         }
-
-        public void AddExp(int exp, bool shouldAddSkillTreeExp)
+        
+        public WeaponWieldKind GetWeaponWieldKind()
         {
+            var item = Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Mainhand);
+            if (item.Template is WeaponTemplate weapon)
+            {
+                EquipmentItemSlotType slotId = (EquipmentItemSlotType)weapon.HoldableTemplate.SlotTypeId;
+                if (slotId == EquipmentItemSlotType.TwoHanded)
+                    return WeaponWieldKind.TwoHanded;
+                else if (slotId == EquipmentItemSlotType.OneHanded)
+                {
+                    var item2 = Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Offhand);
+                    if (item2 != null && item2.Template is WeaponTemplate weapon2)
+                    {
+                        EquipmentItemSlotType slotId2 = (EquipmentItemSlotType)weapon2.HoldableTemplate.SlotTypeId;
+                        if (slotId2 == EquipmentItemSlotType.OneHanded)
+                            return WeaponWieldKind.DuelWielded;
+                        else
+                            return WeaponWieldKind.OneHanded;
+                    }
+                    else
+                        return WeaponWieldKind.OneHanded;
+                }
+            }
+
+            return WeaponWieldKind.None;
+        }
+
+        public void AddExp(int exp, bool shouldAddAbilityExp)
+        {
+            var expMultiplier = 1d;
             if (exp == 0)
                 return;
-
-            if (Experience + exp > ExperienceManager.Instance.GetExpForLevel((byte)ExperienceManager.Instance.maxLevel))
-            {
-                Experience = ExperienceManager.Instance.GetExpForLevel((byte)ExperienceManager.Instance.maxLevel);
-            }
-            else
-            {
-                Experience += exp;
-            }
-
-            if (shouldAddSkillTreeExp)
-                Abilities.AddActiveExp(exp);
-
-            SendPacket(new SCExpChangedPacket(ObjId, exp, shouldAddSkillTreeExp));
+            if (float.TryParse(ConfigurationManager.Instance.GetConfiguration("ExperienceMultiplierInPercent"), out var xpm))
+                expMultiplier = xpm / 100f;
+            var totalExp = Math.Round(expMultiplier * exp);
+            exp = (int)totalExp;
+            Expirience += exp;
+            if (shouldAddAbilityExp)
+                Abilities.AddActiveExp(exp); // TODO ... or all?
+            SendPacket(new SCExpChangedPacket(ObjId, exp, shouldAddAbilityExp));
             CheckLevelUp();
         }
 
         public void CheckLevelUp()
         {
-            var needExp = ExperienceManager.Instance.GetExpForLevel((byte)(Level + 1));
+            var needExp = ExpirienceManager.Instance.GetExpForLevel((byte)(Level + 1));
             var change = false;
-            while (Experience >= needExp && Level < ExperienceManager.Instance.maxLevel)
+            while (Expirience >= needExp)
             {
                 change = true;
                 Level++;
-                needExp = ExperienceManager.Instance.GetExpForLevel((byte)(Level + 1));
+                needExp = ExpirienceManager.Instance.GetExpForLevel((byte)(Level + 1));
             }
 
             if (change)
@@ -759,68 +822,72 @@ namespace AAEmu.Game.Models.Game.Char
 
         public void CheckExp()
         {
-            var needExp = ExperienceManager.Instance.GetExpForLevel(Level);
-            if (Experience < needExp)
-                Experience = needExp;
-            needExp = ExperienceManager.Instance.GetExpForLevel((byte)(Level + 1));
-            while (Experience >= needExp)
+            var needExp = ExpirienceManager.Instance.GetExpForLevel(Level);
+            if (Expirience < needExp)
+                Expirience = needExp;
+            needExp = ExpirienceManager.Instance.GetExpForLevel((byte)(Level + 1));
+            while (Expirience >= needExp)
             {
                 Level++;
-                needExp = ExperienceManager.Instance.GetExpForLevel((byte)(Level + 1));
+                needExp = ExpirienceManager.Instance.GetExpForLevel((byte)(Level + 1));
             }
         }
 
-        public void ChangeMoney(SlotType typeTo, int amount)
+        public bool ChangeMoney(SlotType moneylocation, int amount) => ChangeMoney(SlotType.None, moneylocation, amount);
+
+        public bool ChangeMoney(SlotType typeFrom, SlotType typeTo, int amount)
         {
+            var itemTasks = new List<ItemTask>();
+            switch(typeFrom)
+            {
+                case SlotType.Inventory:
+                    if (amount > Money)
+                    {
+                        SendErrorMessage(ErrorMessageType.NotEnoughMoney);
+                        return false;
+                    }
+                    Money -= amount;
+                    itemTasks.Add(new MoneyChange(-amount));
+                    break;
+                case SlotType.Bank:
+                    if (amount > Money2)
+                    {
+                        SendErrorMessage(ErrorMessageType.NotEnoughMoney);
+                        return false;
+                    }
+                    Money2 -= amount;
+                    itemTasks.Add(new MoneyChangeBank(-amount));
+                    break;
+            }
             switch (typeTo)
             {
-                case SlotType.Bank:
-                    if ((Money - amount) >= 0)
-                    {
-                        Money -= amount;
-                        Money2 += amount;
-                        SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.DepositMoney,
-                            new List<ItemTask>
-                            {
-                                new MoneyChange(-amount),
-                                new MoneyChangeBank(amount)
-                            },
-                            new List<ulong>()));
-                    }
-                    else
-                        _log.Warn("Not Money in Inventory.");
-
-                    break;
                 case SlotType.Inventory:
-                    if ((Money2 - amount) >= 0)
-                    {
-                        Money2 -= amount;
-                        Money += amount;
-                        SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.WithdrawMoney,
-                            new List<ItemTask>
-                            {
-                                new MoneyChange(amount),
-                                new MoneyChangeBank(-amount)
-                            },
-                            new List<ulong>()));
-                    }
-                    else
-                        _log.Warn("Not Money in Bank.");
-
+                    Money += amount;
+                    itemTasks.Add(new MoneyChange(amount));
                     break;
-                case SlotType.None:
-                    break;
-                case SlotType.Equipment:
-                    break;
-                case SlotType.Trade:
-                    break;
-                case SlotType.Mail:
-                    break;
-                default:
-                    _log.Warn("Change Money!");
+                case SlotType.Bank:
+                    Money2 += amount;
+                    itemTasks.Add(new MoneyChangeBank(amount));
                     break;
             }
+            SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.DepositMoney, itemTasks, new List<ulong>()));
+            return true;
         }
+
+        public bool AddMoney(SlotType moneyLocation,int amount)
+        {
+            if (amount < 0)
+                return false;
+            return ChangeMoney(SlotType.None, moneyLocation, amount);
+        }
+
+        public bool SubtractMoney(SlotType moneyLocation, int amount)
+        {
+            if (amount < 0)
+                return false;
+            return ChangeMoney(SlotType.None, moneyLocation, -amount);
+        }
+
 
         public void ChangeLabor(short change, int actabilityId)
         {
@@ -837,24 +904,30 @@ namespace AAEmu.Game.Models.Game.Char
             SendPacket(new SCCharacterLaborPowerChangedPacket(change, actabilityId, actabilityChange, actabilityStep));
         }
 
+        public override int GetAbLevel(AbilityType type)
+        {
+            if (type == AbilityType.General) return Level;
+            return ExpirienceManager.Instance.GetLevelFromExp(Abilities.Abilities[type].Exp);
+        }
+
         public void SetAction(byte slot, ActionSlotType type, uint actionId)
         {
             Slots[slot].Type = type;
             Slots[slot].ActionId = actionId;
         }
 
-        public void SetOption(ushort key, string value)
+        public void SetOption(string uiDataKey, string value)
         {
-            if (_options.ContainsKey(key))
-                _options[key] = value;
+            if (_options.ContainsKey(uiDataKey))
+                _options[uiDataKey] = value;
             else
-                _options.Add(key, value);
+                _options.Add(uiDataKey, value);
         }
 
-        public string GetOption(ushort key)
+        public string GetOption(string uiDataKey)
         {
-            if (_options.ContainsKey(key))
-                return _options[key];
+            if (_options.ContainsKey(uiDataKey))
+                return _options[uiDataKey];
             return "";
         }
 
@@ -863,9 +936,10 @@ namespace AAEmu.Game.Models.Game.Char
             Subscribers.Add(disposable);
         }
 
-        public void SendOption(ushort key)
+        public void SendOption(string uiDataKey)
         {
-            Connection.SendPacket(new SCResponseUIDataPacket(Id, key, GetOption(key)));
+            var name = ""; // TODO 
+            Connection.SendPacket(new SCResponseUIDataPacket(Id, name, uiDataKey, GetOption(uiDataKey)));
         }
 
         public void SendMessage(string message, params object[] parameters)
@@ -878,6 +952,10 @@ namespace AAEmu.Game.Models.Game.Char
             SendPacket(new SCChatMessagePacket(type, string.Format(message, parameters)));
         }
 
+        public void SendErrorMessage(ErrorMessageType errorMsgType, uint type = 0, bool isNotify = true)
+        {
+            SendPacket(new SCErrorMsgPacket(errorMsgType, type, isNotify));
+        }
 
         public override void BroadcastPacket(GamePacket packet, bool self)
         {
@@ -927,16 +1005,16 @@ namespace AAEmu.Game.Models.Game.Char
                         character.Race = (Race)reader.GetByte("race");
                         character.Gender = (Gender)reader.GetByte("gender");
                         character.Level = reader.GetByte("level");
-                        character.Experience = reader.GetInt32("expirience");
+                        character.Expirience = reader.GetInt32("expirience");
                         character.RecoverableExp = reader.GetInt32("recoverable_exp");
                         character.Hp = reader.GetInt32("hp");
                         character.Mp = reader.GetInt32("mp");
                         character.LaborPower = reader.GetInt16("labor_power");
                         character.LaborPowerModified = reader.GetDateTime("labor_power_modified");
                         character.ConsumedLaborPower = reader.GetInt32("consumed_lp");
-                        character.SkillTreeOne = (AbilityType)reader.GetByte("ability1");
-                        character.SkillTreeTwo = (AbilityType)reader.GetByte("ability2");
-                        character.SkillTreeThree = (AbilityType)reader.GetByte("ability3");
+                        character.Ability1 = (AbilityType)reader.GetByte("ability1");
+                        character.Ability2 = (AbilityType)reader.GetByte("ability2");
+                        character.Ability3 = (AbilityType)reader.GetByte("ability3");
                         character.Position.WorldId = reader.GetUInt32("world_id");
                         character.Position.ZoneId = reader.GetUInt32("zone_id");
                         character.Position.X = reader.GetFloat("x");
@@ -973,11 +1051,6 @@ namespace AAEmu.Game.Models.Game.Char
                         character.NumBankSlots = reader.GetInt16("num_bank_slot");
                         character.ExpandedExpert = reader.GetByte("expanded_expert");
                         character.Updated = reader.GetDateTime("updated_at");
-                        character.WeaponTypeBuffId = 0; //TODO: get from saved buffs
-                        character.WeaponEquipSetBuffId = 0; //TODO: get from saved buffs
-                        character.ArmorKindBuffId = 0; //TODO: get from saved buffs
-                        character.ArmorGradeBuffId = 0; //TODO: get from saved buffs
-                        character.ArmorSetBuffIds = new List<uint>(); //TODO: get from saved buffs
 
                         character.Inventory = new Inventory(character);
 
@@ -1002,9 +1075,9 @@ namespace AAEmu.Game.Models.Game.Char
                 {
                     while (reader.Read())
                     {
-                        var key = reader.GetUInt16("key");
-                        var value = reader.GetString("value");
-                        character.SetOption(key, value);
+                        var uiDataKey = reader.GetString("ui_data_key");
+                        var name = reader.GetString("name");
+                        character.SetOption(uiDataKey, name);
                     }
                 }
             }
@@ -1037,16 +1110,16 @@ namespace AAEmu.Game.Models.Game.Char
                         character.Race = (Race)reader.GetByte("race");
                         character.Gender = (Gender)reader.GetByte("gender");
                         character.Level = reader.GetByte("level");
-                        character.Experience = reader.GetInt32("expirience");
+                        character.Expirience = reader.GetInt32("expirience");
                         character.RecoverableExp = reader.GetInt32("recoverable_exp");
                         character.Hp = reader.GetInt32("hp");
                         character.Mp = reader.GetInt32("mp");
                         character.LaborPower = reader.GetInt16("labor_power");
                         character.LaborPowerModified = reader.GetDateTime("labor_power_modified");
                         character.ConsumedLaborPower = reader.GetInt32("consumed_lp");
-                        character.SkillTreeOne = (AbilityType)reader.GetByte("ability1");
-                        character.SkillTreeTwo = (AbilityType)reader.GetByte("ability2");
-                        character.SkillTreeThree = (AbilityType)reader.GetByte("ability3");
+                        character.Ability1 = (AbilityType)reader.GetByte("ability1");
+                        character.Ability2 = (AbilityType)reader.GetByte("ability2");
+                        character.Ability3 = (AbilityType)reader.GetByte("ability3");
                         character.Position.WorldId = reader.GetUInt32("world_id");
                         character.Position.ZoneId = reader.GetUInt32("zone_id");
                         character.Position.X = reader.GetFloat("x");
@@ -1105,12 +1178,13 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var template = CharacterManager.Instance.GetTemplate((byte)Race, (byte)Gender);
             ModelId = template.ModelId;
-            BuyBack = new Item[20];
+            BuyBackItems = new ItemContainer(this, SlotType.None,false);
             Slots = new ActionSlot[85];
             for (var i = 0; i < Slots.Length; i++)
                 Slots[i] = new ActionSlot();
 
             Craft = new CharacterCraft(this);
+            Procs = new UnitProcs(this);
             LocalPingPosition = new Point();
 
             using (var connection = MySQL.CreateConnection())
@@ -1135,7 +1209,7 @@ namespace AAEmu.Game.Models.Game.Char
                 Mates = new CharacterMates(this);
                 Mates.Load(connection);
 
-
+                
 
                 using (var command = connection.CreateCommand())
                 {
@@ -1161,10 +1235,42 @@ namespace AAEmu.Game.Models.Game.Char
             }
 
             Mails = new CharacterMails(this);
-            MailManager.Instance.GetCurrentMailList(this, true); //Doesn't need a connection, but does need to load after the inventory
+            MailManager.Instance.GetCurrentMailList(this); //Doesn't need a connection, but does need to load after the inventory
         }
 
-        public bool Save()
+        public bool SaveDirectlyToDatabase()
+        {
+            // Try to save New Character
+            var saved = false;
+            using (var sqlConnection = MySQL.CreateConnection())
+            {
+                using (var transaction = sqlConnection.BeginTransaction())
+                {
+                    try
+                    {
+                        saved = Save(sqlConnection, transaction);
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        saved = false;
+                        _log.Error(string.Format("Character save failed for {0} - {1}",Id, Name));
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch
+                        {
+                            // Really failed here
+                            _log.Fatal(string.Format("Character save rollback failed for {0} - {1}", Id, Name));
+                        }
+                    }
+                }
+            }
+            return saved;
+        }
+
+        public bool Save(MySqlConnection connection, MySqlTransaction transaction)
         {
             bool result;
             try
@@ -1179,132 +1285,103 @@ namespace AAEmu.Game.Models.Game.Char
                         slots.Write(slot.ActionId);
                 }
 
-                using (var connection = MySQL.CreateConnection())
+                using (var command = connection.CreateCommand())
                 {
-                    using (var transaction = connection.BeginTransaction())
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    // ----
+                    command.CommandText =
+                        "REPLACE INTO `characters` " +
+                        "(`id`,`account_id`,`name`,`access_level`,`race`,`gender`,`unit_model_params`,`level`,`expirience`,`recoverable_exp`,`hp`,`mp`,`labor_power`,`labor_power_modified`,`consumed_lp`,`ability1`,`ability2`,`ability3`,`world_id`,`zone_id`,`x`,`y`,`z`,`rotation_x`,`rotation_y`,`rotation_z`,`faction_id`,`faction_name`,`expedition_id`,`family`,`dead_count`,`dead_time`,`rez_wait_duration`,`rez_time`,`rez_penalty_duration`,`leave_time`,`money`,`money2`,`honor_point`,`vocation_point`,`crime_point`,`crime_record`,`delete_request_time`,`transfer_request_time`,`delete_time`,`bm_point`,`auto_use_aapoint`,`prev_point`,`point`,`gift`,`num_inv_slot`,`num_bank_slot`,`expanded_expert`,`slots`,`updated_at`) " +
+                        "VALUES(@id,@account_id,@name,@access_level,@race,@gender,@unit_model_params,@level,@expirience,@recoverable_exp,@hp,@mp,@labor_power,@labor_power_modified,@consumed_lp,@ability1,@ability2,@ability3,@world_id,@zone_id,@x,@y,@z,@rotation_x,@rotation_y,@rotation_z,@faction_id,@faction_name,@expedition_id,@family,@dead_count,@dead_time,@rez_wait_duration,@rez_time,@rez_penalty_duration,@leave_time,@money,@money2,@honor_point,@vocation_point,@crime_point,@crime_record,@delete_request_time,@transfer_request_time,@delete_time,@bm_point,@auto_use_aapoint,@prev_point,@point,@gift,@num_inv_slot,@num_bank_slot,@expanded_expert,@slots,@updated_at)";
+
+                    command.Parameters.AddWithValue("@id", Id);
+                    command.Parameters.AddWithValue("@account_id", AccountId);
+                    command.Parameters.AddWithValue("@name", Name);
+                    command.Parameters.AddWithValue("@access_level", AccessLevel);
+                    command.Parameters.AddWithValue("@race", (byte)Race);
+                    command.Parameters.AddWithValue("@gender", (byte)Gender);
+                    command.Parameters.AddWithValue("@unit_model_params", unitModelParams);
+                    command.Parameters.AddWithValue("@level", Level);
+                    command.Parameters.AddWithValue("@expirience", Expirience);
+                    command.Parameters.AddWithValue("@recoverable_exp", RecoverableExp);
+                    command.Parameters.AddWithValue("@hp", Hp);
+                    command.Parameters.AddWithValue("@mp", Mp);
+                    command.Parameters.AddWithValue("@labor_power", LaborPower);
+                    command.Parameters.AddWithValue("@labor_power_modified", LaborPowerModified);
+                    command.Parameters.AddWithValue("@consumed_lp", ConsumedLaborPower);
+                    command.Parameters.AddWithValue("@ability1", (byte)Ability1);
+                    command.Parameters.AddWithValue("@ability2", (byte)Ability2);
+                    command.Parameters.AddWithValue("@ability3", (byte)Ability3);
+                    command.Parameters.AddWithValue("@world_id", WorldPosition?.WorldId ?? Position.WorldId);
+                    command.Parameters.AddWithValue("@zone_id", WorldPosition?.ZoneId ?? Position.ZoneId);
+                    command.Parameters.AddWithValue("@x", WorldPosition?.X ?? Position.X);
+                    command.Parameters.AddWithValue("@y", WorldPosition?.Y ?? Position.Y);
+                    command.Parameters.AddWithValue("@z", WorldPosition?.Z ?? Position.Z);
+                    command.Parameters.AddWithValue("@rotation_x", WorldPosition?.RotationX ?? Position.RotationX);
+                    command.Parameters.AddWithValue("@rotation_y", WorldPosition?.RotationY ?? Position.RotationY);
+                    command.Parameters.AddWithValue("@rotation_z", WorldPosition?.RotationZ ?? Position.RotationZ);
+                    command.Parameters.AddWithValue("@faction_id", Faction.Id);
+                    command.Parameters.AddWithValue("@faction_name", FactionName);
+                    command.Parameters.AddWithValue("@expedition_id", Expedition?.Id ?? 0);
+                    command.Parameters.AddWithValue("@family", Family);
+                    command.Parameters.AddWithValue("@dead_count", DeadCount);
+                    command.Parameters.AddWithValue("@dead_time", DeadTime);
+                    command.Parameters.AddWithValue("@rez_wait_duration", RezWaitDuration);
+                    command.Parameters.AddWithValue("@rez_time", RezTime);
+                    command.Parameters.AddWithValue("@rez_penalty_duration", RezPenaltyDuration);
+                    command.Parameters.AddWithValue("@leave_time", LeaveTime);
+                    command.Parameters.AddWithValue("@money", Money);
+                    command.Parameters.AddWithValue("@money2", Money2);
+                    command.Parameters.AddWithValue("@honor_point", HonorPoint);
+                    command.Parameters.AddWithValue("@vocation_point", VocationPoint);
+                    command.Parameters.AddWithValue("@crime_point", CrimePoint);
+                    command.Parameters.AddWithValue("@crime_record", CrimeRecord);
+                    command.Parameters.AddWithValue("@delete_request_time", DeleteRequestTime);
+                    command.Parameters.AddWithValue("@transfer_request_time", TransferRequestTime);
+                    command.Parameters.AddWithValue("@delete_time", DeleteTime);
+                    command.Parameters.AddWithValue("@bm_point", BmPoint);
+                    command.Parameters.AddWithValue("@auto_use_aapoint", AutoUseAAPoint);
+                    command.Parameters.AddWithValue("@prev_point", PrevPoint);
+                    command.Parameters.AddWithValue("@point", Point);
+                    command.Parameters.AddWithValue("@gift", Gift);
+                    command.Parameters.AddWithValue("@num_inv_slot", NumInventorySlots);
+                    command.Parameters.AddWithValue("@num_bank_slot", NumBankSlots);
+                    command.Parameters.AddWithValue("@expanded_expert", ExpandedExpert);
+                    command.Parameters.AddWithValue("@slots", slots.GetBytes());
+                    command.Parameters.AddWithValue("@updated_at", Updated);
+                    command.ExecuteNonQuery();
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    foreach (var pair in _options)
                     {
-                        using (var command = connection.CreateCommand())
-                        {
-                            command.Connection = connection;
-                            command.Transaction = transaction;
-
-                            // ----
-                            command.CommandText =
-                                "REPLACE INTO `characters` " +
-                                "(`id`,`account_id`,`name`,`access_level`,`race`,`gender`,`unit_model_params`,`level`,`expirience`,`recoverable_exp`,`hp`,`mp`,`labor_power`,`labor_power_modified`,`consumed_lp`,`ability1`,`ability2`,`ability3`,`world_id`,`zone_id`,`x`,`y`,`z`,`rotation_x`,`rotation_y`,`rotation_z`,`faction_id`,`faction_name`,`expedition_id`,`family`,`dead_count`,`dead_time`,`rez_wait_duration`,`rez_time`,`rez_penalty_duration`,`leave_time`,`money`,`money2`,`honor_point`,`vocation_point`,`crime_point`,`crime_record`,`delete_request_time`,`transfer_request_time`,`delete_time`,`bm_point`,`auto_use_aapoint`,`prev_point`,`point`,`gift`,`num_inv_slot`,`num_bank_slot`,`expanded_expert`,`slots`,`updated_at`) " +
-                                "VALUES(@id,@account_id,@name,@access_level,@race,@gender,@unit_model_params,@level,@expirience,@recoverable_exp,@hp,@mp,@labor_power,@labor_power_modified,@consumed_lp,@ability1,@ability2,@ability3,@world_id,@zone_id,@x,@y,@z,@rotation_x,@rotation_y,@rotation_z,@faction_id,@faction_name,@expedition_id,@family,@dead_count,@dead_time,@rez_wait_duration,@rez_time,@rez_penalty_duration,@leave_time,@money,@money2,@honor_point,@vocation_point,@crime_point,@crime_record,@delete_request_time,@transfer_request_time,@delete_time,@bm_point,@auto_use_aapoint,@prev_point,@point,@gift,@num_inv_slot,@num_bank_slot,@expanded_expert,@slots,@updated_at)";
-
-                            command.Parameters.AddWithValue("@id", Id);
-                            command.Parameters.AddWithValue("@account_id", AccountId);
-                            command.Parameters.AddWithValue("@name", Name);
-                            command.Parameters.AddWithValue("@access_level", AccessLevel);
-                            command.Parameters.AddWithValue("@race", (byte)Race);
-                            command.Parameters.AddWithValue("@gender", (byte)Gender);
-                            command.Parameters.AddWithValue("@unit_model_params", unitModelParams);
-                            command.Parameters.AddWithValue("@level", Level);
-                            command.Parameters.AddWithValue("@expirience", Experience);
-                            command.Parameters.AddWithValue("@recoverable_exp", RecoverableExp);
-                            command.Parameters.AddWithValue("@hp", Hp);
-                            command.Parameters.AddWithValue("@mp", Mp);
-                            command.Parameters.AddWithValue("@labor_power", LaborPower);
-                            command.Parameters.AddWithValue("@labor_power_modified", LaborPowerModified);
-                            command.Parameters.AddWithValue("@consumed_lp", ConsumedLaborPower);
-                            command.Parameters.AddWithValue("@ability1", (byte)SkillTreeOne);
-                            command.Parameters.AddWithValue("@ability2", (byte)SkillTreeTwo);
-                            command.Parameters.AddWithValue("@ability3", (byte)SkillTreeThree);
-                            command.Parameters.AddWithValue("@world_id", WorldPosition?.WorldId ?? Position.WorldId);
-                            command.Parameters.AddWithValue("@zone_id", WorldPosition?.ZoneId ?? Position.ZoneId);
-                            command.Parameters.AddWithValue("@x", WorldPosition?.X ?? Position.X);
-                            command.Parameters.AddWithValue("@y", WorldPosition?.Y ?? Position.Y);
-                            command.Parameters.AddWithValue("@z", WorldPosition?.Z ?? Position.Z);
-                            command.Parameters.AddWithValue("@rotation_x",
-                                WorldPosition?.RotationX ?? Position.RotationX);
-                            command.Parameters.AddWithValue("@rotation_y",
-                                WorldPosition?.RotationY ?? Position.RotationY);
-                            command.Parameters.AddWithValue("@rotation_z",
-                                WorldPosition?.RotationZ ?? Position.RotationZ);
-                            command.Parameters.AddWithValue("@faction_id", Faction.Id);
-                            command.Parameters.AddWithValue("@faction_name", FactionName);
-                            command.Parameters.AddWithValue("@expedition_id", Expedition?.Id ?? 0);
-                            command.Parameters.AddWithValue("@family", Family);
-                            command.Parameters.AddWithValue("@dead_count", DeadCount);
-                            command.Parameters.AddWithValue("@dead_time", DeadTime);
-                            command.Parameters.AddWithValue("@rez_wait_duration", RezWaitDuration);
-                            command.Parameters.AddWithValue("@rez_time", RezTime);
-                            command.Parameters.AddWithValue("@rez_penalty_duration", RezPenaltyDuration);
-                            command.Parameters.AddWithValue("@leave_time", LeaveTime);
-                            command.Parameters.AddWithValue("@money", Money);
-                            command.Parameters.AddWithValue("@money2", Money2);
-                            command.Parameters.AddWithValue("@honor_point", HonorPoint);
-                            command.Parameters.AddWithValue("@vocation_point", VocationPoint);
-                            command.Parameters.AddWithValue("@crime_point", CrimePoint);
-                            command.Parameters.AddWithValue("@crime_record", CrimeRecord);
-                            command.Parameters.AddWithValue("@delete_request_time", DeleteRequestTime);
-                            command.Parameters.AddWithValue("@transfer_request_time", TransferRequestTime);
-                            command.Parameters.AddWithValue("@delete_time", DeleteTime);
-                            command.Parameters.AddWithValue("@bm_point", BmPoint);
-                            command.Parameters.AddWithValue("@auto_use_aapoint", AutoUseAAPoint);
-                            command.Parameters.AddWithValue("@prev_point", PrevPoint);
-                            command.Parameters.AddWithValue("@point", Point);
-                            command.Parameters.AddWithValue("@gift", Gift);
-                            command.Parameters.AddWithValue("@num_inv_slot", NumInventorySlots);
-                            command.Parameters.AddWithValue("@num_bank_slot", NumBankSlots);
-                            command.Parameters.AddWithValue("@expanded_expert", ExpandedExpert);
-                            command.Parameters.AddWithValue("@slots", slots.GetBytes());
-                            command.Parameters.AddWithValue("@updated_at", Updated);
-                            command.ExecuteNonQuery();
-                        }
-
-                        using (var command = connection.CreateCommand())
-                        {
-                            command.Connection = connection;
-                            command.Transaction = transaction;
-
-                            foreach (var pair in _options)
-                            {
-                                command.CommandText =
-                                    "REPLACE INTO `options` (`key`,`value`,`owner`) VALUES (@key,@value,@owner)";
-                                command.Parameters.AddWithValue("@key", pair.Key);
-                                command.Parameters.AddWithValue("@value", pair.Value);
-                                command.Parameters.AddWithValue("@owner", Id);
-                                command.ExecuteNonQuery();
-                                command.Parameters.Clear();
-                            }
-                        }
-
-                        Inventory?.Save(connection, transaction);
-                        Abilities?.Save(connection, transaction);
-                        Actability?.Save(connection, transaction);
-                        Appellations?.Save(connection, transaction);
-                        Portals?.Save(connection, transaction);
-                        Friends?.Save(connection, transaction);
-                        Blocked?.Save(connection, transaction);
-                        Skills?.Save(connection, transaction);
-                        Quests?.Save(connection, transaction);
-                        Mates?.Save(connection, transaction);
-
-                        try
-                        {
-                            transaction.Commit();
-                            result = true;
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex);
-
-                            try
-                            {
-                                transaction.Rollback();
-                            }
-                            catch (Exception ex2)
-                            {
-                                _log.Error(ex2);
-                            }
-
-                            result = false;
-                        }
+                        //command.CommandText = "REPLACE INTO `options` (`key`,`value`,`owner`) VALUES (@key,@value,@owner)";
+                        command.CommandText = "REPLACE INTO `options` (`ui_data_key`,`name`,`owner`) VALUES (@ui_data_key,@name,@owner)";
+                        command.Parameters.AddWithValue("@ui_data_key", pair.Key);
+                        command.Parameters.AddWithValue("@name", pair.Value);
+                        command.Parameters.AddWithValue("@owner", Id);
+                        command.ExecuteNonQuery();
+                        command.Parameters.Clear();
                     }
                 }
+
+                // Inventory?.Save(connection, transaction);
+                Abilities?.Save(connection, transaction);
+                Actability?.Save(connection, transaction);
+                Appellations?.Save(connection, transaction);
+                Portals?.Save(connection, transaction);
+                Friends?.Save(connection, transaction);
+                Blocked?.Save(connection, transaction);
+                Skills?.Save(connection, transaction);
+                Quests?.Save(connection, transaction);
+                Mates?.Save(connection, transaction);
+                result = true;
             }
             catch (Exception ex)
             {
@@ -1331,8 +1408,80 @@ namespace AAEmu.Game.Models.Game.Char
                 character.SendPacket(new SCTargetChangedPacket(character.ObjId, 0));
             }
 
-            character.SendPacket(new SCUnitsRemovedPacket(new[] { ObjId }));
+            character.SendPacket(new SCUnitsRemovedPacket(new[] {ObjId}));
         }
+
+        //public PacketStream Write(PacketStream stream)
+        //{
+        //    stream.Write(Id);
+        //    stream.Write(Name);
+        //    stream.Write((byte)Race);
+        //    stream.Write((byte)Gender);
+        //    stream.Write(Level);
+        //    stream.Write(Hp);
+        //    stream.Write(Mp);
+        //    stream.Write(Position.ZoneId);
+        //    stream.Write(Faction.Id);
+        //    stream.Write(Expedition?.Id ?? 0u);
+        //    stream.Write(Family);
+
+        //    var items = Inventory.Equipment.GetSlottedItemsList();
+        //    foreach (var item in items)
+        //    {
+        //        if (item == null)
+        //            stream.Write(0u);
+        //        else
+        //            stream.Write(item);
+        //    }
+
+        //    //var idx = 0;
+        //    //do
+        //    //{
+        //    //    if (idx - 19 > 6)
+        //    //    {
+        //    //        if (items[idx] == null)
+        //    //            stream.Write(0u);
+        //    //        else
+        //    //            stream.Write(items[idx]);
+        //    //    }
+        //    //    else
+        //    //    {
+        //    //        stream.Write(items[idx] == null ? 0u : items[idx].TemplateId);
+        //    //    }
+        //    //    idx++;
+        //    //} while (idx < 28);
+
+
+        //    stream.Write((byte)Ability1);
+        //    stream.Write((byte)Ability2);
+        //    stream.Write((byte)Ability3);
+
+        //    stream.Write(Helpers.ConvertLongX(Position.X));
+        //    stream.Write(Helpers.ConvertLongY(Position.Y));
+        //    stream.Write(Position.Z);
+
+        //    stream.Write(ModelParams);
+
+        //    stream.Write(LaborPower);         // laborPower
+        //    stream.Write(LaborPowerModified); // lastLaborPowerModified
+        //    stream.Write(DeadCount);          // deadCount
+        //    stream.Write(DeadTime);           // deadTime
+        //    stream.Write(RezWaitDuration);    // rezWaitDuration
+        //    stream.Write(RezTime);            // rezTime
+        //    stream.Write(RezPenaltyDuration); // rezPenaltyDuration
+        //    stream.Write(LeaveTime);          // lastWorldLeaveTime
+        //    stream.Write(Money);              // moneyAmount
+        //    stream.Write(0L);                 // moneyAmount
+        //    stream.Write(CrimePoint);         // crimePoint
+        //    stream.Write(CrimeRecord);        // crimeRecord
+        //    stream.Write((short)0);           // crimeScore
+        //    stream.Write(DeleteRequestTime);  // deleteRequestedTime
+        //    stream.Write(TransferRequestTime);// transferRequestedTime
+        //    stream.Write(DeleteTime);         // deleteDelay
+        //    stream.Write(ConsumedLaborPower); // consumedLp
+
+        //    return stream;
+        //}
 
         public PacketStream Write(PacketStream stream)
         {
@@ -1345,11 +1494,11 @@ namespace AAEmu.Game.Models.Game.Char
             stream.Write(Mp);
             stream.Write(Position.ZoneId);
             stream.Write(Faction.Id);
-            stream.Write(FactionName);
             stream.Write(Expedition?.Id ?? 0);
             stream.Write(Family);
 
-            foreach (var item in Inventory.Equip)
+            var items = Inventory.Equipment.GetSlottedItemsList();
+            foreach (var item in items)
             {
                 if (item == null)
                     stream.Write(0);
@@ -1357,42 +1506,36 @@ namespace AAEmu.Game.Models.Game.Char
                     stream.Write(item);
             }
 
-            stream.Write((byte)SkillTreeOne);
-            stream.Write((byte)SkillTreeTwo);
-            stream.Write((byte)SkillTreeThree);
+            stream.Write((byte)Ability1);
+            stream.Write((byte)Ability2);
+            stream.Write((byte)Ability3);
 
             stream.Write(Helpers.ConvertLongX(Position.X));
             stream.Write(Helpers.ConvertLongY(Position.Y));
             stream.Write(Position.Z);
 
             stream.Write(ModelParams);
-            stream.Write(LaborPower);
-            stream.Write(LaborPowerModified);
-            stream.Write(DeadCount);
-            stream.Write(DeadTime);
-            stream.Write(RezWaitDuration);
-            stream.Write(RezTime);
-            stream.Write(RezPenaltyDuration);
-            stream.Write(LeaveTime); // lastWorldLeaveTime
-            stream.Write(Money);
-            stream.Write(0L); // moneyAmount
-            stream.Write(CrimePoint);
-            stream.Write(CrimeRecord);
-            stream.Write((short)0); // crimeScore
-            stream.Write(DeleteRequestTime);
-            stream.Write(TransferRequestTime);
-            stream.Write(DeleteTime); // deleteDelay
-            stream.Write(ConsumedLaborPower);
-            stream.Write(BmPoint);
-            stream.Write(Money2); //moneyAmount
-            stream.Write(0L); //moneyAmount
-            stream.Write(AutoUseAAPoint);
-            stream.Write(PrevPoint);
-            stream.Write(Point);
-            stream.Write(Gift);
-            stream.Write(Updated);
-            stream.Write((byte)0); // forceNameChange
+
+            stream.Write(LaborPower);          // laborPower
+            stream.Write(LaborPowerModified);  // lastLaborPowerModified
+            stream.Write(DeadCount);           // deadCount
+            stream.Write(DeadTime);            // deadTime
+            stream.Write(RezWaitDuration);     // rezWaitDuration
+            stream.Write(RezTime);             // rezTime
+            stream.Write(RezPenaltyDuration);  // rezPenaltyDuration
+            stream.Write(LeaveTime);           // lastWorldLeaveTime
+            stream.Write(Money);               // moneyAmount
+            stream.Write(0L);                  // moneyAmount
+            stream.Write(CrimePoint);          // crimePoint
+            stream.Write(CrimeRecord);         // crimeRecord
+            stream.Write((short)0);            // crimeScore
+            stream.Write(DeleteRequestTime);   // deleteRequestedTime
+            stream.Write(TransferRequestTime); // transferRequestedTime
+            stream.Write(DeleteTime);          // deleteDelay
+            stream.Write(ConsumedLaborPower);  // consumedLp
+
             return stream;
         }
+
     }
 }

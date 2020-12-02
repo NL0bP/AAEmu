@@ -46,9 +46,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             }
 
             // Simulated unit
-            const MoveTypeEnum type = (MoveTypeEnum)1;
-            // Return moveType object
-            var moveType = (UnitMoveType)MoveType.GetType(type);
+            var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
             // Change NPC coordinates
             moveType.X = npc.Position.X;
@@ -72,14 +70,14 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationY = 0;
             moveType.RotationZ = rotZ;
 
-            moveType.Flags = 5;     // 5-идти, 4-бежать (мобы прыжками), 3-стоять на месте
-            moveType.DeltaMovement = new byte[3];
+            moveType.Flags = 5;     // 5-walk, 4-run, 3-stand still
+            moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127; // 88.. 118
             moveType.DeltaMovement[2] = 0;
             moveType.Stance = 1;    // COMBAT = 0x0, IDLE = 0x1
             moveType.Alertness = 0; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
-            moveType.Time = Seq;    // должно всё время увеличиваться, для нормального движения
+            moveType.Time = Seq;    // has to change all the time for normal motion.
 
             // Broadcasting Mobile State
             npc.BroadcastPacket(new SCOneUnitMovementPacket(npc.ObjId, moveType), true);

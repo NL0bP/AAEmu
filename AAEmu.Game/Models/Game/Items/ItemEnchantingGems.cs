@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Items{    public sealed class ItemEnchantingGems    {        public uint Id { get; set; }        public int ItemId { get; set; }        public int EquipSlotGroupId { get; set; }        public int GemVisualEffectId { get; set; }        public int EquipLevel { get; set; }        public int ItemGradeId { get; set; }    }}

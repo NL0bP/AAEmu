@@ -9,6 +9,6 @@
         public uint CraftId {get; set;}
         public uint ItemId {get; set;}
         public int Amount {get; set;}
-        public bool MainGrade {get; set;}
+        //public bool MainGrade {get; set;} // отсутствует в 0.5.101.406
     }
 }

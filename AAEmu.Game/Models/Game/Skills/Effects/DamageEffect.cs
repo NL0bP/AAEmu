@@ -1,8 +1,12 @@
 ﻿using System;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items;
+using AAEmu.Game.Models.Game.Items.Procs;
+using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -59,159 +63,150 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public int TargetHealthMax { get; set; }
         public float TargetHealthMul { get; set; }
         public int TargetHealthAdd { get; set; }
-        public bool FireProc { get; set; }
+        //public bool FireProc { get; set; } // отсутствует в 0.5.101.406
 
         public override bool OnActionTime => false;
 
         public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
-            CastAction castObj, Skill skill, SkillObject skillObject, DateTime time)
+            CastAction castObj, Skill skill, SkillObject skillObject, DateTime time,
+            CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("DamageEffect" +
-                      "DamageType {0}, FixedMin {1}, FixedMax {2}, Multiplier {3}, " +
-                      "UseMainhandWeapon {4}, UseOffhandWeapon {5}, UseRangedWeapon {6}, " +
-                      "CriticalBonus {7}, TargetBuffTagId {8}, TargetBuffBonus {9}, " +
-                      "UseFixedDamage {10}, UseLevelDamage {11}, LevelMd {12}, " +
-                      "LevelVaStart {13}, LevelVaEnd {14}, TargetBuffBonusMul {15}, " +
-                      "UseChargedBuff {16}, ChargedBuffId {17}, ChargedMul {18}, " +
-                      "AggroMultiplier {19}, HealthStealRatio {20}, ManaStealRatio {21}, " +
-                      "DpsMultiplier {22}, WeaponSlotId {23}, CheckCrime {24}, " +
-                      "HitAnimTimingId {25}, UseTargetChargedBuff {26}, TargetChargedBuffId {27}, " +
-                      "TargetChargedMul {28}, DpsIncMultiplier {29}, EngageCombat {30}, " +
-                      "Synergy {31}, ActabilityGroupId {32}, ActabilityStep {33}, " +
-                      "ActabilityMul {34}, ActabilityAdd {35}, ChargedLevelMul {36}, " +
-                      "AdjustDamageByHeight {37}, UsePercentDamage {38}, PercentMin {39}, " +
-                      "PercentMax {40}, UseCurrentHealth {41}, TargetHealthMin {42}, " +
-                      "TargetHealthMax {43}, TargetHealthMul {44}, TargetHealthAdd {45}, FireProc {46}",
-                       DamageType, FixedMin, FixedMax, Multiplier, UseMainhandWeapon, UseOffhandWeapon,
-                       UseRangedWeapon, CriticalBonus, TargetBuffTagId, TargetBuffBonus, UseFixedDamage,
-                       UseLevelDamage, LevelMd, LevelVaStart, LevelVaEnd, TargetBuffBonusMul, UseChargedBuff,
-                       ChargedBuffId, ChargedMul, AggroMultiplier, HealthStealRatio, ManaStealRatio,
-                       DpsMultiplier, WeaponSlotId, CheckCrime, HitAnimTimingId, UseTargetChargedBuff,
-                       TargetChargedBuffId, TargetChargedMul, DpsIncMultiplier, EngageCombat, Synergy,
-                       ActabilityGroupId, ActabilityStep, ActabilityMul, ActabilityAdd, ChargedLevelMul,
-                       AdjustDamageByHeight, UsePercentDamage, PercentMin, PercentMax, UseCurrentHealth,
-                       TargetHealthMin, TargetHealthMax, TargetHealthMul, TargetHealthAdd, FireProc);
+            _log.Debug("DamageEffect");
 
-            if (!(target is Unit)) { return; }
+            if (!(target is Unit))
+            {
+                return;
+            }
 
             var trg = (Unit)target;
-            var min = 0;
-            var max = 0;
-
+            var min = 0.0f;
+            var max = 0.0f;
+            
             if (UseFixedDamage)
             {
                 min += FixedMin;
                 max += FixedMax;
             }
 
-            var unk = 0f;
-            var unk2 = 1f;
-            var skillLevel = 1;
-            if (skill != null)
+            // Used for NPCs, I think
+            var levelMin = 0.0f;
+            var levelMax = 0.0f;
+            if (UseLevelDamage) 
             {
-                skillLevel = (skill.Level - 1) * skill.Template.LevelStep + skill.Template.AbilityLevel;
-                if (skillLevel >= skill.Template.AbilityLevel)
-                {
-                    unk = 0.015f * (skillLevel - skill.Template.AbilityLevel + 1);
-                }
-                unk2 = (1 + unk) * 1.3f;
+                var lvlMd = caster.LevelDps * LevelMd;
+                // Hack null-check on skill
+                var levelModifier = (( (skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
+            
+                levelMin += (lvlMd - levelModifier * lvlMd) + 0.5f;
+                levelMax += (levelModifier + 1) * lvlMd + 0.5f;
             }
-
-            if (UseLevelDamage)
-            {
-                var levelMd = (unk + 1) * LevelMd;
-                min += (int)(caster.LevelDps * levelMd + 0.5f);
-                max += (int)((((skillLevel - 1) * 0.020408163f * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.0099999998f + 1f) * caster.LevelDps * levelMd + 0.5f);
-            }
-
-            var dpsInc = 0f;
-
+            
+            // Stats/Weapon DPS
+            var dpsInc = 0;
             switch (DamageType)
             {
                 case DamageType.Melee:
-                    Log.Debug("DamageEffect caster.DpsInc {0}", caster.DpsInc);
                     dpsInc = caster.DpsInc;
                     break;
                 case DamageType.Magic:
-                    Log.Debug("DamageEffect caster.MDps {0}, caster.MDpsInc {1}", caster.MDps, caster.MDpsInc);
-                    dpsInc = caster.MDps + caster.MDpsInc;
+                    dpsInc = caster.MDps;
                     break;
                 case DamageType.Ranged:
-                    Log.Debug("DamageEffect caster.RangedDpsInc {0}", caster.RangedDpsInc);
                     dpsInc = caster.RangedDpsInc;
                     break;
-                    //case DamageType.Siege:
-                    //    break;
-                    //default:
-                    //    throw new ArgumentOutOfRangeException();
             }
 
-            var dps = 0f;
+            max = (dpsInc * 0.001f) * DpsIncMultiplier;
+            var weaponDamage = 0.0f;
+
             if (UseMainhandWeapon)
-            {
-                Log.Debug("DamageEffect caster.Dps {0}", caster.Dps);
-                dps += caster.Dps;
-            }
-            else if (UseOffhandWeapon)
-            {
-                Log.Debug("DamageEffect caster.OffhandDps {0}", caster.OffhandDps);
-                dps += caster.OffhandDps;
-            }
-            else if (UseRangedWeapon)
-            {
-                Log.Debug("DamageEffect caster.RangedDps {0}", caster.RangedDps);
-                dps += caster.RangedDps;
-            }
+                weaponDamage = caster.Dps * 0.001f; // TODO : Use only weapon value!
+            if (UseOffhandWeapon)
+                weaponDamage = (caster.OffhandDps * 0.001f) + weaponDamage;
+            if (UseRangedWeapon)
+                weaponDamage = (caster.RangedDps * 0.001f) + weaponDamage; // TODO : Use only weapon value!
 
-            //// TODO vv--убрать этот костыль--vv
-            //if (dps <= 0)
-            //{
-            //    dps = 15000f * caster.Level;
-            //}
-            //if (dpsInc <= 0)
-            //{
-            //    dpsInc = 2000f * caster.Level;
-            //}
-            //// TODO ^^--убрать этот костыль--^^
+            max = (DpsMultiplier * weaponDamage) + max;
+            
+            var minCastBonus = 1000f;
+            // Hack null-check on skill
+            var castTimeMod = skill?.Template.CastingTime ?? 0 ; // This mod depends on casting_inc too!
+            if (castTimeMod <= 1000)
+                minCastBonus = min > 0 ? min : minCastBonus;
+            else
+                minCastBonus = castTimeMod;
 
-            min += (int)((DpsMultiplier * dps * 0.001f + DpsIncMultiplier * dpsInc * 0.001f) * unk2 + 0.5f);
-            max += (int)((DpsMultiplier * dps * 0.001f + DpsIncMultiplier * dpsInc * 0.001f) * unk2 + 0.5f);
-            min = (int)(min * Multiplier);
-            max = (int)(max * Multiplier);
-            var value = Rand.Next(min, max);
-
-            caster.SummarizeDamage[0] += value;
-
-            if (caster is Character chr1) // Character is in battle
+            var variableDamage = (max * minCastBonus * 0.001f);
+            // TODO : Handle NPC
+            if (WeaponSlotId < 0)
             {
-                chr1.IsInBattle = true;
+                min = variableDamage + levelMin;
+                max = variableDamage + levelMax;
             }
-            if (target is Character chr2)
+            else
             {
-                chr2.IsInBattle = true;
+                var weapon = caster.Equipment.GetItemBySlot(WeaponSlotId);
+                if (weapon != null)
+                {
+                    var holdable = (WeaponTemplate)weapon.Template;
+                    var scaledDamage = holdable.HoldableTemplate.DamageScale * variableDamage * 0.01f;
+                    min = levelMin + (variableDamage - scaledDamage);
+                    max = levelMax + (variableDamage + scaledDamage);
+                }
             }
 
+
+            min *= Multiplier;
+            max *= Multiplier;
+
+            var damageMultiplier = 0.0f;
+            switch (DamageType)
+            {
+                case DamageType.Melee:
+                    // damageMultiplier = caster.Dps???
+                    damageMultiplier = 1.0f;
+                    break;
+                case DamageType.Magic:
+                    damageMultiplier = 1.0f;
+                    break;
+                case DamageType.Ranged:
+                    damageMultiplier = 1.0f;
+                    break;
+                case DamageType.Siege:
+                    // TODO 
+                    damageMultiplier = 1.0f;
+                    break;
+            }
+
+            var iVar1 = (int)(min * (damageMultiplier + 1000));
+            var uVar3 = iVar1 / 1000 + (iVar1 >> 0x1f);
+            min = (uVar3 >> 0x1f) + uVar3;
+            iVar1 = (int)(max * (damageMultiplier + 1000));
+            uVar3 = iVar1 / 1000 + (iVar1 >> 0x1f);
+            max = (uVar3 >> 0x1f) + uVar3;
+            
+            var value = (int)Rand.Next(min, max);
+            trg.ReduceCurrentHp(caster, value);
+            caster.SummarizeDamage += value;
+            
+            // TODO : Use proper chance kinds (melee, magic etc.)
+            if (trg is Character procTarget)
+                procTarget.Procs.RollProcsForKind(ProcChanceKind.TakeDamageAny);
+            if (caster is Character procAttacker)
+                procAttacker.Procs.RollProcsForKind(ProcChanceKind.HitAny);
+
+            if (packetBuilder != null) 
+                packetBuilder.AddPacket(new SCUnitDamagedPacket(castObj, casterObj, caster.ObjId, target.ObjId, value));
+            else
+                trg.BroadcastPacket(new SCUnitDamagedPacket(castObj, casterObj, caster.ObjId, target.ObjId, value), true);
             if (trg is Npc)
             {
                 trg.BroadcastPacket(new SCAiAggroPacket(trg.ObjId, 1, caster.ObjId, caster.SummarizeDamage), true);
             }
             if (trg is Npc npc && npc.CurrentTarget != caster)
             {
-                if (npc.Patrol == null || npc.Patrol.PauseAuto(npc))
-                {
-                    npc.CurrentTarget = caster;
-                    npc.BroadcastPacket(new SCCombatEngagedPacket(caster.ObjId), true); // caster
-                    npc.BroadcastPacket(new SCCombatEngagedPacket(npc.ObjId), true);    // target
-                    npc.BroadcastPacket(new SCCombatFirstHitPacket(npc.ObjId, caster.ObjId, 0), true);
-                    npc.BroadcastPacket(new SCAggroTargetChangedPacket(npc.ObjId, caster.ObjId), true);
-                    npc.BroadcastPacket(new SCTargetChangedPacket(npc.ObjId, caster.ObjId), true);
-
-                    TaskManager.Instance.Schedule(new UnitMove(new Track(), npc), TimeSpan.FromMilliseconds(100));
-                }
+                npc.OnDamageReceived(caster);
             }
-
-            trg.BroadcastPacket(new SCUnitDamagedPacket(castObj, casterObj, caster.ObjId, target.ObjId, value), true);
-            trg.ReduceCurrentHp(caster, value);
         }
     }
 }

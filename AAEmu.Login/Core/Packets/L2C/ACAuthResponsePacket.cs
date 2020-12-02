@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Login.Core.Network.Login;
 
 namespace AAEmu.Login.Core.Packets.L2C
@@ -20,7 +20,7 @@ namespace AAEmu.Login.Core.Packets.L2C
         {
             stream.Write(_accountId);
             stream.Write(_wsk, true);
-            stream.Write(_slotCount);
+            //stream.Write(_slotCount); // нет в 0.5.1.101406
 
             return stream;
         }

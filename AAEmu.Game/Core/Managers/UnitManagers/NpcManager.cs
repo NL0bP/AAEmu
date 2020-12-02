@@ -9,7 +9,6 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Utils.DB;
 using NLog;
 
@@ -48,16 +47,14 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             var template = _templates[id];
 
-            var npc = new Npc
-            {
-                ObjId = objectId > 0 ? objectId : ObjectIdManager.Instance.GetNextId(),
-                TemplateId = id,
-                Template = template,
-                ModelId = template.ModelId,
-                Faction = FactionManager.Instance.GetFaction(template.FactionId),
-                Level = template.Level,
-                Patrol = null
-            };
+            var npc = new Npc();
+            npc.ObjId = objectId > 0 ? objectId : ObjectIdManager.Instance.GetNextId();
+            npc.TemplateId = id;
+            npc.Template = template;
+            npc.ModelId = template.ModelId;
+            npc.Faction = FactionManager.Instance.GetFaction(template.FactionId);
+            npc.Level = template.Level;
+            npc.Patrol = null;
 
             SetEquipItemTemplate(npc, template.Items.Headgear, EquipmentItemSlot.Head);
             SetEquipItemTemplate(npc, template.Items.Necklace, EquipmentItemSlot.Neck);
@@ -68,35 +65,22 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             SetEquipItemTemplate(npc, template.Items.Shoes, EquipmentItemSlot.Feet);
             SetEquipItemTemplate(npc, template.Items.Bracelet, EquipmentItemSlot.Arms);
             SetEquipItemTemplate(npc, template.Items.Back, EquipmentItemSlot.Back);
-            // ear_1
-            // ear_2
-            // finger_1
-            // finger_2
             SetEquipItemTemplate(npc, template.Items.Undershirts, EquipmentItemSlot.Undershirt);
             SetEquipItemTemplate(npc, template.Items.Underpants, EquipmentItemSlot.Underpants);
             SetEquipItemTemplate(npc, template.Items.Mainhand, EquipmentItemSlot.Mainhand);
             SetEquipItemTemplate(npc, template.Items.Offhand, EquipmentItemSlot.Offhand);
             SetEquipItemTemplate(npc, template.Items.Ranged, EquipmentItemSlot.Ranged);
             SetEquipItemTemplate(npc, template.Items.Musical, EquipmentItemSlot.Musical);
-
-            SetEquipItemTemplate(npc, template.BodyItems[0].ItemId, EquipmentItemSlot.Face, 0, template.BodyItems[0].NpcOnly);
-            if (template.ModelParams != null)
-            {
-                if (template.HairId == 0)
-                    SetEquipItemTemplate(npc, template.BodyItems[1].ItemId, EquipmentItemSlot.Hair, 0, template.BodyItems[1].NpcOnly);
-                else
-                    SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
-            }
-            else
-                SetEquipItemTemplate(npc, template.BodyItems[1].ItemId, EquipmentItemSlot.Hair, 0, template.BodyItems[1].NpcOnly);
-
-            SetEquipItemTemplate(npc, template.BodyItems[2].ItemId, EquipmentItemSlot.Glasses, 0, template.BodyItems[2].NpcOnly);
-            SetEquipItemTemplate(npc, template.BodyItems[3].ItemId, EquipmentItemSlot.Reserved, 0, template.BodyItems[3].NpcOnly);
-            SetEquipItemTemplate(npc, template.BodyItems[4].ItemId, EquipmentItemSlot.Tail, 0, template.BodyItems[4].NpcOnly);
-            SetEquipItemTemplate(npc, template.BodyItems[5].ItemId, EquipmentItemSlot.Body, 0, template.BodyItems[5].NpcOnly);
-            SetEquipItemTemplate(npc, template.BodyItems[6].ItemId, EquipmentItemSlot.Beard, 0, template.BodyItems[6].NpcOnly);
-
             SetEquipItemTemplate(npc, template.Items.Cosplay, EquipmentItemSlot.Cosplay);
+
+            for (var i = 0; i < 7; i++)
+            {
+                EquipmentItemSlot slot = (EquipmentItemSlot)(i + 19);
+                if ((slot == EquipmentItemSlot.Hair) && (template.ModelParams != null))
+                    SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
+                else
+                    SetEquipItemTemplate(npc, template.BodyItems[i].ItemId, slot, 0, template.BodyItems[i].NpcOnly);
+            }
 
             foreach (var buffId in template.Buffs)
             {
@@ -124,85 +108,6 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             return npc;
         }
 
-        public uint SetFace(byte race, byte gender)
-        {
-            // [COLLAPSED LOCAL DECLARATIONS. PRESS KEYPAD CTRL-"+" TO EXPAND]
-
-            var result = 0u;
-            switch ( race )
-            {
-                case 1:
-                    if ( gender == 1 )
-                    {
-                        result = 19838u;
-                    }
-                    else
-                    {
-                        if ( gender != 2 )
-                            goto LABEL_23;
-                        result = 19839u;
-                    }
-                    break;
-                case 3:
-                    if ( gender == 1 )
-                    {
-                        result = 401u;
-                    }
-                    else
-                    {
-                        if ( gender != 2 )
-                            goto LABEL_23;
-                        result = 403u;
-                    }
-                    break;
-                case 4:
-                    if ( gender == 1 )
-                    {
-                        result = 23713u;
-                    }
-                    else
-                    {
-                        if ( gender != 2 )
-                            goto LABEL_23;
-                        result = 23714u;
-                    }
-                    break;
-                case 5:
-                    if ( gender == 1 )
-                    {
-                        result = 23715u;
-                    }
-                    else
-                    {
-                        if ( gender != 2 )
-                            goto LABEL_23;
-                        result = 23716u;
-                    }
-                    break;
-                case 6:
-                    if ( gender == 1 )
-                    {
-                        result = 20117u;
-                    }
-                    else
-                    {
-                        if ( gender != 2 )
-                            goto LABEL_23;
-                        result = 20118u;
-                    }
-                    break;
-                case 8:
-                    result = 659u;
-                    if ( gender != 1 )
-                        goto LABEL_23;
-                    break;
-                default:
-                    LABEL_23:
-                    result = 0u;
-                    break;
-            }
-            return result;
-        }
         public void Load()
         {
             _templates = new Dictionary<uint, NpcTemplate>();
@@ -210,9 +115,6 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
             using (var connection = SQLite.CreateConnection())
             {
-                if (connection == null)
-                    return;
-
                 _log.Info("Loading npc templates...");
                 using (var command = connection.CreateCommand())
                 {
@@ -225,7 +127,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var template = new NpcTemplate();
                             template.Id = reader.GetUInt32("id");
-                            template.Name = LocalizationManager.Instance.GetEnglishLocalizedText("npcs", "name", template.Id);
+                            template.Name = reader.GetString("name");
                             template.CharRaceId = reader.GetInt32("char_race_id");
                             template.NpcGradeId = (NpcGradeType)reader.GetByte("npc_grade_id");
                             template.NpcKindId = (NpcKindType)reader.GetByte("npc_kind_id");
@@ -272,12 +174,12 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             template.HonorPoint = reader.GetInt32("honor_point");
                             template.Trader = reader.GetBoolean("trader", true);
                             template.AggroLinkSpecialGuard = reader.GetBoolean("aggro_link_special_guard", true);
-                            template.AggroLinkSpecialIgnoreNpcAttacker =
-                                reader.GetBoolean("aggro_link_special_ignore_npc_attacker", true);
+                            template.AggroLinkSpecialIgnoreNpcAttacker = reader.GetBoolean("aggro_link_special_ignore_npc_attacker", true);
                             template.AbsoluteReturnDistance = reader.GetFloat("absolute_return_distance");
                             template.Repairman = reader.GetBoolean("repairman", true);
                             template.ActivateAiAlways = reader.GetBoolean("activate_ai_always", true);
                             template.Specialty = reader.GetBoolean("specialty", true);
+                            template.SpecialtyCoinId = reader.GetUInt32("specialty_coin_id", 0);
                             template.UseRangeMod = reader.GetBoolean("use_range_mod", true);
                             template.NpcPostureSetId = reader.GetInt32("npc_posture_set_id");
                             template.MateEquipSlotPackId = reader.GetInt32("mate_equip_slot_pack_id", 0);
@@ -288,11 +190,10 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             template.BaseSkillDelay = reader.GetFloat("base_skill_delay");
                             template.NpcInteractionSetId = reader.GetInt32("npc_interaction_set_id", 0);
                             template.UseAbuserList = reader.GetBoolean("use_abuser_list", true);
-                            template.ReturnWhenEnterHousingArea =
-                                reader.GetBoolean("return_when_enter_housing_area", true);
-                            template.LookConverter = reader.GetBoolean("look_converter", true);
-                            template.UseDDCMSMountSkill = reader.GetBoolean("use_ddcms_mount_skill", true);
-                            template.CrowdEffect = reader.GetBoolean("crowd_effect", true);
+                            template.ReturnWhenEnterHousingArea = reader.GetBoolean("return_when_enter_housing_area", true);
+                            //template.LookConverter = reader.GetBoolean("look_converter", true); // отсутствует в 0.5.101.406
+                            //template.UseDDCMSMountSkill = reader.GetBoolean("use_ddcms_mount_skill", true); // отсутствует в 0.5.101.406
+                            //template.CrowdEffect = reader.GetBoolean("crowd_effect", true); // отсутствует в 0.5.101.406
 
                             var bodyPack = reader.GetInt32("equip_bodies_id", 0);
                             var clothPack = reader.GetInt32("equip_cloths_id", 0);
@@ -311,29 +212,29 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                         while (reader2.Read())
                                         {
                                             template.Items.Headgear = reader2.GetUInt32("headgear_id");
-                                            template.Items.HeadgearGrade = reader2.GetByte("headgear_grade_id");
+                                            template.Items.HeadgearGrade = (ItemGrade)reader2.GetByte("headgear_grade_id");
                                             template.Items.Necklace = reader2.GetUInt32("necklace_id");
-                                            template.Items.NecklaceGrade = reader2.GetByte("necklace_grade_id");
+                                            template.Items.NecklaceGrade = (ItemGrade)reader2.GetByte("necklace_grade_id");
                                             template.Items.Shirt = reader2.GetUInt32("shirt_id");
-                                            template.Items.ShirtGrade = reader2.GetByte("shirt_grade_id");
+                                            template.Items.ShirtGrade = (ItemGrade)reader2.GetByte("shirt_grade_id");
                                             template.Items.Belt = reader2.GetUInt32("belt_id");
-                                            template.Items.BeltGrade = reader2.GetByte("belt_grade_id");
+                                            template.Items.BeltGrade = (ItemGrade)reader2.GetByte("belt_grade_id");
                                             template.Items.Pants = reader2.GetUInt32("pants_id");
-                                            template.Items.PantsGrade = reader2.GetByte("pants_grade_id");
+                                            template.Items.PantsGrade = (ItemGrade)reader2.GetByte("pants_grade_id");
                                             template.Items.Gloves = reader2.GetUInt32("glove_id");
-                                            template.Items.GlovesGrade = reader2.GetByte("glove_grade_id");
+                                            template.Items.GlovesGrade = (ItemGrade)reader2.GetByte("glove_grade_id");
                                             template.Items.Shoes = reader2.GetUInt32("shoes_id");
-                                            template.Items.ShoesGrade = reader2.GetByte("shoes_grade_id");
+                                            template.Items.ShoesGrade = (ItemGrade)reader2.GetByte("shoes_grade_id");
                                             template.Items.Bracelet = reader2.GetUInt32("bracelet_id");
-                                            template.Items.BraceletGrade = reader2.GetByte("bracelet_grade_id");
+                                            template.Items.BraceletGrade = (ItemGrade)reader2.GetByte("bracelet_grade_id");
                                             template.Items.Back = reader2.GetUInt32("back_id");
-                                            template.Items.BackGrade = reader2.GetByte("back_grade_id");
+                                            template.Items.BackGrade = (ItemGrade)reader2.GetByte("back_grade_id");
                                             template.Items.Cosplay = reader2.GetUInt32("cosplay_id");
-                                            template.Items.CosplayGrade = reader2.GetByte("cosplay_grade_id");
+                                            template.Items.CosplayGrade = (ItemGrade)reader2.GetByte("cosplay_grade_id");
                                             template.Items.Undershirts = reader2.GetUInt32("undershirt_id");
-                                            template.Items.UndershirtsGrade = reader2.GetByte("undershirt_grade_id");
+                                            template.Items.UndershirtsGrade = (ItemGrade)reader2.GetByte("undershirt_grade_id");
                                             template.Items.Underpants = reader2.GetUInt32("underpants_id");
-                                            template.Items.UnderpantsGrade = reader2.GetByte("underpants_grade_id");
+                                            template.Items.UnderpantsGrade = (ItemGrade)reader2.GetByte("underpants_grade_id");
                                         }
                                     }
                                 }
@@ -352,13 +253,13 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                         while (reader2.Read())
                                         {
                                             template.Items.Mainhand = reader2.GetUInt32("mainhand_id");
-                                            template.Items.MainhandGrade = reader2.GetByte("mainhand_grade_id");
+                                            template.Items.MainhandGrade = (ItemGrade)reader2.GetByte("mainhand_grade_id");
                                             template.Items.Offhand = reader2.GetUInt32("offhand_id");
-                                            template.Items.OffhandGrade = reader2.GetByte("offhand_grade_id");
+                                            template.Items.OffhandGrade = (ItemGrade)reader2.GetByte("offhand_grade_id");
                                             template.Items.Ranged = reader2.GetUInt32("ranged_id");
-                                            template.Items.RangedGrade = reader2.GetByte("ranged_grade_id");
+                                            template.Items.RangedGrade = (ItemGrade)reader2.GetByte("ranged_grade_id");
                                             template.Items.Musical = reader2.GetUInt32("musical_id");
-                                            template.Items.MusicalGrade = reader2.GetByte("musical_grade_id");
+                                            template.Items.MusicalGrade = (ItemGrade)reader2.GetByte("musical_grade_id");
                                         }
                                     }
                                 }
@@ -384,48 +285,27 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                                 .SetHairColorId(reader2.GetUInt32("hair_color_id"))
                                                 .SetSkinColorId(reader2.GetUInt32("skin_color_id"));
 
-                                            template.ModelParams.Face.MovableDecalAssetId =
-                                                reader2.GetUInt32("face_movable_decal_asset_id");
-                                            template.ModelParams.Face.MovableDecalScale =
-                                                reader2.GetFloat("face_movable_decal_scale");
-                                            template.ModelParams.Face.MovableDecalRotate =
-                                                reader2.GetFloat("face_movable_decal_rotate");
-                                            template.ModelParams.Face.MovableDecalMoveX =
-                                                reader2.GetInt16("face_movable_decal_move_x");
-                                            template.ModelParams.Face.MovableDecalMoveY =
-                                                reader2.GetInt16("face_movable_decal_move_y");
+                                            template.ModelParams.Face.MovableDecalAssetId = reader2.GetUInt32("face_movable_decal_asset_id");
+                                            template.ModelParams.Face.MovableDecalScale = reader2.GetFloat("face_movable_decal_scale");
+                                            template.ModelParams.Face.MovableDecalRotate = reader2.GetFloat("face_movable_decal_rotate");
+                                            template.ModelParams.Face.MovableDecalMoveX = reader2.GetInt16("face_movable_decal_move_x");
+                                            template.ModelParams.Face.MovableDecalMoveY = reader2.GetInt16("face_movable_decal_move_y");
 
-                                            template.ModelParams.Face.SetFixedDecalAsset(0,
-                                                reader2.GetUInt32("face_fixed_decal_asset_0_id"),
-                                                reader2.GetFloat("face_fixed_decal_asset_0_weight"));
-                                            template.ModelParams.Face.SetFixedDecalAsset(1,
-                                                reader2.GetUInt32("face_fixed_decal_asset_1_id"),
-                                                reader2.GetFloat("face_fixed_decal_asset_1_weight"));
-                                            template.ModelParams.Face.SetFixedDecalAsset(2,
-                                                reader2.GetUInt32("face_fixed_decal_asset_2_id"),
-                                                reader2.GetFloat("face_fixed_decal_asset_2_weight"));
-                                            template.ModelParams.Face.SetFixedDecalAsset(3,
-                                                reader2.GetUInt32("face_fixed_decal_asset_3_id"),
-                                                reader2.GetFloat("face_fixed_decal_asset_3_weight"));
+                                            template.ModelParams.Face.SetFixedDecalAsset(0, reader2.GetUInt32("face_fixed_decal_asset_0_id"), reader2.GetFloat("face_fixed_decal_asset_0_weight"));
+                                            template.ModelParams.Face.SetFixedDecalAsset(1, reader2.GetUInt32("face_fixed_decal_asset_1_id"), reader2.GetFloat("face_fixed_decal_asset_1_weight"));
+                                            template.ModelParams.Face.SetFixedDecalAsset(2, reader2.GetUInt32("face_fixed_decal_asset_2_id"), reader2.GetFloat("face_fixed_decal_asset_2_weight"));
+                                            template.ModelParams.Face.SetFixedDecalAsset(3, reader2.GetUInt32("face_fixed_decal_asset_3_id"), reader2.GetFloat("face_fixed_decal_asset_3_weight"));
 
-                                            template.ModelParams.Face.DiffuseMapId =
-                                                reader2.GetUInt32("face_diffuse_map_id");
-                                            template.ModelParams.Face.NormalMapId =
-                                                reader2.GetUInt32("face_normal_map_id");
-                                            template.ModelParams.Face.EyelashMapId =
-                                                reader2.GetUInt32("face_eyelash_map_id");
+                                            template.ModelParams.Face.DiffuseMapId = reader2.GetUInt32("face_diffuse_map_id");
+                                            template.ModelParams.Face.NormalMapId = reader2.GetUInt32("face_normal_map_id");
+                                            template.ModelParams.Face.EyelashMapId = reader2.GetUInt32("face_eyelash_map_id");
                                             template.ModelParams.Face.LipColor = reader2.GetUInt32("lip_color");
-                                            template.ModelParams.Face.LeftPupilColor =
-                                                reader2.GetUInt32("left_pupil_color");
-                                            template.ModelParams.Face.RightPupilColor =
-                                                reader2.GetUInt32("right_pupil_color");
+                                            template.ModelParams.Face.LeftPupilColor = reader2.GetUInt32("left_pupil_color");
+                                            template.ModelParams.Face.RightPupilColor = reader2.GetUInt32("right_pupil_color");
                                             template.ModelParams.Face.EyebrowColor = reader2.GetUInt32("eyebrow_color");
-                                            template.ModelParams.Face.MovableDecalWeight =
-                                                reader2.GetFloat("face_movable_decal_weight");
-                                            template.ModelParams.Face.NormalMapWeight =
-                                                reader2.GetFloat("face_normal_map_weight");
+                                            template.ModelParams.Face.MovableDecalWeight = reader2.GetFloat("face_movable_decal_weight");
+                                            template.ModelParams.Face.NormalMapWeight = reader2.GetFloat("face_normal_map_weight");
                                             template.ModelParams.Face.DecoColor = reader2.GetUInt32("deco_color");
-
                                             reader2.GetBytes("modifier", 0, template.ModelParams.Face.Modifier, 0, 128);
                                         }
                                     }
@@ -440,7 +320,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             {
                                 using (var command2 = connection.CreateCommand())
                                 {
-                                    command2.CommandText = "SELECT anim_action_id FROM npc_postures WHERE npc_posture_set_id=@id";
+                                    command2.CommandText = "SELECT * FROM npc_postures WHERE npc_posture_set_id=@id";
                                     command2.Prepare();
                                     command2.Parameters.AddWithValue("id", template.NpcPostureSetId);
                                     using (var sqliteReader2 = command2.ExecuteReader())
@@ -448,6 +328,42 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                     {
                                         if (reader2.Read())
                                             template.AnimActionId = reader2.GetUInt32("anim_action_id");
+                                    }
+                                }
+                            }
+
+                            using (var command2 = connection.CreateCommand())
+                            {
+                                command2.CommandText = "SELECT * FROM item_body_parts WHERE model_id = @model_id";
+                                command2.Prepare();
+                                command2.Parameters.AddWithValue("model_id", template.ModelId);
+                                using (var sqliteReader2 = command2.ExecuteReader())
+                                using (var reader2 = new SQLiteWrapperReader(sqliteReader2))
+                                {
+                                    while (reader2.Read())
+                                    {
+                                        var itemId = reader2.GetUInt32("item_id", 0);
+                                        var npcOnly = reader2.GetBoolean("npc_only", true);
+                                        var slot = reader2.GetInt32("slot_type_id") - 23;
+
+                                        // TODO: slot == 0, как выбрать нужный FaceId?
+
+                                        if (slot == 1)
+                                        {
+                                            if (itemId == template.HairId)
+                                            {
+                                                template.BodyItems[slot] = (itemId, npcOnly);
+                                            }
+
+                                            if (template.HairId == 0)
+                                            {
+                                                template.BodyItems[slot] = (itemId, npcOnly); // TODO: slot == 1, как выбрать нужный HairId?
+                                            }
+                                        }
+                                        else
+                                        {
+                                            template.BodyItems[slot] = (itemId, npcOnly);
+                                        }
                                     }
                                 }
                             }
@@ -468,38 +384,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                     }
                                 }
                             }
-                            
-                            using (var command2 = connection.CreateCommand())
-                            {
-                                command2.CommandText =
-                                    "SELECT slot_type_id, item_id, npc_only  FROM item_body_parts WHERE model_id = @model_id";
-                                command2.Prepare();
-                                command2.Parameters.AddWithValue("model_id", template.ModelId);
-                                using (var sqliteReader2 = command2.ExecuteReader())
-                                using (var reader2 = new SQLiteWrapperReader(sqliteReader2))
-                                {
-                                    while (reader2.Read())
-                                    {
-                                        var slot = reader2.GetInt32("slot_type_id") - 23;
-                                        var itemId = reader2.GetUInt32("item_id", 0); // тоже самое, что и HairId
-                                        var npcOnly = reader2.GetBoolean("npc_only", true);
 
-                                        switch (slot)
-                                        {
-                                            case 0: // set face
-                                                template.BodyItems[slot] = (SetFace(template.Race, template.Gender), npcOnly);
-                                                break;
-                                            case 1 when itemId == template.HairId:  // set hair
-                                                npcOnly = reader2.GetBoolean("npc_only", true);
-                                                template.BodyItems[slot] = (template.HairId, npcOnly);
-                                                break;
-                                            default:
-                                                template.BodyItems[slot] = (itemId, npcOnly);
-                                                break;
-                                        }
-                                    }
-                                }
-                            }
                             _templates.Add(template.Id, template);
                         }
                     }
@@ -596,24 +481,21 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             }
         }
 
-        private void SetEquipItemTemplate(Npc npc, uint templateId, EquipmentItemSlot slot, byte grade = 0, bool npcOnly = false)
+        private void SetEquipItemTemplate(Npc npc, uint templateId, EquipmentItemSlot slot, ItemGrade grade = 0, bool npcOnly = false)
         {
-            if (npcOnly && npc.Equip[(int)slot] != null)
+            if (npcOnly && npc.Equipment.GetItemBySlot((int)slot) != null)
                 return;
 
             Item item = null;
             if (templateId > 0)
             {
                 item = ItemManager.Instance.Create(templateId, 1, grade, false);
-                if (item != null)
-                {
-                    item.SlotType = SlotType.Equipment;
-                    item.Slot = (int)slot;
-                }
+                item.SlotType = SlotType.Equipment;
+                item.Slot = (int)slot;
             }
 
-            npc.Equip[(int)slot] = item;
+            // npc.Equip[(int)slot] = item;
+            npc.Equipment.AddOrMoveExistingItem(0, item, (int)slot);
         }
-
     }
 }

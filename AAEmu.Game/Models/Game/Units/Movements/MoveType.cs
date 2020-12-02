@@ -36,7 +36,7 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             if ((Flags & 0x10) == 0x10)
             {
                 ScType = stream.ReadUInt32();
-                Phase = stream.ReadByte();
+                //Phase = stream.ReadByte();
             }
         }
 
@@ -65,15 +65,13 @@ namespace AAEmu.Game.Models.Game.Units.Movements
                     mType = new VehicleMoveType();
                     break;
                 case MoveTypeEnum.Ship:
-                    // TODO ...
+                    mType = new ShipMoveType();
                     break;
                 case MoveTypeEnum.ShipRequest:
-                    // TODO ...
+                    mType = new ShipRequestMoveType();
                     break;
                 case MoveTypeEnum.Transfer:
                     // TODO ...
-                    break;
-                case MoveTypeEnum.Default:
                     break;
                 default:
                     mType = new DefaultMoveType();

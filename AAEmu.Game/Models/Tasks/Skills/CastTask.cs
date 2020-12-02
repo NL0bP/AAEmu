@@ -1,11 +1,10 @@
-﻿using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Tasks.Skills
 {
     public class CastTask : SkillTask
     {
-        private readonly Skill _skill;
         private readonly Unit _caster;
         private readonly SkillCaster _casterCaster;
         private readonly BaseUnit _target;
@@ -14,7 +13,6 @@ namespace AAEmu.Game.Models.Tasks.Skills
 
         public CastTask(Skill skill, Unit caster, SkillCaster casterCaster, BaseUnit target, SkillCastTarget targetCaster, SkillObject skillObject) : base(skill)
         {
-            _skill = skill;
             _caster = caster;
             _casterCaster = casterCaster;
             _target = target;
@@ -24,7 +22,7 @@ namespace AAEmu.Game.Models.Tasks.Skills
 
         public override void Execute()
         {
-            _skill.Cast(_caster, _casterCaster, _target, _targetCaster, _skillObject);
+            Skill.Cast(_caster, _casterCaster, _target, _targetCaster, _skillObject);
         }
     }
 }

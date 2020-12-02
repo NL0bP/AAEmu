@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game;
 
@@ -9,7 +9,8 @@ namespace AAEmu.Game.Core.Packets.G2C
         private SlaveEquipment slaveEquipment;
         private bool success;
 
-        public SCSlaveEquipmentChangedPacket(SlaveEquipment slaveEquipment, bool success) : base(SCOffsets.SCSlaveEquipmentChangedPacket, 1)
+        public SCSlaveEquipmentChangedPacket(SlaveEquipment slaveEquipment, bool success)
+            : base(SCOffsets.SCSlaveEquipmentChangedPacket, 1)
         {
 
         }

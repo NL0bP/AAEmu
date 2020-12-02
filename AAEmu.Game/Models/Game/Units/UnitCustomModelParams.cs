@@ -60,7 +60,7 @@ namespace AAEmu.Game.Models.Game.Units
 
         public FaceModel()
         {
-            FixedDecalAsset = new FixedDecalAsset[4];
+            FixedDecalAsset = new FixedDecalAsset[4]; // в 0.5.1.101.406 = 4
             for (var i = 0; i < FixedDecalAsset.Length; i++)
                 FixedDecalAsset[i] = new FixedDecalAsset();
 
@@ -88,7 +88,9 @@ namespace AAEmu.Game.Models.Game.Units
             MovableDecalMoveY = stream.ReadInt16();
 
             foreach (var asset in FixedDecalAsset)
+            {
                 asset.Read(stream);
+            }
 
             DiffuseMapId = stream.ReadUInt32();
             NormalMapId = stream.ReadUInt32();
@@ -113,7 +115,9 @@ namespace AAEmu.Game.Models.Game.Units
             stream.Write(MovableDecalMoveY);
 
             foreach (var asset in FixedDecalAsset)
+            {
                 stream.Write(asset);
+            }
 
             stream.Write(DiffuseMapId);
             stream.Write(NormalMapId);
@@ -133,15 +137,16 @@ namespace AAEmu.Game.Models.Game.Units
     public class UnitCustomModelParams : PacketMarshaler
     {
         private UnitCustomModelType _type;
-        public uint ModelId { get; private set; }
         public uint HairColorId { get; private set; }
         public uint SkinColorId { get; private set; }
+        public uint ModelId { get; private set; }
         public FaceModel Face { get; private set; }
 
         public UnitCustomModelParams(UnitCustomModelType type = UnitCustomModelType.None)
         {
             SetType(type);
         }
+
         public UnitCustomModelParams SetType(UnitCustomModelType type)
         {
             _type = type;
@@ -149,7 +154,6 @@ namespace AAEmu.Game.Models.Game.Units
                 Face = new FaceModel();
             return this;
         }
-
         public UnitCustomModelParams SetModelId(uint modelId)
         {
             ModelId = modelId;
@@ -176,7 +180,7 @@ namespace AAEmu.Game.Models.Game.Units
 
         public override void Read(PacketStream stream)
         {
-            SetType((UnitCustomModelType) stream.ReadByte());
+            SetType((UnitCustomModelType) stream.ReadByte()); // ext
 
             if (_type == UnitCustomModelType.None)
                 return;
@@ -187,7 +191,7 @@ namespace AAEmu.Game.Models.Game.Units
                 return;
 
             SkinColorId = stream.ReadUInt32();
-            ModelId = stream.ReadUInt32();
+            //ModelId = stream.ReadUInt32();
 
             if (_type == UnitCustomModelType.Skin)
                 return;
@@ -197,7 +201,7 @@ namespace AAEmu.Game.Models.Game.Units
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write((byte) _type);
+            stream.Write((byte) _type); // ext
             if (_type == UnitCustomModelType.None)
                 return stream;
 
@@ -207,7 +211,7 @@ namespace AAEmu.Game.Models.Game.Units
                 return stream;
 
             stream.Write(SkinColorId);
-            stream.Write(ModelId);
+            //stream.Write(ModelId);
 
             if (_type == UnitCustomModelType.Skin)
                 return stream;

@@ -22,6 +22,7 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.WriteBc(_objId);
             stream.Write((byte) _oldAbilityId);
             stream.Write((byte) _abilityId);
+
             return stream;
         }
     }

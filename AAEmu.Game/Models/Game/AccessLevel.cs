@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AAEmu.Commons.Network;
 using System;
 
@@ -9,7 +9,7 @@ namespace AAEmu.Game.Models.Game
         public static List<Command> CMD = new List<Command>();
 
         public static int getLevel(string commandstr){
-            var result = CMD.Find(o => o.command == commandstr);
+            Command result = CMD.Find(o => o.command == commandstr);
                 if(result != null)
                     return result.level;
             

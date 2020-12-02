@@ -7,7 +7,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSStartSkillPacket : GamePacket
     {
-        public CSStartSkillPacket() : base(0x052, 1)
+        public CSStartSkillPacket() : base(CSOffsets.CSStartSkillPacket, 1)
         {
         }
 
@@ -37,7 +37,7 @@ namespace AAEmu.Game.Core.Packets.C2G
             }
             else if (skillCaster is SkillItem)
             {
-                var item = Connection.ActiveChar.Inventory.GetItem(((SkillItem)skillCaster).ItemId);
+                var item = Connection.ActiveChar.Inventory.GetItemById(((SkillItem)skillCaster).ItemId);
                 if (item == null || skillId != item.Template.UseSkillId)
                     return;
                 Connection.ActiveChar.Quests.OnItemUse(item);
@@ -49,8 +49,16 @@ namespace AAEmu.Game.Core.Packets.C2G
                 var skill = Connection.ActiveChar.Skills.Skills[skillId];
                 skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject);
             }
+            else if (skillId > 0 && Connection.ActiveChar.Skills.IsVariantOfSkill(skillId))
+            {
+                var skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
+                skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject);
+            }
             else
                 _log.Warn("StartSkill: Id {0}, undefined use type", skillId);
+                //If its a valid skill cast it. This fixes interactions with quest items/doodads.
+                var unskill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
+                if(unskill != null) unskill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject);
         }
     }
 }

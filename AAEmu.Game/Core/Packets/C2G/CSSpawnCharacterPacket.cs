@@ -10,7 +10,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSSpawnCharacterPacket : GamePacket
     {
-        public CSSpawnCharacterPacket() : base(0x026, 1)
+        public CSSpawnCharacterPacket() : base(CSOffsets.CSSpawnCharacterPacket, 1)
         {
         }
 
@@ -18,8 +18,8 @@ namespace AAEmu.Game.Core.Packets.C2G
         {
             Connection.State = GameState.World;
 
-            Connection.ActiveChar.VisualOptions = new CharacterVisualOptions();
-            Connection.ActiveChar.VisualOptions.Read(stream);
+            //Connection.ActiveChar.VisualOptions = new CharacterVisualOptions();
+            //Connection.ActiveChar.VisualOptions.Read(stream);
 
             Connection.SendPacket(new SCUnitStatePacket(Connection.ActiveChar));
 

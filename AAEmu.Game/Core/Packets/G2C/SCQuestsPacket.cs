@@ -7,7 +7,7 @@ namespace AAEmu.Game.Core.Packets.G2C
     public class SCQuestsPacket : GamePacket
     {
         private readonly Quest[] _quests;
-
+        
         public SCQuestsPacket(Quest[] quests) : base(SCOffsets.SCQuestsPacket, 1)
         {
             _quests = quests;
@@ -15,7 +15,7 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write(_quests.Length); // count // TODO max 20
+            stream.Write(_quests.Length); // count max 20
             foreach (var quest in _quests)
             {
                 stream.Write(quest);

@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Mate{    public class NpcInitialBuffs    {        public uint Id { get; set; }        public uint NpcId { get; set; }        public uint BuffId { get; set; }    }}

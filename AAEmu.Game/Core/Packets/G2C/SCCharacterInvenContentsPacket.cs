@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Items;
 
@@ -22,9 +22,9 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write((byte) _type);
-            stream.Write(_numChunks);
-            stream.Write(_startChunkIdx);
+            stream.Write((byte) _type);   // invenType
+            stream.Write(_numChunks);     // numChunks
+            stream.Write(_startChunkIdx); // startChunkIdx
             foreach (var item in _items)
             {
                 if (item == null)

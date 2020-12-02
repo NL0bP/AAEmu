@@ -9,24 +9,17 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSListCharacterPacket : GamePacket
     {
-        public CSListCharacterPacket() : base(0x020, 1)
+        public CSListCharacterPacket() : base(CSOffsets.CSListCharacterPacket, 1)
         {
         }
 
         public override void Read(PacketStream stream)
         {
-            var size = stream.ReadInt32(); // TODO max size 4096
-            var data = stream.ReadBytes(); // TODO or string?
+            //var size = stream.ReadInt32(); // TODO max size 4096
+            //var data = stream.ReadBytes(); // TODO or string?
 
-            Connection.SendPacket(new SCGetSlotCountPacket(0));
-            Connection.SendPacket(
-                new SCAccountInfoPacket(
-                    (int)Connection.Payment.Method,
-                    Connection.Payment.Location,
-                    Connection.Payment.StartTime,
-                    Connection.Payment.EndTime
-                )
-            );
+            //Connection.SendPacket(new SCGetSlotCountPacket(0));
+            //Connection.SendPacket(new SCAccountInfoPacket((int)Connection.Payment.Method, Connection.Payment.Location, Connection.Payment.StartTime, Connection.Payment.EndTime));
 
             Connection.LoadAccount();
 
@@ -42,7 +35,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 //                );
 //            }
 
-            Connection.SendPacket(new SCRaceCongestionPacket());
+            //Connection.SendPacket(new SCRaceCongestionPacket());
 
             if (characters.Length == 0)
                 Connection.SendPacket(new SCCharacterListPacket(true, characters));
@@ -55,9 +48,9 @@ namespace AAEmu.Game.Core.Packets.C2G
                     Connection.SendPacket(new SCCharacterListPacket(last, temp));
                 }
 
-            var houses = Connection.Houses.Values.ToArray();
-            foreach (var house in houses)
-                Connection.SendPacket(new SCLoginCharInfoHouse(house.OwnerId, house));
+            //var houses = Connection.Houses.Values.ToArray();
+            //foreach (var house in houses)
+            //    Connection.SendPacket(new SCLoginCharInfoHouse(house.OwnerId, house));
         }
     }
 }

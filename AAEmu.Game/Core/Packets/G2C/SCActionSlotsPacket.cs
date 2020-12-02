@@ -17,50 +17,32 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            foreach (var slot in _slots)
+            foreach (var slot in _slots) // TODO max 85
             {
                 stream.Write((byte)slot.Type);
                 if (slot.Type != ActionSlotType.None)
                     stream.Write(slot.ActionId);
+
+                switch (slot.Type)
+                {
+                    case ActionSlotType.Item:
+                    case ActionSlotType.Skill:
+                    case ActionSlotType.Unk5:
+                        stream.Write(slot.ActionId); // UInt32 type
+                        break;
+                    case ActionSlotType.Unk4:
+                        stream.Write((long)slot.ActionId); // UInt64 itemId
+                        break;
+                    case ActionSlotType.None:
+                        break;
+                    case ActionSlotType.Unk3:
+                        break;
+                    default:
+                        break;
+                }
             }
 
             return stream;
         }
-        
-        // TODO if i miss data
-        /*
-              v3 = 85;
-              do
-              {
-                if ( a2->Reader->field_1C() )
-                {
-                  a2->Reader->ReadByte("type", &v6, 0);
-                  *(v2 - 2) = v6;
-                }
-                else
-                {
-                  v4 = a2->Reader->ReadByte;
-                  v7 = *(v2 - 8);
-                  v4(a2, "type", &v7);
-                }
-                result = *(v2 - 2) - 1;
-                switch ( *(v2 - 2) )
-                {
-                  case 1:
-                  case 2:
-                  case 5:
-                    result = a2->Reader->ReadUInt32("type", v2, 0);
-                    break;
-                  case 4:
-                    result = (a2->Reader->ReadUInt64)("itemId", v2, 0);
-                    break;
-                  default:
-                    break;
-                }
-                v2 += 16;
-                --v3;
-              }
-              while ( v3 );
-         */
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
-
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Tasks.Doodads;
@@ -19,20 +18,25 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 
         public override void Use(Unit caster, Doodad owner, uint skillId)
         {
-            _log.Debug("DoodadFuncTimer : skillId {0}, Delay {1}, NextPhase {2}, KeepRequester {3}, ShowTip {4}, ShowEndTime {5}, Tip {6}",
-                skillId, Delay, NextPhase, KeepRequester, ShowTip, ShowEndTime, Tip);
+            //_log.Debug("Delay " + Delay);
+            //_log.Debug("NextPhase " + NextPhase);
+            //_log.Debug("KeepRequester " + KeepRequester);
+            //_log.Debug("ShowTip " + ShowTip);
+            //_log.Debug("ShowEndTime " + ShowEndTime);
+            //_log.Debug("Tip " + Tip);
 
-            //This is a temporary fix. We need to find how to properly call the next function.
-            //var nextFunc = DoodadManager.Instance.GetFunc(owner.FuncGroupId, skillId);
-            //nextFunc?.Use(caster, owner, skillId);
+            owner.GrowthTime = DateTime.UtcNow.AddMilliseconds(Delay + 1); // TODO need here
 
-            // perform action
-            owner.GrowthTime = DateTime.Now.AddMilliseconds(Delay + 1); // TODO ... need here?
-            owner.BroadcastPacket(new SCDoodadPhaseChangedPacket(owner), true); // TODO door, windows with delay of this timer...
-
-            // plan the execution of NextPhase
-            owner.FuncTask = new DoodadFuncTimerTask(caster, owner, skillId, NextPhase);
-            TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(Delay + 1));
+            if (NextPhase > 0)
+            {
+                owner.FuncTask = new DoodadFuncTimerTask(caster, owner, skillId, NextPhase);
+                TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(Delay + 1));
+            }
+            else
+            {
+                //Wondering if more needs done here if depending on next phase func
+                DoodadManager.Instance.TriggerPhases(GetType().Name, caster, owner, skillId);
+            }
         }
     }
 }

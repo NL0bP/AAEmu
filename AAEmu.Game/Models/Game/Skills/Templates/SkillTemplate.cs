@@ -1,20 +1,18 @@
 ﻿using System.Collections.Generic;
+using AAEmu.Game.Models.Game.Animation;
 using AAEmu.Game.Models.Game.Skills.Plots;
 
 namespace AAEmu.Game.Models.Game.Skills.Templates
 {
     public class SkillTemplate
     {
-        //public int Use { get; set; }
         public uint Id { get; set; }
         public int Cost { get; set; }
         public bool Show { get; set; }
-        public int StartAnimId { get; set; }
-        public uint FireAnimId { get; set; }
+        public Anim FireAnim { get; set; }
         public byte AbilityId { get; set; }
         public int ManaCost { get; set; }
         public int TimingId { get; set; }
-        public int WeaponSlotForAutoattackId { get; set; }
         public int CooldownTime { get; set; }
         public int CastingTime { get; set; }
         public bool IgnoreGlobalCooldown { get; set; }
@@ -22,12 +20,10 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public float EffectSpeed { get; set; }
         public int EffectRepeatCount { get; set; }
         public int EffectRepeatTick { get; set; }
-        public uint CategoryId { get; set; }
         public int ActiveWeaponId { get; set; }
-        public int TargetTypeId { get; set; }
         public SkillTargetType TargetType { get; set; }
-        public SkillTargetSelectionType TargetSelection { get; set; }
-        public SkillTargetRelationType TargetRelation { get; set; }
+        public SkillTargetSelection TargetSelection { get; set; }
+        public SkillTargetRelation TargetRelation { get; set; }
         public int TargetAreaCount { get; set; }
         public int TargetAreaRadius { get; set; }
         public bool TargetSiege { get; set; }
@@ -37,15 +33,10 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public int MinRange { get; set; }
         public int MaxRange { get; set; }
         public bool KeepStealth { get; set; }
-        public bool StopAutoattack { get; set; }
         public int Aggro { get; set; }
-        public int FxGroupId { get; set; }
-        public int ProjectileId { get; set; }
-        public bool CheckObstacle { get; set; }
         public int ChannelingTime { get; set; }
         public int ChannelingTick { get; set; }
         public int ChannelingMana { get; set; }
-        public int ChannelingAnimId { get; set; }
         public uint ChannelingTargetBuffId { get; set; }
         public int TargetAreaAngle { get; set; }
         public int AbilityLevel { get; set; }
@@ -71,15 +62,13 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public uint OffhandToolId { get; set; }
         public int FrontAngle { get; set; }
         public float ManaLevelMd { get; set; }
-        public int TwohandFireAnimId { get; set; }
         public bool Unmount { get; set; }
         public uint DamageTypeId { get; set; }
         public bool AllowToPrisoner { get; set; }
         public uint MilestoneId { get; set; }
-        public int MatchAnimation { get; set; }
+        public bool MatchAnimation { get; set; }
         public Plot Plot { get; set; }
-        public int UseAnimTime { get; set; }
-        public int StartAutoattack { get; set; }
+        public bool UseAnimTime { get; set; }
         public int ConsumeLaborPower { get; set; }
         public bool SourceStun { get; set; }
         public bool TargetAlive { get; set; }
@@ -92,39 +81,19 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public float TargetOffsetDistance { get; set; }
         public int ActabilityGroupId { get; set; }
         public bool PlotOnly { get; set; }
-        public int PitchAngle { get; set; }
         public bool SkillControllerAtEnd { get; set; }
         public bool EndSkillController { get; set; }
-        public int StringInstrumentStartAnimId { get; set; }
-        public int PercussionInstrumentStartAnimId { get; set; }
-        public int TubeInstrumentStartAnimId { get; set; }
-        public int StringInstrumenFireAnimId { get; set; }
-        public int PercussionInstrumentFireFnimId { get; set; }
-        public int TubeInstrumenFireAnimId { get; set; }
         public bool OrUnitReqs { get; set; }
         public bool DefaultGcd { get; set; }
-        public int ShowTargetCastingTime { get; set; }
-        public int ValidHeightEdgeToEdge { get; set; }
-        public int KinkEquipSlotId { get; set; }
-        public int KinkBackpackTypeId { get; set; }
         public bool KeepManaRegen { get; set; }
         public int CrimePoint { get; set; }
         public bool LevelRuleNoConsideration { get; set; }
         public bool UseWeaponCooldownTime { get; set; }
-        public bool SynergyIcon1Buffkind { get; set; }
-        public int SynergyIcon1Id { get; set; }
-        public bool SynergyIcon2Buffkind { get; set; }
-        public int SynergyIcon2Id { get; set; }
         public int CombatDiceId { get; set; }
-        public bool CanActiveWeaponWithoutAnim { get; set; }
         public int CustomGcd { get; set; }
         public bool CancelOngoingBuffs { get; set; }
-        public bool CancelOngoingBuffExceptionTagId { get; set; }
         public bool SourceCannotUseWhileWalk { get; set; }
         public bool SourceMountMate { get; set; }
-        public bool MatchAnimationCount { get; set; }
-        public int DalWieldFireAnimId { get; set; }
-        public bool AutoFire { get; set; }
         public bool CheckTerrain { get; set; }
         public bool TargetOnlyWater { get; set; }
         public bool SourceNotSwim { get; set; }
@@ -137,20 +106,9 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public bool SourceNoSlave { get; set; }
         public bool AutoReUse { get; set; }
         public int AutoReUseDelay { get; set; }
-        public bool SourceNotCollided { get; set; }
-        public int SkillPoints { get; set; }
-        public int DoodadHitFamily { get; set; }
-        public bool SensitiveOperation { get; set; }
-        public bool NameTr { get; set; }
-        public bool DescTr { get; set; }
-        public bool WebDescTr { get; set; }
-        public bool FirstReagentOnly { get; set; }
-        public bool SourceAlive { get; set; }
-        public int TargetDecalRadius { get; set; }
-        public int DoodadBundleId { get; set; }
-        public string Name { get; set; }
-        public string Desc { get; set; }
-        public string WebDesc { get; set; }
+        //public bool SourceNotCollided { get; set; } // отсутствует в 0.5.101.406
+        //public int SkillPoints { get; set; } // отсутствует в 0.5.101.406
+        //public int DoodadHitFamily { get; set; } // отсутствует в 0.5.101.406
         public List<SkillEffect> Effects { get; set; }
 
         public SkillTemplate()

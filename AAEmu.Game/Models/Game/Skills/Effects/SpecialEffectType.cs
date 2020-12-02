@@ -1,6 +1,6 @@
 ﻿namespace AAEmu.Game.Models.Game.Skills.Effects
 {
-    public enum SpecialEffectType
+    public enum SpecialType
     {
         Charge = 1,
         DisturbCasting = 5,
@@ -26,7 +26,7 @@
         SavePortal = 30,
         OpenPortal = 31,
         GainItemWithPosImprint = 32,
-        SkillUse = 33,
+        SkillUse = 33, // TODO renamed due to a conflict with skill.cs
         Anim = 34,
         FxGroup = 35,
         FxGroupAnim = 36,
@@ -110,6 +110,39 @@
         GiveAppellation = 114,
         ExitArchemall = 115,
         WeaponDisplay = 116,
-        AuctionPostAuthority = 117
+        AuctionPostAuthority = 117,
+        // TODO 3+
+        GiveCashPoint = 118,
+        RevertItemLook = 119,
+        RechargeItemSkill = 120,
+        RepairAuthorityInBag = 121,
+        RebuildHousing = 122,
+        ItemEvolving = 123,
+        RechargeItemRndAttrUnitModifier = 124,
+        HudAuctionAuthority = 125,
+        ItemRefurbishment = 126,
+        ProtectionForExpedition = 127,
+        ExpeditionSummon = 128,
+        HudBattlefieldAuthority = 129,
+        RemoveDoodadGroup = 130,
+        AddExpeditionExp = 131,
+        AddExpeditionContributionPoint = 132,
+        GainGachaLootPackItem = 133,
+        ChangeSkillActiveType = 134,
+        ActivateSavedAbilitySet = 135,
+        ItemEvolvingReRoll = 136,
+        ExpandDecoLimit = 137,
+        DominionTaxInKind = 138,
+        ExpeditionLevelChange = 139,
+        RemoveAllDoodad = 140,
+        LearnSpecialAbility = 141,
+        IncreaseFavoritePortalLimit = 142,
+        ResidentServicePoint = 143,
+        AddFamilyExp = 144,
+        ChangeTarget = 145,
+        LoseTargetingTheTarget = 146,
+        PlayAttachmentAnim = 149,
+        PlaySkillControllerAttachmentAnim = 150,
+        ItemSmelting = 151
     }
 }

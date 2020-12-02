@@ -34,6 +34,7 @@ namespace AAEmu.Game.Core.Managers.World
         private readonly ConcurrentDictionary<uint, Doodad> _doodads;
         private readonly ConcurrentDictionary<uint, Npc> _npcs;
         private readonly ConcurrentDictionary<uint, Character> _characters;
+        private readonly ConcurrentDictionary<uint, AreaShape> _areaShapes;
 
         public const int REGION_SIZE = 64;
         public const int CELL_SIZE = 1024 / REGION_SIZE;
@@ -52,6 +53,7 @@ namespace AAEmu.Game.Core.Managers.World
             _doodads = new ConcurrentDictionary<uint, Doodad>();
             _npcs = new ConcurrentDictionary<uint, Npc>();
             _characters = new ConcurrentDictionary<uint, Character>();
+            _areaShapes = new ConcurrentDictionary<uint, AreaShape>();
         }
 
         public WorldInteractionGroup? GetWorldInteractionGroup(uint worldInteractionType)
@@ -197,6 +199,25 @@ namespace AAEmu.Game.Core.Managers.World
                         }
                     }
                 }
+            
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT * FROM aoe_shapes";
+                    command.Prepare();
+                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                    {
+                        while (reader.Read())
+                        {
+                            var shape = new AreaShape();
+                            shape.Id = reader.GetUInt32("id");
+                            shape.Type = (AreaShapeType)reader.GetUInt32("kind_id");
+                            shape.Value1 = reader.GetFloat("value1");
+                            shape.Value2 = reader.GetFloat("value2");
+                            shape.Value3 = reader.GetFloat("value3");
+                            _areaShapes.TryAdd(shape.Id, shape);
+                        }
+                    }
+                }
             }
         }
 
@@ -236,16 +257,22 @@ namespace AAEmu.Game.Core.Managers.World
             }
         }
 
+        private GameObject GetRootObj(GameObject obj)
+        {
+            if (obj.ParentObj == null)
+            {
+                return obj;
+            }
+            else
+            {
+                return GetRootObj(obj.ParentObj);
+            }
+        }
+
         public Region GetRegion(GameObject obj)
         {
-            InstanceWorld world;
-            if (obj.Position.Relative)
-            {
-                world = GetWorld(obj.WorldPosition.WorldId);
-                return GetRegion(world, obj.WorldPosition.X, obj.WorldPosition.Y);
-            }
-
-            world = GetWorld(obj.Position.WorldId);
+            obj = GetRootObj(obj);
+            InstanceWorld world = GetWorld(obj.Position.WorldId);
             return GetRegion(world, obj.Position.X, obj.Position.Y);
         }
 
@@ -472,6 +499,28 @@ namespace AAEmu.Game.Core.Managers.World
             return result;
         }
 
+        public List<T> GetAroundByShape<T>(GameObject obj, AreaShape shape) where T : class
+        {
+            if (shape.Value1 == 0 && shape.Value2 == 0 && shape.Value3 == 0)
+                _log.Warn("AreaShape with no size values was used");
+            if(shape.Type == AreaShapeType.Sphere)
+            {
+                var radius = shape.Value1;
+                var height = shape.Value2;
+                return GetAround<T>(obj, radius);
+            }
+            else if(shape.Type == AreaShapeType.Cuboid)
+            {
+                _log.Warn("AreaShape[Cuboid] Not Implemented.");
+                return GetAround<T>(obj, 5);
+            }
+            else
+            {
+                _log.Error("AreaShape had impossible type");
+                throw new ArgumentNullException("AreaShape type does not exist!");
+            }
+        }
+
         public List<T> GetInCell<T>(uint worldId, int x, int y) where T : class
         {
             var result = new List<T>();
@@ -488,21 +537,40 @@ namespace AAEmu.Game.Core.Managers.World
             return result;
         }
 
+        [Obsolete("Please use ChatManager.Instance.GetNationChat(race).SendPacker(packet) instead.")]
         public void BroadcastPacketToNation(GamePacket packet, Race race)
         {
+            var mRace = (((byte)race - 1) & 0xFC); // some bit magic that makes raceId into some kind of birth continent id
             foreach (var character in _characters.Values)
             {
-                if (character.Race != race)
+                var cmRace = (((byte)character.Race - 1) & 0xFC);
+                if (mRace != cmRace)
                     continue;
                 character.SendPacket(packet);
             }
         }
 
-        public void BroadcastPacketToFaction(GamePacket packet, uint factionId)
+        [Obsolete("Please use ChatManager.Instance.GetFactionChat(factionMotherId).SendPacker(packet) instead.")]
+        public void BroadcastPacketToFaction(GamePacket packet, uint factionMotherId)
         {
             foreach (var character in _characters.Values)
             {
-                if (character.Faction.Id != factionId)
+                if (character.Faction.MotherId != factionMotherId)
+                    continue;
+                character.SendPacket(packet);
+            }
+        }
+
+        [Obsolete("Please use ChatManager.Instance.GetZoneChat(zoneKey).SendPacker(packet) instead.")]
+        public void BroadcastPacketToZone(GamePacket packet, uint zoneKey)
+        {
+            // First find the zone group, so functions like /shout work in larger zones that use multiple zone keys
+            var zone = ZoneManager.Instance.GetZoneByKey(zoneKey);
+            var zoneGroupId = zone?.GroupId ?? 0;
+            var validZones = ZoneManager.Instance.GetZoneKeysInZoneGroupById(zoneGroupId);
+            foreach (var character in _characters.Values)
+            {
+                if (!validZones.Contains(character.Position.ZoneId))
                     continue;
                 character.SendPacket(packet);
             }
@@ -540,7 +608,7 @@ namespace AAEmu.Game.Core.Managers.World
         public void OnPlayerJoin(Character character)
         {
             //turn snow on off 
-            Snow(character);
+            //Snow(character);
            
             //family stuff
             if (character.Family > 0)
@@ -577,6 +645,18 @@ namespace AAEmu.Game.Core.Managers.World
                 Array.Copy(doodads, i, temp, 0, temp.Length);
                 character.SendPacket(new SCDoodadsCreatedPacket(temp));
             }
+        }
+
+        public List<Character> GetAllCharacters()
+        {
+            return _characters.Values.ToList();
+        }
+        
+        public AreaShape GetAreaShapeById(uint id)
+        {
+            if (_areaShapes.TryGetValue(id, out AreaShape res))
+                return res;
+            return null;
         }
     }
 }

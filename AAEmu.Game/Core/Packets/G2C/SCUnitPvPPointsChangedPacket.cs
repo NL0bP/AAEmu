@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
@@ -9,7 +9,8 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly byte _kind;
         private readonly int _point;
 
-        public SCUnitPvPPointsChangedPacket(uint unitId, byte kind, int point) : base(SCOffsets.SCUnitPvPPointsChangedPacket, 1)
+        public SCUnitPvPPointsChangedPacket(uint unitId, byte kind, int point)
+            : base(SCOffsets.SCUnitPvPPointsChangedPacket, 1)
         {
             _unitId = unitId;
             _kind = kind;

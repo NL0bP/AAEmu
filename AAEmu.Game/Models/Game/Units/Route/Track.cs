@@ -94,16 +94,24 @@ namespace AAEmu.Game.Models.Game.Units.Route
 
                 //模拟unit
                 //Simulated unit
-                var type = (MoveTypeEnum)1;
-                //返回moveType对象
-                //return moveType object
-                var moveType = (UnitMoveType)MoveType.GetType(type);
+                var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
                 //改变NPC坐标
                 //Change NPC coordinates
                 moveType.X = npc.Position.X;
                 moveType.Y = npc.Position.Y;
-                moveType.Z = AppConfiguration.Instance.HeightMapsEnable ? WorldManager.Instance.GetHeight(npc.Position.ZoneId, npc.Position.X, npc.Position.Y) : npc.Position.Z;
+                if (npc.TemplateId == 13677 || npc.TemplateId == 13676) // swimming
+                {
+                    moveType.Z = 98.5993f;
+                }
+                else if (npc.TemplateId == 13680) // shark
+                {
+                    moveType.Z = 95.5993f;
+                }
+                else // other
+                {
+                    moveType.Z = AppConfiguration.Instance.HeightMapsEnable ? WorldManager.Instance.GetHeight(npc.Position.ZoneId, npc.Position.X, npc.Position.Y) : npc.Position.Z;
+                }
 
                 // looks in the direction of movement
                 var angle = MathUtil.CalculateAngleFrom(npc, npc.CurrentTarget);
@@ -112,14 +120,14 @@ namespace AAEmu.Game.Models.Game.Units.Route
                 moveType.RotationY = 0;
                 moveType.RotationZ = rotZ;
 
-                moveType.Flags = 4;     // 5-идти, 4-бежать
-                moveType.DeltaMovement = new byte[3];
+                moveType.Flags = 4;     // 5-walk, 4-run, 3-stand still
+                moveType.DeltaMovement = new sbyte[3];
                 moveType.DeltaMovement[0] = 0;
                 moveType.DeltaMovement[1] = 127;
                 moveType.DeltaMovement[2] = 0;
                 moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
                 moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
-                moveType.Time = Seq;
+                moveType.Time = Seq;    // has to change all the time for normal motion.
 
                 if (move)
                 {

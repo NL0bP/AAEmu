@@ -35,6 +35,15 @@ namespace AAEmu.Game.Core.Managers.World
             return _groups.ContainsKey(zoneId) ? _groups[zoneId] : null;
         }
 
+        public List<uint> GetZoneKeysInZoneGroupById(uint zoneGroupId)
+        {
+            var res = new List<uint>();
+            foreach (var z in _zones)
+                if (z.Value.GroupId == zoneGroupId)
+                    res.Add(z.Value.ZoneKey);
+            return res;
+        }
+
         public uint GetTargetIdByZoneId(uint zoneId)
         {
             var zone = GetZoneByKey(zoneId);
@@ -98,7 +107,7 @@ namespace AAEmu.Game.Core.Managers.World
                             template.PirateDesperado = reader.GetBoolean("pirate_desperado", true);
                             template.FishingSeaLootPackId = reader.GetUInt32("fishing_sea_loot_pack_id", 0);
                             template.FishingLandLootPackId = reader.GetUInt32("fishing_land_loot_pack_id", 0);
-                            template.BuffId = reader.GetUInt32("buff_id", 0);
+                            // TODO 1.2 // template.BuffId = reader.GetUInt32("buff_id", 0);
                             _groups.Add(template.Id, template);
                         }
                     }
@@ -133,11 +142,16 @@ namespace AAEmu.Game.Core.Managers.World
                                 template.PeaceProtectedFactionId = reader.GetUInt32("peace_protected_faction_id", 0);
                                 template.NuiaReturnPointId = reader.GetUInt32("nuia_return_point_id", 0);
                                 template.HariharaReturnPointId = reader.GetUInt32("harihara_return_point_id", 0);
-                                template.WarTowerDefId = reader.GetUInt32("war_tower_def_id", 0);
-                                template.PeaceTowerDefId = reader.GetUInt32("peace_tower_def_id", 0);
+                                //template.WarTowerDefId = reader.GetUInt32("war_tower_def_id", 0); // отсутствует в 0.5.101.406
+                                // TODO 1.2 // template.PeaceTowerDefId = reader.GetUInt32("peace_tower_def_id", 0);
+                                //template.Closed = reader.GetBoolean("closed",true); // отсутствует в 0.5.101.406
 
                                 _groups[zoneGroupId].Conflict = template;
                                 _conflicts.Add(zoneGroupId, template);
+
+                                // Only do intial setup when the zone isn't closed
+                                //if (!template.Closed)  // отсутствует в 0.5.101.406
+                                //    template.SetState(ZoneConflictType.Conflict); // Set to Conflict for testing, normally it should start at Tension
                             }
                             else
                                 _log.Warn("ZoneGroupId: {1} doesn't exist for conflict", zoneGroupId);
@@ -157,7 +171,7 @@ namespace AAEmu.Game.Core.Managers.World
                             template.Id = reader.GetUInt32("id");
                             template.ZoneGroupId = reader.GetUInt32("zone_group_id");
                             template.TagId = reader.GetUInt32("tag_id");
-                            template.BannedPeriodsId = reader.GetUInt32("banned_periods_id");
+                            // TODO 1.2 // template.BannedPeriodsId = reader.GetUInt32("banned_periods_id");
                             _groupBannedTags.Add(template.Id, template);
                         }
                     }

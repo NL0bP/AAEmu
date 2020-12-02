@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Quests.Templates;
+﻿using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -14,12 +14,12 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
         public int LvlMin { get; set; }
         public int LvlMax { get; set; }
         public bool IsParty { get; set; }
-        public int LvlMinNpc { get; set; }
-        public int LvlMaxNpc { get; set; }
-        public uint PcFactionId { get; set; }
-        public bool PcFactionExclusive { get; set; }
-        public uint NpcFactionId { get; set; }
-        public bool NpcFactionExclusive { get; set; }
+        //public int LvlMinNpc { get; set; } // отсутствует в 0.5.101.406
+        //public int LvlMaxNpc { get; set; } // отсутствует в 0.5.101.406
+        //public uint PcFactionId { get; set; } // отсутствует в 0.5.101.406
+        //public bool PcFactionExclusive { get; set; } // отсутствует в 0.5.101.406
+        //public uint NpcFactionId { get; set; } // отсутствует в 0.5.101.406
+        //public bool NpcFactionExclusive { get; set; } // отсутствует в 0.5.101.406
 
         public override bool Use(Character character, Quest quest, int objective)
         {

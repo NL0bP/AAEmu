@@ -20,7 +20,6 @@ namespace AAEmu.Game.Models.Game.Crafts
         public bool ShowUpperCraft { get; set; }
         public int RecommendLevel { get; set; }
         public int VisibleOrder { get; set; }
-        public string Title { get; set; }
 
         public List<CraftProduct> CraftProducts { get; set; }
         public List<CraftMaterial> CraftMaterials { get; set; }

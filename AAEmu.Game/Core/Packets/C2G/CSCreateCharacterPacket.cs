@@ -1,13 +1,14 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSCreateCharacterPacket : GamePacket
     {
-        public CSCreateCharacterPacket() : base(0x022, 1)
+        public CSCreateCharacterPacket() : base(CSOffsets.CSCreateCharacterPacket, 1)
         {
         }
 
@@ -17,9 +18,15 @@ namespace AAEmu.Game.Core.Packets.C2G
             var race = stream.ReadByte();
             var gender = stream.ReadByte();
             var items = new uint[7];
+            //for (var i = 0; i < 7; i++)
+            //    items[i] = stream.ReadUInt32();
+            
+            var template = CharacterManager.Instance.GetTemplate(race, gender);
             for (var i = 0; i < 7; i++)
-                items[i] = stream.ReadUInt32();
-
+            {
+                template.BodyItems.Items[i].ModelId = stream.ReadUInt32();
+                template.BodyItems.Items[i].NpcOnly = false;
+            }
             var customModel = new UnitCustomModelParams();
             customModel.Read(stream);
 

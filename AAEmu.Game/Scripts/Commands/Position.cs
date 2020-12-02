@@ -1,6 +1,8 @@
 ﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.NPChar;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -8,36 +10,45 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("position", this);
+            string[] names = { "position", "pos" };
+            CommandManager.Instance.Register(names, this);
         }
 
         public string GetCommandLineHelp()
         {
-            return "[rot]";
+            return "(player)";
         }
 
         public string GetCommandHelpText()
         {
-            return "Displays information about your and the position of your target if selected.\n" +
-                "If a argument is set, your rotation information will also be displayed.";
+            return "Displays information about the position of you, or your target if a target is selected or provided as a argument.";
         }
 
         public void Execute(Character character, string[] args)
         {
-            var position = character.CurrentTarget?.Position ?? character.Position;
-            character.SendMessage("[Position] X: {0}, Y: {1}, Z: {2}, ZoneId: {3}", position.X, position.Y, position.Z,
-                position.ZoneId);
-
-            if (args.Length > 0)
-                character.SendMessage("[Position] RotX: {0}, RotY: {1}, RotZ: {2}", position.RotationX,
-                    position.RotationY,
-                    position.RotationZ);
-
-            if (character.CurrentTarget != null)
+            if (character.CurrentTarget != null && character.CurrentTarget != character)
             {
-                var rx = character.Position.X - character.CurrentTarget.Position.X;
-                var ry = character.Position.Y - character.CurrentTarget.Position.Y;
-                character.SendMessage("[Position][Relative] X: {0}, Y: {1}", rx, ry);
+                var pos = character.CurrentTarget.Position;
+
+                if (character.CurrentTarget is Npc npc)
+                    character.SendMessage("[Position] Id: {0}, ObjId: {1}, TemplateId: {2} X: |cFFFFFFFF{3}|r  Y: |cFFFFFFFF{4}|r  Z: |cFFFFFFFF{5}|r", npc.Spawner.Id, character.CurrentTarget.ObjId, npc.TemplateId, pos.X, pos.Y, pos.Z);
+            }
+            else
+            {
+                Character targetPlayer = character;
+                if (args.Length > 0)
+                    targetPlayer = WorldManager.Instance.GetTargetOrSelf(character, args[0], out var firstarg);
+
+
+                var pos = targetPlayer.Position;
+
+                var zonename = "???";
+                var zone = ZoneManager.Instance.GetZoneByKey(pos.ZoneId);
+                if (zone != null)
+                    zonename = "@ZONE_NAME(" + zone.Id.ToString() + ")";
+
+                character.SendMessage("[Position] |cFFFFFFFF{0}|r X: |cFFFFFFFF{1:F1}|r  Y: |cFFFFFFFF{2:F1}|r  Z: |cFFFFFFFF{3:F1}|r  RotZ: |cFFFFFFFF{4:F0}|r  ZoneId: |cFFFFFFFF{5}|r {6}",
+                    targetPlayer.Name, pos.X, pos.Y, pos.Z, pos.RotationZ, pos.ZoneId, zonename);
             }
         }
     }

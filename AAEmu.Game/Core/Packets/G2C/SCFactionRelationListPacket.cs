@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Faction;
 
@@ -8,7 +8,7 @@ namespace AAEmu.Game.Core.Packets.G2C
     {
         private readonly FactionRelation[] _relations;
 
-        public SCFactionRelationListPacket() : base(0x008, 1)
+        public SCFactionRelationListPacket() : base(0x007, 1)
         {
             _relations = new FactionRelation[] { };
         }
@@ -26,7 +26,7 @@ namespace AAEmu.Game.Core.Packets.G2C
             {
                 stream.Write(relation.Id);
                 stream.Write(relation.Id2);
-                stream.Write((byte) relation.State);
+                stream.Write((byte) relation.Friendship);
                 stream.Write(relation.ExpTime);
                 stream.Write(0L); // type(id)
                 stream.Write((byte) 0); // nState

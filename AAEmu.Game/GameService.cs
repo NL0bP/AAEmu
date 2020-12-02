@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
@@ -29,14 +30,15 @@ namespace AAEmu.Game
             TaskIdManager.Instance.Initialize();
             TaskManager.Instance.Initialize();
 
+            LocalizationManager.Instance.Load();
             ObjectIdManager.Instance.Initialize();
             TradeIdManager.Instance.Initialize();
 
+            ConfigurationManager.Instance.Load();
+
             ItemIdManager.Instance.Initialize();
+            ChatManager.Instance.Initialize();
             CharacterIdManager.Instance.Initialize();
-
-            LaborPowerManager.Instance.Initialize();
-
             FamilyIdManager.Instance.Initialize();
             ExpeditionIdManager.Instance.Initialize();
             VisitedSubZoneIdManager.Instance.Initialize();
@@ -46,8 +48,10 @@ namespace AAEmu.Game
             HousingIdManager.Instance.Initialize();
             HousingTldManager.Instance.Initialize();
             TeamIdManager.Instance.Initialize();
+            LaborPowerManager.Instance.Initialize();
+            QuestIdManager.Instance.Initialize();
+            MailIdManager.Instance.Initialize();
 
-            LocalizationManager.Instance.Load();
             ZoneManager.Instance.Load();
             WorldManager.Instance.Load();
             QuestManager.Instance.Load();
@@ -55,16 +59,21 @@ namespace AAEmu.Game
             ShipyardManager.Instance.Load();
 
             FormulaManager.Instance.Load();
-            ExperienceManager.Instance.Load();
+            ExpirienceManager.Instance.Load();
 
             TlIdManager.Instance.Initialize();
+            SpecialtyManager.Instance.Load();
             ItemManager.Instance.Load();
+            ItemManager.Instance.LoadUserItems();
+            AnimationManager.Instance.Load();
             PlotManager.Instance.Load();
             SkillManager.Instance.Load();
             CraftManager.Instance.Load();
             MateManager.Instance.Load();
             SlaveManager.Instance.Load();
             TeamManager.Instance.Load();
+            //AuctionManager.Instance.Load();
+            MailManager.Instance.Load();
 
             NameManager.Instance.Load();
             FactionManager.Instance.Load();
@@ -73,6 +82,7 @@ namespace AAEmu.Game
             FamilyManager.Instance.Load();
             PortalManager.Instance.Load();
             FriendMananger.Instance.Load();
+            ModelManager.Instance.Load();
 
             NpcManager.Instance.Load();
             DoodadManager.Instance.Load();
@@ -82,12 +92,10 @@ namespace AAEmu.Game
             SpawnManager.Instance.Load();
             SpawnManager.Instance.SpawnAll();
             HousingManager.Instance.SpawnAll();
-            //TransferManager.Instance.SpawnAll();
+            TransferManager.Instance.SpawnAll();
 
             AccessLevelManager.Instance.Load();
             CashShopManager.Instance.Load();
-            MailManager.Instance.Load();
-            DuelManager.Instance.Initialize();
             ScriptCompiler.Compile();
 
             TimeManager.Instance.Start();
@@ -96,8 +104,9 @@ namespace AAEmu.Game
             StreamNetwork.Instance.Start();
             LoginNetwork.Instance.Start();
 
+            SaveManager.Instance.Initialize();
+            SpecialtyManager.Instance.Initialize();
             stopWatch.Stop();
-
             _log.Info("Server started! Took {0}", stopWatch.Elapsed);
 
             return Task.CompletedTask;
@@ -105,7 +114,9 @@ namespace AAEmu.Game
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _log.Info("Stopping daemon.");
+            _log.Info("Stopping daemon ...");
+
+            SaveManager.Instance.Stop();
 
             SpawnManager.Instance.Stop();
             TaskManager.Instance.Stop();
@@ -113,14 +124,19 @@ namespace AAEmu.Game
             StreamNetwork.Instance.Stop();
             LoginNetwork.Instance.Stop();
 
+            /*
             HousingManager.Instance.Save();
             MailManager.Instance.Save();
+            ItemManager.Instance.Save();
+            */
+
+            TimeManager.Instance.Stop();
             return Task.CompletedTask;
         }
 
         public void Dispose()
         {
-            _log.Info("Disposing....");
+            _log.Info("Disposing ...");
 
             LogManager.Flush();
         }

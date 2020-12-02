@@ -1,12 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using AAEmu.Commons.IO;
-using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models;
 using AAEmu.Game.Utils.DB;
 using Microsoft.Extensions.Configuration;
@@ -26,19 +22,14 @@ namespace AAEmu.Game
         private static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
         public static AutoResetEvent ShutdownSignal = new AutoResetEvent(false); // TODO save to shutdown server?
 
-        public static int UpTime => (int)(DateTime.Now - _startTime).TotalSeconds;
+        public static int UpTime => (int)(DateTime.UtcNow - _startTime).TotalSeconds;
 
         public static async Task Main(string[] args)
         {
-            CliUtil.WriteHeader("Game & Stream", ConsoleColor.DarkGreen);
-            CliUtil.LoadingTitle();
-
             Initialization();
-
+            
             if (FileManager.FileExists(FileManager.AppPath + "Config.json"))
-            {
                 Configuration(args);
-            }
             else
             {
                 _log.Error($"{FileManager.AppPath}Config.json doesn't exist!");
@@ -55,10 +46,6 @@ namespace AAEmu.Game
             }
 
             connection.Close();
-
-            // Check if there are any updates
-            CheckDatabaseUpdates();
-
 
             var builder = new HostBuilder()
                 .ConfigureAppConfiguration((hostingContext, config) =>
@@ -78,11 +65,11 @@ namespace AAEmu.Game
 
             await builder.RunConsoleAsync();
         }
-
+        
         private static void Initialization()
         {
             _thread.Name = "AA.Game Base Thread";
-            _startTime = DateTime.Now;
+            _startTime = DateTime.UtcNow;
         }
 
         private static void Configuration(string[] args)
@@ -95,26 +82,6 @@ namespace AAEmu.Game
             configurationBuilder.Bind(AppConfiguration.Instance);
 
             LogManager.Configuration = new XmlLoggingConfiguration(FileManager.AppPath + "NLog.config", false);
-        }
-
-        private static void CheckDatabaseUpdates()
-        {
-            _log.Info("Checking for updates...");
-            var files = Directory.GetFiles("sql");
-            foreach (var filePath in files.Where(file => Path.GetExtension(file).ToLower() == ".sql"))
-            {
-                RunUpdate(Path.GetFileName(filePath));
-            }
-        }
-
-        private static void RunUpdate(string updateFile)
-        {
-            if (UpdatesManager.Instance.CheckUpdate(updateFile))
-            {
-                return;
-            }
-            _log.Info("Update '{0}' found, executing...", updateFile);
-            UpdatesManager.Instance.RunUpdate(updateFile);
         }
     }
 }

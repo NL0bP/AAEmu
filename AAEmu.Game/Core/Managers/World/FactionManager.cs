@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AAEmu.Commons.Utils;
@@ -46,19 +46,17 @@ namespace AAEmu.Game.Core.Managers.World
                     {
                         while (reader.Read())
                         {
-                            var faction = new SystemFaction
-                            {
-                                Id = reader.GetUInt32("id"),
-                                Name = reader.GetString("name"),
-                                OwnerName = reader.GetString("owner_name"),
-                                UnitOwnerType = (sbyte) reader.GetInt16("owner_type_id"),
-                                OwnerId = reader.GetUInt32("owner_id"),
-                                PoliticalSystem = reader.GetByte("political_system_id"),
-                                MotherId = reader.GetUInt32("mother_id"),
-                                AggroLink = reader.GetBoolean("aggro_link", true),
-                                GuardHelp = reader.GetBoolean("guard_help", true),
-                                DiplomacyTarget = reader.GetBoolean("is_diplomacy_tgt", true)
-                            };
+                            var faction = new SystemFaction();
+                            faction.Id = reader.GetUInt32("id");
+                            faction.Name = LocalizationManager.Instance.Get("system_factions", "name", reader.GetUInt32("id"));
+                            faction.OwnerName = reader.GetString("owner_name");
+                            faction.UnitOwnerType = (sbyte) reader.GetInt16("owner_type_id");
+                            faction.OwnerId = reader.GetUInt32("owner_id");
+                            faction.PoliticalSystem = reader.GetByte("political_system_id");
+                            faction.MotherId = reader.GetUInt32("mother_id");
+                            faction.AggroLink = reader.GetBoolean("aggro_link", true);
+                            faction.GuardHelp = reader.GetBoolean("guard_help", true);
+                            //faction.DiplomacyTarget = reader.GetBoolean("is_diplomacy_tgt", true); // отсутствует в 0.5.101.406
                             _systemFactions.Add(faction.Id, faction);
                         }
                     }
@@ -75,12 +73,10 @@ namespace AAEmu.Game.Core.Managers.World
                     {
                         while (reader.Read())
                         {
-                            var relation = new FactionRelation
-                            {
-                                Id = reader.GetUInt32("faction1_id"),
-                                Id2 = reader.GetUInt32("faction2_id"),
-                                State = (RelationState) reader.GetByte("state_id")
-                            };
+                            var relation = new FactionRelation();
+                            relation.Id = reader.GetUInt32("faction1_id");
+                            relation.Id2 = reader.GetUInt32("faction2_id");
+                            relation.Friendship = (RelationState) reader.GetByte("friendship");
                             _relations.Add(relation);
 
                             var faction = _systemFactions[relation.Id];

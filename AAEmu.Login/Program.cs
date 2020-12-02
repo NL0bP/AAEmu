@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using AAEmu.Commons.IO;
-using AAEmu.Commons.Utils;
 using AAEmu.Login.Models;
 using AAEmu.Login.Utils;
 using Microsoft.Extensions.Configuration;
@@ -22,13 +21,10 @@ namespace AAEmu.Login
         private static string Name => Assembly.GetExecutingAssembly().GetName().Name;
         private static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-        public static int UpTime => (int) (DateTime.Now - _startTime).TotalSeconds;
+        public static int UpTime => (int) (DateTime.UtcNow - _startTime).TotalSeconds;
 
         public static async Task Main(string[] args)
         {
-            CliUtil.WriteHeader("Login", ConsoleColor.DarkGreen);
-            CliUtil.LoadingTitle();
-
             Initialization();
 
             if (FileManager.FileExists(FileManager.AppPath + "Config.json"))
@@ -72,7 +68,7 @@ namespace AAEmu.Login
         private static void Initialization()
         {
             _thread.Name = "AA.LoginServer Base Thread";
-            _startTime = DateTime.Now;
+            _startTime = DateTime.UtcNow;
         }
 
         private static void Configuration(string[] args)

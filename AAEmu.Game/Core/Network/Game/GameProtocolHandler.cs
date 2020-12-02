@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Text;
 using AAEmu.Commons.Network;
@@ -44,8 +44,12 @@ namespace AAEmu.Game.Core.Network.Game
                 var con = GameConnectionTable.Instance.GetConnection(session.Id);
                 if (con != null)
                 {
-//                    if(con.ActiveChar != null)
-//                        ObjectIdManager.Instance.ReleaseId(con.ActiveChar.BcId);
+                    if (con.ActiveChar != null)
+                    {
+                        // On crash, force people out of the chat channels so we don't get phantom or duplicates
+                        Managers.ChatManager.Instance.LeaveAllChannels(con.ActiveChar);
+                        // ObjectIdManager.Instance.ReleaseId(con.ActiveChar.BcId);
+                    }
                     con.OnDisconnect();
                     StreamManager.Instance.RemoveToken(con.Id);
                     GameConnectionTable.Instance.RemoveConnection(session.Id);
@@ -119,14 +123,14 @@ namespace AAEmu.Game.Core.Network.Game
                         stream2.ReadUInt16(); //len
                         stream2.ReadByte(); //unk
                         var level = stream2.ReadByte();
-                        
+
                         byte crc = 0;
                         byte counter = 0;
-                        if (level == 1)
-                        {
-                            crc = stream2.ReadByte(); // TODO 1.2 crc
-                            counter = stream2.ReadByte(); // TODO 1.2 counter
-                        }
+                        //if (level == 1)
+                        //{
+                        //    crc = stream2.ReadByte(); // TODO 1.2 crc
+                        //    counter = stream2.ReadByte(); // TODO 1.2 counter
+                        //}
                         
                         var type = stream2.ReadUInt16();
                         _packets[level].TryGetValue(type, out var classType);

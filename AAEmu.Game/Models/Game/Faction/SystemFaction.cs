@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using AAEmu.Commons.Network;
 
@@ -13,7 +13,7 @@ namespace AAEmu.Game.Models.Game.Faction
         public uint MotherId { get; set; }
         public sbyte UnitOwnerType { get; set; }
         public byte PoliticalSystem { get; set; }
-        public bool DiplomacyTarget { get; set; }
+        //public bool DiplomacyTarget { get; set; } // отсутствует в 0.5.101.406
         public bool AggroLink { get; set; }
         public bool GuardHelp { get; set; }
         public byte AllowChangeName { get; set; }
@@ -30,7 +30,7 @@ namespace AAEmu.Game.Models.Game.Faction
         {
             if (id == Id)
                 return RelationState.Friendly;
-            return Relations.ContainsKey(id) ? Relations[id].State : RelationState.Neutral;
+            return Relations.ContainsKey(id) ? Relations[id].Friendship : RelationState.Neutral;
         }
 
         public override PacketStream Write(PacketStream stream)
@@ -44,7 +44,7 @@ namespace AAEmu.Game.Models.Game.Faction
             stream.Write(UnitOwnerType);
             stream.Write(PoliticalSystem);
             stream.Write(Created);
-            stream.Write(DiplomacyTarget);
+            //stream.Write(DiplomacyTarget); // отсутствует в 0.5.101.406
             stream.Write(AllowChangeName);
             return stream;
         }

@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.Skills.Plots;
+using AAEmu.Game.Models.Game.Skills.Plots.Tree;
+using AAEmu.Game.Models.Game.Skills.Plots.Type;
 using AAEmu.Game.Utils.DB;
 using NLog;
 
@@ -13,6 +16,7 @@ namespace AAEmu.Game.Core.Managers
         private Dictionary<uint, Plot> _plots;
         private Dictionary<uint, PlotEventTemplate> _eventTemplates;
         private Dictionary<uint, PlotCondition> _conditions;
+        private Dictionary<uint, PlotAoeCondition> _aoeConditions;
 
         public Plot GetPlot(uint id)
         {
@@ -33,6 +37,7 @@ namespace AAEmu.Game.Core.Managers
             _plots = new Dictionary<uint, Plot>();
             _eventTemplates = new Dictionary<uint, PlotEventTemplate>();
             _conditions = new Dictionary<uint, PlotCondition>();
+            _aoeConditions = new Dictionary<uint, PlotAoeCondition>();
             using (var connection = SQLite.CreateConnection())
             {
                 _log.Info("Loading plots...");
@@ -67,8 +72,8 @@ namespace AAEmu.Game.Core.Managers
                             template.Id = reader.GetUInt32("id");
                             template.PlotId = reader.GetUInt32("plot_id");
                             template.Position = reader.GetInt32("position");
-                            template.SourceUpdateMethod = (PlotUpdateMethodType)reader.GetUInt32("source_update_method_id");
-                            template.TargetUpdateMethod = (PlotUpdateMethodType)reader.GetUInt32("target_update_method_id");
+                            template.SourceUpdateMethodId = reader.GetUInt32("source_update_method_id");
+                            template.TargetUpdateMethodId = reader.GetUInt32("target_update_method_id");
                             template.TargetUpdateMethodParam1 = reader.GetInt32("target_update_method_param1");
                             template.TargetUpdateMethodParam2 = reader.GetInt32("target_update_method_param2");
                             template.TargetUpdateMethodParam3 = reader.GetInt32("target_update_method_param3");
@@ -99,45 +104,11 @@ namespace AAEmu.Game.Core.Managers
                             var template = new PlotCondition();
                             template.Id = reader.GetUInt32("id");
                             template.NotCondition = reader.GetBoolean("not_condition", true);
-                            template.Kind = (PlotConditionType)reader.GetInt32("kind_id");
+                            template.Kind = (PlotConditionType) reader.GetInt32("kind_id");
                             template.Param1 = reader.GetInt32("param1");
                             template.Param2 = reader.GetInt32("param2");
                             template.Param3 = reader.GetInt32("param3");
                             _conditions.Add(template.Id, template);
-                        }
-                    }
-                }
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM plot_aoe_conditions";
-                    command.Prepare();
-                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
-                    {
-                        while (reader.Read())
-                        {
-                            var id = reader.GetUInt32("event_id");
-                            var condId = reader.GetUInt32("condition_id");
-                            var template = new PlotEventCondition();
-                            template.Condition = _conditions[condId];
-                            template.Position = reader.GetInt32("position");
-                            var plotEvent = _eventTemplates[id];
-                            if (plotEvent.Conditions.Count > 0)
-                            {
-                                var res = false;
-                                for (var node = plotEvent.Conditions.First; node != null; node = node.Next)
-                                    if (node.Value.Position > template.Position)
-                                    {
-                                        plotEvent.Conditions.AddBefore(node, template);
-                                        res = true;
-                                        break;
-                                    }
-
-                                if (!res)
-                                    plotEvent.Conditions.AddLast(template);
-                            }
-                            else
-                                plotEvent.Conditions.AddFirst(template);
                         }
                     }
                 }
@@ -155,9 +126,9 @@ namespace AAEmu.Game.Core.Managers
                             var template = new PlotEventCondition();
                             template.Condition = _conditions[condId];
                             template.Position = reader.GetInt32("position");
-                            template.SourceId = reader.GetInt32("source_id");
-                            template.TargetId = reader.GetInt32("target_id");
-                            template.NotifyFailure = reader.GetBoolean("notify_failure", true);
+                            template.SourceId = (PlotEffectSource)reader.GetInt32("source_id");
+                            template.TargetId = (PlotEffectTarget)reader.GetInt32("target_id");
+                            // TODO 1.2 // template.NotifyFailure = reader.GetBoolean("notify_failure", true);
                             var plotEvent = _eventTemplates[id];
                             if (plotEvent.Conditions.Count > 0)
                             {
@@ -181,6 +152,40 @@ namespace AAEmu.Game.Core.Managers
 
                 using (var command = connection.CreateCommand())
                 {
+                    command.CommandText = "SELECT * FROM plot_aoe_conditions";
+                    command.Prepare();
+                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                    {
+                        while (reader.Read())
+                        {
+                            var id = reader.GetUInt32("event_id");
+                            var condId = reader.GetUInt32("condition_id");
+                            var template = new PlotAoeCondition();
+                            template.Condition = _conditions[condId];
+                            template.Position = reader.GetInt32("position");
+                            var plotEvent = _eventTemplates[id];
+                            if (plotEvent.AoeConditions.Count > 0)
+                            {
+                                var res = false;
+                                for (var node = plotEvent.AoeConditions.First; node != null; node = node.Next)
+                                    if (node.Value.Position > template.Position)
+                                    {
+                                        plotEvent.AoeConditions.AddBefore(node, template);
+                                        res = true;
+                                        break;
+                                    }
+
+                                if (!res)
+                                    plotEvent.AoeConditions.AddLast(template);
+                            }
+                            else
+                                plotEvent.AoeConditions.AddFirst(template);
+                        }
+                    }
+                }
+
+                using (var command = connection.CreateCommand())
+                {
                     command.CommandText = "SELECT * FROM plot_effects";
                     command.Prepare();
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
@@ -190,8 +195,8 @@ namespace AAEmu.Game.Core.Managers
                             var id = reader.GetUInt32("event_id");
                             var template = new PlotEventEffect();
                             template.Position = reader.GetInt32("position");
-                            template.SourceId = reader.GetInt32("source_id");
-                            template.TargetId = reader.GetInt32("target_id");
+                            template.SourceId = (PlotEffectSource) reader.GetInt32("source_id");
+                            template.TargetId = (PlotEffectTarget) reader.GetInt32("target_id");
                             template.ActualId = reader.GetUInt32("actual_id");
                             template.ActualType = reader.GetString("actual_type");
                             var evnt = _eventTemplates[id];
@@ -226,6 +231,7 @@ namespace AAEmu.Game.Core.Managers
                             var template = new PlotNextEvent();
                             var id = reader.GetUInt32("event_id");
                             var nextId = reader.GetUInt32("next_event_id");
+                            template.Id = reader.GetUInt32("id");
                             template.Event = _eventTemplates[nextId];
                             template.Position = reader.GetInt32("position");
                             template.PerTarget = reader.GetBoolean("per_target", true);
@@ -262,6 +268,13 @@ namespace AAEmu.Game.Core.Managers
                 }
 
                 _log.Info("Loaded {0} plot events", _eventTemplates.Count);
+                
+                foreach(var plot in _plots.Values)
+                {
+                    if (plot.EventTemplate != null)
+                        plot.Tree = PlotBuilder.BuildTree(plot.Id);
+                }
+                // Task.Run(() => flameboltTree.Execute(new PlotState()));
             }
         }
     }

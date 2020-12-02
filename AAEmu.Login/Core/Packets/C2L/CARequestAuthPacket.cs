@@ -6,7 +6,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CARequestAuthPacket : LoginPacket
     {
-        public CARequestAuthPacket() : base(0x01)
+        public CARequestAuthPacket() : base(0x01) // в версии 0.5.1.101.406
         {
         }
 

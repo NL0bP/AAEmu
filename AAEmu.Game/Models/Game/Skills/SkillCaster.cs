@@ -1,8 +1,17 @@
-﻿using System;
+using System;
 using AAEmu.Commons.Network;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
+    public enum SkillCasterType : byte
+    {
+        Unit = 0,
+        Unk1 = 1, // Doodad
+        Item = 2,
+        Unk3 = 3, // TODO mountSkillType
+        Doodad = 4 // Gimmick
+    }
+
     public abstract class SkillCaster : PacketMarshaler
     {
         public SkillCasterType Type { get; set; }
@@ -15,7 +24,7 @@ namespace AAEmu.Game.Models.Game.Skills
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write((byte)Type);
+            stream.Write((byte) Type);
             stream.WriteBc(ObjId);
             return stream;
         }
@@ -28,14 +37,14 @@ namespace AAEmu.Game.Models.Game.Skills
                 case SkillCasterType.Unit:
                     obj = new SkillCasterUnit();
                     break;
-                case SkillCasterType.Action:
-                    obj = new SkillCasterAction();
+                case SkillCasterType.Unk1:
+                    obj = new SkillCasterUnk1();
                     break;
                 case SkillCasterType.Item:
                     obj = new SkillItem();
                     break;
-                case SkillCasterType.Mount:
-                    obj = new SkillCasterMount();
+                case SkillCasterType.Unk3:
+                    obj = new SkillCasterUnk3();
                     break;
                 case SkillCasterType.Doodad:
                     obj = new SkillDoodad();
@@ -62,15 +71,15 @@ namespace AAEmu.Game.Models.Game.Skills
         }
     }
 
-    public class SkillCasterAction : SkillCaster
+    public class SkillCasterUnk1 : SkillCaster
     {
-        public SkillCasterAction()
+        public SkillCasterUnk1()
         {
         }
 
-        public SkillCasterAction(uint objId)
+        public SkillCasterUnk1(uint objId)
         {
-            Type = SkillCasterType.Action;
+            Type = SkillCasterType.Unk1;
             ObjId = objId;
         }
     }
@@ -114,17 +123,17 @@ namespace AAEmu.Game.Models.Game.Skills
         }
     }
 
-    public class SkillCasterMount : SkillCaster
+    public class SkillCasterUnk3 : SkillCaster
     {
         public uint MountSkillTemplateId { get; set; }
 
-        public SkillCasterMount()
+        public SkillCasterUnk3()
         {
         }
 
-        public SkillCasterMount(uint objId)
+        public SkillCasterUnk3(uint objId)
         {
-            Type = SkillCasterType.Mount;
+            Type = SkillCasterType.Unk3;
             ObjId = objId;
         }
 

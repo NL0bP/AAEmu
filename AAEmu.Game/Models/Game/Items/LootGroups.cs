@@ -8,7 +8,7 @@ namespace AAEmu.Game.Models.Game.Items
         public uint PackId { get; set; }
         public int GroupNo { get; set; }
         public uint DropRate { get; set; }
-        public byte ItemGradeDistributionId { get; set; }
+        public ItemGrade ItemGradeDistributionId { get; set; }
 
         /*
          * To sort an array

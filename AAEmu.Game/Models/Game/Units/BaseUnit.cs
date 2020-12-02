@@ -1,5 +1,6 @@
 ﻿using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.World;
 
 namespace AAEmu.Game.Models.Game.Units
@@ -14,6 +15,7 @@ namespace AAEmu.Game.Models.Game.Units
         Mate = 5,
         Shipyard = 6
     }
+
     public enum ModelPostureType : byte
     {
         None = 0,
@@ -27,7 +29,9 @@ namespace AAEmu.Game.Models.Game.Units
     {
         public string Name { get; set; } = string.Empty;
         public SystemFaction Faction { get; set; }
+
         public virtual float Scale => 1f;
+        
         public Effects Effects { get; set; }
         public SkillModifiers Modifiers { get; set; }
 
@@ -44,25 +48,9 @@ namespace AAEmu.Game.Models.Game.Units
         public virtual void RemoveBonus(uint bonusIndex, UnitAttribute attribute)
         {
         }
-        public virtual double ApplySkillModifiers(Skill skill, SkillAttributeType attribute, double baseValue)
-        {
+        
+        public virtual double ApplySkillModifiers(Skill skill, SkillAttribute attribute, double baseValue) {
             return Modifiers.ApplyModifiers(skill, attribute, baseValue);
-        }
-
-        public virtual SkillTargetRelationType GetRelationTo(BaseUnit other)
-        {
-            if (Faction.Id == other.Faction.Id)
-                return SkillTargetRelationType.Friendly;
-
-            var relation = other.Faction.GetRelationState(Faction.Id);
-            if (relation == RelationState.Friendly)
-                return SkillTargetRelationType.Friendly;
-
-            else if (relation == RelationState.Hostile)
-                return SkillTargetRelationType.Hostile;
-
-            else
-                return SkillTargetRelationType.Others;
         }
     }
 }

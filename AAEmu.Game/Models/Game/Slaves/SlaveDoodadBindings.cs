@@ -8,6 +8,6 @@
         public int AttachPointId { get; set; }
         public uint DoodadId { get; set; }
         public bool Persist { get; set; }
-        public float Scale { get; set; }
+        //public float Scale { get; set; } // отсутствует в 0.5.101.406
     }
 }

@@ -13,9 +13,9 @@ namespace AAEmu.Game.Core.Managers
         //private List<LaborPower> _onlineChar;
         //private List<LaborPower> _offlineChar;
         private const short LpChangePremium = 10; // TODO in config
-        private const short LpChange = 5;
-        private const short UpLimit = 2000;
-        private const double Delay = 5; // min
+        private short LpChange = short.Parse(ConfigurationManager.Instance.GetConfiguration("LaborRecoveryAmount"));
+        private short UpLimit = short.Parse(ConfigurationManager.Instance.GetConfiguration("LaborMax"));
+        private double Delay = double.Parse(ConfigurationManager.Instance.GetConfiguration("LaborRecoveryRate")); // min
 
         public LaborPowerManager()
         {
@@ -56,13 +56,13 @@ namespace AAEmu.Game.Core.Managers
                     if (change >= LpChange)
                     {
                         _log.Warn("Added {0} Labor Point for Char: {1}", LpChange, character.Value.Name);
-                        character.Value.LaborPowerModified = DateTime.Now;
+                        character.Value.LaborPowerModified = DateTime.UtcNow;
                         character.Value.ChangeLabor(LpChange, 0);
                     }
-                    else if (change > 0)
+                    else if (change != 0)
                     {
                         _log.Warn("Added {0} Labor Point for Char: {1}", change, character.Value.Name);
-                        character.Value.LaborPowerModified = DateTime.Now;
+                        character.Value.LaborPowerModified = DateTime.UtcNow;
                         character.Value.ChangeLabor(change, 0);
                     }
                 }

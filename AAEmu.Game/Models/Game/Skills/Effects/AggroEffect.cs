@@ -1,5 +1,5 @@
-﻿using System;
-using AAEmu.Game.Models.Game.NPChar;
+using System;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -20,22 +20,11 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
         
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            Skill skill, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("AggroEffect: UseFixedAggro {0}, FixedMin {1}, FixedMax {2}, UseLevelAggro {3}, LevelMd {4}," +
-                      " LevelVaStart {5}, LevelVaEnd {6}, UseChargedBuff {7}, ChargedBuffId {8}, ChargedMul {9}",
-                UseFixedAggro, FixedMin, FixedMax, UseLevelAggro, LevelMd, LevelVaStart, LevelVaEnd, UseChargedBuff, ChargedBuffId, ChargedMul);
-            if (!(caster is Npc npc))
-            {
-                return;
-            }
-
-            npc.IsAutoAttack = true;
-            npc.CurrentTarget = target;
-            npc.SetForceAttack(true);
-            var combat = new Combat();
-            combat.Execute(npc);
+            _log.Debug("AggroEffect");
         }
     }
 }

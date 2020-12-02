@@ -42,7 +42,6 @@ namespace AAEmu.Game.Core.Managers
                             template.ShowUpperCraft = reader.GetBoolean("show_upper_crafts");
                             template.RecommendLevel = reader.GetInt32("recommend_level");
                             template.VisibleOrder = reader.GetInt32("visible_order");
-                            template.Title = LocalizationManager.Instance.GetEnglishLocalizedText("crafts", "title", template.Id);
                             _crafts.Add(template.Id, template);
                         }
                     }
@@ -94,7 +93,7 @@ namespace AAEmu.Game.Core.Managers
                             template.CraftId = craftId;
                             template.ItemId = reader.GetUInt32("item_id");
                             template.Amount = reader.GetInt32("amount", 1); //We always want to cost at least 1 item ?
-                            template.MainGrade = reader.GetBoolean("main_grade");
+                            //template.MainGrade = reader.GetBoolean("main_grade"); // отсутствует в 0.5.101.406
 
                             _crafts[craftId].CraftMaterials.Add(template);
                         }

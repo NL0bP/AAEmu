@@ -4,6 +4,16 @@ using AAEmu.Commons.Utils;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
+    public enum SkillCastTargetType : byte
+    {
+        Unit = 0,
+        Position = 1,
+        Position2 = 2,
+        Item = 3,
+        Doodad = 4,
+        Position3 = 5
+    }
+
     public abstract class SkillCastTarget : PacketMarshaler
     {
         public SkillCastTargetType Type { get; set; }

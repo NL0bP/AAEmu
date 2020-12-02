@@ -1,14 +1,17 @@
 ﻿using System;
+
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class SpawnPet : ISpecialEffect
+    public class SpawnPet : SpecialEffectAction
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
+        protected static Logger _log = LogManager.GetCurrentClassLogger();
+
+        public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
             SkillCastTarget targetObj,
@@ -21,6 +24,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
+            _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
+
             var owner = (Character)caster;
             var skillData = (SkillItem)casterObj;
 
@@ -33,7 +38,6 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                     break;
             }
             owner.Mates.SpawnMount(skillData);
-            _log.Warn("Special effects: SpawnPet");
         }
     }
 }

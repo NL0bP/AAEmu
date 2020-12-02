@@ -1,0 +1,21 @@
+{
+  "SecretKey": "test",
+  "InternalNetwork": {
+    "Host": "127.0.0.1",
+    "Port": 1233
+  },
+  "Network": {
+    "Host": "*",
+    "Port": 1230,
+    "PlayerNumber": 10
+  },
+  "Connections": {
+    "MySQLProvider": {
+      "Host": "localhost",
+      "Port": "3306",
+      "User": "root",
+      "Password": "",
+      "Database": "aaemu_editor"
+    }
+  }
+}

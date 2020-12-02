@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Slaves{    public class SlaveCustomizingEquipSlots    {		public uint Id { get; set; }		public int SlaveCustomizingId { get; set; }		public int EquipSlotId { get; set; }		public string EquipSlotName { get; set; }	}}

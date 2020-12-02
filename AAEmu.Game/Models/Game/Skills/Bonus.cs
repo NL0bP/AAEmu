@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Models.Game.Skills.Templates;
+using AAEmu.Game.Models.Game.Skills.Templates;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
@@ -6,6 +6,5 @@ namespace AAEmu.Game.Models.Game.Skills
     {
         public BonusTemplate Template { get; set; }
         public int Value { get; set; }
-        public int LinearLevelBonus { get; set; }
     }
 }

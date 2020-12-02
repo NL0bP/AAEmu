@@ -1,4 +1,4 @@
-using AAEmu.Game.Core.Managers;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Managers.UnitManagers;
@@ -31,8 +31,9 @@ namespace AAEmu.Game.Scripts.Commands
 
         public string GetCommandHelpText()
         {
-            return "Rotate a npc or doodad using target unit as a template";
+            return "Rotate target unit towards you";
         }
+
         public void Execute(Character character, string[] args)
         {
             //if (args.Length < 2)
@@ -54,23 +55,30 @@ namespace AAEmu.Game.Scripts.Commands
 
                 var angle = MathUtil.CalculateAngleFrom(character.CurrentTarget, character);
                 var rotZ = MathUtil.ConvertDegreeToDirection(angle);
+                if (args.Length > 0) 
+                {
+                    sbyte.TryParse(args[0], out rotZ);
+                }
+
                 moveType.RotationX = 0;
                 moveType.RotationY = 0;
                 moveType.RotationZ = rotZ;
 
+                character.CurrentTarget.Position.RotationZ = rotZ;
+
                 moveType.Flags = 5;
-                moveType.DeltaMovement = new byte[3];
+                moveType.DeltaMovement = new sbyte[3];
                 moveType.DeltaMovement[0] = 0;
                 moveType.DeltaMovement[1] = 0;
                 moveType.DeltaMovement[2] = 0;
-                moveType.Stance = 1;     //combat=0, idle=1
+                moveType.Stance = 1; //combat=0, idle=1
                 moveType.Alertness = 0; //idle=0, combat=2
                 moveType.Time = Seq;
 
                 character.BroadcastPacket(new SCOneUnitMovementPacket(character.CurrentTarget.ObjId, moveType), true);
             }
             else
-                character.SendMessage("[Rotate] Take something to the target");
+                character.SendMessage("[Rotate] You need to target something first");
         }
     }
 }

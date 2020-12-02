@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Models.Game.Features;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
@@ -12,8 +13,8 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write("aaemu.info"); // host
-            
+            stream.Write("aaemu.local"); // host
+
             // siege -> (byte)fset[0] & 1 == 1
             // premium -> (byte)fset[0] & 0x10 == 0x10
             // levelLimit -> (byte)fset[1]
@@ -36,10 +37,12 @@ namespace AAEmu.Game.Core.Packets.G2C
             // hudAuctionButton -> (uint)fset[8] & 0x20000 == 0x20000
             // auctionPostBuff -> (uint)fset[8] & 0x80000 == 0x80000
             // houseTaxPrepay -> (uint)fset[8] & 0x100000 == 0x100000
-            
-            //stream.Write(new byte[] {0x11,0x37,0x0F, 0x0F, 0x79, 0x69, 0xb3, 0x8d, 0x32, 0x0C, 0x1a}, true); // fset - показывает 6 рас
-            //                                                                            >----<
-            stream.Write(new byte[] {0x11, 0x37, 0x0F, 0x0F, 0x79, 0x69, 0xb3, 0x8d, 0x32, 0x08, 0x1a}, true); // fset - показывает 4 расы
+
+            // 0x11, 0x37, 0x0F, 0x0F, 0x79, 0x69, 0xb3, 0x8d, 0x32, 0x0c, 0x1a
+            // stream.Write(new byte[] {0x11, 0x37, 0x0F, 0x0F, 0x79, 0x69, 0xb3, 0x8d, 0x32, 0x0c, 0x1a}, true); // fset
+            //var fset = new FeatureSet();
+            //fset.Write(stream);
+            stream.Write(new byte[] { 0x11, 0x37, 0x0F, 0x0F, 0x79 }, true); // fset
 
             /*
                 {
@@ -56,7 +59,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                   [auctionPostBuff] => true
                   [hudAuctionButton] => true
                   [taxItem] => true
-                  [dwarfWarborn] => false
+                  [dwarfWarborn] => true
                   [achievement] => true
                   [bm_mileage] => true
                   [mailCoolTime] => true
@@ -67,30 +70,34 @@ namespace AAEmu.Game.Core.Packets.G2C
                   [ranking] => true
                 }
              */
-            
+
             // TODO 0x3E, 0x32, 0x0F, 0x0F, 0x79, 0x00, 0x33
             // TODO 0x7F, 0x37, 0x34, 0x0F, 0x79, 0x08, 0x7D, 0xCB, 0x37, 0x65, 0x03, 0xDE, 0xAE, 0x86, 0x3C, 0x0E, 0x02, 0xE6, 0x6F, 0xC7, 0xBB, 0x9B, 0x5D, 0x01, 0x00, 0x01
 
             stream.Write(0); // count
 
-            stream.Write(50); // initLp
-            stream.Write(false); // canPlaceHouse
-            stream.Write(false); // canPayTax
-            stream.Write(true); // canUseAuction
-            stream.Write(true); // canTrade
-            stream.Write(true); // canSendMail
-            stream.Write(true); // canUseBank
-            stream.Write(true); // canUseCopper
+            //stream.Write(50); // initLp
+            //stream.Write(false); // canPlaceHouse
+            //stream.Write(false); // canPayTax
+            //stream.Write(true); // canUseAuction
+            //stream.Write(true); // canTrade
+            //stream.Write(true); // canSendMail
+            //stream.Write(true); // canUseBank
+            //stream.Write(true); // canUseCopper
 
-            stream.Write((byte)2); // secondPriceType
-            /*
-             * 0 - kr aapoint
-             * 1 - ru aapoint
-             * 2 - na loyalt token
-             */
-            stream.Write((byte)0); // secondPasswordMaxFailCount
+            //stream.Write((byte)2); // secondPriceType
+            ///*
+            // * 0 - kr aapoint
+            // * 1 - ru aapoint
+            // * 2 - na loyalt token
+            // */
+            //stream.Write((byte)0); // secondPasswordMaxFailCount
 
-            stream.Write((ushort)0); // idleKickTime
+            //stream.Write((ushort)0); // idleKickTime
+
+            stream.Write((byte)0); // searchLevel
+            stream.Write((byte)0); // bidLevel
+            stream.Write((byte)0); // postLevel
 
             return stream;
         }

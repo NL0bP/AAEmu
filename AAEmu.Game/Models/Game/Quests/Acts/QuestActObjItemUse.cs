@@ -8,18 +8,18 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
         public uint ItemId { get; set; }
         public int Count { get; set; }
         public uint HighlightDoodadId { get; set; }
-        public int HighlightDoodadPhase { get; set; }
+        //public int HighlightDoodadPhase { get; set; } // отсутствует в 0.5.101.406
         public bool UseAlias { get; set; }
         public uint QuestActObjAliasId { get; set; }
         public bool DropWhenDestroy { get; set; }
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Debug("QuestActObjItemUse QuestId {0}, ItemId {1}, Count {2}, HighlightDoodadId {3}, HighlightDoodadPhase {4}," +
-                       " UseAlias {5}, QuestActObjAliasId {6}, objective {7}",
-                quest.TemplateId, ItemId, Count, HighlightDoodadId, HighlightDoodadPhase, UseAlias, QuestActObjAliasId, objective);
-
-            return objective >= Count;
+            _log.Warn("QuestActObjItemUse");
+            if (objective >= Count)
+                return true;
+            else
+                return false;
         }
     }
 }

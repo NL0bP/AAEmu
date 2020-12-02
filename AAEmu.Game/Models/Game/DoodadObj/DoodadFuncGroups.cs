@@ -10,9 +10,8 @@
         }
 
         public uint Id { get; set; }
+        public uint Almighty { get; set; }
         public DoodadFuncGroupKind GroupKindId { get; set; }
         public uint SoundId { get; set; }
-        public string Name { get; set; }
-        public string PhaseMsg { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Skills.Templates;
@@ -6,6 +6,14 @@ using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
+    public enum EffectState
+    {
+        Created,
+        Acting,
+        Finishing,
+        Finished
+    }
+
     public class Effect
     {
         private object _lock = new object();
@@ -17,8 +25,7 @@ namespace AAEmu.Game.Models.Game.Skills
         public Unit Caster { get; set; }
         public SkillCaster SkillCaster { get; set; }
         public BaseUnit Owner { get; set; }
-        public EffectStateType State { get; set; }
-        public short AbLevel { get; set; }
+        public EffectState State { get; set; }
         public bool InUse { get; set; }
         public int Duration { get; set; }
         public double Tick { get; set; }
@@ -36,18 +43,6 @@ namespace AAEmu.Game.Models.Game.Skills
             EndTime = DateTime.MinValue;
         }
 
-        public Effect(BaseUnit owner, Unit caster, SkillCaster skillCaster, EffectTemplate template, Skill skill, DateTime time, short abLevel)
-        {
-            Owner = owner;
-            Caster = caster;
-            SkillCaster = skillCaster;
-            Template = template;
-            AbLevel = abLevel;
-            Skill = skill;
-            StartTime = time;
-            EndTime = DateTime.MinValue;
-        }
-
         public void UpdateEffect()
         {
             Template.Start(Caster, Owner, this);
@@ -55,7 +50,7 @@ namespace AAEmu.Game.Models.Game.Skills
                 Duration = Template.GetDuration();
             if (StartTime == DateTime.MinValue)
             {
-                StartTime = DateTime.Now;
+                StartTime = DateTime.UtcNow;
                 EndTime = StartTime.AddMilliseconds(Duration);
             }
 
@@ -65,7 +60,7 @@ namespace AAEmu.Game.Models.Game.Skills
             {
                 var time = GetTimeLeft();
                 if (time > 0)
-                    _count = (int)(time / Tick + 0.5f + 1);
+                    _count = (int) (time / Tick + 0.5f + 1);
                 else
                     _count = -1;
                 EffectTaskManager.Instance.AddDispelTask(this, Tick);
@@ -78,70 +73,64 @@ namespace AAEmu.Game.Models.Game.Skills
         {
             switch (State)
             {
-                case EffectStateType.Created:
+                case EffectState.Created:
+                {
+                    State = EffectState.Acting;
+
+                    Template.Start(Caster, Owner, this);
+
+                    if (Duration == 0)
+                        Duration = Template.GetDuration();
+                    if (StartTime == DateTime.MinValue)
                     {
-                        State = EffectStateType.Acting;
+                        StartTime = DateTime.UtcNow;
+                        EndTime = StartTime.AddMilliseconds(Duration);
+                    }
 
-                        Template.Start(Caster, Owner, this);
+                    Tick = Template.GetTick();
 
-                        if (Duration == 0)
-                            Duration = Template.GetDuration();
-                        if (StartTime == DateTime.MinValue)
-                        {
-                            StartTime = DateTime.Now;
-                            EndTime = StartTime.AddMilliseconds(Duration);
-                        }
-
-                        Tick = Template.GetTick();
-
-                        if (Tick > 0)
-                        {
-                            var time = GetTimeLeft();
-                            if (time > 0)
-                                _count = (int)(time / Tick + 0.5f + 1);
-                            else
-                                _count = -1;
-                            EffectTaskManager.Instance.AddDispelTask(this, Tick);
-                        }
+                    if (Tick > 0)
+                    {
+                        var time = GetTimeLeft();
+                        if (time > 0)
+                            _count = (int) (time / Tick + 0.5f + 1);
                         else
-                            EffectTaskManager.Instance.AddDispelTask(this, GetTimeLeft());
-
-                        return;
+                            _count = -1;
+                        EffectTaskManager.Instance.AddDispelTask(this, Tick);
                     }
-                case EffectStateType.Acting:
+                    else
+                        EffectTaskManager.Instance.AddDispelTask(this, GetTimeLeft());
+
+                    return;
+                }
+                case EffectState.Acting:
+                {
+                    if (_count == -1)
                     {
-                        if (_count == -1)
+                        if (Template.OnActionTime)
                         {
-                            if (Template.OnActionTime)
-                            {
-                                Template.TimeToTimeApply(Caster, Owner, this);
-                                return;
-                            }
+                            Template.TimeToTimeApply(Caster, Owner, this);
+                            return;
                         }
-                        else if (_count > 0)
-                        {
-                            _count--;
-                            if (Template.OnActionTime && _count > 0)
-                            {
-                                Template.TimeToTimeApply(Caster, Owner, this);
-                                return;
-                            }
-                        }
-
-                        State = EffectStateType.Finishing;
-                        break;
                     }
-                case EffectStateType.Finishing:
+                    else if (_count > 0)
+                    {
+                        _count--;
+                        if (Template.OnActionTime && _count > 0)
+                        {
+                            Template.TimeToTimeApply(Caster, Owner, this);
+                            return;
+                        }
+                    }
+
+                    State = EffectState.Finishing;
                     break;
-                case EffectStateType.Finished:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                }
             }
 
-            if (State == EffectStateType.Finishing)
+            if (State == EffectState.Finishing)
             {
-                State = EffectStateType.Finished;
+                State = EffectState.Finished;
                 InUse = false;
                 StopEffectTask();
             }
@@ -149,15 +138,15 @@ namespace AAEmu.Game.Models.Game.Skills
 
         public void Exit()
         {
-            if (State == EffectStateType.Finished)
+            if (State == EffectState.Finished)
                 return;
-            if (State != EffectStateType.Created)
+            if (State != EffectState.Created)
             {
-                State = EffectStateType.Finishing;
+                State = EffectState.Finishing;
                 ScheduleEffect();
             }
             else
-                State = EffectStateType.Finishing;
+                State = EffectState.Finishing;
         }
 
         private void StopEffectTask()
@@ -176,26 +165,26 @@ namespace AAEmu.Game.Models.Game.Skills
                 UpdateEffect();
             else if (inUse)
                 ScheduleEffect();
-            else if (State != EffectStateType.Finished)
-                State = EffectStateType.Finishing;
+            else if (State != EffectState.Finished)
+                State = EffectState.Finishing;
         }
 
         public bool IsEnded()
         {
-            return State == EffectStateType.Finished || State == EffectStateType.Finishing;
+            return State == EffectState.Finished || State == EffectState.Finishing;
         }
 
         public double GetTimeLeft()
         {
             if (Duration == 0)
                 return -1;
-            var time = (long)(StartTime.AddMilliseconds(Duration) - DateTime.Now).TotalMilliseconds;
+            var time = (long) (StartTime.AddMilliseconds(Duration) - DateTime.UtcNow).TotalMilliseconds;
             return time > 0 ? time : 0;
         }
 
         public uint GetTimeElapsed()
         {
-            var time = (uint)(DateTime.Now - StartTime).TotalMilliseconds;
+            var time = (uint) (DateTime.UtcNow - StartTime).TotalMilliseconds;
             return time > 0 ? time : 0;
         }
 

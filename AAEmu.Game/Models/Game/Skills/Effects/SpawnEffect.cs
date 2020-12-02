@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -16,15 +17,17 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public bool UseSummonerFaction { get; set; }
         public float LifeTime { get; set; }
         public bool DespawnOnCreatorDeath { get; set; }
+
         public bool UseSummoneerAggroTarget { get; set; }
-        public uint MateStateId { get; set; }
+        // TODO 1.2 // public uint MateStateId { get; set; }
 
         public override bool OnActionTime => false;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            Skill skill, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("SpawnEffect");
+            _log.Debug("SpawnEffect");
         }
     }
 }

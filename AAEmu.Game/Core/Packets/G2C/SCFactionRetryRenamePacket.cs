@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
@@ -9,7 +9,8 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly short _errorMessage;
         private readonly string _name;
         
-        public SCFactionRetryRenamePacket(bool xpdt, short errorMessage, string name) : base(SCOffsets.SCFactionRetryRenamePacket, 1)
+        public SCFactionRetryRenamePacket(bool xpdt, short errorMessage, string name)
+            : base(SCOffsets.SCFactionRetryRenamePacket, 1)
         {
             _xpdt = xpdt;
             _errorMessage = errorMessage;

@@ -16,8 +16,10 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
             _log.Debug("DoodadFuncRespawn: MinTime {0}, MaxTime {1}", MinTime, MaxTime);
 
             // Doodad spawn
-            if (!(caster is Character character)) { return; }
-
+            if (!(caster is Character character))
+            {
+                return;
+            }
             var doodad = new DoodadSpawner
             {
                 Id = 0,

@@ -9,17 +9,18 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("test_combat", this);
+            string[] name = { "testcombat", "test_combat" };
+            CommandManager.Instance.Register(name, this);
         }
 
         public string GetCommandLineHelp()
         {
-            return "";
+            return "<engaged||cleared||first_hit||text>";
         }
 
         public string GetCommandHelpText()
         {
-            return "";
+            return "Command to test combat related packets. You can try to use cleared if you are stuck in combat for example.";
         }
 
         public void Execute(Character character, string[] args)
@@ -52,7 +53,7 @@ namespace AAEmu.Game.Scripts.Commands
                         character.SendMessage("[TestCombat] not have target");
 
                     break;
-                case "first_hit":
+                case "first_hit": 
                     if (character.CurrentTarget != null)
                         character.SendPacket(new SCCombatFirstHitPacket(character.ObjId, character.CurrentTarget.ObjId,
                             0));

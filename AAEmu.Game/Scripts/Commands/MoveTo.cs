@@ -1,4 +1,4 @@
-using NLog;
+﻿using NLog;
 using System;
 
 using AAEmu.Game.Core.Managers;
@@ -78,7 +78,7 @@ namespace AAEmu.Game.Scripts.Commands
             }
             else
             {
-                switch (@cmd)
+                switch (cmd)
                 {
                     case "rec":
                         character.SendMessage("[MoveTo] start recording...");

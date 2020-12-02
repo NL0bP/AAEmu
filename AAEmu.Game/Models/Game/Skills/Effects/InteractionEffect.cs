@@ -1,4 +1,5 @@
 ﻿using System;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -13,25 +14,28 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj, Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj, Skill skill, SkillObject skillObject, DateTime time,
+            CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("InteractionEffect, {0}", WorldInteraction);
+            _log.Debug("InteractionEffect, {0}", WorldInteraction);
 
             var classType = Type.GetType("AAEmu.Game.Models.Game.World.Interactions." + WorldInteraction);
             if (classType == null)
             {
-                Log.Error("InteractionEffect, Unknown world interaction: {0}", WorldInteraction);
+                _log.Error("InteractionEffect, Unknown world interaction: {0}", WorldInteraction);
                 return;
             }
 
-            Log.Debug("InteractionEffect, Action: {0}", classType); // TODO help to debug...
+            _log.Debug("InteractionEffect, Action: {0}", classType); // TODO help to debug...
 
             var action = (IWorldInteraction)Activator.CreateInstance(classType);
             action.Execute(caster, casterObj, target, targetObj, skill.Template.Id, DoodadId);
 
+            // TODO do we need this call?
             if (caster is Character character)
             {
-                character.Quests.OnInteraction(WorldInteraction);
+                character.Quests.OnInteraction(WorldInteraction, target);
             }
         }
     }

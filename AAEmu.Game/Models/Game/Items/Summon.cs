@@ -18,14 +18,16 @@ namespace AAEmu.Game.Models.Game.Items
 
         public override void ReadDetails(PacketStream stream)
         {
+            // ------------------6----------------------
             stream.ReadInt32(); // exp
             stream.ReadByte();
-            stream.ReadByte(); // level
+            stream.ReadByte();  // level
         }
 
         public override void WriteDetails(PacketStream stream)
         {
-            stream.Write(0); // exp
+            // ------------------6----------------------
+            stream.Write(0);        // exp
             stream.Write((byte) 0);
             stream.Write((byte) 1); // level
         }

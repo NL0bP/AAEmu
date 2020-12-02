@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -23,7 +25,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
             CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+            Skill skill, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
             var character = (Character)caster;
             if (character == null) return;
@@ -33,9 +35,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             var lootPacks = ItemManager.Instance.GetLootPacks(LootPackId);
             var lootGroups = ItemManager.Instance.GetLootGroups(LootPackId);
-            var lootPackItem = character.Inventory.GetItem(lootPack.ItemId);
+            var lootPackItem = character.Inventory.GetItemById(lootPack.ItemId);
 
-            Log.Debug("LootGroups {0}", lootGroups);
+            _log.Debug("LootGroups {0}", lootGroups);
 
             var rowG = lootGroups.Length;
             var rowP = lootPacks.Length;
@@ -47,7 +49,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                     var itemIdLoot = (uint)0;
                     var minAmount = 0;
                     var maxAmount = 0;
-                    var gradeId = (byte)0;
+                    var gradeId = ItemGrade.Crude;
                     var dropRateMax = (uint)0;
                     var dropRate = Rand.Next(0, maxDropRate);
                     var dropRateGroup = (uint)10000000;
@@ -119,7 +121,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                         var itemIdLoot = (uint)0;
                         var minAmount = 0;
                         var maxAmount = 0;
-                        var gradeId = (byte)0;
+                        var gradeId = ItemGrade.Crude;
                         var dropRateMax = (uint)0;
                         for (var ui = 0; ui < rowP; ui++)
                             if (lootPacks[ui].Group == i)
@@ -162,7 +164,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 }
             }
 
-            Log.Debug("GainLootPackItemEffect {0}", LootPackId);
+            _log.Debug("GainLootPackItemEffect {0}", LootPackId);
         }
 
         private void AddGold(Unit caster, int goldMin, int goldMax)
@@ -182,16 +184,19 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 new List<ItemTask> {new MoneyChange(goldAdd)}, new List<ulong>()));
         }
 
-        private void AddItem(Unit caster, uint itemId, byte gradeId, int minAmount, int maxAmount)
+        private void AddItem(Unit caster, uint itemId, ItemGrade gradeId, int minAmount, int maxAmount)
         {
             var character = (Character)caster;
             if (character == null) return;
             var amount = Rand.Next(minAmount, maxAmount);
-            var item = ItemManager.Instance.Create(itemId, amount, gradeId);
-            InventoryHelper.AddItemAndUpdateClient(character, item);
+            if (!character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Loot, itemId, amount))
+            {
+                // TODO: do proper handling of insufficient bag space
+                character.SendErrorMessage(Error.ErrorMessageType.BagFull);
+            }
         }
 
-        private byte GetGradeDistributionId(byte gradeId)
+        private ItemGrade GetGradeDistributionId(ItemGrade gradeId)
         {
             var gradeDist = ItemManager.Instance.GetGradeDistributions(gradeId);
             var array = new[]
@@ -215,7 +220,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             {
                 if (gradeDrop <= array[i] + old)
                 {
-                    gradeId = i;
+                    gradeId = (ItemGrade)i;
                     i = 11;
                 }
                 else
@@ -233,7 +238,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             if (character == null) return;
             var lootPack = (SkillItem)casterObj;
             if (lootPack == null) return;
-            var lootPackItem = character.Inventory.GetItem(lootPack.ItemId);
+            var lootPackItem = character.Inventory.GetItemById(lootPack.ItemId);
+            character?.Inventory.ConsumeItem(null,ItemTaskType.SkillReagents, lootPackItem.TemplateId, consumeCount,null);
+            /*
             if (lootPackItem.Count > 1)
             {
                 lootPackItem.Count -= consumeCount;
@@ -255,6 +262,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                         },
                         new List<ulong>()));
             }
+            */
         }
     }
 }

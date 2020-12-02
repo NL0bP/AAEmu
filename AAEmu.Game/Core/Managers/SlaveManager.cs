@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Commons.IO;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
@@ -25,6 +27,7 @@ namespace AAEmu.Game.Core.Managers
         private static Logger _log = LogManager.GetCurrentClassLogger();
         private Dictionary<uint, SlaveTemplate> _slaveTemplates;
         private Dictionary<uint, Slave> _activeSlaves;
+        public Dictionary<uint, Dictionary<int, Point>> _attachPoints;
 
         private SlaveTemplate GetSlaveTemplate(uint id)
         {
@@ -83,9 +86,15 @@ namespace AAEmu.Game.Core.Managers
             var activeSlaveInfo = GetActiveSlaveByObjId(objId);
             if (activeSlaveInfo == null) return;
 
-            owner.SendPacket(new SCSlaveDespawnPacket(objId));
-            owner.SendPacket(new SCSlaveRemovedPacket(owner.ObjId, activeSlaveInfo.TlId));
+            foreach (var doodad in activeSlaveInfo.AttachedDoodads)
+            {
+                doodad.Delete();
+            }
+
+            owner.BroadcastPacket(new SCSlaveDespawnPacket(objId), true);
+            owner.BroadcastPacket(new SCSlaveRemovedPacket(owner.ObjId, activeSlaveInfo.TlId), true);
             _activeSlaves.Remove(owner.ObjId);
+            
             activeSlaveInfo.Delete();
         }
 
@@ -99,7 +108,7 @@ namespace AAEmu.Game.Core.Managers
                 return;
             }
 
-            var item = owner.Inventory.GetItem(skillData.ItemId);
+            var item = owner.Inventory.GetItemById(skillData.ItemId);
             if (item == null) return;
 
             var itemTemplate = (SummonSlaveTemplate)ItemManager.Instance.GetTemplate(item.TemplateId);
@@ -111,14 +120,18 @@ namespace AAEmu.Game.Core.Managers
             var tlId = (ushort)TlIdManager.Instance.GetNextId();
             var objId = ObjectIdManager.Instance.GetNextId();
 
+            var spawnPos = owner.Position.Clone();
+            spawnPos.X += slaveTemplate.SpawnXOffset;
+            spawnPos.Y += slaveTemplate.SpawnYOffset;
+
             // TODO
-            owner.SendPacket(new SCSlaveCreatedPacket(owner.ObjId, tlId, objId, false, 0, owner.Name));
+            owner.BroadcastPacket(new SCSlaveCreatedPacket(owner.ObjId, tlId, objId, false, 0, owner.Name), true);
             var template = new Slave
             {
                 TlId = tlId,
                 ObjId = objId,
                 TemplateId = slaveTemplate.Id,
-                Position = owner.Position.Clone(),
+                Position = spawnPos,
                 Name = slaveTemplate.Name,
                 Level = (byte)slaveTemplate.Level,
                 ModelId = slaveTemplate.ModelId,
@@ -127,12 +140,14 @@ namespace AAEmu.Game.Core.Managers
                 Mp = 10000,
                 ModelParams = new UnitCustomModelParams(),
                 Faction = owner.Faction,
-                Id = 10 // TODO
+                Id = 10, // TODO
+                Summoner = owner,
+                AttachedDoodads = new List<Doodad>()
             };
-            template.Position.X += 5.0f;
-            template.Position.Y += 5.0f;
+            
+
             template.Spawn();
-            owner.SendPacket(new SCSlaveStatePacket(objId, tlId, owner.Name, owner.Id, template.Id));
+            
             // TODO - DOODAD SERVER SIDE
             foreach (var doodadBinding in template.Template.DoodadBindings)
             {
@@ -143,17 +158,39 @@ namespace AAEmu.Game.Core.Managers
                     OwnerObjId = owner.ObjId,
                     ParentObjId = template.ObjId,
                     AttachPoint = (byte)doodadBinding.AttachPointId,
-                    Position = new Point(0f, 3.204f, 12588.96f, 0, 0, 0),
                     OwnerId = owner.Id,
-                    PlantTime = DateTime.Now,
+                    PlantTime = DateTime.UtcNow,
                     OwnerType = DoodadOwnerType.Slave,
                     DbHouseId = template.Id,
                     Template = DoodadManager.Instance.GetTemplate(doodadBinding.DoodadId),
-                    Data = (byte)doodadBinding.AttachPointId
+                    Data = (byte)doodadBinding.AttachPointId,
+                    ParentObj = template
                 };
-                doodad.SetScale(doodadBinding.Scale);
-                doodad.FuncGroupId = doodad.GetGroupId();
-                owner.SendPacket(new SCDoodadCreatedPacket(doodad));
+
+                //doodad.SetScale(doodadBinding.Scale); // отсутствует в 0.5.101.406
+
+                doodad.FuncGroupId = doodad.GetFuncGroupId();
+
+                if (_attachPoints.ContainsKey(template.ModelId))
+                {
+                    if (_attachPoints[template.ModelId].ContainsKey(doodadBinding.AttachPointId))
+                    {
+                        doodad.Position = _attachPoints[template.ModelId][doodadBinding.AttachPointId];
+                    }
+                    else
+                    {
+                        _log.Warn("Model id: {0} incomplete attach point information");
+                    }                    
+                }
+                else
+                {
+                    doodad.Position = new Point(0f, 3.204f, 12588.96f, 0, 0, 0);
+                    _log.Warn("Model id: {0} has no attach point information");
+                }
+
+                template.AttachedDoodads.Add(doodad);
+
+                doodad.Spawn();
             }
 
             _activeSlaves.Add(owner.ObjId, template);
@@ -178,58 +215,22 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new SlaveTemplate
-                            {
-                                Id = reader.GetUInt32("id"),
-                                Name = LocalizationManager.Instance.GetEnglishLocalizedText("slaves", "name", reader.GetUInt32("id")),
-                                ModelId = reader.GetUInt32("model_id"),
-                                Mountable = reader.GetBoolean("mountable"),
-                                SpawnXOffset = reader.GetFloat("spawn_x_offset"),
-                                SpawnYOffset = reader.GetFloat("spawn_y_offset"),
-                                //PortalSpawnFxId = reader.GetUInt32("portal_spawn_fx_id"),
-                                PortalSpawnFxId = reader.IsDBNull("portal_spawn_fx_id") ? 0 : reader.GetUInt32("portal_spawn_fx_id"),
-                                PortalScale = reader.GetFloat("portal_scale"),
-                                PortalTime = reader.GetFloat("portal_time"),
-                                //PortalDespawnFxId = reader.GetUInt32("portal_despawn_fx_id"),
-                                PortalDespawnFxId = reader.IsDBNull("portal_despawn_fx_id") ? 0 : reader.GetUInt32("portal_despawn_fx_id"),
-                                //FactionId = reader.GetUInt32("faction_id", 0),
-                                FactionId = reader.IsDBNull("faction_id") ? 0 : reader.GetUInt32("faction_id"),
-                                Level = reader.GetUInt32("level"),
-                                Cost = reader.GetInt32("cost"),
-                                SlaveKindId = reader.GetUInt32("slave_kind_id"),
-                                SpawnValidAreaRange = reader.GetUInt32("spawn_valid_area_range", 0),
-                                //SlaveInitialItemPackId = reader.GetUInt32("slave_initial_item_pack_id", 0),
-                                SlaveInitialItemPackId = reader.IsDBNull("slave_initial_item_pack_id") ? 0 : reader.GetUInt32("slave_initial_item_pack_id"),
-                                //SlaveCustomizingId = reader.GetUInt32("slave_customizing_id", 0),
-                                SlaveCustomizingId = reader.IsDBNull("slave_customizing_id") ? 0 : reader.GetUInt32("slave_customizing_id"),
-                                Customizable = reader.GetBoolean("customizable", false)
-                            };
+                            var template = new SlaveTemplate();
+                            template.Id = reader.GetUInt32("id");
+                            template.Name = reader.GetString("name");
+                            template.ModelId = reader.GetUInt32("model_id");
+                            template.Mountable = reader.GetBoolean("mountable");
+                            template.SpawnXOffset = reader.GetFloat("spawn_x_offset");
+                            template.SpawnYOffset = reader.GetFloat("spawn_y_offset");
+                            template.FactionId = reader.GetUInt32("faction_id", 0);
+                            template.Level = reader.GetUInt32("level");
+                            template.Cost = reader.GetInt32("cost");
+                            template.SlaveKind = (SlaveKind)reader.GetUInt32("slave_kind_id");
+                            template.SpawnValidAreaRance = reader.GetUInt32("spawn_valid_area_range", 0);
+                            //template.SlaveInitialItemPackId = reader.GetUInt32("slave_initial_item_pack_id", 0); // отсутствует в 0.5.101.406
+                            //template.SlaveCustomizingId = reader.GetUInt32("slave_customizing_id", 0); // отсутствует в 0.5.101.406
+                            //template.Customizable = reader.GetBoolean("customizable", false); // отсутствует в 0.5.101.406
                             _slaveTemplates.Add(template.Id, template);
-                        }
-                    }
-                }
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM slave_bindings";
-                    command.Prepare();
-
-                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
-                    {
-                        while (reader.Read())
-                        {
-                            var template = new SlaveBindings
-                            {
-                                Id = reader.GetUInt32("id"),
-                                OwnerId = reader.GetInt32("owner_id"),
-                                BuffId = reader.GetString("owner_type"),
-                                SlaveId = reader.GetUInt32("slave_id"),
-                                AttachPointId = reader.GetUInt32("attach_point_id")
-                            };
-                            if (_slaveTemplates.ContainsKey(template.SlaveId))
-                            {
-                                _slaveTemplates[template.SlaveId].SlaveBindings.Add(template);
-                            }
                         }
                     }
                 }
@@ -290,16 +291,14 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new SlaveDoodadBindings
-                            {
-                                Id = reader.GetUInt32("id"),
-                                OwnerId = reader.GetUInt32("owner_id"),
-                                OwnerType = reader.GetString("owner_type"),
-                                AttachPointId = reader.GetInt32("attach_point_id"),
-                                DoodadId = reader.GetUInt32("doodad_id"),
-                                Persist = reader.GetBoolean("persist"),
-                                Scale = reader.GetFloat("scale")
-                            };
+                            var template = new SlaveDoodadBindings();
+                            template.Id = reader.GetUInt32("id");
+                            template.OwnerId = reader.GetUInt32("owner_id");
+                            template.OwnerType = reader.GetString("owner_type");
+                            template.AttachPointId = reader.GetInt32("attach_point_id");
+                            template.DoodadId = reader.GetUInt32("doodad_id");
+                            template.Persist = reader.GetBoolean("persist");
+                            //template.Scale = reader.GetFloat("scale"); // отсутствует в 0.5.101.406
                             if (_slaveTemplates.ContainsKey(template.OwnerId))
                             {
                                 _slaveTemplates[template.OwnerId].DoodadBindings.Add(template);
@@ -307,33 +306,35 @@ namespace AAEmu.Game.Core.Managers
                         }
                     }
                 }
-
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM slave_mount_skills";
-                    command.Prepare();
-
-                    using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
-                    {
-                        while (reader.Read())
-                        {
-                            var template = new SlaveMountSkills
-                            {
-                                Id = reader.GetUInt32("id"),
-                                SlaveId = reader.GetUInt32("slave_id"),
-                                MountSkillId = reader.GetUInt32("mount_skill_id"),
-                            };
-                            if (_slaveTemplates.ContainsKey(template.SlaveId))
-                            {
-                                _slaveTemplates[template.SlaveId].MountSkillId.Add(template);
-                            }
-                        }
-                    }
-                }
-
-
             }
+
             #endregion
+
+
+            _log.Info("Loading Slave Model Attach Points...");
+
+            var contents = FileManager.GetFileContents($"{FileManager.AppPath}Data/slave_attach_points.json");
+            if (string.IsNullOrWhiteSpace(contents))
+                throw new IOException(
+                    $"File {FileManager.AppPath}Data/slave_attach_points.json doesn't exists or is empty.");
+
+            List<SlaveModelAttachPoint> attachPoints;
+            if (JsonHelper.TryDeserializeObject(contents, out attachPoints, out _))
+                _log.Info("Slave model attach points loaded...");
+            else
+                _log.Warn("Slave model attach points not loaded...");
+            
+            _attachPoints = new Dictionary<uint, Dictionary<int, Point>>();
+            foreach (var set in attachPoints)
+            {
+                _attachPoints[set.ModelId] = set.AttachPoints;
+            }
         }
+    }
+
+    public class SlaveModelAttachPoint
+    {
+        public uint ModelId;
+        public Dictionary<int, Point> AttachPoints;
     }
 }

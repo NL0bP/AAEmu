@@ -1,11 +1,11 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSDeleteMailPacket : GamePacket
     {
-        public CSDeleteMailPacket() : base(0x0a1, 1)
+        public CSDeleteMailPacket() : base(CSOffsets.CSDeleteMailPacket, 1)
         {
         }
 
@@ -13,8 +13,8 @@ namespace AAEmu.Game.Core.Packets.C2G
         {
             var mailId = stream.ReadInt64();
             var isSent = stream.ReadBoolean();
-            
-            _log.Debug("DeleteMail, mailId: {0}, isSent: {1}", mailId, isSent);
+
+            Connection.ActiveChar.Mails.DeleteMail(mailId, isSent);
         }
     }
 }
