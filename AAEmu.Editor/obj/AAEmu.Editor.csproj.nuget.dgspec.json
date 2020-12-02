@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj": {}
+    "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj": {}
   },
   "projects": {
     "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
@@ -129,14 +129,14 @@
         }
       }
     },
-    "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj": {
+    "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj": {
       "version": "0.5.0-alpha",
       "restore": {
-        "projectUniqueName": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
+        "projectUniqueName": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
         "projectName": "AAEmu.Editor",
-        "projectPath": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
+        "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
         "packagesPath": "C:\\Users\\NLObP\\.nuget\\packages\\",
-        "outputPath": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\obj\\",
+        "outputPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\NLObP\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -153,8 +153,8 @@
           "netcoreapp2.2": {
             "targetAlias": "netcoreapp2.2",
             "projectReferences": {
-              "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
-                "projectPath": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj"
+              "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
+                "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj"
               }
             }
           }

@@ -21675,6 +21675,7 @@
       "path": "microsoft.netcore.targets/2.0.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
         "lib/netstandard1.0/_._",
@@ -21754,6 +21755,7 @@
       "path": "netstandard.library/2.0.3",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
         "build/netstandard2.0/NETStandard.Library.targets",
@@ -23360,6 +23362,7 @@
       "path": "system.io/4.3.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/MonoAndroid10/_._",
@@ -23440,6 +23443,7 @@
       "path": "system.reflection/4.3.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/MonoAndroid10/_._",
@@ -23520,6 +23524,7 @@
       "path": "system.reflection.primitives/4.3.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/MonoAndroid10/_._",
@@ -23576,6 +23581,7 @@
       "path": "system.runtime/4.3.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/MonoAndroid10/_._",
@@ -23894,6 +23900,7 @@
       "path": "system.text.encoding/4.3.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/MonoAndroid10/_._",
@@ -24057,6 +24064,7 @@
       "path": "system.threading.tasks/4.3.0",
       "files": [
         ".nupkg.metadata",
+        ".signature.p7s",
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/MonoAndroid10/_._",
@@ -24144,11 +24152,11 @@
   "project": {
     "version": "0.5.0-alpha",
     "restore": {
-      "projectUniqueName": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
+      "projectUniqueName": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
       "projectName": "AAEmu.Editor",
-      "projectPath": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
+      "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
       "packagesPath": "C:\\Users\\NLObP\\.nuget\\packages\\",
-      "outputPath": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\obj\\",
+      "outputPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\NLObP\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -24165,8 +24173,8 @@
         "netcoreapp2.2": {
           "targetAlias": "netcoreapp2.2",
           "projectReferences": {
-            "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
-              "projectPath": "D:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj"
+            "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
+              "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj"
             }
           }
         }
