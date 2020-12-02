@@ -18,15 +18,15 @@ namespace AAEmu.Game.Core.Packets.C2G
             var race = stream.ReadByte();
             var gender = stream.ReadByte();
             var items = new uint[7];
-            //for (var i = 0; i < 7; i++)
-            //    items[i] = stream.ReadUInt32();
-            
-            var template = CharacterManager.Instance.GetTemplate(race, gender);
             for (var i = 0; i < 7; i++)
-            {
-                template.BodyItems.Items[i].ModelId = stream.ReadUInt32();
-                template.BodyItems.Items[i].NpcOnly = false;
-            }
+                items[i] = stream.ReadUInt32();
+
+            //var template = CharacterManager.Instance.GetTemplate(race, gender);
+            //for (var i = 0; i < 7; i++)
+            //{
+            //    template.BodyItems.Items[i].ModelId = stream.ReadUInt32();
+            //    template.BodyItems.Items[i].NpcOnly = false;
+            //}
             var customModel = new UnitCustomModelParams();
             customModel.Read(stream);
 

@@ -12,11 +12,11 @@ namespace AAEmu.Game.Core.Packets.C2G
         public override void Read(PacketStream stream)
         {
             var objId = stream.ReadBc();
-            var unkId = stream.ReadUInt32();
-            var unk2Id = stream.ReadUInt32();
-            var unk3Id = stream.ReadUInt32();
+            var FuncGroupId = stream.ReadUInt32();
+            var TimeLeft = stream.ReadUInt32();
+            var puzzleGroup = stream.ReadUInt32();
             
-            _log.Warn("ChangeDoodadPhase, ObjId: {0}, Id: {1}, {2}, {3}", objId, unkId, unk2Id, unk3Id);
+            _log.Warn("CSChangeDoodadPhase, ObjId: {0}, Id: {1}, {2}, {3}", objId, FuncGroupId, TimeLeft, puzzleGroup);
         }
     }
 }
