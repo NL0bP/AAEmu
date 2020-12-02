@@ -7,8 +7,6 @@ Head over to the [wiki](https://github.com/atel0/AAEmu/wiki).
 If you don't find what you're looking for there, [talk to a human](#discussion). Please do not use our issue tracker for support requests.
 
 ### Discussion
-- [Site](https://aaemu.info/)
-- [Forums](https://boards.aaemu.pw/)
 - [Community Discord](https://discord.gg/vn8E8E6)
 
 ### Can I contribute?
@@ -29,4 +27,4 @@ Yes you can! Contributions are welcomed provided that they comply with our [Cont
 	You should have received a copy of the GNU Lesser General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-atel0/AAEmu are not affiliated with XLGames. All brands and trademarks belong to their respective owners. AAEmu is not a XLGames-approved software, nor is it associated with XLGames.
+NLObP/AAEmu are not affiliated with XLGames. All brands and trademarks belong to their respective owners. AAEmu is not a XLGames-approved software, nor is it associated with XLGames.
