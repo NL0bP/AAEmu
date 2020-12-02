@@ -30,4 +30,14 @@ Yes you can! Contributions are welcomed provided that they comply with our [Cont
 	You should have received a copy of the GNU Lesser General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-atel0/AAEmu are not affiliated with XLGames. All brands and trademarks belong to their respective owners. AAEmu is not a XLGames-approved software, nor is it associated with XLGames.
+NLObP/AAEmu are not affiliated with XLGames. All brands and trademarks belong to their respective owners. AAEmu is not a XLGames-approved software, nor is it associated with XLGames.
+
+![avatar](/doc/img/Screenshot_1.png)
+![avatar](/doc/img/Screenshot_2.png)
+![avatar](/doc/img/Screenshot_3.png)
+![avatar](/doc/img/Screenshot_4.png)
+![avatar](/doc/img/Screenshot_5.png)
+![avatar](/doc/img/Screenshot_6.png)
+![avatar](/doc/img/Screenshot_7.png)
+
+
