@@ -1,12 +1,13 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSResetSkillsPacket : GamePacket
     {
-        public CSResetSkillsPacket() : base(CSOffsets.CSResetSkillsPacket, 1)
+        public CSResetSkillsPacket() : base(CSOffsets.CSResetSkillsPacket, 5)
         {
         }
 

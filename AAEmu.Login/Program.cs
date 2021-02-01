@@ -21,7 +21,7 @@ namespace AAEmu.Login
         private static string Name => Assembly.GetExecutingAssembly().GetName().Name;
         private static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-        public static int UpTime => (int) (DateTime.Now - _startTime).TotalSeconds;
+        public static int UpTime => (int) (DateTime.UtcNow - _startTime).TotalSeconds;
 
         public static async Task Main(string[] args)
         {
@@ -68,7 +68,7 @@ namespace AAEmu.Login
         private static void Initialization()
         {
             _thread.Name = "AA.LoginServer Base Thread";
-            _startTime = DateTime.Now;
+            _startTime = DateTime.UtcNow;
         }
 
         private static void Configuration(string[] args)

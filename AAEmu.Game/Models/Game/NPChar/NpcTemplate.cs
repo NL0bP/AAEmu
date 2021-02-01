@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using AAEmu.Game.Models.Game.AI.v2.Params;
+using AAEmu.Game.Models.Game.AI_old.Static;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
@@ -53,6 +54,8 @@ namespace AAEmu.Game.Models.Game.NPChar
     {
         public uint Id { get; set; }
         public string Name { get; set; }
+        public bool NpcOnly { get; set; }
+        public uint OwnerTypeId { get; set; }
         public int CharRaceId { get; set; }
         public NpcGradeType NpcGradeId { get; set; }
         public NpcKindType NpcKindId { get; set; }
@@ -61,7 +64,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         public uint ModelId { get; set; }
         public uint FactionId { get; set; }
         public bool SkillTrainer { get; set; }
-        public int AiFileId { get; set; }
+        public AiFilesType AiFileId { get; set; }
         public bool Merchant { get; set; }
         public int NpcNicknameId { get; set; }
         public bool Auctioneer { get; set; }
@@ -72,7 +75,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         public int BaseSkillId { get; set; }
         public bool TrackFriendship { get; set; }
         public bool Priest { get; set; }
-        public int NpcTedencyId { get; set; }
+        //public int NpcTedencyId { get; set; } // there is no such field in the database for version 3030
         public bool Blacksmith { get; set; }
         public bool Teleporter { get; set; }
         public float Opacity { get; set; }
@@ -80,14 +83,14 @@ namespace AAEmu.Game.Models.Game.NPChar
         public float Scale { get; set; }
         public float SightRangeScale { get; set; }
         public float SightFovScale { get; set; }
-        public int MilestoneId { get; set; }
+        //public int MilestoneId { get; set; } // there is no such field in the database for version 3030
         public float AttackStartRangeScale { get; set; }
         public bool Aggression { get; set; }
         public float ExpMultiplier { get; set; }
         public int ExpAdder { get; set; }
         public bool Stabler { get; set; }
         public bool AcceptAggroLink { get; set; }
-        public int RecrutingBattlefieldId { get; set; }
+        //public int RecrutingBattlefieldId { get; set; } // there is no such field in the database for version 3030
         public float ReturnDistance { get; set; }
         public int NpcAiParamId { get; set; }
         public bool NonPushableByActor { get; set; }
@@ -125,6 +128,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         public uint MerchantPackId { get; set; }
 
         public uint HairId { get; set; }
+        public uint HornId { get; set; }
         public UnitCustomModelParams ModelParams { get; set; }
         public EquipItemsTemplate Items { get; set; }
         public (uint ItemId, bool NpcOnly)[] BodyItems { get; set; }
@@ -133,6 +137,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         public AiParams AiParams { get; set; }
         public Dictionary<SkillUseConditionKind, List<NpcSkill>> Skills { get; set; }
         public List<NpcPassiveBuff> PassiveBuffs { get; set; }
+        public uint TotalCustomId { get; set; }
 
         public NpcTemplate()
         {

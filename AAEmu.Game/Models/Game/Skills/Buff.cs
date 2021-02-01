@@ -3,19 +3,12 @@ using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Effects;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
-    public enum EffectState
-    {
-        Created,
-        Acting,
-        Finishing,
-        Finished
-    }
-
     public class Buff
     {
         private object _lock = new object();
@@ -61,7 +54,7 @@ namespace AAEmu.Game.Models.Game.Skills
                 Duration = Template.GetDuration(AbLevel);
             if (StartTime == DateTime.MinValue)
             {
-                StartTime = DateTime.Now;
+                StartTime = DateTime.UtcNow;
                 EndTime = StartTime.AddMilliseconds(Duration);
             }
 
@@ -94,7 +87,7 @@ namespace AAEmu.Game.Models.Game.Skills
                         Duration = Template.GetDuration(AbLevel);
                     if (StartTime == DateTime.MinValue)
                     {
-                        StartTime = DateTime.Now;
+                        StartTime = DateTime.UtcNow;
                         EndTime = StartTime.AddMilliseconds(Duration);
                     }
 
@@ -192,13 +185,13 @@ namespace AAEmu.Game.Models.Game.Skills
         {
             if (Duration == 0)
                 return -1;
-            var time = (long) (StartTime.AddMilliseconds(Duration) - DateTime.Now).TotalMilliseconds;
+            var time = (long) (StartTime.AddMilliseconds(Duration) - DateTime.UtcNow).TotalMilliseconds;
             return time > 0 ? time : 0;
         }
 
         public uint GetTimeElapsed()
         {
-            var time = (uint) (DateTime.Now - StartTime).TotalMilliseconds;
+            var time = (uint) (DateTime.UtcNow - StartTime).TotalMilliseconds;
             return time > 0 ? time : 0;
         }
 

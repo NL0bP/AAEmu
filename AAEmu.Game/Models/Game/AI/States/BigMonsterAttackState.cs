@@ -8,6 +8,7 @@ using AAEmu.Game.Models.Game.AI.Params;
 using AAEmu.Game.Models.Game.AI.Params.BigMonster;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils;
 

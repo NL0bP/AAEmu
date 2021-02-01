@@ -41,11 +41,13 @@ namespace AAEmu.Game.GameData
                 using (var sqliteReader = command.ExecuteReader())
                 using (var reader = new SQLiteWrapperReader(sqliteReader))
                 {
+                    var step = 0u;
                     while (reader.Read())
                     {
                         var template = new BuffModifier()
                         {
-                            Id = reader.GetUInt32("id"),
+                            Id = step++,
+                            //Id = reader.GetUInt32("id"),
                             OwnerId = reader.GetUInt32("owner_id"),
                             OwnerType = reader.GetString("owner_type"),
                             TagId = reader.GetUInt32("tag_id", 0),

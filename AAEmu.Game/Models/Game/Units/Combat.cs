@@ -2,8 +2,10 @@
 
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units.Route;
 
 namespace AAEmu.Game.Models.Game.Units
@@ -88,6 +90,18 @@ namespace AAEmu.Game.Models.Game.Units
                     LoopAuto(npc);
                 }
             }
+        }
+        public override void Execute(Transfer transfer)
+        {
+            throw new NotImplementedException();
+        }
+        public override void Execute(Gimmick gimmick)
+        {
+            throw new NotImplementedException();
+        }
+        public override void Execute(BaseUnit unit)
+        {
+            throw new NotImplementedException();
         }
     }
 }

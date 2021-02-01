@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using AAEmu.Commons.Utils;
@@ -123,14 +123,14 @@ namespace AAEmu.Game.Core.Managers
                     using (var sqliteReader = command.ExecuteReader())
                     using (var reader = new SQLiteWrapperReader(sqliteReader))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
-                            var formula = new WearableFormula
-                            {
-                                Id = reader.GetUInt32("id"),
-                                Type = (WearableFormulaType) reader.GetByte("kind_id"),
-                                TextFormula = reader.GetString("formula")
-                            };
+                            var formula = new WearableFormula();
+                            formula.Id = step++;
+                            //formula.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
+                            formula.Type = (WearableFormulaType) reader.GetByte("kind_id");
+                            formula.TextFormula = reader.GetString("formula");
                             if (formula.Prepare())
                                 _wearableFormulas.Add(formula.Type, formula);
                         }

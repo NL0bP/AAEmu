@@ -1,6 +1,7 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
@@ -10,7 +11,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly AbilityType _oldAbilityId;
         private readonly AbilityType _abilityId;
 
-        public SCAbilitySwappedPacket(uint objId, AbilityType oldAbilityId, AbilityType abilityId) : base(SCOffsets.SCAbilitySwappedPacket, 1)
+        public SCAbilitySwappedPacket(uint objId, AbilityType oldAbilityId, AbilityType abilityId) : base(SCOffsets.SCAbilitySwappedPacket, 5)
         {
             _objId = objId;
             _oldAbilityId = oldAbilityId;

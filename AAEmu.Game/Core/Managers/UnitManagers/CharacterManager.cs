@@ -18,6 +18,7 @@ using AAEmu.Game.Utils.DB;
 using AAEmu.Game.Models.Game.Chat;
 using NLog;
 using AAEmu.Game.Models.Game.Items.Actions;
+using AAEmu.Game.Models.Game.Skills.Static;
 using MySql.Data.MySqlClient;
 
 namespace AAEmu.Game.Core.Managers.UnitManagers
@@ -86,13 +87,13 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             //Not sure if we should put htis here or world
             foreach(var character in WorldManager.Instance.GetAllCharacters())
             {
-                if (character.IsInCombat && character.LastCombatActivity.AddSeconds(30) < DateTime.Now)
+                if (character.IsInCombat && character.LastCombatActivity.AddSeconds(30) < DateTime.UtcNow)
                 {
                     character.BroadcastPacket(new SCCombatClearedPacket(character.ObjId), true);
                     character.IsInCombat = false;
                 }
                 
-                if (character.IsInPostCast && character.LastCast.AddSeconds(5) < DateTime.Now)
+                if (character.IsInPostCast && character.LastCast.AddSeconds(5) < DateTime.UtcNow)
                 {
                     character.IsInPostCast = false;
                 }
@@ -118,7 +119,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
 
                 character.Hp = Math.Min(character.Hp, character.MaxHp);
                 character.Mp = Math.Min(character.Mp, character.MaxMp);
-                character.BroadcastPacket(new SCUnitPointsPacket(character.ObjId, character.Hp, character.Mp), true);
+                character.BroadcastPacket(new SCUnitPointsPacket(character.ObjId, character.Hp, character.Mp, character.HighAbilityRsc), true);
             }
         }
         
@@ -372,7 +373,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         while (reader.Read())
                         {
                             var template = new ExpertLimit();
-                            template.Id = reader.GetUInt32("id");
+                            template.Id = (uint)step;
+                            //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
                             template.UpLimit = reader.GetInt32("up_limit");
                             template.ExpertLimitCount = reader.GetByte("expert_limit");
                             template.Advantage = reader.GetInt32("advantage");
@@ -588,7 +590,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             }
         }
 
-        public List<LoginCharacterInfo> LoadCharacters(uint accountId)
+        public List<LoginCharacterInfo> LoadCharacters(ulong accountId)
         {
             var result = new List<LoginCharacterInfo>();
             using (var connection = MySQL.CreateConnection())

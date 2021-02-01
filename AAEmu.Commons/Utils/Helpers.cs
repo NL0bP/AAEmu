@@ -70,13 +70,13 @@ namespace AAEmu.Commons.Utils
 
         public static long UnixTimeNow()
         {
-            var timeSpan = (DateTime.Now - _unixDate);
+            var timeSpan = (DateTime.UtcNow - _unixDate);
             return (long)timeSpan.TotalSeconds;
         }
 
         public static long UnixTimeNowInMilli()
         {
-            var timeSpan = (DateTime.Now - _unixDate);
+            var timeSpan = (DateTime.UtcNow - _unixDate);
             return (long)timeSpan.TotalMilliseconds;
         }
 
@@ -136,6 +136,47 @@ namespace AAEmu.Commons.Utils
             temp -= coords[1] * 0.2561f;
             coords[0] = (byte)(temp / 0.001);
             return coords;
+        }
+
+        public static (long x, long y, float z) ConvertWorldPosition(byte[] values)
+        {
+            var tempX = 8 * (values[0] + ((values[1] + (values[2] << 8)) << 8));
+            var flagX = (int)(((-(values[8] & 0x80) >> 30) & 0xFFFFFFFE) + 1);
+            var resX = ((long)tempX << 32) * flagX;
+
+            var tempY = 8 * (values[3] + ((values[4] + (values[5] << 8)) << 8));
+            var flagY = (((-(values[8] & 0x40) >> 30) & 0xFFFFFFFE) + 1);
+            var resY = ((long)tempY << 32) * flagY;
+
+            var tempZ = (ulong)(values[6] + ((values[7] + ((values[8] & 0x3f) << 8)) << 8));
+
+            var resultZ = (float)Math.Round(tempZ * 0.00000023841858 * 4196 - 100, 4, MidpointRounding.ToEven);
+
+            return (resX, resY, resultZ);
+        }
+
+        public static byte[] ConvertWorldPosition(long x, long y, float z)
+        {
+            var preX = x >> 31;
+            var preY = y >> 31;
+
+            var resultX = (preX ^ (x + preX + (0 > preX ? 1 : 0))) >> 3;
+            var resultY = (preY ^ (y + preY + (0 > preY ? 1 : 0))) >> 3;
+            var resultZ = (long)Math.Floor((z + 100f) / 4196f * 4194304f + 0.5);
+
+            var position = new byte[9];
+            position[0] = (byte)(resultX >> 32);
+            position[1] = (byte)(resultX >> 40);
+            position[2] = (byte)(resultX >> 48);
+
+            position[3] = (byte)(resultY >> 32);
+            position[4] = (byte)(resultY >> 40);
+            position[5] = (byte)(resultY >> 48);
+
+            position[6] = (byte)resultZ;
+            position[7] = (byte)(resultZ >> 8);
+            position[8] = (byte)(((resultZ >> 16) & 0x3F) + (((y < 0 ? 1 : 0) + 2 * (x < 0 ? 1 : 0)) << 6));
+            return position;
         }
 
         public static (float x, float y, float z) ConvertPosition(byte[] values)
@@ -245,6 +286,69 @@ namespace AAEmu.Commons.Utils
         {
             var size = data.Length;
             return Crc8(data, size);
+        }
+        public static float SbyteToFloat(sbyte i)
+        {
+            return ((i - sbyte.MinValue) * (1f / 0xFF)) - 0.5f;
+        }
+
+        public static float Int16ToFloat(short i)
+        {
+            return ((i - short.MinValue) * (1f / 0xFFFF)) - 0.5f;
+        }
+
+        /*
+        * Which works out about 30% faster than PZahras (not that you'd notice with small amounts of data).
+        * The BitConverter method itself is pretty quick, it's just having to do the replace which slows it down, so if you can live with the dashes then it's perfectly good.
+        */
+        public static string ByteArrayToString(byte[] data)
+        {
+            char[] lookup = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+            int i = 0, p = 0, l = data.Length;
+            char[] c = new char[l * 2 + 2];
+            byte d;
+            //int p = 2; c[0] = '0'; c[1] = 'x'; //если хотим 0x
+            while (i < l)
+            {
+                d = data[i++];
+                c[p++] = lookup[d / 0x10];
+                c[p++] = lookup[d % 0x10];
+            }
+            return new string(c, 0, c.Length);
+        }
+
+        public static short ConvertRadianToShortDirection(float radian)
+        {
+            var z = radian * 0.15915494309189533576888376337251; // values.X / (float)Math.PI * 2; // переводим из радиан в направление
+
+            var rad = Convert.ToInt16(z * 32767f);
+
+            return rad;
+        }
+        
+        public static sbyte ConvertRadianToSbyteDirection(float radian)
+        {
+            var z = radian * 0.15915494309189533576888376337251; // values.X / (float)Math.PI * 2; // переводим из радиан в направление
+
+            var rad = Convert.ToSByte(z * 127f);
+
+            return rad;
+        }
+        
+        public static float ConvertDirectionToRadian(sbyte rotation)
+        {
+            var z = rotation * 0.0078740157; // переводим из направления в радианы
+            z *= Math.PI * 2;
+
+            return (float)z;
+        }
+        
+        public static float ConvertDirectionToRadian(short rotation)
+        {
+            var z = rotation * 0.000030518509; // переводим из направления в радианы
+            z *= Math.PI * 2;
+
+            return (float)z;
         }
     }
 }

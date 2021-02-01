@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -193,7 +193,7 @@ namespace AAEmu.Game.Core.Managers
                 AttachedDoodads = new List<Doodad>(),
                 AttachedSlaves = new List<Slave>(),
                 AttachedCharacters = new Dictionary<AttachPointKind, Character>(),
-                SpawnTime = DateTime.Now
+                SpawnTime = DateTime.UtcNow
             };
             template.Spawn();
             
@@ -208,7 +208,7 @@ namespace AAEmu.Game.Core.Managers
                     ParentObjId = template.ObjId,
                     AttachPoint = (byte)doodadBinding.AttachPointId,
                     OwnerId = owner.Id,
-                    PlantTime = DateTime.Now,
+                    PlantTime = DateTime.UtcNow,
                     OwnerType = DoodadOwnerType.Slave,
                     DbHouseId = template.Id,
                     Template = DoodadManager.Instance.GetTemplate(doodadBinding.DoodadId),
@@ -267,7 +267,7 @@ namespace AAEmu.Game.Core.Managers
                     AttachedDoodads = new List<Doodad>(),
                     AttachedSlaves = new List<Slave>(),
                     AttachedCharacters = new Dictionary<AttachPointKind, Character>(),
-                    SpawnTime = DateTime.Now,
+                    SpawnTime = DateTime.UtcNow,
                     AttachPointId = (sbyte) slaveBinding.AttachPointId,
                     OwnerObjId = template.ObjId
                 };
@@ -399,11 +399,13 @@ namespace AAEmu.Game.Core.Managers
 
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
                             var template = new SlaveDoodadBindings
                             {
-                                Id = reader.GetUInt32("id"),
+                                Id = step++,
+                                //Id = reader.GetUInt32("id"), // there is no such field in the database for version 3030
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
                                 AttachPointId = reader.GetInt32("attach_point_id"),

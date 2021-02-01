@@ -8,13 +8,13 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Expeditions;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Plots.Tree;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Tasks;
@@ -50,6 +50,7 @@ namespace AAEmu.Game.Models.Game.Units
         public virtual int HpRegen { get; set; }
         [UnitAttribute(UnitAttribute.PersistentHealthRegen)]
         public virtual int PersistentHpRegen { get; set; } = 30;
+        public int HighAbilityRsc { get; set; }
         public int Mp { get; set; }
         [UnitAttribute(UnitAttribute.MaxMana)]
         public virtual int MaxMp { get; set; }
@@ -248,9 +249,9 @@ namespace AAEmu.Game.Models.Game.Units
             {
                 //StartRegen();
             }
-            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Hp > 0 ? Mp : 0), true);
+            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Hp > 0 ? Mp : 0, Hp > 0 ? HighAbilityRsc : 0), true);
         }
-        
+
         public virtual void ReduceCurrentMp(Unit unit, int value)
         {
             if (Hp == 0)
@@ -261,7 +262,7 @@ namespace AAEmu.Game.Models.Game.Units
                 StopRegen();
             else
                 StartRegen();
-            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Mp), true);
+            BroadcastPacket(new SCUnitPointsPacket(ObjId, Hp, Hp > 0 ? Mp : 0, Hp > 0 ? HighAbilityRsc : 0), true);
         }
 
         public virtual void DoDie(Unit killer)
@@ -302,7 +303,7 @@ namespace AAEmu.Game.Models.Game.Units
                 {
                     character2.StopAutoSkill(character2);
                     character2.IsInBattle = false; // we need the character to be "not in battle"
-                    character2.DeadTime = DateTime.Now;
+                    character2.DeadTime = DateTime.UtcNow;
                 }
 
                 killer.CurrentTarget = null;
@@ -356,7 +357,7 @@ namespace AAEmu.Game.Models.Game.Units
             {
                 var buff = SkillManager.Instance.GetBuffTemplate((uint) BuffConstants.RETRIBUTION_BUFF);
                 var casterObj = new SkillCasterUnit(ObjId);
-                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now));
+                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.UtcNow));
             }
             else
             {
@@ -371,7 +372,7 @@ namespace AAEmu.Game.Models.Game.Units
             {
                 var buff = SkillManager.Instance.GetBuffTemplate((uint) BuffConstants.BLOODLUST_BUFF);
                 var casterObj = new SkillCasterUnit(ObjId);
-                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now));
+                Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.UtcNow));
             }
             else
             {

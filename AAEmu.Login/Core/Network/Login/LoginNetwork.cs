@@ -19,19 +19,20 @@ namespace AAEmu.Login.Core.Network.Login
         {
             _handler = new LoginProtocolHandler();
 
-            RegisterPacket(0x01, typeof(CARequestAuthPacket)); // TODO +---
             RegisterPacket(0x02, typeof(CARequestAuthTencentPacket));
             RegisterPacket(0x03, typeof(CARequestAuthGameOnPacket));
             RegisterPacket(0x04, typeof(CARequestAuthTrionPacket));
-            RegisterPacket(0x05, typeof(CARequestAuthMailRuPacket)); // TODO +
-            RegisterPacket(0x06, typeof(CAChallengeResponsePacket));
+            RegisterPacket(0x05, typeof(CAChallengeResponsePacket));
+            //RegisterPacket(0x05, typeof(CARequestAuthMailRuPacket)); // TODO +
+            RegisterPacket(0x06, typeof(CAChallengeResponse2Packet)); // требует клиент 3.0.3.0
             RegisterPacket(0x07, typeof(CAChallengeResponse2Packet));
             RegisterPacket(0x08, typeof(CAOtpNumberPacket));
             RegisterPacket(0x0a, typeof(CAPcCertNumberPacket));
-            RegisterPacket(0x0b, typeof(CAListWorldPacket)); // TODO +
-            RegisterPacket(0x0c, typeof(CAEnterWorldPacket)); // TODO +
-            RegisterPacket(0x0d, typeof(CACancelEnterWorldPacket));
-            RegisterPacket(0x0e, typeof(CARequestReconnectPacket)); // TODO +
+            RegisterPacket(0x0C, typeof(CAListWorldPacket)); // TODO +
+            RegisterPacket(0x0D, typeof(CAEnterWorldPacket)); // TODO +
+            RegisterPacket(0x0F, typeof(CARequestReconnectPacket)); // TODO +
+            RegisterPacket(0x11, typeof(CARequestAuthTWPacket)); // TODO +
+            RegisterPacket(0x05, typeof(CARequestAuthTrionPacket));
         }
 
         public void Start()

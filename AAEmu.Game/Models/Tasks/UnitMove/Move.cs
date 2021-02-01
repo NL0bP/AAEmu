@@ -1,5 +1,7 @@
-﻿using AAEmu.Game.Models.Game.Char;
+﻿using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Transfers.Paths;
+using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Route;
 
 namespace AAEmu.Game.Models.Tasks.UnitMove
@@ -7,23 +9,28 @@ namespace AAEmu.Game.Models.Tasks.UnitMove
     public class Move : Task
     {
         private readonly Simulation _patrol;
-        private readonly Npc _npc;
+        private readonly Unit _unit;
         private readonly float _targetX;
         private readonly float _targetY;
         private readonly float _targetZ;
+        private readonly TransfersPathPoint _pp;
 
         /// <summary>
-        /// Initialization task
+        /// Move task
         /// </summary>
         /// <param name="patrol"></param>
-        /// <param name="ch"></param>
-        public Move(Simulation patrol, Npc npc, float TargetX, float TargetY, float TargetZ)
+        /// <param name="unit"></param>
+        /// <param name="TargetX"></param>
+        /// <param name="TargetY"></param>
+        /// <param name="TargetZ"></param>
+        public Move(Simulation patrol, Unit unit, float TargetX, float TargetY, float TargetZ, TransfersPathPoint pp = null)
         {
             _patrol = patrol;
-            _npc = npc;
             _targetX = TargetX;
             _targetY = TargetY;
             _targetZ = TargetZ;
+            _unit = unit;
+            _pp = pp;
         }
 
         /// <summary>
@@ -31,9 +38,18 @@ namespace AAEmu.Game.Models.Tasks.UnitMove
         /// </summary>
         public override void Execute()
         {
-            if (_npc.Hp > 0)
+            switch (_unit)
             {
-                _patrol?.MoveTo(_patrol, _npc, _targetX, _targetY, _targetZ);
+                case Npc _npc:
+                    _patrol?.MoveTo(_patrol, _npc, _targetX, _targetY, _targetZ);
+                    break;
+                case Gimmick _gimmick:
+                    _patrol?.MoveTo(_patrol, _gimmick, _targetX, _targetY, _targetZ);
+                    break;
+                case Transfer _transfer:
+                    _patrol?.MoveTo(_patrol, _transfer, _targetX, _targetY, _targetZ);
+                    //_patrol?.MoveToPath(_patrol, _transfer, _targetX, _targetY, _targetZ, _pp);
+                    break;
             }
         }
     }

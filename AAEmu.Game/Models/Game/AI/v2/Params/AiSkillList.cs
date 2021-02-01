@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using NLua;
 
-namespace AAEmu.Game.Models.Game.AI.V2.Params
+namespace AAEmu.Game.Models.Game.AI.v2.Params
 {
     public class AiSkillList
     {
@@ -59,10 +58,10 @@ namespace AAEmu.Game.Models.Game.AI.V2.Params
             }
         }
     }
-    public class AiSkill
-    {
-        public uint SkillId { get; set; }
-        public float Delay { get; set; }
-        public bool Strafe { get; set; }
-    }
+    //public class AiSkill
+    //{
+    //    public uint SkillId { get; set; }
+    //    public float Delay { get; set; }
+    //    public bool Strafe { get; set; }
+    //}
 }

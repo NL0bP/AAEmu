@@ -98,7 +98,8 @@ namespace AAEmu.Game
             DoodadManager.Instance.Load();
             HousingManager.Instance.Load();
             TransferManager.Instance.Load();
-
+            GimmickManager.Instance.Load();
+            
             SpawnManager.Instance.Load();
 
             AccessLevelManager.Instance.Load();
@@ -123,7 +124,6 @@ namespace AAEmu.Game
             spawnSw.Start();
             SpawnManager.Instance.SpawnAll();
             HousingManager.Instance.SpawnAll();
-            TransferManager.Instance.SpawnAll();
             spawnSw.Stop();
             _log.Info("Units spawned in {0}", spawnSw.Elapsed);
             

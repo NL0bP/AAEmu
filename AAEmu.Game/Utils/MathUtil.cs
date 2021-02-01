@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.World;
 using Microsoft.VisualBasic.CompilerServices;
 
@@ -30,6 +31,11 @@ namespace AAEmu.Game.Utils
         public static double RadianToDegree(double angle)
         {
             return angle * (180.0 / Math.PI);
+        }
+
+        public static double DegreeToRadian(double angle)
+        {
+            return angle * (Math.PI / 180.0);
         }
 
         public static double ConvertDirectionToDegree(sbyte direction)
@@ -248,6 +254,69 @@ namespace AAEmu.Game.Utils
                 var rotZ = (float)Math.Asin(-2.0 * (quat.X*quat.Z - quat.Y*quat.W)/(sqx + sqy + sqz + sqw));
 
                 return new Vector3(rotX, rotY, rotZ);
+        }
+
+        public static double Distance(GameObject obj, Point target)
+        {
+            return new Vector3(obj.Position.X, obj.Position.Y, obj.Position.Z).Distance(new Vector3(target.X, target.Y, target.Z));
+        }
+
+        public static double CalculateDirection(Vector3 obj1, Vector3 obj2)
+        {
+            var rad = Math.Atan2(obj2.Y - obj1.Y, obj2.X - obj1.X);
+
+            return rad;
+        }
+        
+        public static float GetDistance(Vector3 v1, Vector3 v2, bool point3d = false)
+        {
+            return point3d
+                ?
+                MathF.Sqrt(MathF.Pow(v1.X - v2.X, 2) + MathF.Pow(v1.Y - v2.Y, 2) + MathF.Pow(v1.Y - v2.Y, 2))
+                :
+                MathF.Sqrt(MathF.Pow(v1.X - v2.X, 2) + MathF.Pow(v1.Y - v2.Y, 2));
+        }
+        public static float ConvertToDirection(double radian)
+        {
+            var degree = RadianToDegree(radian);
+            degree += -90; // 12 o'clock == 0°
+
+            double direction = 0f;
+            if (Math.Abs(degree) > 135 && Math.Abs(degree) <= 180)
+            {
+                direction = degree * 182.0389;
+            }
+            else if (Math.Abs(degree) > 90 && Math.Abs(degree) <= 135 || Math.Abs(degree) < 270 && Math.Abs(degree) >= 225)
+            {
+                direction = degree * 205.6814814814815;
+            }
+            else if (Math.Abs(degree) >= 0 && Math.Abs(degree) <= 90 || Math.Abs(degree) <= 360 && Math.Abs(degree) >= 270)
+            {
+                direction = degree * 252.9777777777778;
+            }
+            //_log.Warn("Degree0={0}, Degree1={1}, Direction={2}", tmp, degree, direction);
+
+            return Helpers.ConvertDirectionToRadian((short)direction);
+        }
+
+        private const double Pi = 3.14159;
+        private const double Pi2 = 3.14159 * 2;
+        private const double Pi12 = 3.14159 * 0.5;
+
+        public static Quaternion ConvertRadianToDirectionShort(double radian)
+        {
+            if (radian < 0)
+            {
+                radian = Pi2 + radian;
+            }
+            radian -= Pi12;
+            if (radian > Pi)
+            {
+                radian -= Pi2;
+            }
+            var quat = Quaternion.CreateFromYawPitchRoll((float)radian, 0.0f, 0.0f);
+
+            return quat;
         }
     }
 }

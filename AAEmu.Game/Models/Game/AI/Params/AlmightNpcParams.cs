@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using AAEmu.Game.Models.Game.AI.v2.Params;
 using NLua;
 
 namespace AAEmu.Game.Models.Game.AI.Params

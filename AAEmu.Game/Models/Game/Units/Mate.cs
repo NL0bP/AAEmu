@@ -431,7 +431,7 @@ namespace AAEmu.Game.Models.Game.Units
         {
             character.SendPacket(new SCUnitStatePacket(this));
             character.SendPacket(new SCMateStatePacket(ObjId));
-            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp));
+            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc));
             if (Att1 > 0)
             {
                 var owner = WorldManager.Instance.GetCharacterByObjId(Att1);

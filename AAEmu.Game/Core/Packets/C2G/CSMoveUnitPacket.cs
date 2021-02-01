@@ -8,6 +8,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
+using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Core.Packets.C2G
@@ -17,17 +18,29 @@ namespace AAEmu.Game.Core.Packets.C2G
         private uint _objId;
         private MoveType _moveType;
         
-        public CSMoveUnitPacket() : base(CSOffsets.CSMoveUnitPacket, 1)
+        public CSMoveUnitPacket() : base(CSOffsets.CSMoveUnitPacket, 5)
         {
         }
 
         public override void Read(PacketStream stream)
         {
             _objId = stream.ReadBc();
-            
+            var myObjId = Connection.ActiveChar.ObjId;
             var type = (MoveTypeEnum)stream.ReadByte();
             _moveType = MoveType.GetType(type);
-            stream.Read(_moveType);
+            stream.Read(_moveType); // Read UnitMovement
+            var extraFlag = stream.ReadByte(); // add in 3.0.3.0
+
+            // ---- test Ai_old ----
+            var movementAction = new MovementAction(
+                new Point(_moveType.X, _moveType.Y, _moveType.Z, (sbyte)_moveType.Rot.X, (sbyte)_moveType.Rot.Y, (sbyte)_moveType.Rot.Z),
+                new Point(0, 0, 0),
+                (sbyte)_moveType.Rot.Z,
+                3,
+                MoveTypeEnum.Unit
+            );
+            Connection.ActiveChar.VisibleAi.OwnerMoved(movementAction);
+            // ---- test Ai_old ----
         }
 
         public override void Execute()
@@ -118,9 +131,9 @@ namespace AAEmu.Game.Core.Packets.C2G
                 if (!(_moveType is UnitMoveType mType))
                     return;
                 
-                if ((mType.ActorFlags & 0x20) != 0)
+                if (((ushort)mType.ActorFlags & 0x20) != 0)
                 {
-                    Connection
+                        Connection
                         .ActiveChar
                         .SetPosition(mType.X2, mType.Y2, mType.Z2, mType.RotationX, mType.RotationY, mType.RotationZ);
 

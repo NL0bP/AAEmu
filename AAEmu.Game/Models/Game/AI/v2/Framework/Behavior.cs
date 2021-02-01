@@ -1,6 +1,6 @@
-using System;
+﻿using System;
 
-namespace AAEmu.Game.Models.Game.AI.v2
+namespace AAEmu.Game.Models.Game.AI.v2.Framework
 {
     public enum BehaviorKind
     {
@@ -41,7 +41,7 @@ namespace AAEmu.Game.Models.Game.AI.v2
     /// </summary>
     public abstract class Behavior
     {
-        public NpcAi Ai { get; set; }
+        public Framework.NpcAi Ai { get; set; }
 
         public abstract void Enter();
         public abstract void Tick(TimeSpan delta);

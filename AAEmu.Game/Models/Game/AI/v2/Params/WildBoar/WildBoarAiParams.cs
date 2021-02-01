@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using AAEmu.Game.Models.Game.AI.V2.Params;
 using NLua;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Params.WildBoar

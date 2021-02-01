@@ -23,7 +23,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
             //TODO add doodad scaling transformation
             owner.FuncTask = new DoodadFuncGrowthTask(caster, owner, skillId, NextPhase);
             var customDelay = Delay / 200.0f;
-            owner.GrowthTime = DateTime.Now.AddMilliseconds(customDelay);
+            owner.GrowthTime = DateTime.UtcNow.AddMilliseconds(customDelay);
             TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(customDelay));
         }
     }

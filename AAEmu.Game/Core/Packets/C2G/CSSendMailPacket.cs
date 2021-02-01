@@ -2,7 +2,7 @@
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
-using AAEmu.Game.Models.Game.Error;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Mails;
 using AAEmu.Game.Utils;
@@ -11,7 +11,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSSendMailPacket : GamePacket
     {
-        public CSSendMailPacket() : base(CSOffsets.CSSendMailPacket, 1)
+        public CSSendMailPacket() : base(CSOffsets.CSSendMailPacket, 5)
         {
         }
 

@@ -111,7 +111,7 @@ namespace AAEmu.Game.Core.Managers.World
         public void SendFactions(Character character)
         {
             if (_systemFactions.Values.Count == 0)
-                character.SendPacket(new SCFactionListPacket());
+                character.SendPacket(new SCSystemFactionListPacket());
             else
             {
                 var factions = _systemFactions.Values.ToArray();
@@ -119,7 +119,7 @@ namespace AAEmu.Game.Core.Managers.World
                 {
                     var temp = new SystemFaction[factions.Length - i <= 20 ? factions.Length - i : 20];
                     Array.Copy(factions, i, temp, 0, temp.Length);
-                    character.SendPacket(new SCFactionListPacket(temp));
+                    character.SendPacket(new SCSystemFactionListPacket(temp));
                 }
             }
         }

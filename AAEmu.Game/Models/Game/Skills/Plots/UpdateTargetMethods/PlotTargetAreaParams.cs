@@ -1,4 +1,5 @@
 ﻿using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.World;
 
 namespace AAEmu.Game.Models.Game.Skills.Plots.UpdateTargetMethods

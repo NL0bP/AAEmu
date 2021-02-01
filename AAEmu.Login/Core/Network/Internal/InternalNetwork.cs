@@ -3,6 +3,7 @@ using System.Net;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Commons.Utils;
 using AAEmu.Login.Core.Packets.G2L;
+using AAEmu.Login.Core.Packets.L2G;
 using AAEmu.Login.Models;
 using NLog;
 

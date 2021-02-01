@@ -4,6 +4,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Team;
 using AAEmu.Game.Models.Game.Units;
@@ -122,7 +123,7 @@ namespace AAEmu.Game.Core.Managers
                 Owner = owner,
                 Target = target,
                 IsParty = activeTeam?.IsParty ?? isParty,
-                Time = DateTime.Now,
+                Time = DateTime.UtcNow,
                 TeamId = activeTeam?.Id ?? 0u,
             });
             target.SendPacket(new SCAskToJoinTeamPacket(activeTeam?.Id ?? 0u, owner.Id, owner.Name, isParty));
@@ -137,7 +138,7 @@ namespace AAEmu.Game.Core.Managers
                 return;
             }
 
-            if (isReject || activeInvitation.Time.AddSeconds(60) < DateTime.Now) // 60 seconds for timeout
+            if (isReject || activeInvitation.Time.AddSeconds(60) < DateTime.UtcNow) // 60 seconds for timeout
             {
                 activeInvitation.Owner.SendPacket(new SCRejectedTeamPacket(activeInvitation.Target.Name, activeInvitation.IsParty));
                 _activeInvitations.Remove(target.Id);
@@ -170,7 +171,7 @@ namespace AAEmu.Game.Core.Managers
                 if (activeTeam.MembersCount() >= (activeTeam.IsParty ? 5 : 50)) // TODO - NEED TESTS
                 {
                     // ERROR TEAM IS FULL
-                    target.SendErrorMessage(Models.Game.Error.ErrorMessageType.TeamFull);
+                    target.SendErrorMessage(ErrorMessageType.TeamFull);
                     _activeInvitations.Remove(activeInvitation.Target.Id);
                     return;
                 }

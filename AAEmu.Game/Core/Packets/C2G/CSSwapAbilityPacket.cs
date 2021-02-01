@@ -1,12 +1,13 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSSwapAbilityPacket : GamePacket
     {
-        public CSSwapAbilityPacket() : base(CSOffsets.CSSwapAbilityPacket, 1)
+        public CSSwapAbilityPacket() : base(CSOffsets.CSSwapAbilityPacket, 5)
         {
         }
 

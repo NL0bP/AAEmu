@@ -1,8 +1,10 @@
 ﻿using System;
-using System.Threading;
+
+using AAEmu.Commons.Cryptography;
 using AAEmu.Commons.Network;
-using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Connections;
+using AAEmu.Game.Core.Packets.C2G;
+using AAEmu.Game.Core.Packets.G2C;
 
 namespace AAEmu.Game.Core.Network.Game
 {
@@ -14,13 +16,14 @@ namespace AAEmu.Game.Core.Network.Game
         {
             Level = level;
         }
-        
+
         /// <summary>
         /// This is called in Encode after Read() in the case of GamePackets
         /// The purpose is to separate packet data from packet behavior
         /// </summary>
-        public virtual void Execute(){}
-
+        public virtual void Execute() { }
+        
+        // отправляем шифрованные пакеты от сервера
         public override PacketStream Encode()
         {
             var ps = new PacketStream();
@@ -41,6 +44,27 @@ namespace AAEmu.Game.Core.Network.Game
                         .Write((byte)0); // count
                 }
 
+                if (Level == 5)
+                {
+                    //пакет от сервера DD05 шифруем с помощью XOR
+                    var bodyCrc = new PacketStream()
+                        .Write(EncryptionManager.Instance.GetSCMessageCount(Connection.Id, Connection.AccountId))
+                        .Write(TypeId)
+                        .Write(this);
+
+                    var crc8 = EncryptionManager.Instance.Crc8(bodyCrc); //посчитали CRC пакета
+
+                    var data = new PacketStream();
+                    data
+                        .Write(crc8) // CRC
+                        .Write(bodyCrc, false); // data
+
+                    var encrypt = EncryptionManager.Instance.StoCEncrypt(data);
+                    body = new PacketStream();
+                    body.Write(encrypt, false);
+                    EncryptionManager.Instance.IncSCMsgCount(Connection.Id, Connection.AccountId);
+                }
+
                 packet.Write(body, false);
 
                 ps.Write(packet);
@@ -54,26 +78,37 @@ namespace AAEmu.Game.Core.Network.Game
             // SC here you can set the filter to hide packets
             if (!(TypeId == 0x013 && Level == 2) && // Pong
                 !(TypeId == 0x016 && Level == 2) && // FastPong
-                !(TypeId == 0x06B && Level == 1) && // SCUnitMovements
-                !(TypeId == 0x06C && Level == 1)) // SCOneUnitMovement
-            {
+                !(TypeId == SCOffsets.SCUnitMovementsPacket && Level == 5) && // SCMoveTypes
+                !(TypeId == SCOffsets.SCOneUnitMovementPacket && Level == 5) && // SCOneMoveType
+                !(TypeId == SCOffsets.SCUnitPointsPacket && Level == 5))
                 //_log.Debug("GamePacket: S->C type {0:X} {2}\n{1}", TypeId, ps, this.ToString().Substring(23));
-                _log.Trace("GamePacket: S->C type {0:X3} {1}", TypeId, this.ToString().Substring(23));
+                _log.Debug("GamePacket: S->C type {0:X3} {1}", TypeId, ToString().Substring(23));
 
+            if (TypeId == 0xFFFF)
+            {
+                _log.Error("UNKNOWN OPCODE FOR PACKET");
+                throw new SystemException();
             }
+
             return ps;
         }
 
         public override PacketBase<GameConnection> Decode(PacketStream ps)
         {
             // CS here you can set the filter to hide packets
-            if (!(TypeId == 0x012 && Level == 2) && // Ping
-                !(TypeId == 0x015 && Level == 2) && // FastPing
-                !(TypeId == 0x089 && Level == 1)) // CSMoveUnit
-            {
+            if (!(TypeId == 0x012 && Level == 2) // Ping
+                && !(TypeId == 0x015 && Level == 2) // FastPing
+                && !(TypeId == CSOffsets.CSMoveUnitPacket && Level == 5)   // CSMoveUnit
+            )
                 //_log.Debug("GamePacket: C->S type {0:X} {2}\n{1}", TypeId, ps, this.ToString().Substring(23));
-                _log.Trace("GamePacket: C->S type {0:X3} {1}", TypeId, this.ToString().Substring(23));
+                _log.Debug("GamePacket: C->S type {0:X3} {1}", TypeId, ToString().Substring(23));
+
+            if (TypeId == 0xFFFF)
+            {
+                _log.Error("UNKNOWN OPCODE FOR PACKET");
+                throw new SystemException();
             }
+
             try
             {
                 Read(ps);

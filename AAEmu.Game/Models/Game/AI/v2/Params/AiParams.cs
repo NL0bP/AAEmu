@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
+using AAEmu.Game.Models.Game.AI.v2.Params.Almighty;
 using AAEmu.Game.Models.Game.AI.v2.Params.Archer;
 using AAEmu.Game.Models.Game.AI.v2.Params.BigMonster;
-using AAEmu.Game.Models.Game.AI.V2.Params;
 using AAEmu.Game.Models.Game.AI.v2.Params.WildBoar;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Params

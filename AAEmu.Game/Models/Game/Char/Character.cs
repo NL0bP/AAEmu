@@ -13,7 +13,6 @@ using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.DoodadObj;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Expeditions;
 using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Formulas;
@@ -23,6 +22,7 @@ using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Effects;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
@@ -62,7 +62,7 @@ namespace AAEmu.Game.Models.Game.Char
         public List<IDisposable> Subscribers { get; set; }
 
         public uint Id { get; set; }
-        public uint AccountId { get; set; }
+        public ulong AccountId { get; set; }
         public Race Race { get; set; }
         public Gender Gender { get; set; }
         public short LaborPower { get; set; }
@@ -1213,9 +1213,9 @@ namespace AAEmu.Game.Models.Game.Char
         public void SetHostileActivity(Character attacker)
         {
             if (_hostilePlayers.ContainsKey(attacker.ObjId))
-                _hostilePlayers[attacker.ObjId] = DateTime.Now;
+                _hostilePlayers[attacker.ObjId] = DateTime.UtcNow;
             else
-                _hostilePlayers.TryAdd(attacker.ObjId, DateTime.Now);
+                _hostilePlayers.TryAdd(attacker.ObjId, DateTime.UtcNow);
         }
 
         public bool IsActivelyHostile(Character target)
@@ -1223,7 +1223,7 @@ namespace AAEmu.Game.Models.Game.Char
             if(_hostilePlayers.TryGetValue(target.ObjId, out var value))
             {
                 //Maybe get the time to stay hostile from db?
-                return value.AddSeconds(30) > DateTime.Now;
+                return value.AddSeconds(30) > DateTime.UtcNow;
             }
             return false;
         }
@@ -1445,7 +1445,7 @@ namespace AAEmu.Game.Models.Game.Char
                     if (buffTemplate != null)
                     {
                         var casterObj = new SkillCasterUnit(ObjId);
-                        var newZoneBuff = new Buff(this, this, casterObj, buffTemplate, null, System.DateTime.Now);
+                        var newZoneBuff = new Buff(this, this, casterObj, buffTemplate, null, System.DateTime.UtcNow);
                         Buffs.AddBuff(newZoneBuff);
                     }
                 }
@@ -1500,7 +1500,7 @@ namespace AAEmu.Game.Models.Game.Char
 
                     var buff = SkillManager.Instance.GetBuffTemplate(1391);
                     var casterObj = new SkillCasterUnit(ObjId);
-                    Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.Now), 0, duration);
+                    Buffs.AddBuff(new Buff(this, this, casterObj, buff, null, DateTime.UtcNow), 0, duration);
 
                     if (Hp > minHpLeft)
                         ReduceCurrentHp(this, maxDmgLeft); //Leaves you at 5% hp no matter what
@@ -1566,7 +1566,7 @@ namespace AAEmu.Game.Models.Game.Char
                 SendPacket(packet);
         }
 
-        public static Character Load(uint characterId, uint accountId)
+        public static Character Load(uint characterId, ulong accountId)
         {
             using (var connection = MySQL.CreateConnection())
                 return Load(connection, characterId, accountId);
@@ -1602,7 +1602,7 @@ namespace AAEmu.Game.Models.Game.Char
 
         #region Database
 
-        public static Character Load(MySqlConnection connection, uint characterId, uint accountId)
+        public static Character Load(MySqlConnection connection, uint characterId, ulong accountId)
         {
             Character character = null;
             using (var command = connection.CreateCommand())
@@ -1729,7 +1729,7 @@ namespace AAEmu.Game.Models.Game.Char
                         character = new Character(modelParams);
                         character.Position = new Point();
                         character.Id = reader.GetUInt32("id");
-                        character.AccountId = reader.GetUInt32("account_id");
+                        character.AccountId = reader.GetUInt64("account_id");
                         character.Name = reader.GetString("name");
                         character.AccessLevel = reader.GetInt32("access_level");
                         character.Race = (Race)reader.GetByte("race");
@@ -2028,7 +2028,7 @@ namespace AAEmu.Game.Models.Game.Char
         public override void AddVisibleObject(Character character)
         {
             character.SendPacket(new SCUnitStatePacket(this));
-            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp));
+            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc));
         }
 
         public override void RemoveVisibleObject(Character character)

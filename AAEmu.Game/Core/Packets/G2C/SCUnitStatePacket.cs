@@ -21,7 +21,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         private ModelPostureType _modelPostureType;
         //private byte _attachPoint;
 
-        public SCUnitStatePacket(Unit unit) : base(SCOffsets.SCUnitStatePacket, 1)
+        public SCUnitStatePacket(Unit unit) : base(SCOffsets.SCUnitStatePacket, 5)
         {
             _unit = unit;
             switch (_unit)
@@ -131,7 +131,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 stream.Write("");
             }
 
-            stream.WritePosition(_unit.Position.X, _unit.Position.Y, _unit.Position.Z);
+            stream.WritePositionBc(_unit.Position.X, _unit.Position.Y, _unit.Position.Z);
             stream.Write(_unit.Scale);
             stream.Write(_unit.Level);
             stream.Write(_unit.ModelId); // modelRef
@@ -445,12 +445,12 @@ namespace AAEmu.Game.Core.Packets.G2C
             {
                 if (!_unit.Buffs.CheckBuff(8000011)) //TODO Wrong place
                 {
-                    _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000011), null, System.DateTime.Now));
+                    _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000011), null, System.DateTime.UtcNow));
                 }
 
                 if (!_unit.Buffs.CheckBuff(8000012)) //TODO Wrong place
                 {
-                    _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000012), null, System.DateTime.Now));
+                    _unit.Buffs.AddBuff(new Buff(_unit, _unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000012), null, System.DateTime.UtcNow));
                 }
             }
 

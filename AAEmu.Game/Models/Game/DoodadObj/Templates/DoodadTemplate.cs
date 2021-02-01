@@ -14,7 +14,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Templates
         public uint ModelKindId { get; set; }
         public bool UseCreatorFaction { get; set; }
         public bool ForceTodTopPriority { get; set; }
-        public uint MilestoneId { get; set; }
+        //public uint MilestoneId { get; set; } // there is no such field in the database for version 3030
         public uint GroupId { get; set; }
         public bool UseTargetDecal { get; set; }
         public bool UseTargetSilhouette { get; set; }

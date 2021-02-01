@@ -1,6 +1,6 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
-using AAEmu.Game.Models.Game.Error;
+using AAEmu.Game.Models.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
@@ -10,7 +10,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly uint _type;
         private readonly bool _isNotify;
 
-        public SCErrorMsgPacket(ErrorMessageType errorMessage, uint type, bool isNotify) : base(SCOffsets.SCErrorMsgPacket, 1)
+        public SCErrorMsgPacket(ErrorMessageType errorMessage, uint type, bool isNotify) : base(SCOffsets.SCErrorMsgPacket, 5)
         {
             _errorMessage = (short)errorMessage; // TODO - NEED TO FIND ALL 350 IDS
             _type = type;

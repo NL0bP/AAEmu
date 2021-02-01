@@ -3,7 +3,7 @@
     public class GradeDistributions
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        //public string Name { get; set; } // there is no such field in the database for version 3030
         public int Weight0 { get; set; }
         public int Weight1 { get; set; }
         public int Weight2 { get; set; }

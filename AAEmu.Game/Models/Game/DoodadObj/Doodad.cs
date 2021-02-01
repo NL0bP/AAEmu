@@ -44,7 +44,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public DoodadSpawner Spawner { get; set; }
         public DoodadFuncTask FuncTask { get; set; }
 
-        public uint TimeLeft => GrowthTime > DateTime.Now ? (uint)(GrowthTime - DateTime.Now).TotalMilliseconds : 0; // TODO formula time of phase
+        public uint TimeLeft => GrowthTime > DateTime.UtcNow ? (uint)(GrowthTime - DateTime.UtcNow).TotalMilliseconds : 0; // TODO formula time of phase
         public bool cancelPhasing { get; set; }
         
         public uint CurrentPhaseId { get; set; }
@@ -244,14 +244,14 @@ namespace AAEmu.Game.Models.Game.DoodadObj
             stream.Write(AttachPoint); // attachPoint, relative to the parentObj, (Door or window on a house)
             if (AttachPoint != 255 && AttachPosition != null)
             {
-                stream.WritePosition(AttachPosition.X, AttachPosition.Y, AttachPosition.Z);
+                stream.WritePositionBc(AttachPosition.X, AttachPosition.Y, AttachPosition.Z);
                 stream.Write(Helpers.ConvertRotation(AttachPosition.RotationX)); //''
                 stream.Write(Helpers.ConvertRotation(AttachPosition.RotationY)); //''
                 stream.Write(Helpers.ConvertRotation(AttachPosition.RotationZ)); //''
             }
             else
             {
-                stream.WritePosition(Position.X, Position.Y, Position.Z); //self explanatory
+                stream.WritePositionBc(Position.X, Position.Y, Position.Z); //self explanatory
                 stream.Write(Helpers.ConvertRotation(Position.RotationX)); //''
                 stream.Write(Helpers.ConvertRotation(Position.RotationY)); //''
                 stream.Write(Helpers.ConvertRotation(Position.RotationZ)); //''

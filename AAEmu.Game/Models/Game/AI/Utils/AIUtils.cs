@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.AI.Framework;
@@ -6,6 +6,7 @@ using AAEmu.Game.Models.Game.AI.Params;
 using AAEmu.Game.Models.Game.AI.UnitTypes;
 using AAEmu.Game.Models.Game.AI.v2;
 using AAEmu.Game.Models.Game.AI.v2.AiCharacters;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.World;
 using Jace.Util;

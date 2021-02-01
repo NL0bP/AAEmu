@@ -10,7 +10,7 @@ namespace AAEmu.Game.Core.Packets.G2C
     class SCAuctionCanceledPacket : GamePacket
     {
         private readonly AuctionItem item;
-        public SCAuctionCanceledPacket(AuctionItem auctionItem) : base(SCOffsets.SCAuctionCanceledPacket,1)
+        public SCAuctionCanceledPacket(AuctionItem auctionItem) : base(SCOffsets.SCAuctionCanceledPacket, 5)
         {
             item = auctionItem;
         }
@@ -25,12 +25,12 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write((byte)item.Flags);
             stream.Write(item.StackSize);
             stream.Write(item.DetailType);
-            stream.Write(DateTime.Now);
+            stream.Write(DateTime.UtcNow);
             stream.Write(item.LifespanMins);
             stream.Write(item.Type1);
             stream.Write(item.WorldId);
-            stream.Write(DateTime.Now);
-            stream.Write(DateTime.Now);
+            stream.Write(DateTime.UtcNow);
+            stream.Write(DateTime.UtcNow);
             stream.Write(item.WorldId2);
             stream.Write(item.ClientId);
             stream.Write(item.ClientName);

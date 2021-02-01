@@ -55,8 +55,8 @@ namespace AAEmu.Game.Models.Game.Char
                 Xp = ExpirienceManager.Instance.GetExpForLevel(npctemplate.Level, true),
                 Hp = 9999,
                 Mp = 9999,
-                UpdatedAt = DateTime.Now,
-                CreatedAt = DateTime.Now
+                UpdatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
             };
             _mates.Add(template.ItemId, template);
             return template;
@@ -119,7 +119,7 @@ namespace AAEmu.Game.Models.Game.Char
                 }
 
                 var obj = new SkillCasterUnit(mount.ObjId);
-                buff.Apply(mount, obj, mount, null, null, new EffectSource(), null, DateTime.Now);
+                buff.Apply(mount, obj, mount, null, null, new EffectSource(), null, DateTime.UtcNow);
             }
 
             var (newX, newY) = MathUtil.AddDistanceToFront(3, mount.Position.X, mount.Position.Y, mount.Position.RotationZ);
@@ -143,7 +143,7 @@ namespace AAEmu.Game.Models.Game.Char
                     mateDbInfo.Xp = mateInfo.Exp;
                     mateDbInfo.Mileage = mateInfo.Mileage;
                     mateDbInfo.Name = mateInfo.Name;
-                    mateDbInfo.UpdatedAt = DateTime.Now;
+                    mateDbInfo.UpdatedAt = DateTime.UtcNow;
                 }
             }
 

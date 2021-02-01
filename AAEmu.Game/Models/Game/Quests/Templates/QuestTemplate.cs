@@ -12,7 +12,7 @@ namespace AAEmu.Game.Models.Game.Quests.Templates
         public bool RestartOnFail { get; set; }
         public uint ChapterIdx { get; set; }
         public uint QuestIdx { get; set; }
-        public uint MilestoneId { get; set; }
+        //public uint MilestoneId { get; set; } // there is no such field in the database for version 3030
         public bool LetItDone { get; set; }
         public uint DetailId { get; set; }
         public uint ZoneId { get; set; }

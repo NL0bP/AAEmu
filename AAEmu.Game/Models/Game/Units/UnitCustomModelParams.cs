@@ -133,10 +133,18 @@ namespace AAEmu.Game.Models.Game.Units
     public class UnitCustomModelParams : PacketMarshaler
     {
         private UnitCustomModelType _type;
-        public uint HairColorId { get; private set; }
-        public uint SkinColorId { get; private set; }
+        public uint Id { get; private set; }
         public uint ModelId { get; private set; }
+        public uint BodyNormalMapId { get; private set; }
+        public uint HairColorId { get; private set; }
+        public uint HornColorId { get; private set; }
+        public uint SkinColorId { get; private set; }
+        public float BodyNormalMapWeight { get; private set; }
         public FaceModel Face { get; private set; }
+        public uint DefaultHairColor { get; private set; }
+        public uint TwoToneHair { get; private set; }
+        public float TwoToneFirstWidth { get; private set; }
+        public float TwoToneSecondWidth { get; private set; }
 
         public UnitCustomModelParams(UnitCustomModelType type = UnitCustomModelType.None)
         {
@@ -156,15 +164,57 @@ namespace AAEmu.Game.Models.Game.Units
             return this;
         }
 
+        public UnitCustomModelParams SetBodyNormalMapId(uint bodyNormalMapId)
+        {
+            BodyNormalMapId = bodyNormalMapId;
+            return this;
+        }
+
+        public UnitCustomModelParams SetBodyNormalMapWeight(float weight)
+        {
+            BodyNormalMapWeight = weight;
+            return this;
+        }
+
+        public UnitCustomModelParams SetDefaultHairColor(uint defaultHairColor)
+        {
+            DefaultHairColor = defaultHairColor;
+            return this;
+        }
+
         public UnitCustomModelParams SetHairColorId(uint hairColorId)
         {
             HairColorId = hairColorId;
             return this;
         }
 
+        public UnitCustomModelParams SetHornColorId(uint hornColorId)
+        {
+            HornColorId = hornColorId;
+            return this;
+        }
+
         public UnitCustomModelParams SetSkinColorId(uint skinColorId)
         {
             SkinColorId = skinColorId;
+            return this;
+        }
+
+        public UnitCustomModelParams SetTwoToneFirstWidth(float twoToneFirstWidth)
+        {
+            TwoToneFirstWidth = twoToneFirstWidth;
+            return this;
+        }
+
+        public UnitCustomModelParams SetTwoToneHair(uint twoToneHair)
+        {
+            TwoToneHair = twoToneHair;
+            return this;
+        }
+
+        public UnitCustomModelParams SetTwoToneSecondWidth(float twoToneSecondWidth)
+        {
+            TwoToneSecondWidth = twoToneSecondWidth;
             return this;
         }
 

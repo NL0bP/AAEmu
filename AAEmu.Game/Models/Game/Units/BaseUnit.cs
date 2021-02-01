@@ -9,6 +9,7 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
+using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.World;
 
 namespace AAEmu.Game.Models.Game.Units
@@ -44,6 +45,16 @@ namespace AAEmu.Game.Models.Game.Units
         public SkillModifiers SkillModifiersCache { get; set; }
         public BuffModifiers BuffModifiersCache { get; set; }
         public CombatBuffs CombatBuffs { get; set; }
+       
+        /// <summary>
+        /// Unit巡逻
+        /// Unit patrol
+        /// 指明Unit巡逻路线及速度、是否正在执行巡逻等行为
+        /// Indicate the unit's patrol route and speed, whether it is performing patrols, etc.
+        /// </summary>
+        public Patrol Patrol { get; set; }
+        public Simulation Simulation { get; set; }
+        public SimulationNpc SimulationNpc { get; set; }
 
         public BaseUnit()
         {

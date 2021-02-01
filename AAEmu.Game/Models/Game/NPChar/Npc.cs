@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Numerics;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.AI;
 using AAEmu.Game.Models.Game.AI.Framework;
 using AAEmu.Game.Models.Game.AI.v2;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
@@ -43,6 +44,13 @@ namespace AAEmu.Game.Models.Game.NPChar
         public NpcAi Ai { get; set; } // New framework
         public ConcurrentDictionary<uint, Aggro> AggroTable { get; }
         public uint CurrentAggroTarget { get; set; }
+
+        // ---
+        public WorldPos Pos { get; set; }
+        public Quaternion Rot { get; set; }
+        public Vector3 Vel { get; set; }
+        public Vector3 AngVel { get; set; }
+        // ---
 
         #region Attributes
         [UnitAttribute(UnitAttribute.Str)]
@@ -730,7 +738,7 @@ namespace AAEmu.Game.Models.Game.NPChar
         public override void AddVisibleObject(Character character)
         {
             character.SendPacket(new SCUnitStatePacket(this));
-            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp));
+            character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc));
         }
 
         public override void RemoveVisibleObject(Character character)
@@ -774,7 +782,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             }
             else
             {
-                _log.Warn("Failed to remove unit[{0}] aggro from NPC[{1}]", unit.ObjId, this.ObjId);
+                _log.Warn("Failed to remove unit[{0}] aggro from NPC[{1}]", unit.ObjId, ObjId);
             }
         }
 
@@ -841,7 +849,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
             var travelDist = Math.Min(targetDist, distance);
-            var angle = MathUtil.CalculateAngleFrom(this.Position, other);
+            var angle = MathUtil.CalculateAngleFrom(Position, other);
             var rotZ = MathUtil.ConvertDegreeToDirection(angle);
             var (newX, newY) = MathUtil.AddDistanceToFront(travelDist, Position.X, Position.Y, rotZ);
             var (velX, velY) = MathUtil.AddDistanceToFront(4000, 0, 0, rotZ);
@@ -859,15 +867,15 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
-            moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = (ActorMoveType)flags; // 5-walk, 4-run, 3-stand still
             moveType.Flags = 4;
             
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Stance = EStance.Combat;        // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
             moveType.Time = (uint) (DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
 
             SetPosition(Position);
@@ -879,7 +887,7 @@ namespace AAEmu.Game.Models.Game.NPChar
            
             var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
-            var angle = MathUtil.CalculateAngleFrom(this.Position, other);
+            var angle = MathUtil.CalculateAngleFrom(Position, other);
             var rotZ = MathUtil.ConvertDegreeToDirection(angle);
 
            Position.RotationZ = rotZ;
@@ -890,16 +898,16 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.RotationX = 0;
             moveType.RotationY = 0;
             moveType.RotationZ = Position.RotationZ;
-            moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = (ActorMoveType)flags; // 5-walk, 4-run, 3-stand still
             moveType.Flags = 4;
             
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
-            moveType.Time = (uint) (DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
+            moveType.Stance = EStance.Combat;         // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat;  // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Time = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
 
             SetPosition(Position);
             BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
@@ -919,9 +927,9 @@ namespace AAEmu.Game.Models.Game.NPChar
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = (sbyte) (CurrentAggroTarget > 0 ? 0 : 1);    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
-            moveType.Time = (uint) (DateTime.Now - DateTime.Today).TotalMilliseconds;
+            moveType.Stance = (EStance)(CurrentAggroTarget > 0 ? 0 : 1); // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Time = (uint) (DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
             BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
         }
 

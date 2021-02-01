@@ -1,11 +1,13 @@
-using AAEmu.Game.Models.Game.AI.v2.Behaviors;
+﻿using AAEmu.Game.Models.Game.AI.v2.Behaviors;
+using AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
 
 namespace AAEmu.Game.Models.Game.AI.v2.AiCharacters
 {
     /// <summary>
     /// Named as such because of game files
     /// </summary>
-    public class AlmightyNpcAiCharacter : NpcAi
+    public class AlmightyNpcAiCharacter : Framework.NpcAi
     {
         protected override void Build()
         {

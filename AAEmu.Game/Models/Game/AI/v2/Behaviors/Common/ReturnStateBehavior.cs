@@ -1,9 +1,10 @@
 ﻿using System;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Utils;
 
-namespace AAEmu.Game.Models.Game.AI.v2.Behaviors
+namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common
 {
     public class ReturnStateBehavior : Behavior
     {
@@ -24,7 +25,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Behaviors
                 Ai.Owner.Buffs.AddBuff((uint)BuffConstants.NPC_RETURN_BUFF, Ai.Owner);
                 Ai.Owner.Hp = Ai.Owner.MaxHp;
                 Ai.Owner.Mp = Ai.Owner.MaxMp;
-                Ai.Owner.BroadcastPacket(new SCUnitPointsPacket(Ai.Owner.ObjId, Ai.Owner.Hp, Ai.Owner.Mp), true);
+                Ai.Owner.BroadcastPacket(new SCUnitPointsPacket(Ai.Owner.ObjId, Ai.Owner.Hp, Ai.Owner.Mp, Ai.Owner.HighAbilityRsc), true);
             }
 
             var alwaysTeleportOnReturn = false; // get from params

@@ -12,6 +12,7 @@ using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
 using NLog;
+using SkillEffectApplicationMethod = AAEmu.Game.Models.Game.Skills.Effects.Enums.SkillEffectApplicationMethod;
 
 namespace AAEmu.Game.Core.Managers
 {
@@ -365,7 +366,7 @@ namespace AAEmu.Game.Core.Managers
                             template.Unmount = reader.GetBoolean("unmount", true);
                             template.DamageTypeId = reader.GetUInt32("damage_type_id", 0);
                             template.AllowToPrisoner = reader.GetBoolean("allow_to_prisoner", true);
-                            template.MilestoneId = reader.GetUInt32("milestone_id", 0);
+                            //template.MilestoneId = reader.GetUInt32("milestone_id", 0); // there is no such field in the database for version 3030
                             template.MatchAnimation = reader.GetBoolean("match_animation", true);
                             template.Plot = reader.IsDBNull("plot_id") ? null : PlotManager.Instance.GetPlot(reader.GetUInt32("plot_id"));
                             template.UseAnimTime = reader.GetBoolean("use_anim_time", true);
@@ -520,7 +521,7 @@ namespace AAEmu.Game.Core.Managers
                             template.ReflectionRatio = reader.GetInt32("reflection_ratio");
                             template.ReflectionTargetRatio = reader.GetInt32("reflection_target_ratio");
                             template.KnockbackImmune = reader.GetBoolean("knockback_immune");
-                            template.ImmuneBuffTagId = reader.GetUInt32("immune_buff_tag_id", 0);
+                            //template.ImmuneBuffTagId = reader.GetUInt32("immune_buff_tag_id", 0); // there is no such field in the database for version 3030
                             template.AuraRelationId = reader.GetUInt32("aura_relation_id");
                             template.GroupId = reader.GetUInt32("group_id", 0);
                             template.GroupRank = reader.GetInt32("group_rank");
@@ -585,7 +586,7 @@ namespace AAEmu.Game.Core.Managers
                             template.SlaveApplicable = reader.GetBoolean("slave_applicable", true);
                             template.Pacifist = reader.GetBoolean("pacifist", true);
                             template.RemoveOnInteraction = reader.GetBoolean("remove_on_interaction", true);
-                            template.Crime = reader.GetBoolean("crime", true);
+                            //template.Crime = reader.GetBoolean("crime", true); // there is no such field in the database for version 3030
                             template.RemoveOnUnmount = reader.GetBoolean("remove_on_unmount", true);
                             template.AuraChildOnly = reader.GetBoolean("aura_child_only", true);
                             template.RemoveOnMount = reader.GetBoolean("remove_on_mount", true);
@@ -889,7 +890,7 @@ namespace AAEmu.Game.Core.Managers
                             template.ManaStealRatio = reader.GetInt32("mana_steal_ratio");
                             template.DpsMultiplier = reader.GetFloat("dps_multiplier");
                             template.WeaponSlotId = reader.GetInt32("weapon_slot_id");
-                            template.CheckCrime = reader.GetBoolean("check_crime", true);
+                            //template.CheckCrime = reader.GetBoolean("check_crime", true); // there is no such field in the database for version 3030
                             template.HitAnimTimingId = reader.GetUInt32("hit_anim_timing_id");
                             template.UseTargetChargedBuff = reader.GetBoolean("use_target_charged_buff", true);
                             template.TargetChargedBuffId = reader.GetUInt32("target_charged_buff_id", 0);
@@ -1271,7 +1272,7 @@ namespace AAEmu.Game.Core.Managers
                             template.OwnerTypeId = reader.GetUInt32("owner_type_id");
                             template.SubType = reader.GetUInt32("sub_type");
                             template.PosDirId = reader.GetUInt32("pos_dir_id");
-                            template.PosAngle = reader.GetFloat("pos_angle");
+                            //template.PosAngle = reader.GetFloat("pos_angle"); // there is no such field in the database for version 3030
                             template.PosDistance = reader.GetFloat("pos_distance");
                             template.OriDirId = reader.GetUInt32("ori_dir_id");
                             template.OriAngle = reader.GetFloat("ori_angle");
@@ -1396,7 +1397,7 @@ namespace AAEmu.Game.Core.Managers
                             template.Front = reader.GetBoolean("front", true);
                             template.Back = reader.GetBoolean("back", true);
                             template.TargetNpcTagId = reader.GetUInt32("target_npc_tag_id", 0);
-                            template.ApplicationMethod = (SkillEffectApplicationMethod)reader.GetUInt32("application_method_id");
+                            template.ApplicationMethod = (SkillEffectApplicationMethod) reader.GetUInt32("application_method_id");
                             template.ConsumeSourceItem = reader.GetBoolean("consume_source_item", true);
                             template.ConsumeItemId = reader.GetUInt32("consume_item_id", 0);
                             template.ConsumeItemCount = reader.GetInt32("consume_item_count");

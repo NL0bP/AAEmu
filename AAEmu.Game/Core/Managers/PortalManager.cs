@@ -228,7 +228,7 @@ namespace AAEmu.Game.Core.Managers
             // TODO - UnitPortalUsed
             // TODO - Maybe need unitstate?
             // TODO - Reason, ErrorMessage
-            character.SendPacket(new SCTeleportUnitPacket(0, 0, portalInfo.TeleportPosition.X,
+            character.SendPacket(new SCUnitTeleportPacket(0, 0, portalInfo.TeleportPosition.X,
                 portalInfo.TeleportPosition.Y, portalInfo.TeleportPosition.Z, portalInfo.TeleportPosition.RotationZ));
         }
 

@@ -12,6 +12,7 @@ using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils.DB;
 using NLog;
@@ -72,7 +73,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             template.ModelKindId = reader.GetUInt32("model_kind_id");
                             template.UseCreatorFaction = reader.GetBoolean("use_creator_faction", true);
                             template.ForceTodTopPriority = reader.GetBoolean("force_tod_top_priority", true);
-                            template.MilestoneId = reader.GetUInt32("milestone_id", 0);
+                            //template.MilestoneId = reader.GetUInt32("milestone_id", 0); // there is no such field in the database for version 3030
                             template.GroupId = reader.GetUInt32("group_id");
                             template.UseTargetDecal = reader.GetBoolean("use_target_decal", true);
                             template.UseTargetSilhouette = reader.GetBoolean("use_target_silhouette", true);
@@ -330,7 +331,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var func = new DoodadFuncBuyFishModel();
                             func.Id = reader.GetUInt32("id");
-                            func.Name = reader.GetString("name");
+                            //func.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             _funcTemplates["DoodadFuncBuyFishModel"].Add(func.Id, func);
                         }
                     }
@@ -568,7 +569,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var func = new DoodadFuncConsumeChangerModel();
                             func.Id = reader.GetUInt32("id");
-                            func.Name = reader.GetString("name");
+                            //func.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             _funcTemplates["DoodadFuncConsumeChangerModel"].Add(func.Id, func);
                         }
                     }
@@ -2306,7 +2307,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             doodad.Position.Y = y;
             doodad.Position.Z = z;
             doodad.ItemId = itemId;
-            doodad.PlantTime = DateTime.Now;
+            doodad.PlantTime = DateTime.UtcNow;
             
             if (scale > 0)
                 doodad.SetScale(scale);

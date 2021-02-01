@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using AAEmu.Commons.Utils;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Mails;
@@ -105,14 +105,20 @@ namespace AAEmu.Game.Core.Managers.World
                     command.Prepare();
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
                             var template = new SpecialtyNpc();
-                            template.Id = reader.GetUInt32("id");
-                            template.Name = reader.GetString("name");
+                            template.Id = step++;
+                            //template.Id = reader.GetUInt32("id"); // there is no such field in the database for version 3030
+                            //template.Name = reader.GetString("name"); // there is no such field in the database for version 3030
                             template.NpcId = reader.GetUInt32("npc_id");
                             template.SpecialtyBundleId = reader.GetUInt32("specialty_bundle_id");
                             
+                            // в наличии дубли NpcId, пропускаем их
+                            if (_specialtyNpc.ContainsKey(template.NpcId))
+                                continue;
+
                             _specialtyNpc.Add(template.NpcId, template);
                         }
                     }

@@ -6,6 +6,7 @@ using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Faction;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -37,8 +38,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 return;
             if (Buff.RequireBuffId > 0 && !target.Buffs.CheckBuff(Buff.RequireBuffId))
                 return; // TODO send error?
-            if (target.Buffs.CheckBuffImmune(Buff.Id))
-                return; // TODO send error of immune?
+            //if (target.Buffs.CheckBuffImmune(Buff.Id))
+            //    return; // TODO send error of immune?
 
             uint abLevel = 1;
             if (caster is Character character)

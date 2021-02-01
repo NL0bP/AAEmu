@@ -4,6 +4,7 @@ using System.Linq;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.AI.Framework;
 using AAEmu.Game.Models.Game.AI.v2;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
 using NLog;
 
 namespace AAEmu.Game.Core.Managers

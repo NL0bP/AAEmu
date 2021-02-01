@@ -6,9 +6,8 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
-using AAEmu.Game.Utils;
 
-namespace AAEmu.Game.Models.Game.AI.v2.Behaviors
+namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common
 {
     public class AttackBehavior : BaseCombatBehavior
     {

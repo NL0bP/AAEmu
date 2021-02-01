@@ -45,7 +45,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public int ManaStealRatio { get; set; }
         public float DpsMultiplier { get; set; }
         public int WeaponSlotId { get; set; }
-        public bool CheckCrime { get; set; }
+        //public bool CheckCrime { get; set; } // there is no such field in the database for version 3030
         public uint HitAnimTimingId { get; set; }
         public bool UseTargetChargedBuff { get; set; }
         public uint TargetChargedBuffId { get; set; }
@@ -369,7 +369,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             {
                 caster.Hp = Math.Min(caster.MaxHp, caster.Hp + healthStolen);
                 caster.Mp = Math.Min(caster.MaxMp, caster.Mp + manaStolen);
-                caster.BroadcastPacket(new SCUnitPointsPacket(caster.ObjId, caster.Hp, caster.Mp), true);
+                caster.BroadcastPacket(new SCUnitPointsPacket(caster.ObjId, caster.Hp, caster.Mp, caster.HighAbilityRsc), true);
             }
 
 
@@ -392,7 +392,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             if (trgCharacter != null)
             {
                 trgCharacter.IsInCombat = true;
-                trgCharacter.LastCombatActivity = DateTime.Now;
+                trgCharacter.LastCombatActivity = DateTime.UtcNow;
                 if (attacker != null)
                 {
                     trgCharacter.SetHostileActivity(attacker);
@@ -402,7 +402,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             if (attacker != null)
             {
                 attacker.IsInCombat = true;
-                attacker.LastCombatActivity = DateTime.Now;
+                attacker.LastCombatActivity = DateTime.UtcNow;
                 attacker.Procs.RollProcsForKind(ProcChanceKind.HitAny);
             }
 

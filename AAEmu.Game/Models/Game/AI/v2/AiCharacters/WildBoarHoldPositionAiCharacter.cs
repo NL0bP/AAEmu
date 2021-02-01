@@ -1,9 +1,11 @@
-using AAEmu.Game.Models.Game.AI.v2.Behaviors;
+﻿using AAEmu.Game.Models.Game.AI.v2.Behaviors;
+using AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 using AAEmu.Game.Models.Game.AI.v2.Behaviors.WildBoar;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
 
 namespace AAEmu.Game.Models.Game.AI.v2.AiCharacters
 {
-    public class WildBoarHoldPositionAiCharacter : NpcAi
+    public class WildBoarHoldPositionAiCharacter : Framework.NpcAi
     {
         protected override void Build()
         {

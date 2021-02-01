@@ -1,11 +1,16 @@
 ﻿using System;
-
+using System.Numerics;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.UnitMove;
+using NLog;
 
 namespace AAEmu.Game.Models.Game.Units
 {
@@ -15,6 +20,46 @@ namespace AAEmu.Game.Models.Game.Units
     /// </summary>
     public abstract class Patrol
     {
+        protected static Logger _log = LogManager.GetCurrentClassLogger();
+
+        protected const float Tolerance = 0.5f; // 1.401298E-45f Погрешность
+        public Skill skill;
+        public int idx; // index of skill
+        public float ReturnDistance;
+        public bool GoBack { get; set; }
+        public bool InPatrol { get; set; }
+        public bool InitMovement { get; set; } // инициируем точку возврвата, для возврата, если NPC ушел далеко
+        public short Degree { get; set; } = 360;
+        public float Time { get; set; }
+        public float DeltaTime { get; set; } = 0.1f;
+        public DateTime UpdateTime { get; set; }
+        public UnitMoveType moveType { get; set; }
+        public double Angle { get; set; }
+        public short AngleZ { get; set; }
+        public float Distance { get; set; }
+        public float MovingDistance { get; set; } = 0.27f;
+        public double AngleTmp { get; set; }
+        public float AngVelocity { get; set; } = 5.0f;
+        public float MaxVelocityForward { get; set; } = 5.4f;
+        public float MaxVelocityBackward { get; set; } = 0f;
+        public float VelAccel { get; set; } = 1.0f;
+        public Vector3 vBeginPoint { get; set; }
+        public Vector3 vEndPoint { get; set; }
+        public Vector3 vMovingDistance { get; set; }
+        public Vector3 vMaxVelocityForwardRun { get; set; } = new Vector3(5.4f, 5.4f, 5.4f);
+        public Vector3 vMaxVelocityBackRun { get; set; } = new Vector3(-5.4f, -5.4f, -5.4f);
+        public Vector3 vMaxVelocityForwardWalk { get; set; } = new Vector3(1.8f, 1.8f, 1.8f);
+        public Vector3 vMaxVelocityBackWalk { get; set; } = new Vector3(-1.8f, -1.8f, -1.8f);
+        public Vector3 vVelocity { get; set; }
+        public Vector3 vVelAccel { get; set; } = new Vector3(1.8f, 1.8f, 1.8f);
+        public Vector3 vPosition { get; set; }
+        public Vector3 vPausePosition { get; set; }
+        public Vector3 vTarget { get; set; }
+        public Vector3 vDistance { get; set; }
+        public float RangeToCheckPoint { get; set; } = 0.25f; // distance to checkpoint at which it is considered that we have reached it
+        public Vector3 vRangeToCheckPoint { get; set; } = new Vector3(0.5f, 0.5f, 0f); // distance to checkpoint at which it is considered that we have reached it
+        public bool FollowPath { get; set; } = false;
+        
         /// <summary>
         /// 是否正在执行巡逻任务
         /// Are patrols under way?
@@ -89,28 +134,25 @@ namespace AAEmu.Game.Models.Game.Units
         /// Perform patrol missions
         /// </summary>
         /// <param name="npc"></param>
-        public void Apply(Npc npc)
+        public void Apply(BaseUnit unit)
         {
             //如果NPC不存在或不处于巡航模式或者当前执行次数不为0
             //If NPC does not exist or is not in cruise mode or the current number of executions is not zero
-            if (npc.Patrol == null || (npc.Patrol.Running == false && this != npc.Patrol) || (npc.Patrol.Running == true && this == npc.Patrol))
+            if (unit.Patrol == null || (unit.Patrol.Running == false && this != unit.Patrol) || (unit.Patrol.Running == true && this == unit.Patrol))
             {
                 //如果上次巡航模式处于暂停状态则保存上次巡航模式
                 //If the last cruise mode is suspended, save the last cruise mode
-                if (npc.Patrol != null && npc.Patrol != this && !npc.Patrol.Abandon)
+                if (unit.Patrol != null && unit.Patrol != this && !unit.Patrol.Abandon)
                 {
-                    LastPatrol = npc.Patrol;
+                    LastPatrol = unit.Patrol;
                 }
                 ++Count;
-                //++Seq;
-                Seq = (uint)Rand.Next(0, 10000);
+                Seq = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
                 Running = true;
-                npc.Patrol = this;
-                Execute(npc);
+                unit.Patrol = this;
+                Execute(unit);
             }
         }
-
-        public abstract void Execute(Npc npc);
 
         /// <summary>
         /// 再次执行任务
@@ -119,59 +161,59 @@ namespace AAEmu.Game.Models.Game.Units
         /// <param name="npc"></param>
         /// <param name="time"></param>
         /// <param name="patrol"></param>
-        public void Repeat(Npc npc, double time = 100, Patrol patrol = null)
+        public void Repeat(BaseUnit unit, double time = 100, Patrol patrol = null)
         {
             if (!(patrol ?? this).Abandon)
             {
-                TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, npc), TimeSpan.FromMilliseconds(time));
+                TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, unit), TimeSpan.FromMilliseconds(time));
             }
         }
 
-        public bool PauseAuto(Npc npc)
+        public bool PauseAuto(BaseUnit unit)
         {
-            if (Interrupt || !npc.Patrol.Running)
+            if (Interrupt || !unit.Patrol.Running)
             {
-                Pause(npc);
+                Pause(unit);
                 return true;
             }
             return false;
         }
 
-        public void Pause(Npc npc)
+        public void Pause(BaseUnit unit)
         {
             Running = false;
-            PausePosition = npc.Position.Clone();
+            PausePosition = unit.Position.Clone();
         }
 
-        public void Stop(Npc npc)
+        public void Stop(BaseUnit unit)
         {
             Running = false;
             Abandon = true;
 
-            Recovery(npc);
+            Recovery(unit);
         }
 
-        public void Recovery(Npc npc)
+        public void Recovery(BaseUnit unit)
         {
             // 如果当前巡航处于暂停状态则恢复当前巡航
             // Resume current cruise if current cruise is paused
             if (!Abandon && Running == false)
             {
-                npc.Patrol.Running = true;
-                Repeat(npc);
+                unit.Patrol.Running = true;
+                Repeat(unit);
                 return;
             }
             // 如果上次巡航不为null
             // If the last cruise is not null
             if (LastPatrol != null && Running == false)
             {
-                if (npc.Position.X == LastPatrol.PausePosition.X && npc.Position.Y == LastPatrol.PausePosition.Y && npc.Position.Z == LastPatrol.PausePosition.Z)
+                if (unit.Position.X == LastPatrol.PausePosition.X && unit.Position.Y == LastPatrol.PausePosition.Y && unit.Position.Z == LastPatrol.PausePosition.Z)
                 {
                     LastPatrol.Running = true;
-                    npc.Patrol = LastPatrol;
+                    unit.Patrol = LastPatrol;
                     // 恢复上次巡航
                     // Resume last cruise
-                    Repeat(npc, 500, LastPatrol);
+                    Repeat(unit, 500, LastPatrol);
                 }
                 else
                 {
@@ -188,26 +230,81 @@ namespace AAEmu.Game.Models.Game.Units
                     line.Position = LastPatrol.PausePosition;
                     // 恢复上次巡航
                     // Resume last cruise
-                    Repeat(npc, 500, line);
+                    Repeat(unit, 500, line);
                 }
             }
         }
 
-        public void LoopAuto(Npc npc)
+        public void LoopAuto(BaseUnit unit)
         {
             if (Loop)
             {
                 Count = 0;
                 //Seq = 0;
-                Seq = (uint)Rand.Next(0, 10000);
-                Repeat(npc, LoopDelay);
+                Seq = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
+                Repeat(unit, LoopDelay);
             }
             else
             {
                 // 非循环任务则终止本任务并尝试恢复上次任务
                 // Acyclic tasks terminate this task and attempt to resume the last task
-                Stop(npc);
+                Stop(unit);
             }
         }
+        public SkillCastTarget GetSkillCastTarget(Unit caster, Skill skill)
+        {
+            SkillCastTarget targetType;
+            switch (skill.Template.TargetType)
+            {
+                case SkillTargetType.Doodad:
+                    targetType = SkillCastTarget.GetByType(SkillCastTargetType.Doodad);
+                    targetType.ObjId = caster.CurrentTarget.ObjId;
+                    break;
+                case SkillTargetType.AnyUnit:
+                case SkillTargetType.AnyUnitAlways:
+                case SkillTargetType.Friendly:
+                case SkillTargetType.FriendlyOthers:
+                case SkillTargetType.GeneralUnit:
+                case SkillTargetType.Hostile:
+                case SkillTargetType.Others:
+                    targetType = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
+                    targetType.ObjId = caster.CurrentTarget.ObjId;
+                    break;
+                case SkillTargetType.Self:
+                    targetType = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
+                    targetType.ObjId = caster.CurrentTarget?.ObjId ?? caster.ObjId;
+                    break;
+                case SkillTargetType.ArtilleryPos:
+                case SkillTargetType.BallisticPos:
+                case SkillTargetType.CommanderPos:
+                case SkillTargetType.CursorPos:
+                case SkillTargetType.Pos:
+                case SkillTargetType.RelativePos:
+                case SkillTargetType.SourcePos:
+                case SkillTargetType.SummonPos:
+                    targetType = SkillCastTarget.GetByType(SkillCastTargetType.Position);
+                    break;
+                case SkillTargetType.Item:
+                    targetType = SkillCastTarget.GetByType(SkillCastTargetType.Item);
+                    targetType.ObjId = caster.CurrentTarget.ObjId;
+                    break;
+                case SkillTargetType.Party:
+                case SkillTargetType.Raid:
+                case SkillTargetType.Line:
+                case SkillTargetType.Pet:
+                case SkillTargetType.Parent:
+                case SkillTargetType.ChildSlave:
+                case SkillTargetType.PetOwner:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return targetType;
+        }
+
+        public abstract void Execute(BaseUnit unit);
+        public abstract void Execute(Npc npc);
+        public abstract void Execute(Transfer transfer);
+        public abstract void Execute(Gimmick gimmick);
     }
 }

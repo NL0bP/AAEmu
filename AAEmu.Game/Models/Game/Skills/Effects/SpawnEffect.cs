@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
@@ -12,7 +12,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         public uint OwnerTypeId { get; set; }
         public uint SubType { get; set; }
         public uint PosDirId { get; set; }
-        public float PosAngle { get; set; }
+        //public float PosAngle { get; set; } // there is no such field in the database for version 3030
         public float PosDistance { get; set; }
         public uint OriDirId { get; set; }
         public float OriAngle { get; set; }

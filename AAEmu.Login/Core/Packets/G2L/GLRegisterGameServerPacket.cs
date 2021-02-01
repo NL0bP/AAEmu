@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+
 using AAEmu.Commons.Network;
 using AAEmu.Login.Core.Controllers;
 using AAEmu.Login.Core.Network.Internal;
@@ -22,7 +23,9 @@ namespace AAEmu.Login.Core.Packets.G2L
                 var additionalesCount = stream.ReadInt32();
                 var mirrors = new List<byte>();
                 for (var i = 0; i < additionalesCount; i++)
+                {
                     mirrors.Add(stream.ReadByte());
+                }
 
                 GameController.Instance.Add(gsId, mirrors, Connection);
             }

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Models.Game.AI.V2.Params;
+using AAEmu.Game.Models.Game.AI.v2.Params;
+using AAEmu.Game.Models.Game.AI.v2.Params.Almighty;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 
-namespace AAEmu.Game.Models.Game.AI.v2.Behaviors
+namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common
 {
     public class AlmightyAttackBehavior : BaseCombatBehavior
     {

@@ -2,6 +2,7 @@
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -126,7 +127,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
             trg.Hp += value;
             trg.Hp = Math.Min(trg.Hp, trg.MaxHp);
-            trg.BroadcastPacket(new SCUnitPointsPacket(trg.ObjId, trg.Hp, trg.Mp), true);
+            trg.BroadcastPacket(new SCUnitPointsPacket(trg.ObjId, trg.Hp, trg.Mp, trg.HighAbilityRsc), true);
 
             trg.Events.OnHealed(this, new OnHealedArgs { Healer = caster, HealAmount = value });
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Models.Game.World;
@@ -107,7 +108,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
 
             // 模拟unit
             // simulation unit
-            var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
+            moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
             // 改变NPC坐标
             // Change the NPC coordinates
@@ -133,14 +134,14 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationY = 0;
             moveType.RotationZ = rotZ;
 
-            moveType.Flags = 5;     // 5-walk, 4-run, 3-stand still
+            moveType.ActorFlags = ActorMoveType.Walk; // 5-walk, 4-run, 3-stand still
             moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127;
             moveType.DeltaMovement[2] = 0;
-            moveType.Stance = 1;    // COMBAT = 0x0, IDLE = 0x1
-            moveType.Alertness = 0; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
-            moveType.Time = Seq;    // has to change all the time for normal motion.
+            moveType.Stance = EStance.Idle;           // COMBAT = 0x0, IDLE = 0x1
+            moveType.Alertness = AiAlertness.Idle;    // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+            moveType.Time = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
 
             if (move)
             {
@@ -158,6 +159,18 @@ namespace AAEmu.Game.Models.Game.Units.Route
                 npc.BroadcastPacket(new SCOneUnitMovementPacket(npc.ObjId, moveType), true);
                 LoopAuto(npc);
             }
+        }
+        public override void Execute(Transfer transfer)
+        {
+            throw new NotImplementedException();
+        }
+        public override void Execute(Gimmick gimmick)
+        {
+            throw new NotImplementedException();
+        }
+        public override void Execute(BaseUnit unit)
+        {
+            throw new NotImplementedException();
         }
     }
 }

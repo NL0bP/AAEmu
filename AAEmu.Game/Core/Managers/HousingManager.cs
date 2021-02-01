@@ -8,13 +8,13 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Items.Actions;
 using MySql.Data.MySqlClient;
 using NLog;
@@ -37,7 +37,7 @@ namespace AAEmu.Game.Core.Managers
         private static int MAX_HEAVY_TAX_COUNTED = 10; // Maximum number of heavy tax buildings to take into account for tax calculation
         private bool isCheckingTaxTiming = false;
 
-        public int GetByAccountId(Dictionary<uint, House> values, uint accountId)
+        public int GetByAccountId(Dictionary<uint, House> values, ulong accountId)
         {
             foreach (var (id, house) in _houses)
                 if (house.AccountId == accountId)
@@ -253,7 +253,7 @@ namespace AAEmu.Game.Core.Managers
                             var factionId = reader.GetUInt32("faction_id");
                             var house = Create(templateId, factionId);
                             house.Id = reader.GetUInt32("id");
-                            house.AccountId = reader.GetUInt32("account_id");
+                            house.AccountId = reader.GetUInt64("account_id");
                             house.OwnerId = reader.GetUInt32("owner");
                             house.CoOwnerId = reader.GetUInt32("co_owner");
                             house.Name = reader.GetString("name");
@@ -337,7 +337,7 @@ namespace AAEmu.Game.Core.Managers
                 {
                     var casterObj = new Models.Game.Skills.SkillCasterUnit(house.ObjId);
                     house.Buffs.AddBuff(new Models.Game.Skills.Buff(house, house, casterObj,
-                        protectionBuffTemplate, null, System.DateTime.Now));
+                        protectionBuffTemplate, null, System.DateTime.UtcNow));
                 }
                 else
                 {
@@ -364,7 +364,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         var casterObj = new Models.Game.Skills.SkillCasterUnit(house.ObjId);
                         house.Buffs.AddBuff(new Models.Game.Skills.Buff(house, house, casterObj,
-                            protectionBuffTemplate, null, System.DateTime.Now));
+                            protectionBuffTemplate, null, System.DateTime.UtcNow));
                     }
                     else
                     {
@@ -620,7 +620,7 @@ namespace AAEmu.Game.Core.Managers
                 // Remove owner
                 house.OwnerId = 0;
                 house.CoOwnerId = 0;
-                house.AccountId = 0;
+                house.AccountId = 0UL;
                 house.SellPrice = 0;
                 house.SellToPlayerId = 0;
                 house.Permission = HousingPermission.Public;
@@ -652,11 +652,11 @@ namespace AAEmu.Game.Core.Managers
             // TODO: not sure how to handle this, just insta-delete it for now
             house.Delete();
             // TODO: Add to despawn handler
-            //house.Despawn = DateTime.Now.AddSeconds(20);
+            //house.Despawn = DateTime.UtcNow.AddSeconds(20);
             //SpawnManager.Instance.AddDespawn(house);
         }
 
-        public bool CalculateBuildingTaxInfo(uint AccountId, HousingTemplate newHouseTemplate, bool buildingNewHouse, out int totalTaxToPay, out int heavyHouseCount, out int normalHouseCount, out int hostileTaxRate)
+        public bool CalculateBuildingTaxInfo(ulong AccountId, HousingTemplate newHouseTemplate, bool buildingNewHouse, out int totalTaxToPay, out int heavyHouseCount, out int normalHouseCount, out int hostileTaxRate)
         {
             totalTaxToPay = 0;
             heavyHouseCount = 0;

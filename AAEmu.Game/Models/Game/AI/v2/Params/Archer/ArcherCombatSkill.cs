@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NLua;
 
-namespace AAEmu.Game.Models.Game.AI.V2.Params.Archer
+namespace AAEmu.Game.Models.Game.AI.v2.Params.Archer
 {
     public class ArcherCombatSkill
     {

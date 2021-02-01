@@ -10,6 +10,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Effects;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Utils;
 using AAEmu.Game.Models.Game.Units;
 
@@ -62,7 +63,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public int ReflectionRatio { get; set; }
         public int ReflectionTargetRatio { get; set; }
         public bool KnockbackImmune { get; set; }
-        public uint ImmuneBuffTagId { get; set; }
+        //public uint ImmuneBuffTagId { get; set; }  // there is no such field in the database for version 3030
         public uint AuraRelationId { get; set; }
         public uint GroupId { get; set; }
         public int GroupRank { get; set; }
@@ -102,7 +103,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         public bool SlaveApplicable { get; set; }
         public bool Pacifist { get; set; }
         public bool RemoveOnInteraction { get; set; }
-        public bool Crime { get; set; }
+        //public bool Crime { get; set; } // there is no such field in the database for version 3030
         public bool RemoveOnUnmount { get; set; }
         public bool AuraChildOnly { get; set; }
         public bool RemoveOnMount { get; set; }
@@ -176,8 +177,8 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
         {
             if (RequireBuffId > 0 && !target.Buffs.CheckBuff(RequireBuffId))
                 return; //TODO send error?
-            if (target.Buffs.CheckBuffImmune(Id))
-                return; //TODO  error of immune?
+            //if (target.Buffs.CheckBuffImmune(Id))
+            //    return; //TODO  error of immune?
             uint abLevel = 1;
             if (caster is Character character)
             {
@@ -243,7 +244,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                 var eff = SkillManager.Instance.GetEffectTemplate(tickEff.EffectId);
                 var targetObj = new SkillCastUnitTarget(owner.ObjId);
                 var skillObj = new SkillObject(); // TODO ?
-                eff.Apply(caster, buff.SkillCaster, owner, targetObj, new CastBuff(buff), new EffectSource(this), skillObj, DateTime.Now);
+                eff.Apply(caster, buff.SkillCaster, owner, targetObj, new CastBuff(buff), new EffectSource(this), skillObj, DateTime.UtcNow);
             }
         }
 
@@ -288,7 +289,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                         continue;
 
                     var targetObj = new SkillCastUnitTarget(trg.ObjId);
-                    eff.Apply((Unit)source, buff.SkillCaster, trg, targetObj, new CastBuff(buff), new EffectSource(this), skillObj, DateTime.Now);
+                    eff.Apply((Unit)source, buff.SkillCaster, trg, targetObj, new CastBuff(buff), new EffectSource(this), skillObj, DateTime.UtcNow);
                 }
             }
         }

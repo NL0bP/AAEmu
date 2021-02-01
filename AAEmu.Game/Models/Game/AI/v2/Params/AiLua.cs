@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using NLua;
 
-namespace AAEmu.Game.Models.Game.AI.V2.Params
+namespace AAEmu.Game.Models.Game.AI.v2.Params
 {
     class AiLua : Lua
     {
