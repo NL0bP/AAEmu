@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Net;
-using AAEmu.Commons.Network.Type;
+using AAEmu.Commons.Network.Core;
 using AAEmu.Commons.Utils;
 using AAEmu.Login.Core.Packets.C2L;
 using AAEmu.Login.Models;
@@ -19,7 +19,7 @@ namespace AAEmu.Login.Core.Network.Login
         {
             _handler = new LoginProtocolHandler();
 
-            RegisterPacket(0x01, typeof(CARequestAuthPacket)); // шлет Editor
+            RegisterPacket(0x01, typeof(CARequestAuthPacket)); // TODO +---
             RegisterPacket(0x02, typeof(CARequestAuthTencentPacket));
             RegisterPacket(0x03, typeof(CARequestAuthGameOnPacket));
             RegisterPacket(0x04, typeof(CARequestAuthTrionPacket));
@@ -38,9 +38,7 @@ namespace AAEmu.Login.Core.Network.Login
         {
             var config = AppConfiguration.Instance.Network;
             _server = new Server(
-                new IPEndPoint(config.Host.Equals("*") ? IPAddress.Any : IPAddress.Parse(config.Host), config.Port),
-                config.NumConnections);
-            _server.SetHandler(_handler);
+                config.Host.Equals("*") ? IPAddress.Any : IPAddress.Parse(config.Host), config.Port, _handler);
             _server.Start();
 
             _log.Info("Network started with Number Connections of: " + config.NumConnections);

@@ -59,7 +59,13 @@ namespace AAEmu.Commons.Utils
 
         public static DateTime UnixTime(long time)
         {
-            return time == 0 ? DateTime.MinValue : _unixDate.AddSeconds(time);
+            if (time > DateTime.MaxValue.Second)
+                return DateTime.MaxValue;
+
+            if (time < DateTime.MinValue.Second)
+                return DateTime.MinValue;
+            
+            return _unixDate.AddSeconds(time);
         }
 
         public static long UnixTimeNow()
@@ -214,12 +220,6 @@ namespace AAEmu.Commons.Utils
                 .Where(x => x % 2 == 0)
                 .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
                 .ToArray();
-        }
-
-        public static string ByteArrayToString(byte[] data)
-        {
-            var hex = BitConverter.ToString(data);
-            return hex.Replace("-", "");
         }
 
         public static byte[] ConvertIp(string ip)

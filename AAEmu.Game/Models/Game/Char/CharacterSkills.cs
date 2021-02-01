@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using MySql.Data.MySqlClient;
@@ -17,15 +19,17 @@ namespace AAEmu.Game.Models.Game.Char
         }
 
         private List<uint> _removed;
+
         public Dictionary<uint, Skill> Skills { get; set; }
-        public Dictionary<uint, PassiveBuffTemplate> PassiveBuffs { get; set; }
+        public Dictionary<uint, PassiveBuff> PassiveBuffs { get; set; }
+
         public Character Owner { get; set; }
 
         public CharacterSkills(Character owner)
         {
             Owner = owner;
             Skills = new Dictionary<uint, Skill>();
-            PassiveBuffs = new Dictionary<uint, PassiveBuffTemplate>();
+            PassiveBuffs = new Dictionary<uint, PassiveBuff>();
             _removed = new List<uint>();
         }
 
@@ -33,79 +37,19 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var template = SkillManager.Instance.GetSkillTemplate(skillId);
             if (template.AbilityId > 0 &&
-                template.AbilityId != (byte) Owner.SkillTreeOne &&
-                template.AbilityId != (byte) Owner.SkillTreeTwo &&
-                template.AbilityId != (byte) Owner.SkillTreeThree)
+                template.AbilityId != (byte) Owner.Ability1 &&
+                template.AbilityId != (byte) Owner.Ability2 &&
+                template.AbilityId != (byte) Owner.Ability3)
                 return;
-            var points = ExperienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
+            var points = ExpirienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
             points -= GetUsedSkillPoints();
             if (template.SkillPoints > points)
                 return;
 
             if (Skills.ContainsKey(skillId))
-            {
-                Skills[skillId].Level++;
-                Owner.SendPacket(new SCSkillUpgradedPacket(Skills[skillId]));
-            }
+                Owner.SendPacket(new SCSkillLearnedPacket(Skills[skillId]));
             else
                 AddSkill(template, 1, true);
-        }
-
-        public void AddSkill(uint skillId, bool newlyLearned)
-        {
-            var template = SkillManager.Instance.GetSkillTemplate(skillId);
-            if (template.AbilityId > 10 || template.SkillPoints > GetRemainingSkillPoints())
-                return;
-
-
-            var skillTreeLevel = -1;
-            if ((byte)Owner.SkillTreeOne == template.AbilityId)
-            {
-                skillTreeLevel =
-                    ExperienceManager.Instance.GetLevelFromExp(Owner.Abilities.Abilities[Owner.SkillTreeOne].Exp);
-            }
-            else if ((byte)Owner.SkillTreeTwo == template.AbilityId)
-            {
-                skillTreeLevel =
-                    ExperienceManager.Instance.GetLevelFromExp(Owner.Abilities.Abilities[Owner.SkillTreeTwo].Exp);
-            }
-            else if ((byte)Owner.SkillTreeThree == template.AbilityId)
-            {
-                skillTreeLevel =
-                    ExperienceManager.Instance.GetLevelFromExp(Owner.Abilities.Abilities[Owner.SkillTreeThree].Exp);
-            }
-
-            if (Owner.Level >= 10 && skillTreeLevel < 10)
-            {
-                skillTreeLevel = 10;
-            }
-            else if (Owner.Level < 10)
-            {
-                skillTreeLevel = Owner.Level;
-            }
-
-            if (skillTreeLevel != -1 && skillTreeLevel >= template.AbilityLevel)
-            {
-                byte skillLevel = 1;
-                if (template.LevelStep != 0)
-                {
-                    skillLevel += (byte)((skillTreeLevel - template.AbilityLevel) / template.LevelStep);
-                }
-
-                var skill = new Skill
-                {
-                    Id = template.Id,
-                    Template = template,
-                    Level = skillLevel
-                };
-
-                Skills.Add(skill.Id, skill);
-
-                if (newlyLearned)
-                {
-                    Owner.SendPacket(new SCSkillLearnedPacket(skill));
-                }
-            }
         }
 
         public void AddSkill(SkillTemplate template, byte level, bool packet)
@@ -114,92 +58,32 @@ namespace AAEmu.Game.Models.Game.Char
             {
                 Id = template.Id,
                 Template = template,
-                Level = level
+                Level = (template.LevelStep > 0 ? (byte)(((Owner.GetAbLevel((AbilityType)template.AbilityId) - (template.AbilityLevel)) / template.LevelStep) + 1): (byte)1)
             };
             Skills.Add(skill.Id, skill);
 
             if (packet)
                 Owner.SendPacket(new SCSkillLearnedPacket(skill));
         }
-
-        public void AddPassive(uint passiveId, bool newlyLearned)
-        {
-            var template = SkillManager.Instance.GetPassiveBuffTemplate(passiveId);
-            if (template.AbilityId > 10 || GetRemainingSkillPoints() < 1 || PassiveBuffs.ContainsKey(template.BuffId))
-                return;
-
-            var activeSkillsInTree = 0;
-            foreach (var skill in Skills.Values)
-                if (skill.Template.AbilityId == template.AbilityId)
-                    activeSkillsInTree++;
-
-            foreach (var passive in PassiveBuffs.Values)
-                if (passive.AbilityId == template.AbilityId)
-                    activeSkillsInTree++;
-
-            if (newlyLearned && activeSkillsInTree < template.ReqPoints)
-                return;
-
-            PassiveBuffs.Add(passiveId, template);
-
-            if (newlyLearned)
-                Owner.SendPacket(new SCBuffLearnedPacket(Owner.ObjId, passiveId));
-
-
-            if (!Owner.Effects.CheckBuff(template.BuffId))
-            {
-                var buffTemplate = SkillManager.Instance.GetBuffTemplate(template.BuffId);
-                buffTemplate.Kind = BuffKindType.Hidden; // TODO: change all passive buffs in SQLite db's (client && server) to be hidden so they don't appear on the buff bar
-                Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Unit),
-                    buffTemplate, null, DateTime.Now));
-            }
-        }
-
+        
         public void AddBuff(uint buffId)
         {
             var template = SkillManager.Instance.GetPassiveBuffTemplate(buffId);
             if(template.AbilityId > 0 && 
-               template.AbilityId != (byte)Owner.SkillTreeOne && 
-               template.AbilityId != (byte)Owner.SkillTreeTwo && 
-               template.AbilityId != (byte)Owner.SkillTreeThree)
+               template.AbilityId != (byte)Owner.Ability1 && 
+               template.AbilityId != (byte)Owner.Ability2 && 
+               template.AbilityId != (byte)Owner.Ability3)
                 return;
-            var points = ExperienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
+            var points = ExpirienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
             points -= GetUsedSkillPoints();
             if(template.ReqPoints > points)
                 return;
             if(PassiveBuffs.ContainsKey(buffId))
                 return;
-            PassiveBuffs.Add(template.Id, template);
-            Owner.BroadcastPacket(new SCBuffLearnedPacket(Owner.ObjId, template.Id), true);
-            // TODO apply buff effect
-        }
-
-        public void Reset(AbilityType abilityId, bool notify) // TODO with price...
-        {
-            foreach (var skill in new List<Skill>(Skills.Values))
-            {
-                if (skill.Template.AbilityId != (byte)abilityId)
-                {
-                    continue;
-                }
-                Skills.Remove(skill.Id);
-                _removed.Add(skill.Id);
-            }
-
-            foreach (var buff in new List<PassiveBuffTemplate>(PassiveBuffs.Values))
-            {
-                if (buff.AbilityId != (byte)abilityId)
-                {
-                    continue;
-                }
-                PassiveBuffs.Remove(buff.Id);
-                Owner.Effects.RemoveBuff(buff.BuffId);
-                _removed.Add(buff.Id);
-            }
-
-            if (notify)
-                Owner.SendPacket(new SCSkillsResetPacket(Owner.ObjId, abilityId));
-
+            var buff = new PassiveBuff {Id = buffId, Template = template};
+            PassiveBuffs.Add(buff.Id, buff);
+            Owner.BroadcastPacket(new SCBuffLearnedPacket(Owner.ObjId, buff.Id), true);
+            buff.Apply(Owner);
         }
 
         public void Reset(AbilityType abilityId) // TODO with price...
@@ -212,10 +96,11 @@ namespace AAEmu.Game.Models.Game.Char
                 _removed.Add(skill.Id);
             }
 
-            foreach (var buff in new List<PassiveBuffTemplate>(PassiveBuffs.Values))
+            foreach (var buff in new List<PassiveBuff>(PassiveBuffs.Values))
             {
-                if (buff.AbilityId != (byte)abilityId)
+                if (buff.Template.AbilityId != (byte)abilityId)
                     continue;
+                buff.Remove(Owner);
                 PassiveBuffs.Remove(buff.Id);
                 _removed.Add(buff.Id);
             }
@@ -227,29 +112,23 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var points = 0;
             foreach (var skill in Skills.Values)
-                points++;
+                points += skill.Template.SkillPoints;
             foreach (var buff in PassiveBuffs.Values)
-                points++;
+                points += buff.Template?.ReqPoints ?? 1;
             return points;
         }
-
-        public bool IsDerivitiveSkill(uint skillId)
+        
+        // TODO : Optimize this by storing a map of derivative skills and their matches
+        public bool IsVariantOfSkill(uint skillId)
         {
             var skillTemplate = SkillManager.Instance.GetSkillTemplate(skillId);
-            foreach (var skill in Skills.Values)
-            {
-                if (skill.Template.AbilityId == skillTemplate.AbilityId && skill.Template.AbilityLevel == skillTemplate.AbilityLevel)
-                    return true;
-            }
 
-            return false;
+            return Skills.Values.Any(skill =>
+                skill.Template.AbilityId == skillTemplate.AbilityId &&
+                skill.Template.AbilityLevel == skillTemplate.AbilityLevel);
         }
 
-        public int GetRemainingSkillPoints()
-        {
-            return ExperienceManager.Instance.GetSkillPointsForLevel(Owner.Level) - GetUsedSkillPoints();
-        }
-
+        #region database
         public void Load(MySqlConnection connection)
         {
             using (var command = connection.CreateCommand())
@@ -264,10 +143,18 @@ namespace AAEmu.Game.Models.Game.Char
                         switch (type)
                         {
                             case SkillType.Skill:
-                                AddSkill(reader.GetUInt32("id"), false);
+                                var skill = new Skill
+                                {
+                                    Id = reader.GetUInt32("id"),
+                                    Level = reader.GetByte("level")
+                                };
+                                AddSkill(skill.Id);
                                 break;
                             case SkillType.Buff:
-                                AddPassive(reader.GetUInt32("id"), false);
+                                var buffId = reader.GetUInt32("id");
+                                var buff = new PassiveBuff {Id = buffId, Template = SkillManager.Instance.GetPassiveBuffTemplate(buffId)};
+                                PassiveBuffs.Add(buff.Id, buff);
+                                buff.Apply(Owner);
                                 break;
                         }
                     }
@@ -330,5 +217,7 @@ namespace AAEmu.Game.Models.Game.Char
                 }
             }
         }
+
+        #endregion
     }
 }

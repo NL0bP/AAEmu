@@ -3,10 +3,13 @@
         "Id": 1,
         "Name": "Nuian",
         "Pos": {
-            "WorldId": 1,
+            "WorldId": 0,
             "X": 15578.042,
             "Y": 15382.122,
-            "Z": 126.484
+            "Z": 126.484,
+			"RotationX": 0,
+			"RotationY": 0,
+			"RotationZ": 53
         },
         "NumInventorySlot": 50,
         "NumBankSlot": 50
@@ -15,10 +18,13 @@
         "Id": 4,
         "Name": "Elf",
         "Pos": {
-            "WorldId": 1,
+            "WorldId": 0,
             "X": 10388.576,
             "Y": 15982.466,
-            "Z": 367.606
+            "Z": 367.606,
+			"RotationX": 0,
+			"RotationY": 0,
+			"RotationZ": 12
         },
         "NumInventorySlot": 50,
         "NumBankSlot": 50
@@ -27,10 +33,13 @@
         "Id": 5,
         "Name": "Hariharan",
         "Pos": {
-            "WorldId": 1,
+            "WorldId": 0,
             "X": 19304.874,
             "Y": 7646.06,
-            "Z": 212.704
+            "Z": 212.704,
+			"RotationX": 0,
+			"RotationY": 0,
+			"RotationZ": 76
         },
         "NumInventorySlot": 50,
         "NumBankSlot": 50
@@ -39,10 +48,13 @@
         "Id": 6,
         "Name": "Ferre",
         "Pos": {
-            "WorldId": 1,
+            "WorldId": 0,
             "X": 23881.218,
             "Y": 10495.782,
-            "Z": 589.7838
+            "Z": 589.7838,
+			"RotationX": 0,
+			"RotationY": 0,
+			"RotationZ": 67
         },
         "NumInventorySlot": 50,
         "NumBankSlot": 50

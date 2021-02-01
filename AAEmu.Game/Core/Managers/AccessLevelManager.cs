@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
@@ -16,20 +16,20 @@ namespace AAEmu.Game.Core.Managers
         
         public void Load()
         {
-            var dic = readSettings();
+            Dictionary<string, int> dic = readSettings();
 
             _log.Info("Loading CommandAccessLevels...");
 
-            foreach(var entry in dic)
+            foreach(KeyValuePair<string, int> entry in dic)
                 CMD.Add(new Command{ command = entry.Key, level = entry.Value });
 
             _log.Info("Loaded {0} CommandAccessLevels", CMD.Count);
         }
 
         public static Dictionary<string, int> readSettings(){
-            var d = new Dictionary<string, int>();
+            Dictionary<string, int> d = new Dictionary<string, int>();
             try{
-                var data = File.ReadAllText("AccessLevels.json");
+                string data = File.ReadAllText("AccessLevels.json");
                 d = JsonConvert.DeserializeObject<Dictionary<string, int>>(data);
             }
             catch{}

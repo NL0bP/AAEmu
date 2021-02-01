@@ -1,20 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Utils;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class ItemCapScale : ISpecialEffect
+    public class ItemCapScale : SpecialEffectAction
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
+
+        public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
             SkillCastTarget targetObj,
@@ -22,7 +27,10 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             Skill skill,
             SkillObject skillObject,
             DateTime time,
-            int value1, int value2, int value3, int value4)
+            int value1,
+            int value2,
+            int value3,
+            int value4)
         {
             _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
 
@@ -30,31 +38,43 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             var temperSkillItem = (SkillItem)casterObj;
             var skillTargetItem = (SkillCastItemTarget)targetObj;
 
-            if (owner == null) return;
-            if (temperSkillItem == null) return;
-            if (skillTargetItem == null) return;
+            if (owner == null)
+            {
+                return;
+            }
 
-            var targetItem = owner.Inventory.GetItem(skillTargetItem.Id);
-            var temperItem = owner.Inventory.GetItem(temperSkillItem.ItemId);
+            if (temperSkillItem == null)
+            {
+                return;
+            }
 
-            if (targetItem == null || temperItem == null) return;
+            if (skillTargetItem == null)
+            {
+                return;
+            }
+
+            var targetItem = owner.Inventory.GetItemById(skillTargetItem.Id);
+
+            if (targetItem == null)
+            {
+                return;
+            }
 
             var equipItem = (EquipItem)targetItem;
 
-            var tasksTempering = new List<ItemTask>();
-
-            var itemCapScale = ItemManager.Instance.GetItemCapScale(skill.TemplateId);
+            var itemCapScale = ItemManager.Instance.GetItemCapScale(skill.Id);
 
             var physicalScale = (ushort)Rand.Next(itemCapScale.ScaleMin, itemCapScale.ScaleMax);
             var magicalScale = (ushort)Rand.Next(itemCapScale.ScaleMin, itemCapScale.ScaleMax);
 
             equipItem.TemperPhysical = physicalScale;
             equipItem.TemperMagical = magicalScale;
-
-            tasksTempering.Add(new ItemUpdate(equipItem));
-            owner.Inventory.RemoveItem(temperItem.TemplateId, 1, ItemTaskType.SkillReagents);
-
-            owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.EnchantPhysical, tasksTempering, new List<ulong>()));
+            
+            // The item appears to be consumed as a skill reagent
+            // temperItem._holdingContainer.ConsumeItem(ItemTaskType.EnchantPhysical, temperItem.TemplateId, 1, temperItem);
+            owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.EnchantPhysical, new List<ItemTask>() { new ItemUpdate(equipItem) }, new List<ulong>()));
+            // Note: According to various videos I have found, there is no information on the % reached by a temper ingame. This is sent to help indicate what was achieved.
+            owner.SendMessage(ChatType.System, "Temper:\n |cFFFFFFFF{0}%|r Physical\n|cFFFFFFFF{1}%|r Magical", physicalScale, magicalScale);
         }
     }
 }

@@ -11,7 +11,8 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("testslave", this);
+            string[] name = { "testslave", "test_slave" };
+            CommandManager.Instance.Register(name, this);
         }
 
         public string GetCommandLineHelp()
@@ -21,14 +22,14 @@ namespace AAEmu.Game.Scripts.Commands
 
         public string GetCommandHelpText()
         {
-            return "";
+            return "Spawns a test slave";
         }
 
         public void Execute(Character character, string[] args)
         {
             var slave = new Slave();
-            slave.TemplateId = 46; //54;
-            slave.ModelId = 653; //952;
+            slave.TemplateId = 6;
+            slave.ModelId = 654;
             slave.ObjId = ObjectIdManager.Instance.GetNextId();
             slave.TlId = (ushort)TlIdManager.Instance.GetNextId();
             slave.Faction = FactionManager.Instance.GetFaction(143);
@@ -38,7 +39,7 @@ namespace AAEmu.Game.Scripts.Commands
             slave.Position.Y += 5f; // spawn_Y_offset
             slave.MaxHp = slave.Hp = 5000;
             slave.ModelParams = new UnitCustomModelParams();
-
+            
             slave.Spawn();
         }
     }

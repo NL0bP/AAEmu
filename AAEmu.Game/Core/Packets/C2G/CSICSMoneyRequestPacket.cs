@@ -1,4 +1,5 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 
@@ -6,7 +7,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSICSMoneyRequestPacket : GamePacket
     {
-        public CSICSMoneyRequestPacket() : base(0x11e, 1)
+        public CSICSMoneyRequestPacket() : base(CSOffsets.CSICSMoneyRequestPacket, 1)
         {
         }
 
@@ -15,7 +16,8 @@ namespace AAEmu.Game.Core.Packets.C2G
             // Empty struct
             _log.Warn("ICSMoneyRequest");
 
-            Connection.SendPacket(new SCICSCashPointPacket(5678));
+            var points = CashShopManager.Instance.GetAccountCredits(Connection.AccountId);
+            Connection.SendPacket(new SCICSCashPointPacket(points));
         }
     }
 }

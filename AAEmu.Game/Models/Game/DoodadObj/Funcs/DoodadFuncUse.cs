@@ -1,32 +1,35 @@
 ﻿using System;
-
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Tasks.Skills;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 {
     public class DoodadFuncUse : DoodadFuncTemplate
     {
         public uint SkillId { get; set; }
-
-        public override void Use(Unit caster, Doodad owner, uint skillId)
+        
+        public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
-            _log.Debug("DoodadFuncUse: skillId {0}, SkillId {1}", skillId, SkillId);
+            //TODO check skill refrences and consume items if items are required for skills
+            
+            // Make caster cast skill ? 
+            
+            var skillTemplate = SkillManager.Instance.GetSkillTemplate(SkillId);
+            if (skillTemplate == null)
+                return;
 
-            var character = (Character)caster;
-            if (character != null)
+            if (SkillId > 0)
             {
-                character.LaborPowerModified = DateTime.Now;
-                character.ChangeLabor(-10, 0);
+                var useSkill = new Skill(skillTemplate);
+                TaskManager.Instance.Schedule(
+                    new UseSkillTask(useSkill, caster, new SkillCasterUnit(caster.ObjId), owner,
+                        new SkillCastDoodadTarget() {ObjId = owner.ObjId}, null), TimeSpan.FromMilliseconds(0));
+                // owner.Use(caster);
             }
-
-            var func = DoodadManager.Instance.GetFunc(owner.FuncGroupId, skillId);
-            if (func.NextPhase <= 0) { return; }
-            owner.FuncGroupId = (uint)func.NextPhase;
-            var nextfunc = DoodadManager.Instance.GetFunc(owner.FuncGroupId, 0);
-            nextfunc?.Use(caster, owner, skillId);
         }
     }
 }

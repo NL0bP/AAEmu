@@ -33,7 +33,6 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Templates
         public bool DespawnOnCollision { get; set; }
         public bool NoCollision { get; set; }
         public uint RestrictZoneId { get; set; }
-        public string Name { get; set; }
 
         public List<DoodadFuncGroups> FuncGroups { get; set; }
 

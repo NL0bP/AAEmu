@@ -1,4 +1,6 @@
-﻿namespace AAEmu.Game.Core.Packets.G2C
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace AAEmu.Game.Core.Packets.G2C
 {
     public static class SCOffsets
     {

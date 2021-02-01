@@ -34,7 +34,7 @@ namespace AAEmu.Game.Utils
             _objTables = objTables;
             _exclude = exclude;
             _distinct = distinct;
-            _freeIdSize = (int)(_lastId - _firstId);
+            _freeIdSize = (int) (_lastId - _firstId);
             PrimeFinder.Init();
         }
 
@@ -46,7 +46,17 @@ namespace AAEmu.Game.Utils
                 _freeIds.Clear();
                 _freeIdCount = _freeIdSize;
 
-                foreach (var usedObjectId in ExtractUsedObjectIdTable())
+                var allUsedObjects = new uint[0];
+                try
+                {
+                    allUsedObjects = (uint[])ExtractUsedObjectIdTable();
+                }
+                catch
+                {
+                    _log.Warn("{0} failed to read from database, reverting to default", _name);
+                }
+
+                foreach (var usedObjectId in allUsedObjects)
                 {
                     if (_exclude.Contains(usedObjectId))
                         continue;
@@ -79,13 +89,10 @@ namespace AAEmu.Game.Utils
         private IEnumerable<uint> ExtractUsedObjectIdTable()
         {
             if (_objTables.Length < 2)
-                return Array.Empty<uint>();
+                return new uint[0];
 
             using (var connection = MySQL.CreateConnection())
             {
-                if (connection == null)
-                    return Array.Empty<uint>();
-
                 using (var command = connection.CreateCommand())
                 {
                     var query = "SELECT " + (_distinct ? "DISTINCT " : "") + _objTables[0, 1] + ", 0 AS i FROM " +
@@ -134,15 +141,13 @@ namespace AAEmu.Game.Utils
 
         public void ReleaseId(uint usedObjectId)
         {
-            var objectId = (int)(usedObjectId - _firstId);
+            var objectId = (int) (usedObjectId - _firstId);
             if (objectId > -1)
             {
                 _freeIds.Clear(objectId);
                 if (_nextFreeId > objectId)
                     _nextFreeId = objectId;
                 Interlocked.Increment(ref _freeIdCount);
-
-                _log.Warn("{0}: release objectId {1}", _name, usedObjectId);
             }
             else
                 _log.Warn("{0}: release objectId {1} failed", _name, usedObjectId);
@@ -177,7 +182,7 @@ namespace AAEmu.Game.Utils
                 }
 
                 _nextFreeId = nextFree;
-                return (uint)newId + _firstId;
+                return (uint) newId + _firstId;
             }
         }
 

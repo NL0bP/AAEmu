@@ -33,9 +33,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             // Give your own movement to the selected object, move with yourself
             // 模拟unit
             // Simulated unit
-            var type = (MoveTypeEnum)1;
-            // 返回moveType对象
-            var moveType = (UnitMoveType)MoveType.GetType(type);
+            var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
             if (npc.Position.RotationX < 127)
             {
@@ -48,15 +46,15 @@ namespace AAEmu.Game.Models.Game.Units.Route
 
             // 改变NPC坐标
             // Changing NPC coordinates
-            moveType.Flags = 5;
+            moveType.Flags = 5;     // 5-walk, 4-run, 3-stand still
             //moveType.VelZ = VelZ;
-            moveType.DeltaMovement = new byte[3];
+            moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127; // 88.. 118
             moveType.DeltaMovement[2] = 0;
             moveType.Stance = 1;    // COMBAT = 0x0, IDLE = 0x1
             moveType.Alertness = 0; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
-            moveType.Time = Seq;    // должно всё время увеличиваться, для нормального движения
+            moveType.Time = Seq;    // has to change all the time for normal motion.
 
             // 圆形巡航
             // Round cruising
@@ -98,7 +96,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                 moveType.DeltaMovement[1] = 0;
                 npc.BroadcastPacket(new SCOneUnitMovementPacket(npc.ObjId, moveType), true);
                 //LoopAuto(npc);
-                // остановиться в вершине на time секунд
+                // stop at the top for time seconds
                 double time = (uint)Rand.Next(10, 25);
                 TaskManager.Instance.Schedule(new UnitMovePause(this, npc), TimeSpan.FromSeconds(time));
             }

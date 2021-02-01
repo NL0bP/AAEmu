@@ -8,22 +8,12 @@ namespace AAEmu.Game.Models.Game.World.Interactions
 {
     public class SkinOff : IWorldInteraction
     {
-        public void Execute(Unit caster, SkillCaster casterType, BaseUnit target, SkillCastTarget targetType,
-            uint skillId, uint doodadId, DoodadFuncTemplate objectFunc)
+        public void Execute(Unit caster, SkillCaster casterType, BaseUnit target, SkillCastTarget targetType, uint skillId, uint doodadId, DoodadFuncTemplate objectFunc)
         {
-            // TODO Verification Needed
             if (target is Doodad doodad)
             {
-                var func = DoodadManager.Instance.GetFunc(doodad.FuncGroupId, skillId);
-                if (func == null)
-                    return;
-                var grp = func.GroupId;
-                func.Use(caster, doodad, skillId);
-
-                var nextFunc = DoodadManager.Instance.GetFunc(doodad.FuncGroupId, skillId);
-                if (nextFunc?.NextPhase == grp || nextFunc?.NextPhase == -1)
-                    return;
-                nextFunc?.Use(caster, doodad, skillId);
+                // DoodadManager.Instance.TriggerFunc(GetType().Name, caster, doodad, skillId);
+                doodad.Use(caster, skillId);
             }
         }
     }

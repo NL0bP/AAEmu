@@ -9,7 +9,7 @@ namespace AAEmu.Game.Models.Game.Items.Actions
         public ItemAddNew(Item item)
         {
             _item = item;
-            _type = 0xF; // 15
+            _type = ItemAction.ChangeOwner; // 15
         }
 
         public override PacketStream Write(PacketStream stream)
@@ -22,10 +22,10 @@ namespace AAEmu.Game.Models.Game.Items.Actions
             stream.Write(_item.TemplateId);
             stream.Write(_item.Id);
             stream.Write(_item.Grade);
-            stream.Write((byte)0);
+            stream.Write((byte)_item.ItemFlags);
             stream.Write(_item.Count);
             var details = new PacketStream();
-            details.Write(_item.DetailType);
+            details.Write((byte)_item.DetailType);
             _item.WriteDetails(details);
             stream.Write((short)128);
             stream.Write(details, false);

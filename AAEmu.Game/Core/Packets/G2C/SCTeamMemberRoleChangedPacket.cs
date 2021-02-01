@@ -8,9 +8,9 @@ namespace AAEmu.Game.Core.Packets.G2C
     {
         private readonly uint _teamId;
         private readonly uint _memberId;
-        private readonly MemberRoleType _role;
+        private readonly MemberRole _role;
 
-        public SCTeamMemberRoleChangedPacket(uint teamId, uint memberId, MemberRoleType role) : base(SCOffsets.SCTeamMemberRoleChangedPacket, 1)
+        public SCTeamMemberRoleChangedPacket(uint teamId, uint memberId, MemberRole role) : base(SCOffsets.SCTeamMemberRoleChangedPacket, 1)
         {
             _teamId = teamId;
             _memberId = memberId;

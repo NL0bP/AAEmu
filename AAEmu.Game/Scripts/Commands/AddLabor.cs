@@ -9,7 +9,8 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("add_labor", this);
+            string[] name = { "addlabor", "add_labor", "labor" };
+            CommandManager.Instance.Register(name, this);
         }
 
         public string GetCommandLineHelp()
@@ -19,7 +20,7 @@ namespace AAEmu.Game.Scripts.Commands
 
         public string GetCommandHelpText()
         {
-            // Optional TODO: Add the values be extracting them from actability_groups ?
+            // Optional TODO: Add the values by extracting them from actability_groups ?
             return "Add or remove <amount> of labor. If [vocationSkillId] is provided, then target vocation skill also gains a amount of points.\n" +
                 "(1)Alchemy, (2)Construction, (3)Cooking, (4)Handicrafts, (5)Husbandry, (6)Farming, (7)Fishing, (8)Logging, (9)Gathering, (10)Machining, " +
                 "(11)Metalwork, (12)Printing, (13)Mining, (14)Masonry, (15)Tailoring, (16)Leatherwork, (17)Weaponry, (18)Carpentry, (20)Larceny, " +
@@ -31,7 +32,7 @@ namespace AAEmu.Game.Scripts.Commands
         {
             if (args.Length == 0)
             {
-                character.SendMessage("[Labor] /add_labor (target) <count> [targetSkill]");
+                character.SendMessage("[Labor] " + CommandManager.CommandPrefix + "addlabor (target) <count> [targetSkill]");
                 return;
             }
 
@@ -50,7 +51,7 @@ namespace AAEmu.Game.Scripts.Commands
             targetPlayer.ChangeLabor(count, vocationSkillId);
             if (character.Id != targetPlayer.Id)
             {
-                character.SendMessage("[Add_Labor] added {0} labor to {1}", count, targetPlayer.Name);
+                character.SendMessage("[Labor] added {0} labor to {1}", count, targetPlayer.Name);
                 targetPlayer.SendMessage("[GM] {0} has updated your labor by {1}", character.Name, count);
             }
 

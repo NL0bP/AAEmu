@@ -2,9 +2,18 @@
 
 namespace AAEmu.Game.Models.Game.Skills
 {
+    public enum CastType : byte
+    {
+        Skill = 0,
+        Plot = 1,
+        Buff = 2,
+        BuffTarget = 3,
+        DestroyTarget = 4
+    }
+
     public abstract class CastAction : PacketMarshaler
     {
-        public CastActionType Type { get; set; }
+        public CastType Type { get; set; }
 
         public override PacketStream Write(PacketStream stream)
         {
@@ -20,7 +29,7 @@ namespace AAEmu.Game.Models.Game.Skills
 
         public CastSkill(uint skillId, ushort tlId)
         {
-            Type = CastActionType.Skill;
+            Type = CastType.Skill;
             _skillId = skillId;
             _tlId = tlId;
         }
@@ -43,7 +52,7 @@ namespace AAEmu.Game.Models.Game.Skills
 
         public CastPlot(uint plotId, ushort tlId, uint eventId, uint skillId)
         {
-            Type = CastActionType.Plot;
+            Type = CastType.Plot;
             _plotId = plotId;
             _tlId = tlId;
             _eventId = eventId;
@@ -63,31 +72,31 @@ namespace AAEmu.Game.Models.Game.Skills
 
     public class CastBuff : CastAction
     {
-        private Effect _effect;
+        private Buff _buff;
 
-        public CastBuff(Effect effect)
+        public CastBuff(Buff buff)
         {
-            Type = CastActionType.Buff;
-            _effect = effect;
+            Type = CastType.Buff;
+            _buff = buff;
         }
 
         public override PacketStream Write(PacketStream stream)
         {
             base.Write(stream);
-            stream.Write(_effect.Template.BuffId);
-            stream.WriteBc(_effect.Owner.ObjId);
-            stream.Write(_effect.Index);
+            stream.Write(_buff.Template.BuffId);
+            stream.WriteBc(_buff.Owner.ObjId);
+            stream.Write(_buff.Index);
             stream.Write(true); // t
             stream.Write(false); // t
             return stream;
         }
     }
 
-    public class CastBuffTarget : CastAction
+    public class CastUnk2 : CastAction
     {
-        public CastBuffTarget()
+        public CastUnk2()
         {
-            Type = CastActionType.BuffTarget;
+            Type = CastType.BuffTarget;
         }
 
         public override PacketStream Write(PacketStream stream)
@@ -100,11 +109,11 @@ namespace AAEmu.Game.Models.Game.Skills
         }
     }
 
-    public class CastDestroyTarget : CastAction
+    public class CastUnk3 : CastAction
     {
-        public CastDestroyTarget()
+        public CastUnk3()
         {
-            Type = CastActionType.DestroyTarget;
+            Type = CastType.DestroyTarget;
         }
 
         public override PacketStream Write(PacketStream stream)

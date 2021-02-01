@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
-
-using AAEmu.Commons.Utils;
+﻿using System;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Items;
+using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils;
 
@@ -13,50 +14,36 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
     {
         public uint LootPackId { get; set; }
 
-        public override void Use(Unit caster, Doodad owner, uint skillId)
+        public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
-            _log.Debug("DoodadFuncLootPack : skillId {0}, LootPackId {1}, ", skillId, LootPackId);
+            _log.Debug("DoodadFuncLootPack : LootPackId {0}, SkillId {1}", LootPackId, skillId);
 
-            var character = (Character)caster;
-            if (character == null) { return; }
-
-            var lootPacks = ItemManager.Instance.GetLootPacks(LootPackId);
-            var dropRateMax = 0u;
-            //var items = new List<Item>();
-            var groupNum = 0;
-            HashSet<int> hs = new HashSet<int>();
-            foreach (var lp in lootPacks)
+            Character character = (Character)caster;
+            LootPacks[] lootPacks = ItemManager.Instance.GetLootPacks(LootPackId);
+            Random itemQuantity = new Random();
+            var count = 0;
+            if (character.Inventory.Bag.FreeSlotCount >= lootPacks.Length)
             {
-                hs.Add(lp.Group);
-            }
-            while (groupNum < hs.Count)
-            {
-                groupNum += 1;
-                _log.Warn("DoodadFuncLootPack : skillId {0}, LootPackId {1}, Group Num {2}", skillId, LootPackId, groupNum);
-                var groupFound = false;
-                foreach (var lp in lootPacks)
+                foreach (var pack in lootPacks)
                 {
-                    if (lp.Group != groupNum) { continue; }
+                    //_log.Warn(pack.Id);
+                    //_log.Warn(pack.Group);
+                    //_log.Warn(pack.ItemId);
+                    //_log.Warn(pack.DropRate);
+                    //_log.Warn(pack.MinAmount);
+                    //_log.Warn(pack.MaxAmount);
+                    //_log.Warn(pack.LootPackId);
+                    //_log.Warn(pack.GradeId);
+                    //_log.Warn(pack.AlwaysDrop);
 
-                    dropRateMax += lp.DropRate;
-                    groupFound = true;
+                    //TODO create dropRate chance
+                    count = itemQuantity.Next(pack.MinAmount, pack.MaxAmount);
+                    character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.AutoLootDoodadItem, pack.ItemId, count);
                 }
-                var dropRateItem = Rand.Next(0, dropRateMax);
-                var dropRateItemId = (uint)0;
-                foreach (var lp in lootPacks)
-                {
-                    if (lp.DropRate + dropRateItemId >= dropRateItem && lp.Group == groupNum)
-                    {
-                        var count = Rand.Next(lp.MinAmount, lp.MaxAmount);
-                        var item = ItemManager.Instance.Create(lp.ItemId, count, lp.GradeId);
-                        InventoryHelper.AddItemAndUpdateClient(character, item);
-                        break;
-                    }
-
-                    dropRateItemId += lp.DropRate;
-                }
-                if (groupFound == false) { break; }
+                // DoodadManager.Instance.TriggerPhases(GetType().Name, caster, owner, skillId);
             }
+            else
+                character.SendErrorMessage(Error.ErrorMessageType.BagFull);
         }
     }
 }

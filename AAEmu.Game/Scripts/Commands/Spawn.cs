@@ -24,24 +24,25 @@ namespace AAEmu.Game.Scripts.Commands
 
         public string GetCommandLineHelp()
         {
-            return "<npc||doodad> <unitId>";
+            return "<npc||doodad||remove> <unitId> [rotationZ]";
         }
 
         public string GetCommandHelpText()
         {
-            return "Spawns a npc or doodad using <unitId> as a template";
+            return "Spawns a npc or doodad using <unitId> as a template. Or remove a doodad";
         }
+
         public void Execute(Character character, string[] args)
         {
             if (args.Length < 2)
             {
-                character.SendMessage("[Spawn] /spawn <objType: npc, doodad> <unitId>");
+                character.SendMessage("[Spawn] " + CommandManager.CommandPrefix + "spawn <npc||doodad||remove> <unitId> [rotationZ]");
                 return;
             }
 
             if (uint.TryParse(args[1], out var unitId))
             {
-                character.SendMessage("[Spawn] Arg 0 --- {0} Arg 1 {1}", args[0], args[1]);
+                // character.SendMessage("[Spawn] Arg 0 --- {0} Arg 1 {1}", args[0], args[1]);
 
                 float newX;
                 float newY;
@@ -51,16 +52,18 @@ namespace AAEmu.Game.Scripts.Commands
                 {
                     case "remove":
                         var myDoodad = WorldManager.Instance.GetDoodad(unitId);
-                        if (myDoodad == null)
-                            character.SendMessage("[Spawn] Id {0} Does not exist ", unitId);
-                        character.SendMessage("[Spawn] Doodad ID {0} ", myDoodad.ObjId);
-                        if (myDoodad is Doodad doodad)
-                            character.SendMessage("[Spawn] Object is Doodad ");
-                        ObjectIdManager.Instance.ReleaseId(myDoodad.ObjId);
-                        myDoodad.Delete();
+
+                        if ((myDoodad != null) && (myDoodad is Doodad))
+                        {
+                            character.SendMessage("[Spawn] Removing Doodad with ID {0}", myDoodad.ObjId);
+                            ObjectIdManager.Instance.ReleaseId(myDoodad.ObjId);
+                            myDoodad.Delete();
+                        }
+                        else
+                        {
+                            character.SendMessage("|cFFFF0000[Spawn] Doodad with Id {0} Does not exist |r", unitId);
+                        }
                         break;
-
-
                     case "npc":
                         if (!NpcManager.Instance.Exist(unitId))
                         {
@@ -96,7 +99,7 @@ namespace AAEmu.Game.Scripts.Commands
                         doodadSpawner.Id = 0;
                         doodadSpawner.UnitId = unitId;
                         doodadSpawner.Position = character.Position.Clone();
-                        (newX, newY) = MathUtil.AddDistanceToFront(1, character.Position.X, character.Position.Y, character.Position.RotationZ); // TODO distance 1 meter
+                        (newX, newY) = MathUtil.AddDistanceToFront(3f, character.Position.X, character.Position.Y, character.Position.RotationZ);
                         doodadSpawner.Position.Y = newY;
                         doodadSpawner.Position.X = newX;
                         angle = MathUtil.CalculateAngleFrom(doodadSpawner.Position.Y, doodadSpawner.Position.X, character.Position.Y, character.Position.X);
@@ -111,12 +114,12 @@ namespace AAEmu.Game.Scripts.Commands
                         doodadSpawner.Position.RotationX = 0;
                         doodadSpawner.Position.RotationY = 0;
                         doodadSpawner.Position.RotationZ = newRotZ;
-                        doodadSpawner.Spawn(0);
+                        doodadSpawner.Spawn(0, 0, character.ObjId);
                         break;
                 }
             }
             else
-                character.SendMessage("[Spawn] Throw parse unitId");
+                character.SendMessage("|cFFFF0000[Spawn] Throw parse unitId|r");
         }
     }
 }

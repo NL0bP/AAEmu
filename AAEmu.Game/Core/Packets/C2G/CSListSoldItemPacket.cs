@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
@@ -8,7 +8,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSListSoldItemPacket : GamePacket
     {
-        public CSListSoldItemPacket() : base(0x0b1, 1)
+        public CSListSoldItemPacket() : base(CSOffsets.CSListSoldItemPacket, 1)
         {
         }
 
@@ -18,7 +18,8 @@ namespace AAEmu.Game.Core.Packets.C2G
             var npc = WorldManager.Instance.GetNpc(npcObjId);
             if (npc == null || !npc.Template.Merchant)
                 return;
-            Connection.SendPacket(new SCSoldItemListPacket(Connection.ActiveChar.BuyBack.Where(item => item != null).ToArray()));
+            Connection.ActiveChar.BuyBackItems.ReNumberSlots();
+            Connection.SendPacket(new SCSoldItemListPacket(Connection.ActiveChar.BuyBackItems.Items));
         }
     }
 }

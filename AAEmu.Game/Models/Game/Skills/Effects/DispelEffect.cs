@@ -1,5 +1,6 @@
 ﻿using System;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -13,17 +14,18 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("DispelEffect");
+            _log.Debug("DispelEffect {0}", Id);
 
-            if (BuffTagId > 0 && !target.Effects.CheckBuffs(SkillManager.Instance.GetBuffsByTagId(BuffTagId)))
+            if (BuffTagId > 0 && !target.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId(BuffTagId)))
                 return;
-            if (DispelCount > 0)
-                target.Effects.RemoveBuffs(BuffKindType.Good, DispelCount); //TODO ....
-            if (CureCount > 0)
-                target.Effects.RemoveBuffs(BuffKindType.Bad, CureCount);
+            if (DispelCount > 0 && caster.CanAttack(target))
+                target.Buffs.RemoveBuffs(BuffKind.Good, DispelCount, BuffTagId); //TODO ....
+            if (CureCount > 0 && !caster.CanAttack(target))
+                target.Buffs.RemoveBuffs(BuffKind.Bad, CureCount, BuffTagId);
         }
     }
 }

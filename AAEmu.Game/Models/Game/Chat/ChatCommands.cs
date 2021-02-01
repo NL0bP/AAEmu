@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Chat{    public class ChatCommands    {		public uint Id { get; set; }		public string Name { get; set; }		public int ChatTypeId { get; set; }		public uint MenuOrder { get; set; }		public int DefaultSlashCommandId { get; set; }	}}

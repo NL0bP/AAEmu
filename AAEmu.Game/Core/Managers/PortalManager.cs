@@ -8,11 +8,13 @@ using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.OpenPortal;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Models.Tasks.World;
 using AAEmu.Game.Utils.DB;
 using NLog;
 using Portal = AAEmu.Game.Models.Game.Portal;
@@ -122,8 +124,10 @@ namespace AAEmu.Game.Core.Managers
 
         private static bool CheckItemAndRemove(Character owner, uint itemId, int amount)
         {
-            if (!owner.Inventory.CheckItems(itemId, amount)) return false;
-
+            if (!owner.Inventory.CheckItems(SlotType.Inventory, itemId, amount)) return false;
+            owner.Inventory.Bag.ConsumeItem(ItemTaskType.Teleport, itemId, amount,null);
+            return true;
+            /*
             var items = owner.Inventory.RemoveItem(itemId, amount);
             var tasks = new List<ItemTask>();
             foreach (var (item, count) in items)
@@ -135,6 +139,7 @@ namespace AAEmu.Game.Core.Managers
             }
             owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Teleport, tasks, new List<ulong>()));
             return true;
+            */
         }
 
         private bool CheckCanOpenPortal(Character owner, uint targetZoneId)
@@ -199,6 +204,9 @@ namespace AAEmu.Game.Core.Managers
                 TeleportPosition = portalPointDestination
             };
             portalUnitModel.Spawn();
+
+            var killTask = new KillPortalTask(portalUnitModel);
+            TaskManager.Instance.Schedule(killTask, TimeSpan.FromSeconds(30));
         }
 
         public void OpenPortal(Character owner, SkillObjectUnk1 portalEffectObj)

@@ -3,6 +3,18 @@ using AAEmu.Commons.Utils;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
+    public enum SkillObjectType
+    {
+        None = 0,
+        Unk1 = 1,
+        Unk2 = 2,
+        Unk3 = 3,
+        Unk4 = 4,
+        Unk5 = 5,
+        Unk6 = 6,
+        ItemGradeEnchantingSupport = 7
+    }
+
     public class SkillObject : PacketMarshaler
     {
         public SkillObjectType Flag { get; set; } = SkillObjectType.None;
@@ -38,9 +50,6 @@ namespace AAEmu.Game.Models.Game.Skills
                     break;
                 case SkillObjectType.ItemGradeEnchantingSupport:
                     obj = new SkillObjectItemGradeEnchantingSupport();
-                    break;
-                case SkillObjectType.None:
-                    obj = new SkillObject(); // TODO
                     break;
                 default:
                     obj = new SkillObject();

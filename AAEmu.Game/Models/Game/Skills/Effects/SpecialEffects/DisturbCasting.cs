@@ -1,27 +1,21 @@
-﻿using System;
+using System;
 using AAEmu.Game.Models.Game.Units;
-using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class DisturbCasting : ISpecialEffect
+    public class DisturbCasting : SpecialEffectAction
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
-            SkillCaster casterObj,
-            BaseUnit target,
-            SkillCastTarget targetObj,
-            CastAction castObj,
-            Skill skill,
-            SkillObject skillObject,
-            DateTime time,
-            int value1,
-            int value2,
-            int value3,
-            int value4)
+        // Parameters are estimated to be :
+        // value1 = chance ?
+        // value2 = delay ?
+        public override void Execute(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
+            Skill skill, SkillObject skillObject, DateTime time, int chance, int delay, int value3, int value4)
         {
-            // TODO ...
-            _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
+            if (target is Unit unit)
+            {
+                unit.ActivePlotState?.RequestCancellation();
+                // TODO: Find a way to cancel normal skills properly
+            }
         }
     }
 }

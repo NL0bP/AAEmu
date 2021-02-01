@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Connections;
@@ -75,14 +75,10 @@ namespace AAEmu.Game.Core.Managers.World
                 case 1: // выход к списку персонажей
                     if (connection.State == GameState.World)
                     {
-                        var delay = 10;
-                        if (connection.ActiveChar.IsInBattle)
-                            delay = 60;
-
-                        connection.SendPacket(new SCPrepareLeaveWorldPacket(delay * 1000, type, false));
+                        connection.SendPacket(new SCPrepareLeaveWorldPacket(10000, type, false));
 
                         connection.LeaveTask = new LeaveWorldTask(connection, type);
-                        TaskManager.Instance.Schedule(connection.LeaveTask, TimeSpan.FromSeconds(delay));
+                        TaskManager.Instance.Schedule(connection.LeaveTask, TimeSpan.FromSeconds(10));
                     }
 
                     break;

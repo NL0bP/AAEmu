@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Skills{    public class SkillVisualGroups    {		public uint Id { get; set; }		public int OwnerId { get; set; }		public string OwnerType { get; set; }		public int Level { get; set; }		public int FxGroupId { get; set; }		public int ProjectileId { get; set; }	}}

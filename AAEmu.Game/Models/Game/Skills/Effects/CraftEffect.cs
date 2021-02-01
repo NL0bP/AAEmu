@@ -1,5 +1,6 @@
 ﻿using System;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
@@ -17,9 +18,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
             CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+            EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("CraftEffect, {0}", WorldInteraction);
+            _log.Debug("CraftEffect, {0}", WorldInteraction);
 
             var wiGroup = WorldManager.Instance.GetWorldInteractionGroup((uint)WorldInteraction);
             if (caster is Character character)
@@ -56,11 +57,11 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
                         break;
                     default:
-                        Log.Warn("CraftEffect, {0} not have wi group", WorldInteraction);
+                        _log.Warn("CraftEffect, {0} not have wi group", WorldInteraction);
                         break;
                 }
 
-                character.Quests.OnInteraction(WorldInteraction);
+                character.Quests.OnInteraction(WorldInteraction,target);
             }
         }
     }

@@ -99,11 +99,6 @@ namespace AAEmu.Login.Core.Controllers
             gameServer.MirrorsId.Clear();
         }
 
-        //public void RequestWorldList(LoginConnection connection)
-        //{
-        //    var gsList = new List<GameServer>(_gameServers.Values);
-        //    connection.SendPacket(new ACWorldListPacket(gsList, connection.GetCharacters()));
-        //}
         public async void RequestWorldList(LoginConnection connection)
         {
             if (_gameServers.Values.Any(x => x.Active))
@@ -134,7 +129,7 @@ namespace AAEmu.Login.Core.Controllers
         {
             lock (_gameServers)
             {
-                _gameServers[gsId].Load = (GSLoad) load;
+                _gameServers[gsId].Load = (GSLoad)load;
             }
         }
 
@@ -154,7 +149,7 @@ namespace AAEmu.Login.Core.Controllers
             {
                 if (_gameServers.ContainsKey(gsId))
                 {
-                    connection.SendPacket(new ACWorldCookiePacket((int) connection.Id, _gameServers[gsId]));
+                    connection.SendPacket(new ACWorldCookiePacket((int)connection.Id, _gameServers[gsId]));
                 }
                 else
                 {

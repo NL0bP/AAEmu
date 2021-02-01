@@ -1,4 +1,4 @@
-﻿using AAEmu.Commons.Network;
+using AAEmu.Commons.Network;
 using AAEmu.Login.Core.Controllers;
 using AAEmu.Login.Core.Network.Login;
 
@@ -6,7 +6,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CARequestReconnectPacket : LoginPacket
     {
-        public CARequestReconnectPacket() : base(0x0e) // 0x0d
+        public CARequestReconnectPacket() : base(0x0d)
         {}
 
         public override void Read(PacketStream stream)

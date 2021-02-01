@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using AAEmu.Game.Core.Managers;
 using Quartz;
 
@@ -27,12 +27,13 @@ namespace AAEmu.Game.Models.Tasks
         public async Task<bool> Cancel()
         {
             var result = await TaskManager.Instance.Cancel(this);
-            
-            if (!result) { return false; }
+            if (result)
+            {
+                OnCancel();
+                return true;
+            }
 
-            OnCancel();
-            return true;
-
+            return false;
         }
 
         public virtual void OnCancel()

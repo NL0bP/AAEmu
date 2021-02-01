@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.Char;
@@ -32,7 +32,7 @@ namespace AAEmu.Game.Models.Game.Expeditions
             Y = character.Position.Y;
             Z = character.Position.Z;
             ZoneId = (int)character.Position.ZoneId;
-            Abilities = new[] {(byte)character.SkillTreeOne, (byte)character.SkillTreeTwo, (byte)character.SkillTreeThree};
+            Abilities = new[] {(byte)character.Ability1, (byte)character.Ability2, (byte)character.Ability3};
         }
 
         public void Save(MySqlConnection connection, MySqlTransaction transaction)

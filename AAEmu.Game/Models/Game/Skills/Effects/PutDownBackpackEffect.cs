@@ -1,4 +1,5 @@
 ﻿using System;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Items;
@@ -14,28 +15,38 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("PutDownBackpackEffect");
+            _log.Debug("PutDownBackpackEffect");
 
-            var character = (Character)caster;
+            Character character = (Character)caster;
             if (character == null) return;
 
-            var packItem = (SkillItem) casterObj;
+            SkillItem packItem = (SkillItem)casterObj;
             if (packItem == null) return;
 
-            var item = character.Inventory.GetItem(packItem.ItemId);
+            Item item = character.Inventory.Equipment.GetItemByItemId(packItem.ItemId);
             if (item == null) return;
 
-            InventoryHelper.RemoveItemAndUpdateClient(character, item, 1);
+            if (character.Inventory.SystemContainer.AddOrMoveExistingItem(Items.Actions.ItemTaskType.DropBackpack, item, (int)EquipmentItemSlot.Backpack))
+            {
+                // Spawn doodad
+                _log.Debug("PutDownPackEffect");
+                var (newX, newY) = MathUtil.AddDistanceToFront(1f, character.Position.X, character.Position.Y, character.Position.RotationZ);
+                var pos = character.Position.Clone();
 
-            // Spawn doodad
-            var doodadSpawner = new DoodadSpawner();
-            doodadSpawner.Id = 0;
-            doodadSpawner.UnitId = BackpackDoodadId;
-            doodadSpawner.Position = character.Position.Clone();
-            doodadSpawner.Spawn(0);
+                pos.X = newX;
+                pos.Y = newY;
+                pos.RotationZ = 0; // packs always place facing north
+
+                var doodadSpawner = new DoodadSpawner();
+                doodadSpawner.Id = 0;
+                doodadSpawner.UnitId = BackpackDoodadId;
+                doodadSpawner.Position = pos;
+                var doodad = doodadSpawner.Spawn(0,item.Id,character.ObjId);
+            }
         }
     }
 }

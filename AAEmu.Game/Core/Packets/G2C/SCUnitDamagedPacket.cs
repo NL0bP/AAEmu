@@ -11,8 +11,13 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly uint _casterId;
         private readonly uint _targetId;
         private readonly int _damage;
+        private readonly int _absorbed;
+        public int _manaBurn;
+        
+        public byte HoldableId { get; set; }
+        public SkillHitType HitType { get; set; }
 
-        public SCUnitDamagedPacket(CastAction castAction, SkillCaster skillCaster, uint casterId, uint targetId, int damage)
+        public SCUnitDamagedPacket(CastAction castAction, SkillCaster skillCaster, uint casterId, uint targetId, int damage, int absorbed)
             : base(SCOffsets.SCUnitDamagedPacket, 1)
         {
             _castAction = castAction;
@@ -20,6 +25,7 @@ namespace AAEmu.Game.Core.Packets.G2C
             _casterId = casterId;
             _targetId = targetId;
             _damage = damage;
+            _absorbed = absorbed;
         }
 
         public override PacketStream Write(PacketStream stream)
@@ -28,13 +34,14 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_skillCaster);
             stream.WriteBc(_casterId);
             stream.WriteBc(_targetId);
-            stream.Write((byte)1); // crimeState [ 3.5 = 1 ]
-            stream.WritePisc(_damage, 0, 0);
-            stream.WritePisc(0, 0, 0);
-            stream.Write((byte)19); // hol        [ 3.5 = 19, 0 ]
-            stream.Write((ushort)289); // de     [ damage effect? 3.5 = 5161, 289, 293 ]
-            stream.Write((byte)1); // flag       [ 3.5 = 9, 13 ]
-            stream.Write((byte)1); // result -> to debug info [ 3.5 = 1, 4 ]
+            stream.Write((byte)0); // crimeState
+            stream.WritePisc(_damage, _absorbed, 0);
+            stream.WritePisc(0, 0, _manaBurn);
+            stream.Write(HoldableId); // hol
+            stream.Write((ushort)(288 | (ushort)HitType)); // de
+            // stream.Write((ushort)623);
+            stream.Write((byte)1); // flag
+            stream.Write((byte)1); // result -> to debug info
             // TODO debug info
             return stream;
         }

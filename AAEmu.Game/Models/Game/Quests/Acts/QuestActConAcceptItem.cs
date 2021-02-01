@@ -12,11 +12,9 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective) // triggered by using things
         {
-            _log.Debug("QuestActConAcceptItem: ItemId {0}, Cleanup {1}, DropWhenDestroy {2}, DestroyWhenDrop {3}",
-                ItemId, Cleanup, DropWhenDestroy, DestroyWhenDrop);
-            
+            _log.Debug("QuestActConAcceptItem: ItemId {0}", ItemId);
             // TODO Cleanup
-            return character.Inventory.CheckItems(ItemId, 1);
+            return character.Inventory.CheckItems(Items.SlotType.Inventory, ItemId, 1);
         }
     }
 }

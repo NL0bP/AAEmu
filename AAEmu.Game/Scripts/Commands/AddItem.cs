@@ -3,6 +3,7 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
+using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Core.Managers.World;
@@ -13,7 +14,8 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("add_item", this);
+            string[] name = { "additem", "add_item" };
+            CommandManager.Instance.Register(name, this);
         }
 
         public string GetCommandLineHelp()
@@ -30,7 +32,7 @@ namespace AAEmu.Game.Scripts.Commands
         {
             if (args.Length == 0)
             {
-                character.SendMessage("[Items] /add_item (target) <itemId> [count] [grade]");
+                character.SendMessage("[Items] " + CommandManager.CommandPrefix + "additem (target) <itemId> [count] [grade]");
                 return;
             }
 
@@ -40,7 +42,7 @@ namespace AAEmu.Game.Scripts.Commands
             int count = 1;
             byte grade = 0;
 
-            if ((args.Length > firstarg + 0) && (uint.TryParse(args[firstarg + 0], out uint argitemId)))
+            if ( (args.Length > firstarg + 0) && (uint.TryParse(args[firstarg + 0], out uint argitemId)) )
                 itemId = argitemId;
 
             if ((args.Length > firstarg + 1) && (int.TryParse(args[firstarg + 1], out int argcount)))
@@ -49,29 +51,43 @@ namespace AAEmu.Game.Scripts.Commands
             if ((args.Length > firstarg + 2) && (byte.TryParse(args[firstarg + 2], out byte arggrade)))
                 grade = arggrade;
 
-            var item = ItemManager.Instance.Create(itemId, count, grade, true);
-            if (item == null)
+            if (grade > (byte)ItemGrade.Mythic || grade < (byte)ItemGrade.Crude)
+            {
+                character.SendMessage("|cFFFF0000Item grade cannot be lower than {0} or exceed {1}!|r", (byte)ItemGrade.Crude, (byte)ItemGrade.Mythic);
+                return;
+            }
+
+            var itemTemplate = ItemManager.Instance.GetTemplate(itemId);
+            if (itemTemplate == null)
+            {
+                character.SendMessage("|cFFFF0000Item template does not exist for {0} !|r", itemId);
+                return;
+            }
+
+            if ((itemTemplate.Category_Id == 133) || (itemTemplate.Category_Id == 122)) // Speciality Packs or Tradepacks
+            {
+                var currentBackpack = targetPlayer.Inventory.Equipment.GetItemBySlot((int)EquipmentItemSlot.Backpack);
+                if (currentBackpack != null)
+                {
+                    character.SendMessage("|cFFFF0000No room on the backpack slot to place a tradepack!|r");
+                    return;
+                }
+                if (!targetPlayer.Inventory.Equipment.AcquireDefaultItem(ItemTaskType.Gm, itemId, count, grade))
+                {
+                    character.SendMessage("|cFFFF0000Tradepack could not be created!|r");
+                    return;
+                }
+            }
+            else
+            if (!targetPlayer.Inventory.Bag.AcquireDefaultItem(ItemTaskType.Gm, itemId, count, grade))
             {
                 character.SendMessage("|cFFFF0000Item could not be created!|r");
                 return;
             }
 
-            var res = targetPlayer.Inventory.AddItem(item);
-            if (res == null)
-            {
-                ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                return;
-            }
-
-            var tasks = new List<ItemTask>();
-            if (res.Id != item.Id)
-                tasks.Add(new ItemCountUpdate(res, item.Count));
-            else
-                tasks.Add(new ItemAdd(item));
-            targetPlayer.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.AutoLootDoodadItem, tasks, new List<ulong>()));
             if (character.Id != targetPlayer.Id)
             {
-                character.SendMessage("[Add_Item] added item {0} to {1}'s inventory", itemId, targetPlayer.Name);
+                character.SendMessage("[Items] added item {0} to {1}'s inventory", itemId, targetPlayer.Name);
                 targetPlayer.SendMessage("[GM] {0} has added a item to your inventory", character.Name);
             }
 

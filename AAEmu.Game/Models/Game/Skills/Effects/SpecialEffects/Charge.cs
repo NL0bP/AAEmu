@@ -1,27 +1,38 @@
-﻿using System;
+using System;
+using AAEmu.Commons.Utils;
+using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
-using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class Charge : ISpecialEffect
+    /// <summary>
+    /// SpecialEffect linked with adding charges to a buff.
+    /// </summary>
+    public class Charge : SpecialEffectAction
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
-            SkillCaster casterObj,
-            BaseUnit target,
-            SkillCastTarget targetObj,
-            CastAction castObj,
-            Skill skill,
-            SkillObject skillObject,
-            DateTime time,
-            int value1,
-            int value2,
-            int value3,
-            int value4)
+        public override void Execute(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
+            Skill skill, SkillObject skillObject, DateTime time, int buffId, int minCharge, int maxCharge, int unused)
         {
-            // TODO ...
-            _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
+            lock (caster.ChargeLock)
+            {
+                var buff = caster.Buffs.GetEffectFromBuffId((uint)buffId);
+                var template = SkillManager.Instance.GetBuffTemplate((uint)buffId);
+
+                var chargeDelta = Rand.Next(minCharge, maxCharge);
+                var oldCharge = buff?.Charge ?? 0;
+
+                var newEffect =
+                    new Buff(target, caster, casterObj, template, skill, time)
+                    {
+                        Charge = Math.Min(chargeDelta, template.MaxCharge)
+                    };
+                
+                caster.Buffs.AddBuff(newEffect, buff?.Index ?? 0);
+
+                var newCharge = Math.Min(oldCharge + chargeDelta, template.MaxCharge);
+                newEffect.Charge = newCharge;
+            }
         }
     }
 }

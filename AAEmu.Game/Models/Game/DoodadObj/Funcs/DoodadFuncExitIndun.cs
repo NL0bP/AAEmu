@@ -9,7 +9,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
     {
         public uint ReturnPointId { get; set; }
 
-        public override void Use(Unit caster, Doodad owner, uint skillId)
+        public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
             _log.Debug("DoodadFuncExitIndun, ReturnPointId: {0}", ReturnPointId);
 
@@ -21,7 +21,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 
                     character.SendPacket(
                         new SCLoadInstancePacket(
-                            1,
+                            0,
                             character.WorldPosition.ZoneId,
                             character.WorldPosition.X,
                             character.WorldPosition.Y,

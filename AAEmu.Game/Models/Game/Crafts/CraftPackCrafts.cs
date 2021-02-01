@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Crafts{    /*        Data relating to a craft.    */    public class CraftPackCrafts    {		public uint Id { get; set; }		public int CraftPackId { get; set; }		public int CraftId { get; set; }	}}

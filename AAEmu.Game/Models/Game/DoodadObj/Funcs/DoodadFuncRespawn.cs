@@ -11,13 +11,15 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
         public int MinTime { get; set; }
         public int MaxTime { get; set; }
         
-        public override void Use(Unit caster, Doodad owner, uint skillId)
+        public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
             _log.Debug("DoodadFuncRespawn: MinTime {0}, MaxTime {1}", MinTime, MaxTime);
 
             // Doodad spawn
-            if (!(caster is Character character)) { return; }
-
+            if (!(caster is Character character))
+            {
+                return;
+            }
             var doodad = new DoodadSpawner
             {
                 Id = 0,

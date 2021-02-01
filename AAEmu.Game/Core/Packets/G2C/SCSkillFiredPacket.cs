@@ -17,6 +17,8 @@ namespace AAEmu.Game.Core.Packets.G2C
         private int _fireAnimId = 2;
         private bool _dist;
 
+        public short ComputedDelay { get; set; }
+
         public SCSkillFiredPacket(uint id, ushort tl, SkillCaster caster, SkillCastTarget target, Skill skill, SkillObject skillObject) : base(SCOffsets.SCSkillFiredPacket, 1)
         {
             _id = id;
@@ -47,31 +49,13 @@ namespace AAEmu.Game.Core.Packets.G2C
             stream.Write(_target);
             stream.Write(_skillObject);
 
-            if (_id == 2 || _id == 3 || _id == 4)
-            {
-                if (_dist)
-                {
-                    stream.Write(_effectDelay);                                 // EffectDelay msec
-                    stream.Write((short)(_skill.Template.ChannelingTime / 10 + 10 )); // msec
-                    stream.Write((byte)0);     // f - When changed to 1 when firing an auto-casting skill, will make the little blue arrow.
-                    stream.Write(_fireAnimId); // fire_anim_id
-                }
-                else
-                {
-                    stream.Write((ushort)0);   // EffectDelay msec
-                    stream.Write((ushort)0);   // ChannelingTime msec
-                    stream.Write((byte)1);     // f - When changed to 1 when firing an auto-casting skill, will make the little blue arrow.
-                    stream.Write((byte)15);    // c
-                    stream.Write(_fireAnimId); // fire_anim_id
-                }
-            }
+            stream.Write((short)(ComputedDelay / 10)); // TODO +10 It became visible flying arrows
+            stream.Write((short)(_skill.Template.ChannelingTime / 10 + 10));
+            stream.Write((byte)0); // f
+            if (_skill.Template.Id != 2) // TODO: rotate between mainhand and offhand animation?
+                stream.Write(_skill.Template.FireAnim?.Id ?? 0); // fire_anim_id 
             else
-            {
-                stream.Write((short)(_skill.Template.EffectDelay / 10 + 10)); // TODO +10 It became visible flying arrows
-                stream.Write((short)(_skill.Template.ChannelingTime / 10 + 10));
-                stream.Write((byte)0);                    // f - When changed to 1 when firing an auto-casting skill, will make the little blue arrow.
-                stream.Write(_skill.Template.FireAnimId); // fire_anim_id
-            }
+                stream.Write(2);
 
             stream.Write((byte)0); // flag
 

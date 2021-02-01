@@ -1,1 +1,0 @@
-﻿namespace AAEmu.Game.Models.Game.Skills{    public class SkillReqs    {		public uint Id { get; set; }		public bool Target { get; set; }		public int BuffId { get; set; }		public int BuffTagId { get; set; }		public string Message { get; set; }		public bool DefaultResult { get; set; }	}}

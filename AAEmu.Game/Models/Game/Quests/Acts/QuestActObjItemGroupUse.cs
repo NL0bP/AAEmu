@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Models.Game.Quests.Templates;
+using AAEmu.Game.Models.Game.Quests.Templates;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -15,11 +15,8 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Debug("QuestActObjItemGroupUse QuestId {0}, ItemGroupId {1}, Count {2}, HighlightDoodadId {3}, HighlightDoodadPhase {4}," +
-                       " UseAlias {5}, QuestActObjAliasId {6}, objective {7}",
-                quest.TemplateId, ItemGroupId, Count, HighlightDoodadId, HighlightDoodadPhase, UseAlias, QuestActObjAliasId, objective);
-
-            return objective >= Count;
+            _log.Warn("QuestActObjItemGroupUse");
+            return false;
         }
     }
 }

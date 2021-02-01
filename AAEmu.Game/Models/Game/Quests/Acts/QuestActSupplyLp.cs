@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Quests.Templates;
 
 namespace AAEmu.Game.Models.Game.Quests.Acts
@@ -9,11 +9,9 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
 
         public override bool Use(Character character, Quest quest, int objective)
         {
-            _log.Warn("QuestActSupplyLp QuestId {0}, LaborPower {1}, objective {2}",
-                quest.TemplateId, LaborPower, objective);
+            _log.Debug("QuestActSupplyLp");
             
             character.ChangeLabor((short)LaborPower, 0);
-
             return true;
         }
     }

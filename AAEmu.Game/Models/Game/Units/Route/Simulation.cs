@@ -48,11 +48,11 @@ namespace AAEmu.Game.Models.Game.Units.Route
         int oldTime, chkTime;
         float oldX, oldY, oldZ;
         //*******************************************************
-        public string RecordFilesPath = @"./data/path/"; // путь где хранятся наши файлы
-        public string RecordFileExt = @".path";          // расширение по умолчанию
-        public string MoveFilesPath = @"./data/path/";   // путь где хранятся наши файлы
-        public string MoveFileExt = @".path";            // расширение по умолчанию
-        public string MoveFileName = "";                 // расширение по умолчанию
+        public string RecordFilesPath = @"./bin/debug/netcoreapp2.2/Data/Path/";       // путь где хранятся наши файлы
+        public string RecordFileExt = @".path";       // расширение по умолчанию
+        public string MoveFilesPath = @"./bin/debug/netcoreapp2.2/Data/Path/";         // путь где хранятся наши файлы
+        public string MoveFileExt = @".path";         // расширение по умолчанию
+        public string MoveFileName = "";         // расширение по умолчанию
         private float MovingDistance = 0.25f; //0.3f;
         float RangeToCheckPoint = 0.5f; // дистанция до чекпоинта при которой считается , что мы достигли оного
         int MoveTrigerDelay = 1000;     // срабатывание таймера на движение  0,8 сек
@@ -280,7 +280,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                 StopMove(npc);
                 return;
             }
-            _log.Warn("found nearest checkpoint # " + i + " run there ...");
+            _log.Warn("found nearest checkpoint # "+ i +" run there ...");
             //character.SendMessage("[MoveTo] найден ближайший чекпоинт #" + i + " бежим туда...");
             MoveToPathEnabled = true;
             MoveStepIndex = i;
@@ -422,7 +422,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             {
                 moveType.Flags = 5;      // 5-walk, 4-run, 3-stand still
             }
-            moveType.DeltaMovement = new byte[3];
+            moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 127;
             moveType.DeltaMovement[2] = 0;
@@ -471,7 +471,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationY = 0;
             moveType.RotationZ = rotZ;
             moveType.Flags = 5;      // 5-walk, 4-run, 3-stand still
-            moveType.DeltaMovement = new byte[3];
+            moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
@@ -495,7 +495,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             moveType.RotationY = 0;
             moveType.RotationZ = rotZ;
             moveType.Flags = 5;      // 5-walk, 4-run, 3-stand still
-            moveType.DeltaMovement = new byte[3];
+            moveType.DeltaMovement = new sbyte[3];
             moveType.DeltaMovement[0] = 0;
             moveType.DeltaMovement[1] = 0;
             moveType.DeltaMovement[2] = 0;
@@ -517,7 +517,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             {
                 MovePath.Count(); // проверяем на существование объекта, при отладке всякое может быть
             }
-            catch (Exception e)
+            catch
             {
                 //_log.Warn("Error: {0}", e);
                 //character.SendMessage("[MoveTo] Error: {0}", e);
@@ -584,7 +584,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                     return;
                 }
             }
-            //_log.Warn("walk to #" + MoveStepIndex);
+            _log.Warn("walk to #" + MoveStepIndex);
             //character.SendMessage("[MoveTo] бежим к #" + MoveStepIndex);
             s = MovePath[MoveStepIndex];
             Position.X = ExtractValue(s, 1);
@@ -619,7 +619,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             }
             catch (Exception e)
             {
-                _log.Warn("Error in read MovePath: {0}", e);
+                _log.Warn("Error in read MovePath: {0}", e.Message);
                 //character.SendMessage("[MoveTo] Error in read MovePath: {0}", e);
                 StopMove(npc);
             }
@@ -630,7 +630,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
             }
             catch (Exception e)
             {
-                _log.Warn("Error in read RecordPath: {0}", e);
+                _log.Warn("Error in read RecordPath: {0}", e.Message);
                 //character.SendMessage("[MoveTo] Error in read MovePath: {0}", e);
                 StopMove(npc);
             }

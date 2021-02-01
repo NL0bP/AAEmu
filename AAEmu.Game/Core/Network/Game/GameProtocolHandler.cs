@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Text;
 using AAEmu.Commons.Network;
+using AAEmu.Commons.Network.Core;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using NLog;
@@ -44,8 +45,12 @@ namespace AAEmu.Game.Core.Network.Game
                 var con = GameConnectionTable.Instance.GetConnection(session.Id);
                 if (con != null)
                 {
-//                    if(con.ActiveChar != null)
-//                        ObjectIdManager.Instance.ReleaseId(con.ActiveChar.BcId);
+                    if (con.ActiveChar != null)
+                    {
+                        // On crash, force people out of the chat channels so we don't get phantom or duplicates
+                        Managers.ChatManager.Instance.LeaveAllChannels(con.ActiveChar);
+                        // ObjectIdManager.Instance.ReleaseId(con.ActiveChar.BcId);
+                    }
                     con.OnDisconnect();
                     StreamManager.Instance.RemoveToken(con.Id);
                     GameConnectionTable.Instance.RemoveConnection(session.Id);
@@ -86,7 +91,7 @@ namespace AAEmu.Game.Core.Network.Game
                     stream.Insert(0, connection.LastPacket);
                     connection.LastPacket = null;
                 }
-                stream.Insert(stream.Count, buf);
+                stream.Insert(stream.Count, buf, 0, bytes);
                 while(stream != null && stream.Count > 0)
                 {
                     ushort len;

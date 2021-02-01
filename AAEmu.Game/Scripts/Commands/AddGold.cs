@@ -12,7 +12,8 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register("add_gold", this);
+            string[] name = { "addgold", "add_gold", "gold" };
+            CommandManager.Instance.Register(name, this);
         }
 
         public string GetCommandLineHelp()
@@ -29,7 +30,7 @@ namespace AAEmu.Game.Scripts.Commands
         {
             if (args.Length == 0)
             {
-                character.SendMessage("[Gold] /add_gold (target) <gold> [silver] [copper]");
+                character.SendMessage("[Gold] "+ CommandManager.CommandPrefix + "addgold (target) <gold> [silver] [copper]");
                 return;
             }
 
@@ -44,11 +45,11 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 argGold = amount;
             }
-            if ((args.Length > firstarg + 1) && (int.TryParse(args[firstarg + 1], out amount)))
+            if ((args.Length > firstarg+1) && (int.TryParse(args[firstarg+1], out amount)))
             {
                 argSilver = amount;
             }
-            if ((args.Length > firstarg + 2) && (int.TryParse(args[firstarg + 2], out amount)))
+            if ((args.Length > firstarg + 2) && (int.TryParse(args[firstarg+2], out amount)))
             {
                 argCopper = amount;
             }
@@ -61,7 +62,7 @@ namespace AAEmu.Game.Scripts.Commands
                 targetPlayer.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.AutoLootDoodadItem, new List<ItemTask> { new MoneyChange(argTotal) }, new List<ulong>()));
                 if (character.Id != targetPlayer.Id)
                 {
-                    character.SendMessage("[Gold] changed {0}'s money by {1}g {2}s {3}c", targetPlayer.Name, argGold, argSilver, argCopper);
+                    character.SendMessage("[Gold] changed {0}'s money by {1}g {2}s {3}c",targetPlayer.Name,argGold,argSilver,argCopper);
                     targetPlayer.SendMessage("[GM] {0} has adjusted your money", character.Name);
                 }
             }

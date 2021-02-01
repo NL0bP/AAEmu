@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 
 namespace AAEmu.Game.Models.Game.Items.Templates
 {
-    public enum BackpackType
-    {
+    public enum BackpackType {
         CastleClaim = 1,
         Glider = 2,
         TradePack = 3,
@@ -20,7 +19,7 @@ namespace AAEmu.Game.Models.Game.Items.Templates
         public uint AssetId { get; set; }
         public BackpackType BackpackType { get; set; }
         public uint DeclareSiegeZoneGroupId { get; set; }
-        public bool Heavy { get; set; }
+        public bool Heavy { get; set; } 
         public uint Asset2Id { get; set; }
         public bool NormalSpeciality { get; set; }
         public bool UseAsStat { get; set; }

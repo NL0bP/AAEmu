@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
@@ -11,40 +11,39 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
         public uint ZoneId { get; set; }
         public uint ItemId { get; set; }
 
-        public override void Use(Unit caster, Doodad owner, uint skillId)
+        public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
             _log.Debug("DoodadFuncEnterInstance, ZoneId: {0}, ItemId: {1}", ZoneId, ItemId);
-            if (!(caster is Character character))
-                return;
 
-            character.DisabledSetPosition = true;
-            var zone = ZoneManager.Instance.GetZoneById(ZoneId);
-            if (zone == null)
-                return;
-
-            var world = WorldManager.Instance.GetWorldByZone(zone.ZoneKey);
-            if (world.SpawnPosition != null)
+            if (caster is Character character)
             {
-                character.SendPacket(
-                    new SCLoadInstancePacket(
-                        world.Id,
-                        world.SpawnPosition.ZoneId,
-                        world.SpawnPosition.X,
-                        world.SpawnPosition.Y,
-                        world.SpawnPosition.Z,
-                        0,
-                        0,
-                        0
-                    )
-                );
+                character.DisabledSetPosition = true;
+                var zone = ZoneManager.Instance.GetZoneById(ZoneId);
+                var world = WorldManager.Instance.GetWorldByZone(zone.ZoneKey);
 
-                character.InstanceId = world.Id; // TODO all instances now
-                character.WorldPosition = character.Position.Clone();
-                character.Position = world.SpawnPosition.Clone();
-                character.Position.WorldId = world.Id;
+                if (world.SpawnPosition != null)
+                {
+                    character.SendPacket(
+                        new SCLoadInstancePacket(
+                            world.Id,
+                            world.SpawnPosition.ZoneId,
+                            world.SpawnPosition.X,
+                            world.SpawnPosition.Y,
+                            world.SpawnPosition.Z,
+                            0,
+                            0,
+                            0
+                        )
+                    );
+
+                    character.InstanceId = world.Id; // TODO all instances now
+                    character.WorldPosition = character.Position.Clone();
+                    character.Position = world.SpawnPosition.Clone();
+                    character.Position.WorldId = world.Id;
+                }
+                else
+                    _log.Warn("World #.{0}, not have default spawn position.", world.Id);
             }
-            else
-                _log.Warn("World #.{0}, not have default spawn position.", world.Id);
         }
     }
 }

@@ -10,6 +10,7 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Mate;
+using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils.DB;
 using NLog;
@@ -22,14 +23,14 @@ namespace AAEmu.Game.Core.Managers
         private Regex _nameRegex;
 
         private Dictionary<uint, NpcMountSkills> _slaveMountSkills;
-        private Dictionary<uint, Mount> _activeMates; // ownerObjId, Mount
+        private Dictionary<uint, Mate> _activeMates; // ownerObjId, Mount
 
-        public Mount GetActiveMate(uint ownerObjId)
+        public Mate GetActiveMate(uint ownerObjId)
         {
             return _activeMates.ContainsKey(ownerObjId) ? _activeMates[ownerObjId] : null;
         }
 
-        public Mount GetActiveMateByTlId(uint tlId)
+        public Mate GetActiveMateByTlId(uint tlId)
         {
             foreach (var mate in _activeMates.Values)
             {
@@ -39,7 +40,7 @@ namespace AAEmu.Game.Core.Managers
             return null;
         }
 
-        public Mount GetActiveMateByMateObjId(uint mateObjId)
+        public Mate GetActiveMateByMateObjId(uint mateObjId)
         {
             foreach (var mate in _activeMates.Values)
             {
@@ -49,7 +50,7 @@ namespace AAEmu.Game.Core.Managers
             return null;
         }
 
-        public Mount GetIsMounted(uint objId)
+        public Mate GetIsMounted(uint objId)
         {
             foreach (var mate in _activeMates.Values)
             {
@@ -80,13 +81,13 @@ namespace AAEmu.Game.Core.Managers
             _log.Debug("ChangeTargetMate. tlId: {0}, objId: {1}, targetObjId: {2}", mateInfo.TlId, mateInfo.ObjId, objId);
         }
 
-        public Mount RenameMount(GameConnection connection, uint tlId, string newName)
+        public Mate RenameMount(GameConnection connection, uint tlId, string newName)
         {
             var owner = connection.ActiveChar;
             if (string.IsNullOrWhiteSpace(newName) || newName.Length == 0 || !_nameRegex.IsMatch(newName)) return null;
             var mateInfo = GetActiveMate(owner.ObjId);
             if (mateInfo == null || mateInfo.TlId != tlId) return null;
-            mateInfo.Name = newName;
+            mateInfo.Name = newName.FirstCharToUpper();
             owner.BroadcastPacket(new SCUnitNameChangedPacket(mateInfo.ObjId, newName), true);
             return mateInfo;
         }
@@ -111,7 +112,7 @@ namespace AAEmu.Game.Core.Managers
                 mateInfo.Att1 = character.ObjId;
                 mateInfo.Reason1 = reason;
             }
-
+            character.Buffs.TriggerRemoveOn(BuffRemoveOn.Mount);
             _log.Debug("MountMate. mountTlId: {0}, att1: {1}, att2 {2}, reason: {3}", mateInfo.TlId, mateInfo.Att1, mateInfo.Att2, reason);
         }
 
@@ -140,10 +141,14 @@ namespace AAEmu.Game.Core.Managers
             if ((unMounted != 1 && unMounted != 2) || targetObj == null) return;
 
             character.BroadcastPacket(new SCUnitDetachedPacket(targetObj.ObjId, reason), true);
+
+            character.Events.OnUnmount(character, new OnUnmountArgs { });
+
+            character.Buffs.TriggerRemoveOn(BuffRemoveOn.Unmount);
             _log.Debug("UnMountMate. mountTlId: {0}, objId: {1}, att: {2}, reason: {3}", mateInfo.TlId, targetObj.ObjId, unMounted, reason);
         }
 
-        public void AddActiveMateAndSpawn(Character owner, Mount mount, Item item)
+        public void AddActiveMateAndSpawn(Character owner, Mate mate, Item item)
         {
             if (_activeMates.ContainsKey(owner.ObjId))
             {
@@ -151,14 +156,14 @@ namespace AAEmu.Game.Core.Managers
                 return;
             }
 
-            _activeMates.Add(owner.ObjId, mount);
+            _activeMates.Add(owner.ObjId, mate);
 
             owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.UpdateSummonMateItem, new List<ItemTask> {new ItemUpdate(item)},
                 new List<ulong>())); // TODO - maybe update details
-            owner.SendPacket(new SCMateSpawnedPacket(mount));
-            mount.Spawn();
+            owner.SendPacket(new SCMateSpawnedPacket(mate));
+            mate.Spawn();
 
-            _log.Debug("Mount spawned. ownerObjId: {0}, tlId: {1}, mateObjId: {2}", owner.ObjId, mount.TlId, mount.ObjId);
+            _log.Debug("Mount spawned. ownerObjId: {0}, tlId: {1}, mateObjId: {2}", owner.ObjId, mate.TlId, mate.ObjId);
         }
 
         public void RemoveActiveMateAndDespawn(Character owner, uint tlId)
@@ -192,7 +197,7 @@ namespace AAEmu.Game.Core.Managers
         {
             _nameRegex = new Regex(AppConfiguration.Instance.CharacterNameRegex, RegexOptions.Compiled);
             _slaveMountSkills = new Dictionary<uint, NpcMountSkills>();
-            _activeMates = new Dictionary<uint, Mount>();
+            _activeMates = new Dictionary<uint, Mate>();
 
             #region SQLite
 

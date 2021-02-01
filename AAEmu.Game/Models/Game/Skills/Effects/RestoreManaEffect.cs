@@ -1,5 +1,6 @@
 ﻿using System;
 using AAEmu.Commons.Utils;
+using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -19,10 +20,11 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
 
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("RestoreManaEffect");
+            _log.Debug("RestoreManaEffect");
 
             if (!(target is Unit))
                 return;
@@ -38,11 +40,11 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             var unk = 0f;
             var unk2 = 1f;
             var skillLevel = 1;
-            if (skill != null)
+            if (source != null && source.Skill != null)
             {
-                skillLevel = (skill.Level - 1) * skill.Template.LevelStep + skill.Template.AbilityLevel;
-                if (skillLevel >= skill.Template.AbilityLevel)
-                    unk = 0.15f * (skillLevel - skill.Template.AbilityLevel + 1);
+                skillLevel = (source.Skill.Level - 1) * source.Skill.Template.LevelStep + source.Skill.Template.AbilityLevel;
+                if (skillLevel >= source.Skill.Template.AbilityLevel)
+                    unk = 0.15f * (skillLevel - source.Skill.Template.AbilityLevel + 1);
                 unk2 = (1 + unk) * 1.3f;
             }
 
@@ -59,7 +61,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             // max += (int)((caster.MDps + caster.MDpsInc) * 0.001f * unk2 + 0.5f);
 
             var value = Rand.Next(min, max);
-            trg.BroadcastPacket(new SCUnitHealedPacket(castObj, casterObj, trg.ObjId, 1, value), true);
+            trg.BroadcastPacket(new SCUnitHealedPacket(castObj, casterObj, trg.ObjId, 1, 13, value), true);
             trg.Mp += value;
             trg.Mp = Math.Min(trg.Mp, trg.MaxMp);
             trg.BroadcastPacket(new SCUnitPointsPacket(trg.ObjId, trg.Hp, trg.Mp), true);

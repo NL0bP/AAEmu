@@ -1,4 +1,7 @@
-﻿using System;
+using System;
+using AAEmu.Commons.Utils;
+using AAEmu.Game.Core.Packets;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -20,22 +23,47 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
 
         public override bool OnActionTime => false;
         
-        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj, CastAction castObj,
-            Skill skill, SkillObject skillObject, DateTime time)
+        public override void Apply(Unit caster, SkillCaster casterObj, BaseUnit target, SkillCastTarget targetObj,
+            CastAction castObj,
+            EffectSource source, SkillObject skillObject, DateTime time, CompressedGamePackets packetBuilder = null)
         {
-            Log.Debug("AggroEffect: UseFixedAggro {0}, FixedMin {1}, FixedMax {2}, UseLevelAggro {3}, LevelMd {4}," +
-                      " LevelVaStart {5}, LevelVaEnd {6}, UseChargedBuff {7}, ChargedBuffId {8}, ChargedMul {9}",
-                UseFixedAggro, FixedMin, FixedMax, UseLevelAggro, LevelMd, LevelVaStart, LevelVaEnd, UseChargedBuff, ChargedBuffId, ChargedMul);
-            if (!(caster is Npc npc))
-            {
+            if (!(caster is Character character))
                 return;
+            
+            if (!(target is Npc npc))
+                return;
+
+            var min = 0.0f;
+            var max = 0.0f;
+
+            if (UseLevelAggro)
+            {
+                var lvlMd = caster.LevelDps * LevelMd;
+                var levelModifier = (( (source.Skill?.Level ?? 1) - 1) / 49 * (LevelVaEnd - LevelVaStart) + LevelVaStart) * 0.01f;
+            
+                min += (lvlMd - levelModifier * lvlMd) + 0.5f;
+                max += (levelModifier + 1) * lvlMd + 0.5f;
             }
 
-            npc.IsAutoAttack = true;
-            npc.CurrentTarget = target;
-            npc.SetForceAttack(true);
-            var combat = new Combat();
-            combat.Execute(npc);
+            if (UseChargedBuff)
+            {
+                var effect = caster.Buffs.GetEffectFromBuffId(ChargedBuffId);
+                if (effect != null)
+                {
+                    min += ChargedMul * effect.Charge;
+                    max += ChargedMul * effect.Charge;
+                    effect.Exit();
+                }
+            }
+
+            if (UseFixedAggro)
+            {
+                min += FixedMin;
+                max += FixedMax;
+            }
+
+            var value = (int)Rand.Next(min, max);
+            npc.AddUnitAggro(AggroKind.Damage, character, value);
         }
     }
 }

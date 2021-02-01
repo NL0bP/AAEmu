@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Skills;
 using MySql.Data.MySqlClient;
@@ -31,12 +33,12 @@ namespace AAEmu.Game.Models.Game.Char
         public List<AbilityType> GetActiveAbilities()
         {
             var list = new List<AbilityType>();
-            if (Owner.SkillTreeOne != AbilityType.None)
-                list.Add(Owner.SkillTreeOne);
-            if (Owner.SkillTreeTwo != AbilityType.None)
-                list.Add(Owner.SkillTreeTwo);
-            if (Owner.SkillTreeThree != AbilityType.None)
-                list.Add(Owner.SkillTreeThree);
+            if (Owner.Ability1 != AbilityType.None)
+                list.Add(Owner.Ability1);
+            if (Owner.Ability2 != AbilityType.None)
+                list.Add(Owner.Ability2);
+            if (Owner.Ability3 != AbilityType.None)
+                list.Add(Owner.Ability3);
             return list;
         }
 
@@ -50,30 +52,53 @@ namespace AAEmu.Game.Models.Game.Char
         public void AddActiveExp(int exp)
         {
             // TODO SCExpChangedPacket
-            if (Owner.SkillTreeOne != AbilityType.None)
-                Abilities[Owner.SkillTreeOne].Exp += exp;
-            if (Owner.SkillTreeTwo != AbilityType.None)
-                Abilities[Owner.SkillTreeTwo].Exp += exp;
-            if (Owner.SkillTreeThree != AbilityType.None)
-                Abilities[Owner.SkillTreeThree].Exp += exp;
+            if (Owner.Ability1 != AbilityType.None)
+                Abilities[Owner.Ability1].Exp = Math.Min(Abilities[Owner.Ability1].Exp + exp, ExpirienceManager.Instance.GetExpForLevel(55));
+            if (Owner.Ability2 != AbilityType.None)
+                Abilities[Owner.Ability2].Exp = Math.Min(Abilities[Owner.Ability2].Exp + exp, ExpirienceManager.Instance.GetExpForLevel(55));
+            if (Owner.Ability3 != AbilityType.None)
+                Abilities[Owner.Ability3].Exp = Math.Min(Abilities[Owner.Ability3].Exp + exp, ExpirienceManager.Instance.GetExpForLevel(55));
         }
 
         public void Swap(AbilityType oldAbilityId, AbilityType abilityId)
         {
-            if (Owner.SkillTreeOne == oldAbilityId)
+            Owner.Skills.Reset(oldAbilityId);
+            if (Owner.Ability1 == oldAbilityId)
             {
-                Owner.SkillTreeOne = abilityId;
+                Owner.Ability1 = abilityId;
                 Abilities[abilityId].Order = 0;
             }
-            else if (Owner.SkillTreeTwo == oldAbilityId)
+            else if (Owner.Ability2 == oldAbilityId)
             {
-                Owner.SkillTreeTwo = abilityId;
+                Owner.Ability2 = abilityId;
                 Abilities[abilityId].Order = 1;
+
+                //This sets are current ability level to match ability1 since its suppost to be in sync
+                if (oldAbilityId == AbilityType.None)
+                {
+                    Abilities[Owner.Ability2].Exp = Abilities[Owner.Ability1].Exp;
+                }
             }
-            else if (Owner.SkillTreeThree == oldAbilityId)
+            else if (Owner.Ability3 == oldAbilityId)
             {
-                Owner.SkillTreeThree = abilityId;
+                Owner.Ability3 = abilityId;
                 Abilities[abilityId].Order = 2;
+
+                if(oldAbilityId == AbilityType.None)
+                {
+                    Abilities[Owner.Ability3].Exp = Abilities[Owner.Ability1].Exp;
+
+                    //every unchosen ability is default level 10 besides are selected ones since spillover exp can unsync character exp with skill exp
+                    var c = GetActiveAbilities();
+                    for (var i = 1; i < Abilities.Count; i++)
+                    {
+                        var id = (AbilityType)i;
+                        if (!c.Contains(Abilities[id].Id))
+                        {
+                            Abilities[id].Exp = 42000;
+                        }
+                    }
+                }
             }
 
             if (oldAbilityId != AbilityType.None)
@@ -96,11 +121,11 @@ namespace AAEmu.Game.Models.Game.Char
                             Id = (AbilityType) reader.GetByte("id"),
                             Exp = reader.GetInt32("exp")
                         };
-                        if (ability.Id == Owner.SkillTreeOne)
+                        if (ability.Id == Owner.Ability1)
                             ability.Order = 0;
-                        if (ability.Id == Owner.SkillTreeTwo)
+                        if (ability.Id == Owner.Ability2)
                             ability.Order = 1;
-                        if (ability.Id == Owner.SkillTreeThree)
+                        if (ability.Id == Owner.Ability3)
                             ability.Order = 2;
                         Abilities[ability.Id] = ability;
                     }

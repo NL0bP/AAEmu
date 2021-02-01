@@ -15,10 +15,10 @@ namespace AAEmu.Game.Models.Tasks.Doodads
         public override void Execute()
         {
             _owner.FuncTask = null;
-            if (_respawn && _owner.Spawner != null)
-                _owner.Spawner.DecreaseCount(_owner);
-            else
-                _owner.Delete();
+            // if (_respawn && _owner.Spawner != null)
+            //     _owner.Spawner.DecreaseCount(_owner);
+            // else
+            _owner.Delete();
         }
     }
 }

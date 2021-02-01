@@ -97,7 +97,7 @@ namespace AAEmu.Game.Core.Managers
             {
                 var newFamily = new Family();
                 newFamily.Id = FamilyIdManager.Instance.GetNextId();
-                var owner = GetMemberForCharacter(invitor, 1, "");
+                FamilyMember owner = GetMemberForCharacter(invitor, 1, "");
                 newFamily.AddMember(owner);
                 _familyMembers.Add(owner.Id, owner);
 
@@ -107,7 +107,7 @@ namespace AAEmu.Game.Core.Managers
             }
 
             var family = _families[invitor.Family];
-            var member = GetMemberForCharacter(invitedChar, 0, title);
+            FamilyMember member = GetMemberForCharacter(invitedChar, 0, title);
             family.AddMember(member);
             _familyMembers.Add(member.Id, member);
             invitedChar.Family = invitor.Family;
@@ -197,14 +197,14 @@ namespace AAEmu.Game.Core.Managers
         public void KickMember(Character kicker, uint kickedId) 
         {
             if (kicker.Family == 0) return;
-            var family = _families[kicker.Family];
+            Family family = _families[kicker.Family];
 
-            var kickerMember = family.GetMember(kicker);
+            FamilyMember kickerMember = family.GetMember(kicker);
             if (kickerMember.Role != 1) return; // Only the steward can kick
 
             // Load kicked character
-            var kickedCharacter = WorldManager.Instance.GetCharacterById(kickedId);
-            var isOnline = false;
+            Character kickedCharacter = WorldManager.Instance.GetCharacterById(kickedId);
+            bool isOnline = false;
             if (kickedCharacter != null) 
             {
                 isOnline = true;
@@ -235,12 +235,12 @@ namespace AAEmu.Game.Core.Managers
         public void ChangeTitle(Character owner, uint memberId, string newTitle)
         {
             if (owner.Family == 0) return;
-            var family = _families[owner.Family];
+            Family family = _families[owner.Family];
 
-            var ownerMember = family.GetMember(owner);
+            FamilyMember ownerMember = family.GetMember(owner);
             if (ownerMember.Role != 1) return; // Only the steward can change titles
 
-            var member = _familyMembers[memberId];
+            FamilyMember member = _familyMembers[memberId];
             member.Title = newTitle;
 
             family.SendPacket(new SCFamilyTitleChangedPacket(family.Id, memberId, newTitle));
@@ -249,12 +249,12 @@ namespace AAEmu.Game.Core.Managers
         public void ChangeOwner(Character previousOwner, uint memberId)
         {
             if (previousOwner.Family == 0) return;
-            var family = _families[previousOwner.Family];
+            Family family = _families[previousOwner.Family];
 
-            var previousOwnerMember = family.GetMember(previousOwner);
+            FamilyMember previousOwnerMember = family.GetMember(previousOwner);
             if (previousOwnerMember.Role != 1) return; // Only the steward can change owner
 
-            var member = _familyMembers[memberId];
+            FamilyMember member = _familyMembers[memberId];
             member.Role = 1;
             previousOwnerMember.Role = 0;
 

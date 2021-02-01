@@ -2,8 +2,11 @@
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Chat;
+using AAEmu.Game.Models.Game.Error;
+using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Models.Game.World
 {
@@ -11,16 +14,16 @@ namespace AAEmu.Game.Models.Game.World
     {
         public Guid Guid { get; set; } = Guid.NewGuid();
         public uint ObjId { get; set; }
-        public uint InstanceId { get; set; } = 1;
+        public uint InstanceId { get; set; } = 0;
         public bool DisabledSetPosition { get; set; }
         public Point Position { get; set; }
         public Point WorldPosition { get; set; }
         public Region Region { get; set; }
-
         public DateTime Respawn { get; set; }
         public DateTime Despawn { get; set; }
-
         public virtual bool IsVisible { get; set; }
+        public GameObject ParentObj { get; set; }
+        public virtual float ModelSize { get; set; } = 0f; 
 
         public virtual void SetPosition(Point pos)
         {
@@ -45,16 +48,8 @@ namespace AAEmu.Game.Models.Game.World
         public virtual void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
         {
             if (DisabledSetPosition)
-            {
                 return;
-            }
-            if (this is Character)
-            {
-                if (!Position.X.Equals(x) || !Position.Y.Equals(y) || !Position.Z.Equals(z))
-                {
-                    TeamManager.Instance.UpdatePosition(((Character)this).Id);
-                }
-            }
+
             Position.X = x;
             Position.Y = y;
             Position.Z = z;

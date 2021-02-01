@@ -1,4 +1,5 @@
 ﻿using System;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.NPChar;
@@ -13,7 +14,9 @@ namespace AAEmu.Game.Models.Game.Units
         public override void Execute(Npc npc)
         {
             if (npc == null)
+            {
                 return;
+            }
 
             // If we are killed, the NPC goes to the place of spawn
             var trg = (Unit)npc.CurrentTarget;
@@ -53,7 +56,9 @@ namespace AAEmu.Game.Models.Game.Units
                     maxXYZ = Math.Max(Math.Max(Math.Abs(x), Math.Abs(y)), Math.Abs(z));
                 }
                 else
+                {
                     maxXYZ = _distance + 1f;
+                }
 
                 // 如果最大值超过distance 则放弃攻击转而进行追踪
                 // If the maximum value exceeds distance, the attack is abandoned and the tracking is followed.
@@ -69,10 +74,10 @@ namespace AAEmu.Game.Models.Game.Units
                 {
                     LoopDelay = 2000;
                     var skillId = 2u;
-                    var skillCasterType = 0; // кто применяет
+                    var skillCasterType = 0; // who uses
                     var skillCaster = SkillCaster.GetByType((SkillCasterType)skillCasterType);
                     skillCaster.ObjId = npc.ObjId;
-                    var skillCastTargetType = 0; // на кого применяют
+                    var skillCastTargetType = 0; // who is being used
                     var skillCastTarget = SkillCastTarget.GetByType((SkillCastTargetType)skillCastTargetType);
                     skillCastTarget.ObjId = npc.CurrentTarget.ObjId;
                     var flag = 0;

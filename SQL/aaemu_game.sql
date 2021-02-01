@@ -1,17 +1,8 @@
-/*
-Navicat MySQL Data Transfer
-
-Source Server         : archeage
-Source Server Version : 80012
-Source Host           : localhost:3306
-Source Database       : aaemu_game
-
-Target Server Type    : MYSQL
-Target Server Version : 80012
-File Encoding         : 65001
-
-Date: 2019-10-12 03:17:26
-*/
+CREATE DATABASE IF NOT EXISTS `aaemu_game`;
+USE aaemu_game;
+-- --------------------------------------------------------------------------
+-- Make sure to remove the above two lines if you want use your own DB names
+-- --------------------------------------------------------------------------
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -205,6 +196,8 @@ CREATE TABLE `characters` (
   `vocation_point` int(11) NOT NULL,
   `crime_point` int(11) NOT NULL,
   `crime_record` int(11) NOT NULL,
+  `pvp_honor` int(11) NOT NULL DEFAULT 0,
+  `hostile_faction_kills` int(11) NOT NULL DEFAULT 0,
   `delete_request_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `transfer_request_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `delete_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
@@ -356,6 +349,11 @@ CREATE TABLE `housings` (
   `current_step` tinyint(4) NOT NULL,
   `current_action` int(11) NOT NULL DEFAULT '0',
   `permission` tinyint(4) NOT NULL,
+  `place_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `protected_until` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `faction_id` int(10) unsigned NOT NULL DEFAULT '1',
+  `sell_to` int(10) unsigned NOT NULL DEFAULT '0',
+  `sell_price` bigint(20) NOT NULL DEFAULT '0',
   PRIMARY KEY (`account_id`,`owner`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -367,11 +365,12 @@ CREATE TABLE `housings` (
 -- Table structure for items
 -- ----------------------------
 DROP TABLE IF EXISTS `items`;
+
 CREATE TABLE `items` (
   `id` bigint(20) unsigned NOT NULL,
   `type` varchar(100) NOT NULL,
   `template_id` int(11) unsigned NOT NULL,
-  `slot_type` enum('Equipment','Inventory','Bank') NOT NULL,
+  `slot_type` enum('Equipment','Inventory','Bank','Trade','Mail','System') NOT NULL,
   `slot` int(11) NOT NULL,
   `count` int(11) NOT NULL,
   `details` blob,
@@ -381,6 +380,7 @@ CREATE TABLE `items` (
   `unpack_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `owner` int(11) unsigned NOT NULL,
   `grade` tinyint(1) DEFAULT '0',
+  `flags` tinyint(3) unsigned NOT NULL,
   `created_at` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   PRIMARY KEY (`id`) USING BTREE,
   KEY `owner` (`owner`) USING BTREE
@@ -395,50 +395,39 @@ CREATE TABLE `items` (
 -- ----------------------------
 DROP TABLE IF EXISTS `mails`;
 CREATE TABLE `mails` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `type` int(11) unsigned NOT NULL,
+  `id` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
   `status` int(11) NOT NULL,
-  `title` varchar(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `sender_name` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `attachments` int(11) NOT NULL,
-  `receiver_name` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `title` varchar(45) NOT NULL,
+  `text` varchar(150) NOT NULL,
+  `sender_id` int(11) NOT NULL DEFAULT '0',
+  `sender_name` varchar(45) NOT NULL,
+  `attachment_count` int(11) NOT NULL DEFAULT '0',
+  `receiver_id` int(11) NOT NULL DEFAULT '0',
+  `receiver_name` varchar(45) NOT NULL,
   `open_date` datetime NOT NULL,
+  `send_date` datetime NOT NULL,
+  `received_date` datetime NOT NULL,
   `returned` int(11) NOT NULL,
   `extra` int(11) NOT NULL,
-  `text` varchar(300) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `money_amount_1` int(11) NOT NULL,
   `money_amount_2` int(11) NOT NULL,
   `money_amount_3` int(11) NOT NULL,
-  `send_date` datetime NOT NULL,
-  `received_date` datetime NOT NULL,
+  `attachment0` bigint(20) NOT NULL DEFAULT '0',
+  `attachment1` bigint(20) NOT NULL DEFAULT '0',
+  `attachment2` bigint(20) NOT NULL DEFAULT '0',
+  `attachment3` bigint(20) NOT NULL DEFAULT '0',
+  `attachment4` bigint(20) NOT NULL DEFAULT '0',
+  `attachment5` bigint(20) NOT NULL DEFAULT '0',
+  `attachment6` bigint(20) NOT NULL DEFAULT '0',
+  `attachment7` bigint(20) NOT NULL DEFAULT '0',
+  `attachment8` bigint(20) NOT NULL DEFAULT '0',
+  `attachment9` bigint(20) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of mails
--- ----------------------------
-
--- ----------------------------
--- Table structure for mails_items
--- ----------------------------
-DROP TABLE IF EXISTS `mails_items`;
-CREATE TABLE `mails_items` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `item0` bigint(20) unsigned NOT NULL,
-  `item1` bigint(20) unsigned NOT NULL,
-  `item2` bigint(20) unsigned NOT NULL,
-  `item3` bigint(20) unsigned NOT NULL,
-  `item4` bigint(20) unsigned NOT NULL,
-  `item5` bigint(20) unsigned NOT NULL,
-  `item6` bigint(20) unsigned NOT NULL,
-  `item7` bigint(20) unsigned NOT NULL,
-  `item8` bigint(20) unsigned NOT NULL,
-  `item9` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Records of mails_items
 -- ----------------------------
 
 -- ----------------------------
@@ -549,16 +538,64 @@ CREATE TABLE `skills` (
 -- ----------------------------
 
 -- ----------------------------
--- Table structure for updates
+-- Table structure for auction_house
 -- ----------------------------
-DROP TABLE IF EXISTS `updates`;
-CREATE TABLE `updates` (
-  `path` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  PRIMARY KEY (`path`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- ----------------------------
--- Records of updates
--- ----------------------------
-INSERT INTO `updates` VALUES ('aaemu_game.sql');
-SET FOREIGN_KEY_CHECKS=1;
+DROP TABLE IF EXISTS `auction_house`;
+CREATE TABLE `auction_house` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `duration` tinyint NOT NULL,
+  `item_id` int NOT NULL,
+  `object_id` int NOT NULL,
+  `grade` tinyint(1) NOT NULL,
+  `flags` tinyint(1) NOT NULL,
+  `stack_size` int NOT NULL,
+  `detail_type` tinyint(1) NOT NULL,
+  `creation_time` datetime NOT NULL,
+  `end_time` datetime NOT NULL,
+  `lifespan_mins` int NOT NULL,
+  `type_1` int NOT NULL,
+  `world_id` tinyint NOT NULL,
+  `unsecure_date_time` varchar(45) NOT NULL,
+  `unpack_date_time` varchar(45) NOT NULL,
+  `world_id_2` tinyint NOT NULL,
+  `client_id` int NOT NULL,
+  `client_name` varchar(45) NOT NULL,
+  `start_money` int NOT NULL,
+  `direct_money` int NOT NULL,
+  `bid_world_id` tinyint(1) NOT NULL,
+  `bidder_id` int NOT NULL,
+  `bidder_name` varchar(45) NOT NULL,
+  `bid_money` int NOT NULL,
+  `extra` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+
+DROP TABLE IF EXISTS `accounts`;
+CREATE TABLE `accounts` (
+  `account_id` INT NOT NULL,
+  `credits` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`account_id`)
+)  ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+DROP TABLE IF EXISTS `aaemu_game`.`doodads`;
+CREATE TABLE `aaemu_game`.`doodads` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `owner_id` int,
+  `owner_type` tinyint(4) unsigned DEFAULT 255,
+  `template_id` int NOT NULL,
+  `current_phase_id` int NOT NULL,
+  `plant_time` datetime NOT NULL,
+  `growth_time` datetime NOT NULL,
+  `phase_time` datetime NOT NULL,
+  `x` float NOT NULL,
+  `y` float NOT NULL,
+  `z` float NOT NULL,
+  `rotation_x` tinyint(4) NOT NULL,
+  `rotation_y` tinyint(4) NOT NULL,
+  `rotation_z` tinyint(4) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+

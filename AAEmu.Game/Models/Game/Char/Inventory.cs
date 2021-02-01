@@ -5,1526 +5,599 @@ using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
+using AAEmu.Game.Core.Packets.C2G;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Error;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Items.Templates;
-using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Tasks;
 using AAEmu.Game.Utils.DB;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using MySql.Data.MySqlClient;
 using NLog;
+using NLog.Targets;
 
 namespace AAEmu.Game.Models.Game.Char
 {
+
     public class Inventory
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-
-        private int _freeSlot;
-        private int _freeBankSlot;
-        private List<ulong> _removedItems;
-
         public readonly Character Owner;
-        private int MaxExpandCapacity = 130; //Max size of inventory and bank is 130 slots
-        private uint ExpansionScrollId = 8000025; //Template Id of expansion scroll
 
-        public Item[] Equip { get; set; }
-        public Item[] Items { get; set; }
-        public Item[] Bank { get; set; }
+        public Dictionary<SlotType, ItemContainer> _itemContainers { get; private set; }
+        public ItemContainer Equipment { get; private set; }
+        public ItemContainer Bag { get; private set; }
+        public ItemContainer Warehouse { get; private set; }
+        public ItemContainer MailAttachments { get; private set; }
+        public ItemContainer SystemContainer { get; private set; }
 
         public Inventory(Character owner)
         {
             Owner = owner;
-            Equip = new Item[28];
-            Items = new Item[Owner.NumInventorySlots];
-            Bank = new Item[Owner.NumBankSlots];
-            _removedItems = new List<ulong>();
+            // Create all container types
+            _itemContainers = new Dictionary<SlotType, ItemContainer>();
+
+            var SlotTypes = Enum.GetValues(typeof(SlotType));
+            foreach (var stv in SlotTypes)
+            {
+                SlotType st = (SlotType)stv;
+                // Take Equipment Container from Parent Unit's Equipment
+                if (st == SlotType.Equipment)
+                {
+                    Equipment = Owner.Equipment;
+                    Equipment.Owner = Owner;
+                    Equipment.PartOfPlayerInventory = true;
+                    _itemContainers.Add(st,Equipment);
+                    continue;
+                }
+                var newContainer = new ItemContainer(owner, st, true);
+                _itemContainers.Add(st, newContainer);
+                switch (st)
+                {
+                    /*
+                    case SlotType.Equipment:
+                        newContainer.ContainerSize = 28; // 28 equipment slots for 1.2 client
+                        Equipment = newContainer;
+                        break;
+                    */
+                    case SlotType.Inventory:
+                        newContainer.ContainerSize = Owner.NumInventorySlots;
+                        Bag = newContainer;
+                        break;
+                    case SlotType.Bank:
+                        newContainer.ContainerSize = Owner.NumBankSlots;
+                        Warehouse = newContainer;
+                        break;
+                    case SlotType.Mail:
+                        newContainer.PartOfPlayerInventory = false;
+                        MailAttachments = newContainer;
+                        break;
+                    case SlotType.System:
+                        newContainer.PartOfPlayerInventory = false;
+                        SystemContainer = newContainer;
+                        break;
+                }
+            }
+
         }
 
         #region Database
 
         public void Load(MySqlConnection connection, SlotType? slotType = null)
         {
-            using (var command = connection.CreateCommand())
+            // Get all items for this player
+            var playeritems = ItemManager.Instance.LoadPlayerInventory(Owner);
+            // Wipe inventory (don't use Wipe() here)
+            foreach (var container in _itemContainers)
             {
-                if (slotType == null)
-                    command.CommandText = "SELECT * FROM items WHERE `owner` = @owner";
+                container.Value.Items.Clear();
+                container.Value.UpdateFreeSlotCount();
+            }
+            // Place loaded items list in correct containers
+            foreach (var item in playeritems)
+            {
+                if ((item.SlotType != SlotType.None) && (_itemContainers.TryGetValue(item.SlotType, out var container)))
+                {
+                    if (!container.AddOrMoveExistingItem(ItemTaskType.Invalid, item, item.Slot))
+                    {
+                        item._holdingContainer?.RemoveItem(ItemTaskType.Invalid, item, true);
+                        _log.Error("LoadInventory found unused item type for item, Id {0} ({1}) at {2}:{3} for {1}", item.Id, item.TemplateId, item.SlotType, item.Slot, Owner?.Name ?? "Id:"+item.OwnerId.ToString());
+                        // throw new Exception(string.Format("Was unable to add item {0} to container {1} for player {2} using the defined slot.", item?.Template.Name ?? item.TemplateId.ToString(), item.Slot.ToString(), Owner?.Name ?? "???"));
+                    }
+                }
                 else
                 {
-                    command.CommandText = "SELECT * FROM items WHERE `owner` = @owner AND `slot_type` = @slot_type";
-                    command.Parameters.AddWithValue("@slot_type", slotType);
-                }
-
-                command.Parameters.AddWithValue("@owner", Owner.Id);
-
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var type = reader.GetString("type");
-                        Type nClass = null;
-                        try
-                        {
-                            nClass = Type.GetType(type);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex);
-                        }
-
-                        if (nClass == null)
-                        {
-                            _log.Error("Item type {0} not found!", type);
-                            continue;
-                        }
-
-                        Item item;
-                        try
-                        {
-                            item = (Item)Activator.CreateInstance(nClass);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex);
-                            _log.Error(ex.InnerException);
-                            item = new Item();
-                        }
-
-                        item.Id = reader.GetUInt64("id");
-                        item.TemplateId = reader.GetUInt32("template_id");
-                        item.Template = ItemManager.Instance.GetTemplate(item.TemplateId);
-                        item.SlotType = (SlotType)Enum.Parse(typeof(SlotType), reader.GetString("slot_type"), true);
-                        item.Slot = reader.GetInt32("slot");
-                        item.Count = reader.GetInt32("count");
-                        item.LifespanMins = reader.GetInt32("lifespan_mins");
-                        item.MadeUnitId = reader.GetUInt32("made_unit_id");
-                        item.UnsecureTime = reader.GetDateTime("unsecure_time");
-                        item.UnpackTime = reader.GetDateTime("unpack_time");
-                        item.CreateTime = reader.GetDateTime("created_at");
-                        var details = (PacketStream)(byte[])reader.GetValue("details");
-                        item.ReadDetails(details);
-
-                        if (item.Template.FixedGrade >= 0)
-                            item.Grade = (byte)item.Template.FixedGrade; // Overwrite Fixed-grade items, just to make sure
-                        else if (item.Template.Gradable)
-                            item.Grade = reader.GetByte("grade"); // Load from our DB if the item is gradable
-
-                        if (item.SlotType == SlotType.Equipment)
-                            Equip[item.Slot] = item;
-                        else if (item.SlotType == SlotType.Inventory)
-                            Items[item.Slot] = item;
-                        else if (item.SlotType == SlotType.Bank)
-                            Bank[item.Slot] = item;
-                    }
+                    _log.Warn("LoadInventory found unused itemId {0} ({1}) at {2}:{3} for {1}", item.Id, item.TemplateId, item.SlotType, item.Slot, Owner?.Name ?? "Id:" + item.OwnerId.ToString());
                 }
             }
 
-            if (slotType == null || slotType == SlotType.Equipment)
-                foreach (var item in Equip.Where(x => x != null))
-                    item.Template = ItemManager.Instance.GetTemplate(item.TemplateId);
-
-            if (slotType == null || slotType == SlotType.Inventory)
-            {
-                foreach (var item in Items.Where(x => x != null))
-                    item.Template = ItemManager.Instance.GetTemplate(item.TemplateId);
-                _freeSlot = CheckFreeSlot(SlotType.Inventory);
-            }
-
-            if (slotType == null || slotType == SlotType.Bank)
-            {
-                foreach (var item in Bank.Where(x => x != null))
-                    item.Template = ItemManager.Instance.GetTemplate(item.TemplateId);
-
-                _freeBankSlot = CheckFreeSlot(SlotType.Bank);
-            }
         }
 
+
+        [Obsolete("Items are no longer saves individual player items. It is instead handled by the ItemManager instead, this function does nothing")]
         public void Save(MySqlConnection connection, MySqlTransaction transaction)
         {
-            lock (_removedItems)
-            {
-                if (_removedItems.Count > 0)
-                {
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "DELETE FROM items WHERE owner= @owner AND id IN(" + string.Join(",", _removedItems) + ")";
-                        command.Prepare();
-                        command.Parameters.AddWithValue("@owner", Owner.Id);
-                        command.ExecuteNonQuery();
-                    }
-
-                    _removedItems.Clear();
-                }
-            }
-
-            SaveItems(connection, transaction, Equip);
-            SaveItems(connection, transaction, Items);
-            SaveItems(connection, transaction, Bank);
+            // Nothing
         }
-
-        private void SaveItems(MySqlConnection connection, MySqlTransaction transaction, Item[] items)
-        {
-            using (var command = connection.CreateCommand())
-            {
-                command.Connection = connection;
-                command.Transaction = transaction;
-
-                foreach (var item in items)
-                {
-                    if (item == null)
-                        continue;
-                    var details = new PacketStream();
-                    item.WriteDetails(details);
-
-                    command.CommandText = "REPLACE INTO " +
-                                          "items(`id`,`type`,`template_id`,`slot_type`,`slot`,`count`,`details`,`lifespan_mins`,`made_unit_id`,`unsecure_time`,`unpack_time`,`owner`,`created_at`,`grade`)" +
-                                          " VALUES " +
-                                          "(@id,@type,@template_id,@slot_type,@slot,@count,@details,@lifespan_mins,@made_unit_id,@unsecure_time,@unpack_time,@owner,@created_at,@grade)";
-
-                    command.Parameters.AddWithValue("@id", item.Id);
-                    command.Parameters.AddWithValue("@type", item.GetType().ToString());
-                    command.Parameters.AddWithValue("@template_id", item.TemplateId);
-                    command.Parameters.AddWithValue("@slot_type", (byte)item.SlotType);
-                    command.Parameters.AddWithValue("@slot", item.Slot);
-                    command.Parameters.AddWithValue("@count", item.Count);
-                    command.Parameters.AddWithValue("@details", details.GetBytes());
-                    command.Parameters.AddWithValue("@lifespan_mins", item.LifespanMins);
-                    command.Parameters.AddWithValue("@made_unit_id", item.MadeUnitId);
-                    command.Parameters.AddWithValue("@unsecure_time", item.UnsecureTime);
-                    command.Parameters.AddWithValue("@unpack_time", item.UnpackTime);
-                    command.Parameters.AddWithValue("@created_at", item.CreateTime);
-                    command.Parameters.AddWithValue("@owner", Owner.Id);
-                    command.Parameters.AddWithValue("@grade", item.Grade);
-                    command.ExecuteNonQuery();
-                    command.Parameters.Clear();
-                }
-            }
-        }
-
         #endregion
 
         public void Send()
         {
             Owner.SendPacket(new SCCharacterInvenInitPacket(Owner.NumInventorySlots, (uint)Owner.NumBankSlots));
-            SendFragmentedInventory(SlotType.Inventory, Owner.NumInventorySlots, Items);
-            SendFragmentedInventory(SlotType.Bank, (byte)Owner.NumBankSlots, Bank);
+            SendFragmentedInventory(SlotType.Inventory, Owner.NumInventorySlots, Bag.GetSlottedItemsList().ToArray());
+            SendFragmentedInventory(SlotType.Bank, (byte)Owner.NumBankSlots, Warehouse.GetSlottedItemsList().ToArray());
         }
 
-        public bool AddExistingItem(Item item, bool dontAddPartialCount, SlotType slotType, ItemTaskType reason)
+        /// <summary>
+        /// Consumes a item in specified container list, if the list is null, Bag -> Warehouse -> Equipment order is used.
+        /// This function does not verify the total item count and will consume as much as possible
+        /// It is recommended to use the ConsumeItem function of a ItemContainer itself as much as possible
+        /// </summary>
+        /// <param name="containersToCheck">Array of ItemContainers to check, if null, Inventory + Equipment + WaveHouse is used in that order</param>
+        /// <param name="taskType"></param>
+        /// <param name="templateId">Item TemplateId to consume</param>
+        /// <param name="amountToConsume">Number of units to Consume</param>
+        /// <param name="preferredItem">preferred Item to take units from</param>
+        /// <returns></returns>
+        public int ConsumeItem(SlotType[] containersToCheck, ItemTaskType taskType, uint templateId, int amountToConsume, Item preferredItem)
         {
-            var tasks = TryAddItem(item, slotType, dontAddPartialCount);
-            if (tasks == null)
-            {
-                if (!dontAddPartialCount)
-                    ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                return false;
-            }
-
-            Owner.SendPacket(new SCItemTaskSuccessPacket(reason, tasks, new List<ulong>()));
-            return true;
-        }
-       
-        public bool AddExistingItem(Item item, ItemTaskType taskType)
-        {
-            var tasks = new List<ItemTask>();
-            bool successfullyAddedItem;
-            //Check if can be stacked on another existing item stack
-            if (!Items.Contains(item))
-            {
-                foreach (var existingItem in Items)
-                {
-                    if (existingItem != null && existingItem.Template.Id == item.Template.Id && existingItem.Template.MaxCount >= existingItem.Count + item.Count)
-                    {
-                        //Can stack entire item on existing item
-                        existingItem.Count += item.Count;
-
-                        tasks.Add(new ItemCountUpdate(existingItem, item.Count));
-                        ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                        lock (_removedItems)
-                        {
-                            if (!_removedItems.Contains(item.Id))
-                                _removedItems.Add(item.Id);
-                        }
-                        successfullyAddedItem = true;
-                        break;
-                    }
-                    else if (existingItem != null && existingItem.Template.Id == item.Template.Id && existingItem.Template.MaxCount < existingItem.Count)
-                    {
-                        //Can stack part of item on existing item
-                        var countAdded = existingItem.Template.MaxCount - existingItem.Count;
-                        existingItem.Count += countAdded;
-                        item.Count -= countAdded;
-                        tasks.Add(new ItemCountUpdate(existingItem, countAdded));
-                    }
-                }
-            }
-
-            //If item still has count >0, move it to first free slot
-            var firstFreeSlot = GetFirstFreeSlot(SlotType.Inventory);
-            if (firstFreeSlot != -1)
-            {
-                if (item.Template.LootQuestId > 0)
-                {
-                    Owner.Quests.OnItemGather(item, item.Count);
-                }
-                item.Slot = firstFreeSlot;
-                item.SlotType = SlotType.Inventory;
-                Items[item.Slot] = item;
-                tasks.Add(new ItemAdd(item));
-                successfullyAddedItem = true;
-            }
+            SlotType[] containerList;
+            if (containersToCheck != null)
+                containerList = containersToCheck;
             else
+                containerList = new SlotType[3] {SlotType.Inventory, SlotType.Equipment, SlotType.Bank};
+            var res = 0;
+            foreach (var cli in containerList)
             {
-                //no free slots
-                ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                lock (_removedItems)
+                if (_itemContainers.TryGetValue(cli, out var c))
                 {
-                    if (!_removedItems.Contains(item.Id))
-                        _removedItems.Add(item.Id);
-                }
-
-                if (!Items.Contains(item))
-                    Owner.SendErrorMessage(ErrorMessageType.BagFull);
-                successfullyAddedItem = false;
-            }
-
-            Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-            return successfullyAddedItem;
-        }
-
-        public void AddNewItem(uint itemTemplateId, int count, byte grade, ItemTaskType taskType, int toSlot = -1, SlotType type = SlotType.Inventory)
-        {
-            var tasks = new List<ItemTask>();
-
-            //Check if can be stacked on another existing item stack
-            var checkStackable = Items;
-            if (type == SlotType.Bank)
-                checkStackable = Bank;
-
-            if (toSlot == -1)
-            {
-                foreach (var existingItem in checkStackable)
-                {
-                    if (existingItem != null && existingItem.Template.Id == itemTemplateId && existingItem.Template.MaxCount > existingItem.Count)
-                    {
-                        var countToAdd = Math.Min(count, existingItem.Template.MaxCount - existingItem.Count);
-                        existingItem.Count += countToAdd;
-                        tasks.Add(new ItemCountUpdate(existingItem, countToAdd));
-                        count -= countToAdd;
-                    }
+                    var used = c.ConsumeItem(taskType, templateId, amountToConsume, preferredItem);
+                    res += used;
+                    amountToConsume -= used;
                 }
             }
-
-            //If count still has count >0, create new item stacks until count == 0 or out of inventory space
-            var itemTemplate = ItemManager.Instance.GetTemplate(itemTemplateId);
-            while (count > 0 && CountFreeSlots(type) > 0)
-            {
-                var itemCount = Math.Min(itemTemplate.MaxCount, count);
-                var createdItem = ItemManager.Instance.Create(itemTemplateId, itemCount, grade);
-                int firstFreeSlot;
-
-                if (toSlot <= -1)
-                {
-                    firstFreeSlot = GetFirstFreeSlot(type);
-                }
-                else
-                {
-                    firstFreeSlot = toSlot;
-                }
-
-                count -= itemCount;
-
-                if (firstFreeSlot != -1)
-                {
-                    if (createdItem.Template.LootQuestId > 0)
-                    {
-                        Owner.Quests.OnItemGather(createdItem, createdItem.Count);
-                    }
-                    createdItem.Slot = firstFreeSlot;
-                    createdItem.SlotType = type;
-
-                    if (type == SlotType.Inventory)
-                    {
-                        Items[createdItem.Slot] = createdItem;
-                    }
-                    else if (type == SlotType.Bank)
-                    {
-                        Bank[createdItem.Slot] = createdItem;
-                    }
-
-                    tasks.Add(new ItemAdd(createdItem));
-                }
-                else
-                {
-                    //no free slots, return null
-                    ItemIdManager.Instance.ReleaseId((uint)createdItem.Id);
-                    lock (_removedItems)
-                    {
-                        if (!_removedItems.Contains(createdItem.Id))
-                            _removedItems.Add(createdItem.Id);
-                    }
-                    _log.Warn($"Not enough space to add remaining {count} items of itemTemplateId {itemTemplateId}.");
-                    break;
-                }
-            }
-
-            Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-            return;
-
-        }
-
-        public List<ItemTask> TryAddItem(Item item, SlotType type, bool dontAddPartialCount)
-        {
-            if (item == null)
-                return null;
-
-            var count = item.Count;
-            var tasks = new List<ItemTask>();
-
-            var checkStackable = Items; //Buffer to make sure all items fit before moving if required
-            switch (type)
-            {
-                case SlotType.Bank:
-                    checkStackable = Bank;
-                    break;
-                case SlotType.Mail: //TODO
-                case SlotType.Trade:
-                    return null;    //TODO
-                case SlotType.None:
-                    break;
-                case SlotType.Equipment:
-                    break;
-                case SlotType.Inventory:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
-            }
-
-            if (item.Template.MaxCount > 1)
-            {
-                for (var i = 0; i < checkStackable.Length && count > 0; i++)
-                {
-                    var invItem = checkStackable[i];
-                    if (item.CanStackInto(invItem))
-                    {
-                        var maxChange = Math.Min(invItem.Template.MaxCount - invItem.Count, count);
-                        tasks.Add(new ItemCountUpdate(invItem, maxChange));
-                        invItem.Count += maxChange;
-                        count -= maxChange;
-                    }
-                }
-            }
-
-            if (count > 0)
-            {
-                var firstFreeSlot = GetFirstFreeSlot(type);
-                if (firstFreeSlot != -1)
-                {
-                    item.Slot = firstFreeSlot;
-                    item.SlotType = type;
-                    item.Count = count;
-                    checkStackable[firstFreeSlot] = item;
-                    tasks.Add(new ItemAdd(item));
-                    count = 0;
-                }
-                else if (dontAddPartialCount)
-                {
-                    return null;
-                }
-            }
-
-            if (item.Template.LootQuestId > 0)
-                Owner.Quests.OnItemGather(item, item.Count);
-
-            if (type == SlotType.Inventory)
-                Items = checkStackable;
-            else if (type == SlotType.Bank)
-                Bank = checkStackable;
-            /*else if (type == SlotType.Mail)
-                return null; //TODO
-            else if (type == SlotType.Trade)
-                return null; //TODO */
-
-            return tasks;
-        }
-
-        public Item AddItem(Item item)
-        {
-            if (item.Slot == -1)
-            {
-                var fItemIndex = -1;
-                for (var i = 0; i < Items.Length; i++)
-                    if (Items[i]?.Template != null && Items[i].Template.Id == item.Template.Id &&
-                        Items[i].Template.MaxCount >= Items[i].Count + item.Count)
-                    {
-                        fItemIndex = i;
-                        break;
-                    }
-
-                if (fItemIndex == -1)
-                    item.Slot = _freeSlot;
-                else
-                {
-                    var fItem = Items[fItemIndex];
-                    fItem.Count += item.Count;
-                    ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                    
-                    if (item.Template.LootQuestId > 0)
-                        Owner.Quests.OnItemGather(item, item.Count);
-                    
-                    return fItem;
-                }
-            }
-
-            if (item.Slot == -1 && _freeSlot == -1)
-                return null;
-
-            if (Items[item.Slot] != null)
-                return null;
-
-            item.SlotType = SlotType.Inventory;
-            Items[item.Slot] = item;
-
-            _freeSlot = CheckFreeSlot(SlotType.Inventory);
-
-            if (item.Template.LootQuestId > 0)
-                Owner.Quests.OnItemGather(item, item.Count);
-
-            return item;
-
-        }
-
-        public void RemoveItem(Item item, bool release, ItemTaskType taskType)
-        {
-            if (item == null)
-                return;
-
-            var tasks = new List<ItemTask>();
-            switch (item.SlotType)
-            {
-                case SlotType.Equipment:
-                    Equip[item.Slot] = null;
-                    break;
-                case SlotType.Inventory:
-                    Items[item.Slot] = null;
-                    break;
-                case SlotType.Bank:
-                    Bank[item.Slot] = null;
-                    break;
-                case SlotType.None:
-                    break;
-                case SlotType.Trade:
-                    break;
-                case SlotType.Mail:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-            tasks.Add(new ItemRemove(item));
-            if (release)
-                ItemIdManager.Instance.ReleaseId((uint)item.Id);
-            lock (_removedItems)
-            {
-                if (!_removedItems.Contains(item.Id))
-                    _removedItems.Add(item.Id);
-            }
-
-            //TODO: Call with ItemTaskType
-            Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-        }
-        public void RemoveItem(Item item, int count, ItemTaskType taskType)
-        {
-            if (item == null)
-                return;
-
-            var tasks = new List<ItemTask>();
-
-            var itemCount = item.Count;
-            var temp = Math.Min(count, itemCount);
-            item.Count -= temp;
-            count -= temp;
-            if (count < 0)
-                count = 0;
-
-            if (item.Count == 0)
-            {
-                Items[item.Slot] = null;
-                ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                lock (_removedItems)
-                {
-                    if (!_removedItems.Contains(item.Id))
-                        _removedItems.Add(item.Id);
-                }
-                tasks.Add(new ItemRemove(item));
-            }
-            else
-                tasks.Add(new ItemCountUpdate(item, -temp));
-
-            if (count > 0)
-                RemoveItem(item.TemplateId, count, taskType, tasks);
-            else
-                Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-        }
-
-        public void RemoveItem(uint templateId, int count, ItemTaskType taskType, List<ItemTask> tasks = null)
-        {
-            if (tasks == null)
-                tasks = new List<ItemTask>();
-
-            foreach (var item in Items)
-            {
-                if (item == null || item.TemplateId != templateId)
-                    continue;
-
-                var itemCount = item.Count;
-                var temp = Math.Min(count, itemCount);
-                item.Count -= temp;
-                count -= temp;
-                if (count < 0)
-                    count = 0;
-                if (item.Count == 0)
-                {
-                    Items[item.Slot] = null;
-                    ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                    lock (_removedItems)
-                    {
-                        if (!_removedItems.Contains(item.Id))
-                            _removedItems.Add(item.Id);
-                    }
-                    tasks.Add(new ItemRemove(item));
-                }
-                else
-                    tasks.Add(new ItemCountUpdate(item, -temp));
-
-                if (count == 0)
-                    break;
-            }
-            Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-        }
-
-        public void RemoveItem(uint templateId, int count, ItemTaskType taskType)
-        {
-            var tasks = new List<ItemTask>();
-            foreach (var item in Items)
-            {
-                if (item == null || item.TemplateId != templateId)
-                    continue;
-
-                var itemCount = item.Count;
-                var temp = Math.Min(count, itemCount);
-                item.Count -= temp;
-                count -= temp;
-                if (count < 0)
-                    count = 0;
-                if (item.Count == 0)
-                {
-                    Items[item.Slot] = null;
-                    ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                    lock (_removedItems)
-                    {
-                        if (!_removedItems.Contains(item.Id))
-                            _removedItems.Add(item.Id);
-                    }
-                    tasks.Add(new ItemRemove(item));
-                }
-                else
-                {
-                    tasks.Add(new ItemCountUpdate(item, -temp));
-                }
-                if (count == 0)
-                    break;
-            }
-            Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-        }
-        
-        public void RemoveItem(Item item, bool release)
-        {
-            switch (item.SlotType)
-            {
-                case SlotType.Equipment:
-                    Equip[item.Slot] = null;
-                    break;
-                case SlotType.Inventory:
-                {
-                    Items[item.Slot] = null;
-                    if (_freeSlot == -1 || item.Slot < _freeSlot)
-                        _freeSlot = item.Slot;
-                    break;
-                }
-                case SlotType.Bank:
-                {
-                    Bank[item.Slot] = null;
-                    if (_freeBankSlot == -1 || item.Slot < _freeBankSlot)
-                        _freeBankSlot = item.Slot;
-                    break;
-                }
-                case SlotType.None:
-                    break;
-                case SlotType.Trade:
-                    break;
-                case SlotType.Mail:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            if (release)
-                ItemIdManager.Instance.ReleaseId((uint)item.Id);
-
-            lock (_removedItems)
-            {
-                if (!_removedItems.Contains(item.Id))
-                    _removedItems.Add(item.Id);
-            }
-        }
-        
-        public List<(Item Item, int Count)> RemoveItem(uint templateId, int count)
-        {
-            var res = new List<(Item, int)>();
-            foreach (var item in Items)
-                if (item != null && item.TemplateId == templateId)
-                {
-                    var itemCount = item.Count;
-                    var temp = Math.Min(count, itemCount);
-                    item.Count -= temp;
-                    count -= temp;
-                    if (count < 0)
-                        count = 0;
-                    if (item.Count == 0)
-                    {
-                        Items[item.Slot] = null;
-                        if (_freeSlot == -1 || item.Slot < _freeSlot)
-                            _freeSlot = item.Slot;
-                        ItemIdManager.Instance.ReleaseId((uint)item.Id);
-                        lock (_removedItems)
-                        {
-                            if (!_removedItems.Contains(item.Id))
-                                _removedItems.Add(item.Id);
-                        }
-                    }
-
-                    res.Add((item, itemCount - item.Count));
-                    if (count == 0)
-                        break;
-                }
-
             return res;
         }
 
-        public bool CheckItems(uint templateId, int count) => CheckItems(SlotType.Inventory, templateId, count);
-
         public bool CheckItems(SlotType slotType, uint templateId, int count)
         {
-            Item[] items = null;
-            if (slotType == SlotType.Inventory)
-                items = Items;
-            else if (slotType == SlotType.Equipment)
-                items = Equip;
-            else if (slotType == SlotType.Bank)
-                items = Bank;
+            var totalCount = 0;
+            if (_itemContainers.TryGetValue(slotType, out var c))
+            {
+                if (c.GetAllItemsByTemplate(templateId, -1, out _, out int itemCount))
+                    totalCount += itemCount;
+            }
+            return (totalCount >= count);
+        }
 
-            if (items == null)
-                return false;
+        public int GetItemsCount(uint templateId, int gradeToCount = -1)
+        {
+            if (GetAllItemsByTemplate(null, templateId, gradeToCount, out var _, out var counted))
+                return counted;
+            else
+                return 0;
+        }
 
-            foreach (var item in items)
-                if (item != null && item.TemplateId == templateId)
+        public int GetItemsCount(SlotType slotType, uint templateId, int gradeToCount = -1)
+        {
+            if (GetAllItemsByTemplate(new SlotType[1] { slotType }, templateId, gradeToCount, out var _, out var counted))
+                return counted;
+            else
+                return 0;
+        }
+
+        /// <summary>
+        /// Searches container for a list of items that have a specified templateId
+        /// </summary>
+        /// <param name="inContainerTypes">Array of SlotTypes to search in, you can leave this blank or null to check Inventory + Equipped + Warehouse</param>
+        /// <param name="templateId">templateId to search for</param>
+        /// <param name="foundItems">List of found item objects</param>
+        /// <param name="gradeToCheck">Only list specified grade, use -1 for all grades</param>
+        /// <param name="unitsOfItemFound">Total count of the count values of the found items</param>
+        /// <returns>True if any item was found</returns>
+        public bool GetAllItemsByTemplate(SlotType[] inContainerTypes, uint templateId, int gradeToCheck, out List<Item> foundItems, out int unitsOfItemFound)
+        {
+            bool res = false;
+            foundItems = new List<Item>();
+            unitsOfItemFound = 0;
+            if ((inContainerTypes == null) || (inContainerTypes.Length <= 0))
+            {
+                inContainerTypes = new SlotType[3] { SlotType.Inventory, SlotType.Equipment, SlotType.Bank};
+            }
+            foreach(var ct in inContainerTypes)
+            {
+                if (_itemContainers.TryGetValue(ct, out var c))
                 {
-                    count -= item.Count;
-                    if (count < 0)
-                        count = 0;
-                    if (count == 0)
-                        break;
+                    res |= c.GetAllItemsByTemplate(templateId, gradeToCheck, out var theseItems, out var theseAmounts);
+                    foundItems.AddRange(theseItems);
+                    unitsOfItemFound += theseAmounts;
                 }
-
-            return count == 0;
+            }
+            return res;
         }
 
-        public int GetItemsCount(uint templateId)
+        private enum SwapAction
         {
-            var count = 0;
-            foreach (var item in Items)
-                if (item != null && item.TemplateId == templateId)
-                    count += item.Count;
-            return count;
+            doNothing,
+            doSwap,
+            doSplit,
+            doMerge,
+            doMoveAllToEmpty,
+            doEquipInEmptySlot,
         }
 
-        //For removing item count from an item and moving that count to either a new item or adding to an existing item's count.
-        public void SplitItemStack(ulong fromItemId, SlotType fromType, byte fromSlot, ulong toItemId, SlotType toType, byte toSlot, int count = 0)
+        public bool SplitOrMoveItem(ItemTaskType taskType, ulong fromItemId, SlotType fromType, byte fromSlot,
+            ulong toItemId, SlotType toType, byte toSlot, int count = 0)
         {
-            var fromItem = GetItem(fromType, fromSlot);
-            var toItem = GetItem(toType, toSlot);
+            var info = string.Format("SplitOrMoveItem({0} {1}:{2} => {3} {4}:{5} - {6})", fromItemId, fromType,
+                fromSlot, toItemId, toType, toSlot, count);
+            _log.Trace(info);
+            var fromItem = GetItemById(fromItemId);
+            if ((fromItem == null) && (fromItemId != 0))
+            {
+                _log.Error(string.Format("SplitOrMoveItem - ItemId {0} no longer exists, possibly a phantom item.",
+                    fromItemId));
+                return false;
+            }
 
-            //Make sure you cannot stack different item types, different grades, or items with different flags (eg. bound items into unbound) onto each other.
-            if (fromItem == null || (toItem != null && ((fromItem.TemplateId != toItem.TemplateId) || (fromItem.Grade != toItem.Grade) || (fromItem.Flags != toItem.Flags))))
-                return;
-
-            if (count >= fromItem.Count)
+            var itemInTargetSlot = GetItemById(toItemId);
+            var action = SwapAction.doNothing;
+            if ((count <= 0) && (fromItem != null))
                 count = fromItem.Count;
 
-            if (toItem == null)
+            // Grab target container for easy manipulation
+            ItemContainer targetContainer = Bag;
+            ItemContainer sourceContainer = fromItem?._holdingContainer ?? Bag;
+            if (_itemContainers.TryGetValue(toType, out targetContainer))
             {
-                fromItem.Count -= count;
-                AddNewItem(fromItem.TemplateId, count, fromItem.Grade, ItemTaskType.Split, toSlot, toType);
-                Owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Split, new List<ItemTask>() { new ItemCountUpdate(fromItem, -count) }, new List<ulong>()));
-            }
-            else
-            {
-                StackIntoItem(fromItem, toItem, ItemTaskType.Split, count);
-            }
-        }
-
-        //For moving item count from one item to another.
-        public void StackIntoItem(Item fromItem, Item stackIntoItem, ItemTaskType taskType, int count = 0)
-        {
-            if (count == 0)
-                count = Math.Min(fromItem.Count, stackIntoItem.Template.MaxCount - stackIntoItem.Count);
-
-            stackIntoItem.Count += count;
-            fromItem.Count -= count;
-
-            var tasks = new List<ItemTask>();
-
-            if (fromItem.Count > 0)
-                tasks.Add(new ItemCountUpdate(fromItem, -count));
-            else
-                RemoveItem(fromItem, true, taskType);
-
-            tasks.Add(new ItemCountUpdate(stackIntoItem, count));
-            Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, tasks, new List<ulong>()));
-        }
-
-        public void Move(ulong fromItemId, SlotType fromType, byte fromSlot, ulong toItemId, SlotType toType, byte toSlot)
-        {
-            //TODO: refactor this entire method because it is aids    
-
-            var fromItem = GetItem(fromType, fromSlot);
-            var toItem = GetItem(toType, toSlot);
-
-            if (fromItem != null && fromItem.Id != fromItemId)
-            {
-                _log.Warn("ItemMove: {0} {1}", fromItem.Id, fromItemId);
-                // TODO ... ItemNotify?
-                return;
+                itemInTargetSlot = targetContainer.GetItemBySlot(toSlot);
             }
 
-            if (toItem != null && toItem.Id != toItemId)
+            if (itemInTargetSlot == null)
+                itemInTargetSlot = targetContainer.GetItemBySlot(toSlot);
+
+            // Are we equipping into a empty slot ? For whatever reason the client will send FROM empty equipment slot => TO item to equip
+            if ((fromItemId == 0) && (fromType == SlotType.Equipment) && (toType != SlotType.Equipment) &&
+                (itemInTargetSlot != null))
             {
-                _log.Warn("ItemMove: {0} {1}", toItem.Id, toItemId);
-                // TODO ... ItemNotify?
-                return;
+                action = SwapAction.doEquipInEmptySlot;
+                sourceContainer = Equipment;
             }
 
-            //Check if items can be stacked, if they can't then continue swapping
-            if (fromItem != null && toItem != null && fromItem.CanStackInto(toItem))
+            // Check some conditions when we are not equipping into a empty slot
+            if ((action != SwapAction.doEquipInEmptySlot) && (fromItem == null))
             {
-                StackIntoItem(fromItem, toItem, ItemTaskType.SwapItems);
-                return;
+                _log.Error("SplitOrMoveItem didn't provide a source itemId");
+                return false;
             }
 
-            var removingItems = new List<ulong>();
-            var tasks = new List<ItemTask>();
-
-            if (fromType == SlotType.Equipment && toItem != null && toItem.Template.BindType == ItemBindType.SoulboundEquip)
+            if ((action != SwapAction.doEquipInEmptySlot) && (fromItem?._holdingContainer?.ContainerType != fromType))
             {
-                toItem.SetFlag(ItemFlag.SoulBound);
+                _log.Error("SplitOrMoveItem Source Item Container did not match what the client asked");
+                return false;
             }
 
-            tasks.Add(new ItemMove(fromType, fromSlot, fromItemId, toType, toSlot, toItemId));
-
-            uint toItemEquipBuffId = 0;
-            if (toItem != null)
+            if ((action != SwapAction.doEquipInEmptySlot) && (fromItem.Slot != fromSlot))
             {
-                toItemEquipBuffId = ItemManager.Instance.GetItemEquipBuff(toItem.TemplateId, toItem.Grade);
+                _log.Error("SplitOrMoveItem Source Item slot did not match what the client asked");
+                return false;
             }
 
-            uint fromItemEquipBuffId = 0;
-            if (fromItem != null)
+            if ((action != SwapAction.doEquipInEmptySlot) && (count > fromItem.Count))
             {
-                fromItemEquipBuffId = ItemManager.Instance.GetItemEquipBuff(fromItem.TemplateId, fromItem.Grade);
+                _log.Error("SplitOrMoveItem Source Item has less item count than is requested to be moved");
+                return false;
             }
 
-            var updatedEquipment = false;
-            var taskOverridden = false;
-            if (fromType == SlotType.Equipment)
+            // Validate target Item stuff
+            if (itemInTargetSlot != null)
             {
-                if (toItem != null && (fromSlot == (int)EquipmentItemSlot.Mainhand || fromSlot == (int)EquipmentItemSlot.Offhand))
+                if (itemInTargetSlot.SlotType != toType)
                 {
-                    var toItemTemplate = ((WeaponTemplate)toItem.Template);
-                    var toItemType = toItemTemplate.HoldableTemplate.SlotTypeId;
-
-                    if (fromSlot == (int)EquipmentItemSlot.Mainhand && toItemType == (int)EquipmentItemSlotType.TwoHanded)
-                    {
-                        //Equipping 2h weapon, remove offhand
-                        if (Equip[(int)EquipmentItemSlot.Mainhand] != null && Equip[(int)EquipmentItemSlot.Offhand] != null)
-                        {
-                            var task = TryRemoveWeapon((int)EquipmentItemSlot.Offhand, toSlot);
-                            if (task != null)
-                            {
-                                Equip[(int)EquipmentItemSlot.Mainhand] = toItem;
-                                Equip[(int)EquipmentItemSlot.Mainhand].Slot = (int)EquipmentItemSlot.Mainhand;
-                                Equip[(int)EquipmentItemSlot.Mainhand].SlotType = SlotType.Equipment;
-                                tasks.Add(task);
-                            }
-                            else
-                            {
-                                Owner.SendErrorMessage(ErrorMessageType.CantChangeEquip);
-                                return;
-                            }
-                        }
-                        else if (Equip[(int)EquipmentItemSlot.Mainhand] == null && Equip[(int)EquipmentItemSlot.Offhand] != null)
-                        {
-                            //No equipped main-hand, move offhand to 2h inv slot after 2h equipped
-                            Equip[(int)EquipmentItemSlot.Mainhand] = toItem;
-                            Items[toSlot] = null;
-                            taskOverridden = true;
-                            tasks.Add(MoveEquipToEmptyInv((int)EquipmentItemSlot.Offhand, toSlot));
-                            taskOverridden = true;
-                        }
-                        else
-                        {
-                            Equip[fromSlot] = toItem;
-                        }
-                        updatedEquipment = true;
-                    }
-                    else if (fromSlot == (int)EquipmentItemSlot.Offhand && Equip[(int)EquipmentItemSlot.Mainhand] != null && ((WeaponTemplate)Equip[(int)EquipmentItemSlot.Mainhand].Template).HoldableTemplate.SlotTypeId == (int)EquipmentItemSlotType.TwoHanded)
-                    {
-                        //Equipping an off-hand, remove 2h
-                        if (Equip[(int)EquipmentItemSlot.Offhand] != null)
-                        {
-                            var task = TryRemoveWeapon((int)EquipmentItemSlot.Mainhand, toSlot);
-                            if (task != null)
-                            {
-                                Equip[(int)EquipmentItemSlot.Offhand] = toItem;
-                                Equip[(int)EquipmentItemSlot.Offhand].Slot = (int)EquipmentItemSlot.Offhand;
-                                Equip[(int)EquipmentItemSlot.Offhand].SlotType = SlotType.Equipment;
-                                tasks.Add(task);
-                            }
-                            else
-                            {
-                                Owner.SendErrorMessage(ErrorMessageType.CantChangeEquip);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //No equipped offhand, move equipped 2h to offhand's inv slot
-                            Equip[(int)EquipmentItemSlot.Offhand] = toItem;
-                            Items[toSlot] = null;
-                            taskOverridden = true;
-                            tasks.Add(MoveEquipToEmptyInv((int)EquipmentItemSlot.Mainhand, toSlot));
-                        }
-                    }
-                    else
-                    {
-                        //Not equipping 2h, or offhand while no 2h equipped
-                        Equip[fromSlot] = toItem;
-                    }
+                    _log.Error("SplitOrMoveItem Target Item Type does not match");
+                    return false;
                 }
+
+                if (itemInTargetSlot.Slot != toSlot)
+                {
+                    _log.Error("SplitOrMoveItem Target Item Slot does not match");
+                    return false;
+                }
+
+                if ((action != SwapAction.doEquipInEmptySlot) && (itemInTargetSlot.TemplateId == fromItem.TemplateId) &&
+                    (itemInTargetSlot.Count + count > fromItem.Template.MaxCount) && (fromItem.Template.MaxCount > 1))
+                {
+                    _log.Error("SplitOrMoveItem Target Item stack does not have enough room to take source");
+                    return false;
+                }
+            }
+
+            // Decide what type of thing we need to do
+            if (action != SwapAction.doEquipInEmptySlot)
+            {
+                if ((itemInTargetSlot == null) && (fromItem.Count > count))
+                    action = SwapAction.doSplit;
+                else if ((itemInTargetSlot == null) && (fromItem.Count == count))
+                    action = SwapAction.doMoveAllToEmpty;
+                else if ((itemInTargetSlot != null) && (itemInTargetSlot.TemplateId == fromItem.TemplateId) && (itemInTargetSlot.Template.MaxCount > 1))
+                    action = SwapAction.doMerge;
                 else
-                {
-                    // not equipping mainhand or offhand equipment
-                    Equip[fromSlot] = toItem;
-                }
-                updatedEquipment = true;
-            }
-            else if (fromType == SlotType.Inventory)
-            {
-                Items[fromSlot] = toItem;
-                if (toItemEquipBuffId != 0 && toType == SlotType.Equipment)
-                {
-                    Owner.Effects.RemoveBuff(toItemEquipBuffId);
-                }
-            }
-            else if (fromType == SlotType.Bank)
-            {
-                Bank[fromSlot] = toItem;
-                if (toItemEquipBuffId != 0 && toType == SlotType.Equipment)
-                {
-                    Owner.Effects.RemoveBuff(toItemEquipBuffId);
-                }
+                    action = SwapAction.doSwap;
             }
 
-            if (taskOverridden == false && toType == SlotType.Equipment)
-            {
-                if (fromItem != null && (toSlot == (int)EquipmentItemSlot.Mainhand || toSlot == (int)EquipmentItemSlot.Offhand))
-                {
-                    var fromItemTemplate = ((WeaponTemplate)fromItem.Template);
-                    var fromItemType = fromItemTemplate.HoldableTemplate.SlotTypeId;
+            var doUnEquipOffhand = false;
+            var doUnEquipMainhand = false;
+            Item mainHandWeapon = null;
+            Item offHandWeapon = null;
 
-                    if (toSlot == (int)EquipmentItemSlot.Mainhand && fromItemType == (int)EquipmentItemSlotType.TwoHanded)
+            if ((action == SwapAction.doSwap) || (action == SwapAction.doEquipInEmptySlot))
+            {
+                mainHandWeapon = Equipment.GetItemBySlot((int)EquipmentItemSlot.Mainhand);
+                offHandWeapon = Equipment.GetItemBySlot((int)EquipmentItemSlot.Offhand);
+                // Check for equipping weapons by swapping (and if it's a 2-handed one)
+                var isFromNon2HWeapon = false;
+                var isFrom2H = false;
+                if ((fromItem != null) && (fromItem.Template is WeaponTemplate weaponFrom))
+                {
+                    switch ((EquipmentItemSlotType)weaponFrom.HoldableTemplate.SlotTypeId)
                     {
-                        //Equipping 2h weapon, remove offhand
-                        if (Equip[(int)EquipmentItemSlot.Mainhand] != null && Equip[(int)EquipmentItemSlot.Offhand] != null)
-                        {
-                            var task = TryRemoveWeapon((int)EquipmentItemSlot.Offhand, fromSlot);
-                            if (task != null)
-                            {
-                                Equip[(int)EquipmentItemSlot.Mainhand] = fromItem;
-                                Equip[(int)EquipmentItemSlot.Mainhand].Slot = (int)EquipmentItemSlot.Mainhand;
-                                Equip[(int)EquipmentItemSlot.Mainhand].SlotType = SlotType.Equipment;
-                                tasks.Add(task);
-                            }
-                            else
-                            {
-                                Owner.SendErrorMessage(ErrorMessageType.CantChangeEquip);
-                                return;
-                            }
-                        }
-                        else if (Equip[(int)EquipmentItemSlot.Mainhand] == null && Equip[(int)EquipmentItemSlot.Offhand] != null)
-                        {
-                            //No equipped main-hand, move offhand to 2h inv slot after 2h equipped
-                            Equip[(int)EquipmentItemSlot.Mainhand] = fromItem; ;
-                            Items[fromSlot] = null;
-                            taskOverridden = true;
-                            tasks.Add(MoveEquipToEmptyInv((int)EquipmentItemSlot.Offhand, fromSlot));
-                        }
-                        else
-                        {
-                            Equip[toSlot] = fromItem;
-                        }
-                        updatedEquipment = true;
+                        case EquipmentItemSlotType.TwoHanded:
+                            isFrom2H = true;
+                            break;
+                        case EquipmentItemSlotType.Mainhand:
+                        case EquipmentItemSlotType.Offhand:
+                        case EquipmentItemSlotType.Shield:
+                        case EquipmentItemSlotType.OneHanded:
+                            isFromNon2HWeapon = true;
+                            break;
+                        default:
+                            break;
                     }
-                    else if (toSlot == (int)EquipmentItemSlot.Offhand && Equip[(int)EquipmentItemSlot.Mainhand] != null && ((WeaponTemplate)Equip[(int)EquipmentItemSlot.Mainhand].Template).HoldableTemplate.SlotTypeId == (int)EquipmentItemSlotType.TwoHanded)
+                }
+
+                var isToNon2HWeapon = false;
+                var isTo2H = false;
+                if ((itemInTargetSlot != null) && (itemInTargetSlot.Template is WeaponTemplate weaponTo))
+                {
+                    switch ((EquipmentItemSlotType)weaponTo.HoldableTemplate.SlotTypeId)
                     {
-                        //Equipping an off-hand, remove 2h
-                        if (Equip[(int)EquipmentItemSlot.Offhand] != null)
-                        {
-                            var task = TryRemoveWeapon((int)EquipmentItemSlot.Mainhand, fromSlot);
-                            if (task != null)
-                            {
-                                Equip[(int)EquipmentItemSlot.Offhand] = fromItem;
-                                Equip[(int)EquipmentItemSlot.Offhand].Slot = (int)EquipmentItemSlot.Offhand;
-                                Equip[(int)EquipmentItemSlot.Offhand].SlotType = SlotType.Equipment;
-                                tasks.Add(task);
-                            }
-                            else
-                            {
-                                Owner.SendErrorMessage(ErrorMessageType.CantChangeEquip);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            //No equipped offhand, move equipped 2h to offhand's inv slot
-                            Equip[(int)EquipmentItemSlot.Offhand] = fromItem; ;
-                            Items[fromSlot] = null;
-                            taskOverridden = true;
-                            tasks.Add(MoveEquipToEmptyInv((int)EquipmentItemSlot.Mainhand, fromSlot));
-                        }
+                        case EquipmentItemSlotType.TwoHanded:
+                            isTo2H = true;
+                            break;
+                        case EquipmentItemSlotType.Mainhand:
+                        case EquipmentItemSlotType.Offhand:
+                        case EquipmentItemSlotType.Shield:
+                        case EquipmentItemSlotType.OneHanded:
+                            isToNon2HWeapon = true;
+                            break;
+                        default:
+                            break;
                     }
+                }
+                
+                var isMain2H = false;
+                if ((mainHandWeapon != null) && (mainHandWeapon.Template is WeaponTemplate mainWeapon))
+                {
+                    switch ((EquipmentItemSlotType)mainWeapon.HoldableTemplate.SlotTypeId)
+                    {
+                        case EquipmentItemSlotType.TwoHanded:
+                            isMain2H = true;
+                            break;
+                        /*
+                        case EquipmentItemSlotType.Mainhand:
+                        case EquipmentItemSlotType.Offhand:
+                        case EquipmentItemSlotType.Shield:
+                        case EquipmentItemSlotType.OneHanded:
+                            isFromNon2HWeapon = true;
+                            break;
+                        */
+                        default:
+                            break;
+                    }
+                }
+                
+                if (isTo2H && (sourceContainer.ContainerType == SlotType.Equipment) && (fromSlot == (int)EquipmentItemSlot.Mainhand))
+                    doUnEquipOffhand = true;
+                if (isMain2H && (sourceContainer.ContainerType == SlotType.Equipment) && (fromSlot == (int)EquipmentItemSlot.Offhand))
+                    doUnEquipMainhand = true;
+
+                // Client actually always sends from equipment => inventory no matter how you click it, this is just a safety if it ever changes
+                if (isFrom2H && (targetContainer.ContainerType == SlotType.Equipment) && (toSlot == (int)EquipmentItemSlot.Mainhand))
+                    doUnEquipOffhand = true;
+                if (isMain2H && (targetContainer.ContainerType == SlotType.Equipment) && (toSlot == (int)EquipmentItemSlot.Offhand))
+                    doUnEquipMainhand = true;
+                
+            }
+
+            if ((doUnEquipOffhand) && (offHandWeapon != null))
+            {
+                //_log.Trace("SplitOrMoveItem - UnEquip OffHand required!");
+                // Check if we have enough space to unequip the offhand
+                if (Bag.FreeSlotCount < 1)
+                    return false;
+                // If we can't move it to bag for whatever reason, abort
+                if (!Bag.AddOrMoveExistingItem(taskType, offHandWeapon))
+                    return false;
+            }
+
+            if ((doUnEquipMainhand) && (mainHandWeapon != null))
+            {
+                //_log.Trace("SplitOrMoveItem - UnEquip MainHand required!");
+                // Check if we have enough space to unequip the mainhand
+                if (Bag.FreeSlotCount < 1)
+                    return false;
+                // If we can't move it to bag for whatever reason, abort
+                if (!Bag.AddOrMoveExistingItem(taskType, mainHandWeapon))
+                    return false;
+            }
+
+            // Actually execute what we need to do
+            var itemTasks = new List<ItemTask>();
+            switch (action)
+            {
+                case SwapAction.doEquipInEmptySlot:
+                    itemInTargetSlot.SlotType = sourceContainer.ContainerType;
+                    itemInTargetSlot.Slot = fromSlot;
+                    itemTasks.Add(new ItemMove(fromType, fromSlot, fromItemId, toType, toSlot, toItemId));
+                    if (targetContainer != sourceContainer)
+                    {
+                        sourceContainer.Items.Add(itemInTargetSlot);
+                        targetContainer.Items.Remove(itemInTargetSlot);
+                        itemInTargetSlot._holdingContainer = sourceContainer;
+                        sourceContainer.UpdateFreeSlotCount();
+                        targetContainer.UpdateFreeSlotCount();
+                    }
+                    break;
+                case SwapAction.doSplit:
+                    fromItem.Count -= count;
+                    itemTasks.Add(new ItemCountUpdate(fromItem, -count));
+                    var ni = ItemManager.Instance.Create(fromItem.TemplateId, count, fromItem.Grade, true);
+                    ni.SlotType = toType;
+                    ni.Slot = toSlot;
+                    ni._holdingContainer = targetContainer;
+                    targetContainer.Items.Add(ni);
+                    itemTasks.Add(new ItemAdd(ni));
+                    if (targetContainer != sourceContainer)
+                        targetContainer.UpdateFreeSlotCount();
                     else
-                    {
-                        //Not equipping 2h, or offhand while no 2h equipped
-                        Equip[toSlot] = fromItem;
-                    }
-                }
-                else
-                {
-                    // not equipping mainhand or offhand equipment
-                    Equip[toSlot] = fromItem;
-                }
-                updatedEquipment = true;
-            }
-            else if (!taskOverridden && toType == SlotType.Inventory)
-            {
-                Items[toSlot] = fromItem;
-                if (fromItemEquipBuffId != 0 && fromType == SlotType.Equipment)
-                {
-                    Owner.Effects.RemoveBuff(fromItemEquipBuffId);
-                }
-
-            }
-            else if (toType == SlotType.Bank)
-            {
-                Bank[toSlot] = fromItem;
-                if (fromItemEquipBuffId != 0 && fromType == SlotType.Equipment)
-                {
-                    Owner.Effects.RemoveBuff(fromItemEquipBuffId);
-                }
-
-                if (taskOverridden && fromItem != null)
-                {
+                        sourceContainer.UpdateFreeSlotCount();
+                    break;
+                case SwapAction.doMoveAllToEmpty:
+                    fromItem.SlotType = targetContainer.ContainerType;
                     fromItem.Slot = toSlot;
-                    fromItem.SlotType = SlotType.Bank;
-                }
-            }
-
-            if (updatedEquipment == true)
-            {
-                UpdateEquipmentBuffs();
-            }
-
-            if (taskOverridden == false && fromItem != null)
-            {
-                fromItem.SlotType = toType;
-                fromItem.Slot = toSlot;
-            }
-
-            if (taskOverridden == false && toItem != null)
-            {
-                toItem.SlotType = fromType;
-                toItem.Slot = fromSlot;
-            }
-
-            if (fromItem != null) tasks.Add(new ItemUpdateBits(fromItem));
-            if (toItem != null) tasks.Add(new ItemUpdateBits(toItem));
-
-            Owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.SwapItems, tasks, removingItems));
-
-
-            if (fromType == SlotType.Equipment)
-                Owner.BroadcastPacket(
-                    new SCUnitEquipmentsChangedPacket(Owner.ObjId, new[]
+                    itemTasks.Add(new ItemMove(fromType, fromSlot, fromItem.Id, toType, toSlot, toItemId));
+                    if (targetContainer != sourceContainer)
                     {
-                        (fromSlot, Equip[fromSlot])
-                    }), false);
-            if (toType == SlotType.Equipment)
-                Owner.BroadcastPacket(
-                    new SCUnitEquipmentsChangedPacket(Owner.ObjId, new[]
-                    {
-                        (toSlot, Equip[toSlot])
-                    }), false);
-
-        }
-
-        public void Move(ulong fromItemId, SlotType fromType, byte fromSlot, ulong toItemId, SlotType toType, byte toSlot, int count = 0)
-        {
-            if (count < 0)
-                count = 0;
-
-            var fromItem = GetItem(fromType, fromSlot);
-            var toItem = GetItem(toType, toSlot);
-
-            if (fromItem != null && fromItem.Id != fromItemId)
-            {
-                _log.Warn("ItemMove: {0} {1}", fromItem.Id, fromItemId);
-                // TODO ... ItemNotify?
-                return;
-            }
-
-            if (toItem != null && toItem.Id != toItemId)
-            {
-                _log.Warn("ItemMove: {0} {1}", toItem.Id, toItemId);
-                // TODO ... ItemNotify?
-                return;
-            }
-
-            var removingItems = new List<ulong>();
-            var tasks = new List<ItemTask>();
-
-            tasks.Add(new ItemMove(fromType, fromSlot, fromItemId, toType, toSlot, toItemId));
-
-            if (fromType == SlotType.Equipment)
-                Equip[fromSlot] = toItem;
-            else if (fromType == SlotType.Inventory)
-                Items[fromSlot] = toItem;
-            else if (fromType == SlotType.Bank)
-                Bank[fromSlot] = toItem;
-
-            if (toType == SlotType.Equipment)
-                Equip[toSlot] = fromItem;
-            else if (toType == SlotType.Inventory)
-                Items[toSlot] = fromItem;
-            else if (toType == SlotType.Bank)
-                Bank[toSlot] = fromItem;
-
-            if (fromItem != null)
-            {
-                fromItem.SlotType = toType;
-                fromItem.Slot = toSlot;
-            }
-
-            if (toItem != null)
-            {
-                toItem.SlotType = fromType;
-                toItem.Slot = fromSlot;
-            }
-
-            _freeSlot = CheckFreeSlot(SlotType.Inventory);
-            _freeBankSlot = CheckFreeSlot(SlotType.Bank);
-
-            Owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.SwapItems, tasks, removingItems));
-
-            if (fromType == SlotType.Equipment)
-                Owner.BroadcastPacket(
-                    new SCUnitEquipmentsChangedPacket(Owner.ObjId, new[]
-                    {
-                        (fromSlot, Equip[fromSlot])
-                    }), false);
-            if (toType == SlotType.Equipment)
-                Owner.BroadcastPacket(
-                    new SCUnitEquipmentsChangedPacket(Owner.ObjId, new[]
-                    {
-                        (toSlot, Equip[toSlot])
-                    }), false);
-        }
-
-        public ItemMove TryRemoveWeapon(byte equipSlot, int ignoreSlot)
-        {
-            var openSlot = GetFirstFreeSlot(SlotType.Inventory, ignoreSlot);
-            if (openSlot == -1)
-            {
-                //TODO: Notify not enough inv space for offhand
-                _log.Warn("TryRemoveWeapon Failed...");
-                return null;
-            }
-
-            return MoveEquipToEmptyInv(equipSlot, openSlot);
-        }
-
-        public ItemMove MoveEquipToEmptyInv(byte equipSlot, int emptyInvSlot)
-        {
-            if (Items[emptyInvSlot] != null)
-            {
-                //Empty slot is not empty
-                _log.Warn("MoveEquipToEmptyInv: EmptyInvSlot is not empty...");
-                return null;
-            }
-
-            ulong fromId;
-            if (Equip[equipSlot] == null)
-            {
-                fromId = 0;
-            }
-            else
-            {
-                fromId = Equip[equipSlot].Id;
-            }
-            ulong toId;
-            if (Items[emptyInvSlot] == null)
-            {
-                toId = 0;
-            }
-            else
-            {
-                toId = Items[emptyInvSlot].Id;
-            }
-
-            var EquipBuffId = ItemManager.Instance.GetItemEquipBuff(Equip[equipSlot].TemplateId, Equip[equipSlot].Grade);
-            Owner.Effects.RemoveBuff(EquipBuffId);
-
-            var task = new ItemMove(SlotType.Equipment, equipSlot, fromId, SlotType.Inventory, (byte)emptyInvSlot, toId);
-
-            Items[emptyInvSlot] = Equip[equipSlot];
-            Items[emptyInvSlot].Slot = emptyInvSlot;
-            Items[emptyInvSlot].SlotType = SlotType.Inventory;
-            Equip[equipSlot] = null;
-
-            Owner.BroadcastPacket(new SCUnitEquipmentsChangedPacket(Owner.ObjId, new[] { (equipSlot, Equip[equipSlot]) }), false);
-
-            return task;
-        }
-
-        public void UpdateEquipmentBuffs()
-        {
-            //Weapon type buff
-            uint mainHandType = 0;
-            WeaponTemplate mainHandTemplate = null;
-            if (Equip[(int)EquipmentItemSlot.Mainhand] != null)
-            {
-                mainHandTemplate = ((WeaponTemplate)Equip[(int)EquipmentItemSlot.Mainhand].Template);
-                mainHandType = mainHandTemplate.HoldableTemplate.SlotTypeId;
-            }
-            uint offHandType = 0;
-            WeaponTemplate offHandTemplate = null;
-            if (Equip[(int)EquipmentItemSlot.Offhand] != null)
-            {
-                offHandTemplate = ((WeaponTemplate)Equip[(int)EquipmentItemSlot.Offhand].Template);
-                offHandType = offHandTemplate.HoldableTemplate.SlotTypeId;
-            }
-
-            uint newWeaponBuff = 0;
-            if (offHandType == (int)EquipmentItemSlotType.Shield)
-            {
-                newWeaponBuff = (uint)WeaponTypeBuff.Shield;
-            }
-            else if (mainHandType == (int)EquipmentItemSlotType.TwoHanded)
-            { //2h
-                newWeaponBuff = (uint)WeaponTypeBuff.TwoHanded;
-            }
-            else if (mainHandType != 0 && offHandType != 0)
-            { //duel wield
-                newWeaponBuff = (uint)WeaponTypeBuff.DuelWield;
-            }
-            else
-            {
-                newWeaponBuff = (uint)WeaponTypeBuff.None;
-            }
-
-
-            if (Owner.WeaponTypeBuffId != newWeaponBuff)
-            {
-                Owner.Effects.RemoveBuff(Owner.WeaponTypeBuffId);
-
-                if (newWeaponBuff != 0)
-                {
-                    Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(newWeaponBuff), null, DateTime.Now));
-                }
-
-                Owner.WeaponTypeBuffId = newWeaponBuff;
-            }
-
-            //Weapon set buff
-            if (mainHandTemplate != null && offHandTemplate != null && mainHandTemplate.EquipSetId == offHandTemplate.EquipSetId)
-            {
-                if (Owner.WeaponEquipSetBuffId != mainHandTemplate.EquipSetId)
-                { //Don't remove and reapply the same buff
-                    var WeaponEquipSet = ItemManager.Instance.GetItemSetBonus(mainHandTemplate.EquipSetId);
-
-                    Owner.Effects.RemoveBuff(Owner.WeaponEquipSetBuffId);
-
-                    if (WeaponEquipSet.SetBonuses[2].BuffId != 0 && !Owner.Effects.CheckBuff(WeaponEquipSet.SetBonuses[2].BuffId))
-                    {
-                        Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(WeaponEquipSet.SetBonuses[2].BuffId), null, DateTime.Now));
+                        sourceContainer.Items.Remove(fromItem);
+                        targetContainer.Items.Add(fromItem);
+                        fromItem._holdingContainer = targetContainer;
+                        sourceContainer.UpdateFreeSlotCount();
+                        targetContainer.UpdateFreeSlotCount();
                     }
-
-                    Owner.WeaponEquipSetBuffId = WeaponEquipSet.SetBonuses[2].BuffId;
-                }
-            }
-            else
-            {
-                Owner.Effects.RemoveBuff(Owner.WeaponEquipSetBuffId);
-            }
-
-            //Equip effects
-            foreach (var equipItem in Equip)
-            {
-                if (equipItem != null)
-                {
-                    var EquipBuffId = ItemManager.Instance.GetItemEquipBuff(equipItem.TemplateId, equipItem.Grade);
-                    if (EquipBuffId != 0 && !Owner.Effects.CheckBuff(EquipBuffId))
+                    break;
+                case SwapAction.doMerge:
+                    // Merge x amount into target
+                    var toAddCount = Math.Min(count, itemInTargetSlot.Template.MaxCount - itemInTargetSlot.Count);
+                    if (toAddCount < count)
+                        _log.Trace(string.Format("SplitOrMoveItem supplied more than target can take, changed {0} to {1}",count,toAddCount));
+                    itemInTargetSlot.Count += toAddCount;
+                    fromItem.Count -= toAddCount;
+                    itemTasks.Add(new ItemCountUpdate(itemInTargetSlot, toAddCount));
+                    if (fromItem.Count > 0)
                     {
-                        Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(EquipBuffId), null, DateTime.Now));
-                    }
-                }
-            }
-
-            //Armor 3/7 set buffs
-            //Armor grade buff
-            var armor = new List<Armor> {
-                (Armor)Equip[(int)EquipmentItemSlot.Head],
-                (Armor)Equip[(int)EquipmentItemSlot.Chest],
-                (Armor)Equip[(int)EquipmentItemSlot.Waist],
-                (Armor)Equip[(int)EquipmentItemSlot.Legs],
-                (Armor)Equip[(int)EquipmentItemSlot.Hands],
-                (Armor)Equip[(int)EquipmentItemSlot.Feet],
-                (Armor)Equip[(int)EquipmentItemSlot.Arms]
-            };
-
-            uint maxKind = 0;
-            var armorSets = new Dictionary<uint, uint>();
-            //Key = Equipment Set Id
-            //Value = count
-
-            var armorInfo = new Dictionary<uint, List<uint>>();
-            //Key = Armor kind
-            //List[0] = count
-            //List[1] = lowest grade >= arcane
-            //List[2] = calculated ab_level to send
-
-            foreach (var piece in armor)
-            {
-                if (piece != null)
-                {
-                    var pieceTemplate = ((ArmorTemplate)piece.Template);
-
-                    var kind = pieceTemplate.KindTemplate.TypeId;
-                    var grade = piece.Grade;
-
-                    if (!armorSets.ContainsKey(pieceTemplate.EquipSetId))
-                    {
-                        armorSets.Add(pieceTemplate.EquipSetId, 1);
+                        itemTasks.Add(new ItemCountUpdate(fromItem, -toAddCount));
                     }
                     else
                     {
-                        armorSets[pieceTemplate.EquipSetId]++;
+                        itemTasks.Add(new ItemRemoveSlot(fromItem));
+                        fromItem._holdingContainer.RemoveItem(ItemTaskType.Invalid, fromItem, true);
                     }
-
-                    if (!armorInfo.ContainsKey(kind))
+                    break;
+                case SwapAction.doSwap:
+                    // Swap both item slots
+                    itemTasks.Add(new ItemMove(fromType, fromSlot, fromItem.Id, toType, toSlot, itemInTargetSlot.Id));
+                    fromItem.SlotType = targetContainer.ContainerType;
+                    fromItem.Slot = toSlot;
+                    if (sourceContainer != targetContainer)
                     {
-                        armorInfo.Add(kind, new List<uint> { 0, 0, 0 });
+                        sourceContainer.Items.Remove(fromItem);
+                        targetContainer.Items.Add(fromItem);
+                        fromItem._holdingContainer = targetContainer;
+                        targetContainer.UpdateFreeSlotCount();
                     }
-                    armorInfo[kind][0]++;
-
-                    if (grade >= 4)
+                    itemInTargetSlot.SlotType = sourceContainer.ContainerType;
+                    itemInTargetSlot.Slot = fromSlot;
+                    if (sourceContainer != targetContainer)
                     {
-                        if (armorInfo[kind][1] == 0)
-                        {
-                            armorInfo[kind][1] = grade;
-                        }
-                        else if (armorInfo[kind][1] > grade)
-                        {
-                            armorInfo[kind][1] = grade;
-                        }
+                        targetContainer.Items.Remove(itemInTargetSlot);
+                        sourceContainer.Items.Add(itemInTargetSlot);
+                        itemInTargetSlot._holdingContainer = sourceContainer;
+                        sourceContainer.UpdateFreeSlotCount();
                     }
-
-                    if (armorInfo[kind][0] > maxKind)
-                    {
-                        maxKind = kind;
-                    }
-
-                    armorInfo[kind][2] += (uint)((pieceTemplate.Level * pieceTemplate.Level) / 15) + 30;
-                }
+                    break;
+                default:
+                    Owner.SendMessage("|cFFFF0000SplitOrMoveItem swap action not implemented " + action.ToString() + "|r");
+                    _log.Error("SplitOrMoveItem swap action not implemented " + action.ToString());
+                    break;
             }
 
-            uint armorKindBuffId = 0;
-            uint armorGradeBuffId = 0;
-            if (maxKind != 0 && armorInfo[maxKind][0] >= 4 && armorInfo[maxKind][0] < 7)
+            // Handle Equipment Broadcasting
+            if (fromType == SlotType.Equipment)
             {
-                switch (maxKind)
-                {
-                    case 1:
-                        armorKindBuffId = (uint)ArmorKindBuff.Cloth4;
-                        break;
-                    case 2:
-                        armorKindBuffId = (uint)ArmorKindBuff.Leather4;
-                        break;
-                    case 3:
-                        armorKindBuffId = (uint)ArmorKindBuff.Plate4;
-                        break;
-                }
+                Owner.BroadcastPacket(
+                    new SCUnitEquipmentsChangedPacket(Owner.ObjId, fromSlot, Equipment.GetItemBySlot(fromSlot)), false);
             }
-            else if (maxKind != 0 && armorInfo[maxKind][0] == 7)
+
+            if (toType == SlotType.Equipment)
             {
-                switch (maxKind)
-                {
-                    case 1:
-                        armorKindBuffId = (uint)ArmorKindBuff.Cloth7;
-                        break;
-                    case 2:
-                        armorKindBuffId = (uint)ArmorKindBuff.Leather7;
-                        break;
-                    case 3:
-                        armorKindBuffId = (uint)ArmorKindBuff.Plate7;
-                        break;
-                }
+                Owner.BroadcastPacket(
+                    new SCUnitEquipmentsChangedPacket(Owner.ObjId, toSlot, Equipment.GetItemBySlot(toSlot)), false);
             }
+            
+            if (fromType == SlotType.Equipment || toType == SlotType.Equipment) // Used for gear bonuses and gear buffs
+                Owner.UpdateGearBonuses(itemInTargetSlot, fromItem);
 
-            if (armorKindBuffId != 0)
-            {
-                // Half/Full Armor Kind Buff
-                if (Owner.ArmorKindBuffId != armorKindBuffId)
-                {
-                    Owner.Effects.RemoveBuff(Owner.ArmorKindBuffId);
-                    Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(armorKindBuffId), null, DateTime.Now));
-                    Owner.ArmorKindBuffId = armorKindBuffId;
-                }
+            if (itemTasks.Count > 0)
+                Owner.SendPacket(new SCItemTaskSuccessPacket(taskType, itemTasks, new List<ulong>()));
 
-                //Armor Grade Buff
-                if (Owner.ArmorGradeBuffId != armorGradeBuffId)
-                {
-                    Owner.Effects.RemoveBuff(Owner.ArmorGradeBuffId);
-                }
-                armorGradeBuffId = ItemManager.Instance.GetArmorGradeBuffId(maxKind, armorInfo[maxKind][1]);
+            sourceContainer.ApplyBindRules(taskType);
+            if (targetContainer != sourceContainer)
+                targetContainer.ApplyBindRules(taskType);
 
-                if (armorGradeBuffId != 0 && !Owner.Effects.CheckBuff(armorGradeBuffId))
-                {
-                    Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(armorGradeBuffId), null, DateTime.Now, (short)armorInfo[maxKind][2]));
-                }
-                else if (armorGradeBuffId != 0 && Owner.Effects.CheckBuff(armorGradeBuffId))
-                {
-                    Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(armorGradeBuffId), null, DateTime.Now, (short)armorInfo[maxKind][2])); //TODO: update buff instead of reapplying
-                }
-
-                Owner.ArmorGradeBuffId = armorGradeBuffId;
-
-            }
-            else
-            {
-                Owner.Effects.RemoveBuff(Owner.ArmorKindBuffId);
-                Owner.Effects.RemoveBuff(Owner.ArmorGradeBuffId);
-                Owner.ArmorKindBuffId = 0;
-            }
-
-            //Get Armor Set Bonuses
-            var armorSetBuffIds = new List<uint>();
-            foreach (var (key, value) in armorSets)
-            {
-                var armorSet = ItemManager.Instance.GetItemSetBonus(key);
-                try
-                {
-                    if (armorSet.SetBonuses.Keys.Min() <= value)
-                    {
-                        uint highestNumPieces = 0;
-                        foreach (var numPieces in armorSet.SetBonuses.Keys.Where(numPieces => numPieces <= value && numPieces > highestNumPieces))
-                        {
-                            highestNumPieces = numPieces;
-                        }
-
-                        if (highestNumPieces != 0)
-                        {
-                            armorSetBuffIds.Add(armorSet.SetBonuses[highestNumPieces].BuffId);
-                        }
-                    }
-                }
-                catch (ArgumentNullException argumentNullException)
-                {
-                    // TODO: Handle the System.ArgumentNullException
-                }
-            }
-
-            //Apply Armor Set Bonuses
-            try
-            {
-                foreach (var buffId in armorSetBuffIds.Where(buffId => !Owner.ArmorSetBuffIds.Contains(buffId)))
-                {
-                    Owner.Effects.AddEffect(new Effect(Owner, Owner, SkillCaster.GetByType(SkillCasterType.Item), SkillManager.Instance.GetBuffTemplate(buffId), null, DateTime.Now));
-                }
-            }
-            catch (ArgumentNullException argumentNullException)
-            {
-                // TODO: Handle the System.ArgumentNullException
-            }
-
-            //Remove old Armor set bonuses
-            try
-            {
-                foreach (var buffId in Owner.ArmorSetBuffIds.Where(buffId => !armorSetBuffIds.Contains(buffId)))
-                {
-                    Owner.Effects.RemoveBuff(buffId);
-                }
-            }
-            catch (ArgumentNullException argumentNullException)
-            {
-                // TODO: Handle the System.ArgumentNullException
-            }
-            Owner.ArmorSetBuffIds = armorSetBuffIds;
+            return (itemTasks.Count > 0);
         }
 
-        public bool TakeoffBackpack()
+
+        public bool TakeoffBackpack(ItemTaskType taskType,bool glidersOnly = false)
         {
-            var backpack = GetItem(SlotType.Equipment, (byte)EquipmentItemSlot.Backpack);
+            var backpack = GetEquippedBySlot(EquipmentItemSlot.Backpack);
             if (backpack == null) return true;
 
-            // Move to first available slot
-            var slot = CheckFreeSlot(SlotType.Inventory);
-            if (slot == -1) return false;
+            // Check glider if needed
+            if ((glidersOnly) && (backpack.Template is BackpackTemplate bt) && (bt.BackpackType != BackpackType.Glider))
+                return false;
 
-            Move(backpack.Id, SlotType.Equipment, (byte)EquipmentItemSlot.Backpack, 0, SlotType.Inventory, (byte)slot, 1);
+            // Move to first available slot
+            if (Bag.FreeSlotCount <= 0) 
+                return false;
+            
+            Bag.AddOrMoveExistingItem(taskType, backpack);
+
             return true;
         }
 
-        public Item GetItem(ulong id)
+        public bool TryEquipNewBackPack(ItemTaskType taskType, uint itemId, int itemCount, int gradeToAdd = -1, uint crafterId = 0)
         {
-            foreach (var item in Equip)
-                if (item != null && item.Id == id)
-                    return item;
-            foreach (var item in Items)
-                if (item != null && item.Id == id)
-                    return item;
+            // Remove player backpack
+            if (Owner.Inventory.TakeoffBackpack(taskType, true))
+            {
+                // Put tradepack in their backpack slot
+                return Owner.Inventory.Equipment.AcquireDefaultItem(taskType, itemId, itemCount, gradeToAdd, crafterId);
+            }
+            return false;
+        }
+
+        public Item GetItemById(ulong id)
+        {
+            foreach(var c in _itemContainers)
+            {
+                if ((c.Key == SlotType.Equipment) || (c.Key == SlotType.Inventory) || (c.Key == SlotType.Bank))
+                {
+                    foreach(var i in c.Value.Items)
+                    {
+                        if ((i != null) && (i.Id == id))
+                            return i ;
+                    }
+                }
+            }
             return null;
         }
 
-        public Item GetItemByTemplateId(ulong templateId)
+
+        public Item GetEquippedBySlot(EquipmentItemSlot slot)
         {
-            foreach (var item in Equip)
-                if (item != null && item.TemplateId == templateId)
-                    return item;
-            foreach (var item in Items)
-                if (item != null && item.TemplateId == templateId)
-                    return item;
-            return null;
+            return Equipment.GetItemBySlot((byte)slot);
         }
 
         public Item GetItem(SlotType type, byte slot)
@@ -1536,13 +609,13 @@ namespace AAEmu.Game.Models.Game.Char
                     // TODO ...
                     break;
                 case SlotType.Equipment:
-                    item = Equip[slot];
+                    item = Equipment.GetItemBySlot(slot);
                     break;
                 case SlotType.Inventory:
-                    item = Items[slot];
+                    item = Bag.GetItemBySlot(slot);
                     break;
                 case SlotType.Bank:
-                    item = Bank[slot];
+                    item = Warehouse.GetItemBySlot(slot);
                     break;
                 case SlotType.Trade:
                     // TODO ...
@@ -1555,101 +628,12 @@ namespace AAEmu.Game.Models.Game.Char
             return item;
         }
 
-        public int CountFreeSlots(SlotType type)
+        public int FreeSlotCount(SlotType type)
         {
-            var slot = 0;
-            if (type == SlotType.Inventory)
-            {
-                for (var i = 0; i < Owner.NumInventorySlots; i++)
-                    if (Items[i] == null) slot++;
-            }
-            else if (type == SlotType.Bank)
-            {
-                for (var i = 0; i < Owner.NumBankSlots; i++)
-                    if (Bank[i] == null) slot++;
-            }
-
-            return slot;
-        }
-
-        public int CheckFreeSlot(SlotType type)
-        {
-            var slot = 0;
-            if (type == SlotType.Inventory)
-            {
-                while (Items[slot] != null)
-                    slot++;
-                if (slot > Items.Length)
-                    slot = -1;
-            }
-            else if (type == SlotType.Bank)
-            {
-                while (Bank[slot] != null)
-                    slot++;
-                if (slot > Bank.Length)
-                    slot = -1;
-            }
-
-            return slot;
-        }
-        
-
-        public int GetFirstFreeSlot(SlotType type)
-        {
-            var slot = -1;
-            if (type == SlotType.Inventory)
-            {
-                for (var i = 0; i < Owner.NumInventorySlots; i++)
-                {
-                    if (Items[i] == null)
-                    {
-                        slot = i;
-                        break;
-                    }
-                }
-            }
-            else if (type == SlotType.Bank)
-            {
-                for (var i = 0; i < Owner.NumBankSlots; i++)
-                {
-                    if (Items[i] == null)
-                    {
-                        slot = i;
-                        break;
-                    }
-                }
-            }
-
-            return slot;
-        }
-
-        public int GetFirstFreeSlot(SlotType type, int ignoreSlot)
-        {
-            var slot = -1;
-            if (type == SlotType.Inventory)
-            {
-                for (var i = 0; i < Owner.NumInventorySlots; i++)
-                {
-                    if (Items[i] == null && i != ignoreSlot)
-                    {
-                        slot = i;
-                        break;
-                    }
-                }
-            }
-            else if (type == SlotType.Bank)
-            {
-                for (var i = 0; i < Owner.NumBankSlots; i++)
-                {
-                    if (Items[i] == null && i != ignoreSlot)
-                    {
-                        slot = i;
-                        break;
-                    }
-                }
-            }
-
-            return slot;
+            if (_itemContainers.TryGetValue(type, out var c))
+                return c.FreeSlotCount;
+            else
+                return 0;
         }
 
         private void SendFragmentedInventory(SlotType slotType, byte numItems, Item[] bag)
@@ -1670,102 +654,83 @@ namespace AAEmu.Game.Models.Game.Char
 
         public void ExpandSlot(SlotType slotType)
         {
-            /*
-            * NOTE: server side sqlite db bag_expands table contains no item_id's or  item_counts, old expansion method will always fail
-            * while successful expansion is done client side, causing item's placed in the new slots client side to be placed outside of 
-            * serverside inventory array.
-            */
-
-            if (GetItemsCount(ExpansionScrollId) < 1)
+            var isBank = slotType == SlotType.Bank;
+            var step = ((isBank ? Owner.NumBankSlots : Owner.NumInventorySlots) - 50) / 10;
+            var expands = CharacterManager.Instance.GetExpands(step);
+            if (expands == null)
+                return;
+            var index = expands.FindIndex(e => e.IsBank == isBank);
+            if (index == -1)
+                return;
+            var expand = expands[index];
+            if (expand.Price != 0 && Owner.Money < expand.Price)
             {
-                //Not enough expansion scrolls
-                Owner.SendErrorMessage(ErrorMessageType.NotEnoughExpandItem);
+                _log.Warn("No Money for expand!");
                 return;
             }
 
-            var slots = 0;
-            var price = 0;
-            var taskType = ItemTaskType.ExpandBag;
-            if (slotType == SlotType.Bank)
+            if (expand.ItemId != 0 && expand.ItemCount != 0 && !CheckItems(SlotType.Inventory, expand.ItemId, expand.ItemCount))
             {
-                var nextExpand = CharacterManager.Instance.GetExpandForNextStep(SlotType.Bank, ((Owner.NumBankSlots - 50) / 10));
-                if (nextExpand != null)
-                {
-                    if (Owner.Money < nextExpand.Price)
-                    {
-                        //Not enough money to expand bank
-                        Owner.SendErrorMessage(ErrorMessageType.NotEnoughCoin);
-                        return;
-                    }
-
-                    if (Owner.NumBankSlots >= MaxExpandCapacity)
-                    {
-                        //Already Expanded bank to maximum size
-                        return;
-                    }
-
-                    Owner.NumBankSlots += 10;
-                    slots = Owner.NumBankSlots;
-                    taskType = ItemTaskType.ExpandBank;
-                }
-                else
-                {
-                    //Bank already Expanded to maximum size
-                    return;
-                }
-            }
-
-            if (slotType == SlotType.Inventory)
-            {
-                var nextExpand = CharacterManager.Instance.GetExpandForNextStep(SlotType.Inventory, ((Owner.NumInventorySlots - 50) / 10));
-                if (nextExpand != null)
-                {
-                    if (Owner.Money < nextExpand.Price)
-                    {
-                        //Not enough money to expand Inventory
-                        Owner.SendErrorMessage(ErrorMessageType.NotEnoughCoin);
-                        return;
-                    }
-
-                    if (Owner.NumBankSlots >= MaxExpandCapacity)
-                    {
-                        //Already inventory to maximum size
-                        return;
-                    }
-
-                    Owner.NumInventorySlots += 10;
-                    slots = Owner.NumInventorySlots;
-
-                }
-                else
-                {
-                    //Inventory already Expanded to maximum size
-                    return;
-                }
-            }
-
-            if (slotType != SlotType.Inventory && slotType != SlotType.Bank)
-            {
-                _log.Warn("Invalid slot type tried to be expanded");
+                _log.Warn("Item or Count not fount.");
                 return;
             }
 
-            //Remove 1 expansion scroll
-            RemoveItem(ExpansionScrollId, 1, taskType);
+            var tasks = new List<ItemTask>();
+            if (expand.Price != 0)
+            {
+                Owner.Money -= expand.Price;
+                tasks.Add(new MoneyChange(-expand.Price));
+            }
 
-            Owner.ChangeMoney(SlotType.Inventory, -price);
+            if (expand.ItemId != 0 && expand.ItemCount != 0)
+            {
+                Bag.ConsumeItem(isBank ? ItemTaskType.ExpandBank : ItemTaskType.ExpandBag, expand.ItemId, expand.ItemCount,null);
+            }
 
-            Owner.SendPacket(new SCInvenExpandedPacket(slotType, (byte)slots));
+            if (isBank)
+            {
+                Owner.NumBankSlots = (short)(50 + 10 * (1 + step));
+                Warehouse.ContainerSize = Owner.NumBankSlots;
+            }
+            else
+            {
+                Owner.NumInventorySlots = (byte)(50 + 10 * (1 + step));
+                Bag.ContainerSize = Owner.NumInventorySlots;
+            }
+
+            Owner.SendPacket(
+                new SCInvenExpandedPacket(
+                    isBank ? SlotType.Bank : SlotType.Inventory,
+                    isBank ? (byte)Owner.NumBankSlots : Owner.NumInventorySlots
+                )
+            );
         }
 
-        public void ClearInventory()
+        /// <summary>
+        /// Triggers whenever a new item is added to the player
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="count"></param>
+        /// <param name="onlyUpdatedCount"></param>
+        public void OnAcquiredItem(Item item,int count,bool onlyUpdatedCount = false)
         {
-            foreach (var item in Items)
-            {
-                //Remove all non-null and non-teleport book items from inventory
-                if (item != null && item.TemplateId != 4045)
-                    RemoveItem(item, true, ItemTaskType.Gm);
-            }
+            // Quests
+            if ((item?.Template.LootQuestId > 0) && (count != 0))
+                Owner?.Quests?.OnItemGather(item, count);
         }
+
+        /// <summary>
+        /// Triggers whenever a item (count) is removed
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="count"></param>
+        /// <param name="onlyUpdatedCount"></param>
+        public void OnConsumedItem(Item item, int count, bool onlyUpdatedCount = false)
+        {
+            // Quests
+            if ((item?.Template.LootQuestId > 0) && (count != 0))
+                Owner?.Quests?.OnItemGather(item, -count);
+        }
+
     }
 }

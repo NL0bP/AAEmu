@@ -1,13 +1,16 @@
-﻿using System;
+using System;
+using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class Resurrection : ISpecialEffect
+    public class Resurrection : SpecialEffectAction
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
+
+        public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
             SkillCastTarget targetObj,
@@ -20,8 +23,12 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
-            // TODO ...
-            _log.Warn("Special effects: Resurrection");
+            if (target is Character character && character.Hp <= 0)
+            {
+                character.SendPacket(new SCNotifyResurrectionPacket(casterObj));
+                character.ResurrectHpPercent = (uint) value2;
+                character.ResurrectMpPercent = (uint) value3;
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.Skills
 {
@@ -8,7 +9,7 @@ namespace AAEmu.Game.Models.Game.Skills
         public uint OwnerId { get; set; }
         public string OwnerType { get; set; } // unused - always "Buff"
         public uint TagId { get; set; }
-        public SkillAttributeType SkillAttribute { get; set; }
+        public SkillAttribute SkillAttribute { get; set; }
         public UnitModifierType UnitModifierType { get; set; }
         public int Value { get; set; }
         public uint SkillId { get; set; }

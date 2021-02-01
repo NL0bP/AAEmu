@@ -42,7 +42,6 @@ namespace AAEmu.Game.Core.Managers
                             template.ShowUpperCraft = reader.GetBoolean("show_upper_crafts");
                             template.RecommendLevel = reader.GetInt32("recommend_level");
                             template.VisibleOrder = reader.GetInt32("visible_order");
-                            template.Title = LocalizationManager.Instance.GetEnglishLocalizedText("crafts", "title", template.Id);
                             _crafts.Add(template.Id, template);
                         }
                     }

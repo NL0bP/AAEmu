@@ -1,8 +1,7 @@
 ﻿namespace AAEmu.Game.Models.Game.Formulas
 {
-    public enum UnitOwnerType : byte
+    public enum FormulaOwnerType : byte
     {
-        //unit_owner_type
         Character = 0,
         Npc = 1,
         Slave = 2,
@@ -14,17 +13,17 @@
 
     public enum UnitFormulaKind : byte
     {
+        // Commented Formula Kinds do not exist
         // TODO v.1.0
-        //unit_formula_kind
         MeleeCritical = 1,
         MeleeAntiMiss = 2,
-        MeleeDodge = 3,
-        MeleeBlock = 4,
+        //MeleeDodge = 3,
+        //MeleeBlock = 4,
         MeleeParry = 5,
         RangedCritical = 6,
         RangedAntiMiss = 7,
-        RangedDodge = 8,
-        RangedBlock = 9,
+        //RangedDodge = 8,
+        //RangedBlock = 9,
         SpellCritical = 10,
         SpellAntiMiss = 11,
         LevelDps = 12,
@@ -69,6 +68,6 @@
     public class UnitFormula : Formula
     {
         public UnitFormulaKind Kind { get; set; }
-        public UnitOwnerType Owner { get; set; }
+        public FormulaOwnerType Owner { get; set; }
     }
 }

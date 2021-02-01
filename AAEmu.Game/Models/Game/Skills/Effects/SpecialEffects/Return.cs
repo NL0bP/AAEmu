@@ -1,13 +1,16 @@
 ﻿using System;
+
 using AAEmu.Game.Models.Game.Units;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
 {
-    public class Return : ISpecialEffect
+    public class Return : SpecialEffectAction
     {
         private static Logger _log = LogManager.GetCurrentClassLogger();
-        public void Execute(Unit caster,
+
+        public override void Execute(Unit caster,
             SkillCaster casterObj,
             BaseUnit target,
             SkillCastTarget targetObj,
@@ -20,8 +23,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
-            // TODO ...
-            _log.Warn("Special effects: Return");
+            _log.Warn("value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4);
         }
     }
 }

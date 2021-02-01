@@ -1,4 +1,5 @@
-﻿using AAEmu.Game.Core.Managers.Id;
+﻿using System;
+using System.Collections.Generic;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 
@@ -7,7 +8,6 @@ namespace AAEmu.Game.Models.Tasks.Skills
     public class MeleeCastTask : SkillTask
     {
         //private readonly uint _skillId;
-        private readonly Skill _skill;
         private readonly Unit _caster;
         private readonly SkillCaster _casterCaster;
         private readonly BaseUnit _target;
@@ -16,7 +16,6 @@ namespace AAEmu.Game.Models.Tasks.Skills
 
         public MeleeCastTask(Skill skill, Unit caster, SkillCaster casterCaster, BaseUnit target, SkillCastTarget targetCaster, SkillObject skillObject) : base(skill)
         {
-            _skill = skill;
             _caster = caster;
             _casterCaster = casterCaster;
             _target = target;
@@ -26,8 +25,7 @@ namespace AAEmu.Game.Models.Tasks.Skills
 
         public override void Execute()
         {
-            _skill.TlId = (ushort)TlIdManager.Instance.GetNextId();
-            _skill.Cast(_caster, _casterCaster, _target, _targetCaster, _skillObject);
+            Skill.Cast(_caster, _casterCaster, _target, _targetCaster, _skillObject);
         }
     }
 }

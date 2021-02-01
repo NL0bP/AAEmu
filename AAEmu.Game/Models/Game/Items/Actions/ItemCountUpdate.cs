@@ -7,9 +7,14 @@ namespace AAEmu.Game.Models.Game.Items.Actions
         private readonly Item _item;
         private readonly int _count;
 
+        /// <summary>
+        /// Add or subtracts count from the item count of a given item
+        /// </summary>
+        /// <param name="item">Item to update</param>
+        /// <param name="count">Amount to add or subtract</param>
         public ItemCountUpdate(Item item, int count)
         {
-            _type = 4;
+            _type = ItemAction.AddStack;
             _item = item;
             _count = count;
         }

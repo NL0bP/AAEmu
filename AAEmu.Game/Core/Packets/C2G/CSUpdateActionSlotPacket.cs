@@ -6,7 +6,7 @@ namespace AAEmu.Game.Core.Packets.C2G
 {
     public class CSUpdateActionSlotPacket : GamePacket
     {
-        public CSUpdateActionSlotPacket() : base(0x0b6, 1)
+        public CSUpdateActionSlotPacket() : base(CSOffsets.CSUpdateActionSlotPacket, 1)
         {
         }
 
@@ -22,7 +22,6 @@ namespace AAEmu.Game.Core.Packets.C2G
                     break;
                 case ActionSlotType.Item:
                 case ActionSlotType.Skill:
-                case ActionSlotType.Unk5:
                     // TODO убрать что бы найти что это ... case ActionSlotType.Unk5:
                     var actionId = stream.ReadUInt32();
                     Connection.ActiveChar.SetAction(slot, type, actionId);
@@ -30,9 +29,6 @@ namespace AAEmu.Game.Core.Packets.C2G
                 case ActionSlotType.Unk4:
                     var itemId = stream.ReadUInt64();
                     // TODO
-                    break;
-                case ActionSlotType.Unk3:
-                    _log.Error("UpdateActionSlot, Unknown packet type!");
                     break;
                 default:
                     _log.Error("UpdateActionSlot, Unknown packet type!");
