@@ -1,8 +1,17 @@
-CREATE DATABASE IF NOT EXISTS `aaemu_game`;
-USE aaemu_game;
--- --------------------------------------------------------------------------
--- Make sure to remove the above two lines if you want use your own DB names
--- --------------------------------------------------------------------------
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : archeage
+Source Server Version : 80012
+Source Host           : localhost:3306
+Source Database       : aaemu_game
+
+Target Server Type    : MYSQL
+Target Server Version : 80012
+File Encoding         : 65001
+
+Date: 2020-10-30 14:42:34
+*/
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -18,10 +27,6 @@ CREATE TABLE `abilities` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of abilities
--- ----------------------------
-
--- ----------------------------
 -- Table structure for actabilities
 -- ----------------------------
 DROP TABLE IF EXISTS `actabilities`;
@@ -32,10 +37,6 @@ CREATE TABLE `actabilities` (
   `owner` int(10) unsigned NOT NULL,
   PRIMARY KEY (`owner`,`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of actabilities
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for appellations
@@ -49,8 +50,41 @@ CREATE TABLE `appellations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of appellations
+-- Table structure for auction_house
 -- ----------------------------
+DROP TABLE IF EXISTS `auction_house`;
+CREATE TABLE `auction_house` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `duration` tinyint(4) NOT NULL,
+  `item_id` int(11) NOT NULL,
+  `object_id` int(11) NOT NULL,
+  `grade` tinyint(1) NOT NULL,
+  `flags` tinyint(1) NOT NULL,
+  `stack_size` int(11) NOT NULL,
+  `detail_type` tinyint(1) NOT NULL,
+  `creation_time` datetime NOT NULL,
+  `lifespan_mins` int(11) NOT NULL,
+  `type_1` int(11) NOT NULL,
+  `world_id` tinyint(4) NOT NULL,
+  `unsecure_date_time` varchar(45) NOT NULL,
+  `unpack_date_time` varchar(45) NOT NULL,
+  `world_id_2` tinyint(4) NOT NULL,
+  `client_id` int(11) NOT NULL,
+  `client_name` varchar(45) NOT NULL,
+  `start_money` int(11) NOT NULL,
+  `direct_money` int(11) NOT NULL,
+  `time_left` int(11) NOT NULL,
+  `bid_world_id` tinyint(1) NOT NULL,
+  `bidder_id` int(11) NOT NULL,
+  `bidder_name` varchar(45) NOT NULL,
+  `bid_money` int(11) NOT NULL,
+  `extra` int(11) NOT NULL,
+  `item_name` varchar(45) NOT NULL,
+  `category_a` int(11) NOT NULL,
+  `category_b` int(11) NOT NULL,
+  `category_c` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Table structure for blocked
@@ -61,10 +95,6 @@ CREATE TABLE `blocked` (
   `blocked_id` int(11) NOT NULL,
   PRIMARY KEY (`owner`,`blocked_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of blocked
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for cash_shop_item
@@ -101,53 +131,6 @@ CREATE TABLE `cash_shop_item` (
   `dis_price` int(10) unsigned DEFAULT '0' COMMENT '当前售价',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=20100054 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='此表来自于代码中的字段并去除重复字段生成。字段名称和内容以代码为准。';
-
--- ----------------------------
--- Records of cash_shop_item
--- ----------------------------
-INSERT INTO `cash_shop_item` VALUES ('20100011', '20100011', '1-1', '1', '1', '0', '0', '29176', '0', '0', '0', '0', '0', '0', '2019-05-01 14:10:08', '2055-06-16 14:10:12', '0', '874', '85', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100012', '20100012', '1-2', '1', '2', '0', '0', '29177', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100013', '20100013', '1-3', '1', '3', '0', '0', '29178', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100014', '20100014', '1-4', '1', '4', '0', '0', '29179', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100015', '20100015', '1-5', '1', '5', '0', '0', '29180', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100016', '20100016', '1-6', '1', '6', '0', '0', '29181', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100017', '20100017', '1-7', '1', '7', '0', '0', '29182', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100018', '20100018', '2-1', '2', '1', '0', '0', '29183', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100019', '20100019', '2-1', '2', '1', '0', '0', '29184', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100020', '20100020', '2-2', '2', '2', '0', '0', '29185', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100021', '20100021', '2-3', '2', '3', '0', '0', '29186', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100022', '20100022', '2-4', '2', '4', '0', '0', '29187', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100023', '20100023', '2-5', '2', '5', '0', '0', '29188', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100024', '20100024', '2-6', '2', '6', '0', '0', '29189', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100025', '20100025', '2-7', '2', '7', '0', '0', '29190', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100026', '20100026', '3-1', '3', '1', '0', '0', '29191', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100027', '20100027', '3-2', '3', '2', '0', '0', '29192', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100028', '20100028', '3-3', '3', '3', '0', '0', '29193', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100029', '20100029', '3-4', '3', '4', '0', '0', '29194', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100030', '20100030', '3-5', '3', '5', '0', '0', '29195', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100031', '20100031', '3-6', '3', '6', '0', '0', '29196', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100032', '20100032', '3-7', '3', '7', '0', '0', '29197', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100033', '20100033', '4-1', '4', '1', '0', '0', '29198', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100034', '20100034', '4-2', '4', '2', '0', '0', '29199', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100035', '20100035', '4-3', '4', '3', '0', '0', '29200', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100036', '20100036', '4-4', '4', '4', '0', '0', '29201', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100037', '20100037', '4-6', '4', '5', '0', '0', '29202', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100038', '20100038', '4-6', '4', '6', '0', '0', '29203', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100039', '20100039', '4-7', '4', '7', '0', '0', '29204', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100040', '20100040', '5-1', '5', '1', '0', '0', '29205', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100041', '20100041', '5-2', '5', '2', '0', '0', '29206', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100042', '20100042', '5-3', '5', '3', '0', '0', '29207', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100043', '20100043', '5-4', '5', '4', '0', '0', '29208', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100044', '20100044', '5-5', '5', '5', '0', '0', '29209', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100045', '20100045', '5-6', '5', '6', '0', '0', '29210', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100046', '20100046', '5-7', '5', '7', '0', '0', '29211', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100047', '20100047', '6-1', '6', '1', '0', '0', '29212', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100048', '20100048', '6-2', '6', '2', '0', '0', '29213', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100049', '20100049', '6-3', '6', '3', '0', '0', '29214', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100050', '20100050', '6-4', '6', '4', '0', '0', '29215', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100051', '20100051', '6-5', '6', '5', '0', '0', '29216', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100052', '20100052', '6-6', '6', '6', '0', '0', '29217', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
-INSERT INTO `cash_shop_item` VALUES ('20100053', '20100053', '6-7', '6', '7', '0', '0', '29218', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0001-01-01 00:00:00', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0001-01-01 00:00:00', '0');
 
 -- ----------------------------
 -- Table structure for characters
@@ -196,8 +179,6 @@ CREATE TABLE `characters` (
   `vocation_point` int(11) NOT NULL,
   `crime_point` int(11) NOT NULL,
   `crime_record` int(11) NOT NULL,
-  `pvp_honor` int(11) NOT NULL DEFAULT 0,
-  `hostile_faction_kills` int(11) NOT NULL DEFAULT 0,
   `delete_request_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `transfer_request_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
   `delete_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
@@ -217,10 +198,6 @@ CREATE TABLE `characters` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of characters
--- ----------------------------
-
--- ----------------------------
 -- Table structure for completed_quests
 -- ----------------------------
 DROP TABLE IF EXISTS `completed_quests`;
@@ -230,10 +207,6 @@ CREATE TABLE `completed_quests` (
   `owner` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id`,`owner`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Records of completed_quests
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for expeditions
@@ -248,10 +221,6 @@ CREATE TABLE `expeditions` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`,`owner`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of expeditions
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for expedition_members
@@ -270,10 +239,6 @@ CREATE TABLE `expedition_members` (
   `memo` varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   PRIMARY KEY (`character_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of expedition_members
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for expedition_role_policies
@@ -296,10 +261,6 @@ CREATE TABLE `expedition_role_policies` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of expedition_role_policies
--- ----------------------------
-
--- ----------------------------
 -- Table structure for family_members
 -- ----------------------------
 DROP TABLE IF EXISTS `family_members`;
@@ -313,10 +274,6 @@ CREATE TABLE `family_members` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of family_members
--- ----------------------------
-
--- ----------------------------
 -- Table structure for friends
 -- ----------------------------
 DROP TABLE IF EXISTS `friends`;
@@ -326,10 +283,6 @@ CREATE TABLE `friends` (
   `owner` int(11) NOT NULL,
   PRIMARY KEY (`id`,`owner`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of friends
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for housings
@@ -349,28 +302,18 @@ CREATE TABLE `housings` (
   `current_step` tinyint(4) NOT NULL,
   `current_action` int(11) NOT NULL DEFAULT '0',
   `permission` tinyint(4) NOT NULL,
-  `place_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `protected_until` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `faction_id` int(10) unsigned NOT NULL DEFAULT '1',
-  `sell_to` int(10) unsigned NOT NULL DEFAULT '0',
-  `sell_price` bigint(20) NOT NULL DEFAULT '0',
   PRIMARY KEY (`account_id`,`owner`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Records of housings
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for items
 -- ----------------------------
 DROP TABLE IF EXISTS `items`;
-
 CREATE TABLE `items` (
   `id` bigint(20) unsigned NOT NULL,
   `type` varchar(100) NOT NULL,
   `template_id` int(11) unsigned NOT NULL,
-  `slot_type` enum('Equipment','Inventory','Bank','Trade','Mail','System') NOT NULL,
+  `slot_type` enum('Equipment','Inventory','Bank','Trade','Mail') NOT NULL,
   `slot` int(11) NOT NULL,
   `count` int(11) NOT NULL,
   `details` blob,
@@ -382,13 +325,10 @@ CREATE TABLE `items` (
   `grade` tinyint(1) DEFAULT '0',
   `flags` tinyint(3) unsigned NOT NULL,
   `created_at` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
+  `bounded` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`) USING BTREE,
   KEY `owner` (`owner`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of items
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for mails
@@ -427,10 +367,6 @@ CREATE TABLE `mails` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
--- Records of mails
--- ----------------------------
-
--- ----------------------------
 -- Table structure for mates
 -- ----------------------------
 DROP TABLE IF EXISTS `mates`;
@@ -450,10 +386,6 @@ CREATE TABLE `mates` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of mates
--- ----------------------------
-
--- ----------------------------
 -- Table structure for options
 -- ----------------------------
 DROP TABLE IF EXISTS `options`;
@@ -463,10 +395,6 @@ CREATE TABLE `options` (
   `owner` int(11) unsigned NOT NULL,
   PRIMARY KEY (`key`,`owner`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of options
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for portal_book_coords
@@ -486,10 +414,6 @@ CREATE TABLE `portal_book_coords` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
 
 -- ----------------------------
--- Records of portal_book_coords
--- ----------------------------
-
--- ----------------------------
 -- Table structure for portal_visited_district
 -- ----------------------------
 DROP TABLE IF EXISTS `portal_visited_district`;
@@ -499,10 +423,6 @@ CREATE TABLE `portal_visited_district` (
   `owner` int(11) NOT NULL,
   PRIMARY KEY (`id`,`subzone`,`owner`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of portal_visited_district
--- ----------------------------
 
 -- ----------------------------
 -- Table structure for quests
@@ -518,10 +438,6 @@ CREATE TABLE `quests` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
--- Records of quests
--- ----------------------------
-
--- ----------------------------
 -- Table structure for skills
 -- ----------------------------
 DROP TABLE IF EXISTS `skills`;
@@ -532,70 +448,4 @@ CREATE TABLE `skills` (
   `owner` int(11) unsigned NOT NULL,
   PRIMARY KEY (`id`,`owner`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
--- ----------------------------
--- Records of skills
--- ----------------------------
-
--- ----------------------------
--- Table structure for auction_house
--- ----------------------------
-
-DROP TABLE IF EXISTS `auction_house`;
-CREATE TABLE `auction_house` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `duration` tinyint NOT NULL,
-  `item_id` int NOT NULL,
-  `object_id` int NOT NULL,
-  `grade` tinyint(1) NOT NULL,
-  `flags` tinyint(1) NOT NULL,
-  `stack_size` int NOT NULL,
-  `detail_type` tinyint(1) NOT NULL,
-  `creation_time` datetime NOT NULL,
-  `end_time` datetime NOT NULL,
-  `lifespan_mins` int NOT NULL,
-  `type_1` int NOT NULL,
-  `world_id` tinyint NOT NULL,
-  `unsecure_date_time` varchar(45) NOT NULL,
-  `unpack_date_time` varchar(45) NOT NULL,
-  `world_id_2` tinyint NOT NULL,
-  `client_id` int NOT NULL,
-  `client_name` varchar(45) NOT NULL,
-  `start_money` int NOT NULL,
-  `direct_money` int NOT NULL,
-  `bid_world_id` tinyint(1) NOT NULL,
-  `bidder_id` int NOT NULL,
-  `bidder_name` varchar(45) NOT NULL,
-  `bid_money` int NOT NULL,
-  `extra` int NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
-
-DROP TABLE IF EXISTS `accounts`;
-CREATE TABLE `accounts` (
-  `account_id` INT NOT NULL,
-  `credits` INT NOT NULL DEFAULT 0,
-  PRIMARY KEY (`account_id`)
-)  ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
-
-DROP TABLE IF EXISTS `aaemu_game`.`doodads`;
-CREATE TABLE `aaemu_game`.`doodads` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `owner_id` int,
-  `owner_type` tinyint(4) unsigned DEFAULT 255,
-  `template_id` int NOT NULL,
-  `current_phase_id` int NOT NULL,
-  `plant_time` datetime NOT NULL,
-  `growth_time` datetime NOT NULL,
-  `phase_time` datetime NOT NULL,
-  `x` float NOT NULL,
-  `y` float NOT NULL,
-  `z` float NOT NULL,
-  `rotation_x` tinyint(4) NOT NULL,
-  `rotation_y` tinyint(4) NOT NULL,
-  `rotation_z` tinyint(4) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
-
+SET FOREIGN_KEY_CHECKS=1;

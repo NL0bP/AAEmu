@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using AAEmu.Commons.IO;
-using AAEmu.Game.Genesis;
 using AAEmu.Game.Models;
 using AAEmu.Game.Utils.DB;
 using Microsoft.Extensions.Configuration;
@@ -64,7 +63,6 @@ namespace AAEmu.Game
                 {
                     services.AddOptions();
                     services.AddSingleton<IHostedService, GameService>();
-                    services.AddSingleton<IHostedService, DiscordBotService>();
                 });
             
             await builder.RunConsoleAsync();
