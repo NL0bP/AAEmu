@@ -38,9 +38,9 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var template = SkillManager.Instance.GetSkillTemplate(skillId);
             if (template.AbilityId > 0 &&
-                template.AbilityId != (byte) Owner.Ability1 &&
-                template.AbilityId != (byte) Owner.Ability2 &&
-                template.AbilityId != (byte) Owner.Ability3)
+                template.AbilityId != (int) Owner.Ability1 &&
+                template.AbilityId != (int) Owner.Ability2 &&
+                template.AbilityId != (int) Owner.Ability3)
                 return;
             var points = ExpirienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
             points -= GetUsedSkillPoints();
@@ -71,9 +71,9 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var template = SkillManager.Instance.GetPassiveBuffTemplate(buffId);
             if(template.AbilityId > 0 && 
-               template.AbilityId != (byte)Owner.Ability1 && 
-               template.AbilityId != (byte)Owner.Ability2 && 
-               template.AbilityId != (byte)Owner.Ability3)
+               template.AbilityId != (int)Owner.Ability1 && 
+               template.AbilityId != (int)Owner.Ability2 && 
+               template.AbilityId != (int)Owner.Ability3)
                 return;
             var points = ExpirienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
             points -= GetUsedSkillPoints();

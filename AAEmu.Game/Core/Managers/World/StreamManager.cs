@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.S2C;
 using AAEmu.Game.Models.Game.DoodadObj;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.World
 {
     public class StreamManager : Singleton<StreamManager>
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
         private readonly Dictionary<uint, ulong> _accounts;
 
         protected StreamManager()
@@ -50,7 +52,9 @@ namespace AAEmu.Game.Core.Managers.World
                 }
             }
             else
+            {
                 connection.SendPacket(new TCJoinResponsePacket(1));
+            }
         }
 
         public void RequestCell(StreamConnection connection, uint instanceId, int x, int y)
@@ -67,9 +71,15 @@ namespace AAEmu.Game.Core.Managers.World
         {
             var doodads = connection.GetRequest(requestId);
             if (doodads == null)
+            {
                 return;
+            }
+
             if (next >= doodads.Length)
+            {
                 connection.RemoveRequest(requestId);
+            }
+
             var count = Math.Min(doodads.Length - next, 30);
             var res = new Doodad[count];
             Array.Copy(doodads, next > 0 ? next - 1 : 0, res, 0, count);

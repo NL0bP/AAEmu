@@ -19,7 +19,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public override Doodad Spawn(uint objId, ulong itemId, uint charId) //Mostly used for player created spawns
         {
 
-            Character character = WorldManager.Instance.GetCharacterByObjId(charId);
+            var character = WorldManager.Instance.GetCharacterByObjId(charId);
             var doodad = DoodadManager.Instance.Create(objId, UnitId, character);
 
             if (doodad == null)

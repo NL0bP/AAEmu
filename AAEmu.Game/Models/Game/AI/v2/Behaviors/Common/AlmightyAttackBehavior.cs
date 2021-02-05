@@ -106,7 +106,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common
 
         private List<AiSkillList> RequestAvailableSkillList(float trgDist)
         {
-            int healthRatio = (int)(((float)Ai.Owner.Hp / Ai.Owner.MaxHp) * 100);
+            var healthRatio = (int)(((float)Ai.Owner.Hp / Ai.Owner.MaxHp) * 100);
 
             var baseList = _aiParams.AiSkillLists.AsEnumerable();
 

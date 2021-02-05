@@ -23,9 +23,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
-            int index = value1;
-            int value = value2;
-            int operation = value3;
+            var index = value1;
+            var value = value2;
+            var operation = value3;
             //value 4 unused
 
 

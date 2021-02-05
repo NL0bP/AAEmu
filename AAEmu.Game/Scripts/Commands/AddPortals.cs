@@ -1,11 +1,7 @@
-﻿using System.Collections.Generic;
-using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
+﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -39,7 +35,7 @@ namespace AAEmu.Game.Scripts.Commands
 
             Character targetPlayer = WorldManager.Instance.GetTargetOrSelf(character, args[0], out var firstarg);
 
-            var portalName = args[firstarg+0];
+            var portalName = args[firstarg + 0];
             var position = character.Position;
             var x = position.X;
             var y = position.Y;
@@ -48,16 +44,29 @@ namespace AAEmu.Game.Scripts.Commands
             var zoneId = position.ZoneId;
 
             if ((args.Length == firstarg + 5) && (float.TryParse(args[firstarg + 1], out float argx)))
+            {
                 x = argx;
+            }
+
             if ((args.Length == firstarg + 5) && (float.TryParse(args[firstarg + 2], out float argy)))
+            {
                 y = argy;
+            }
+
             if ((args.Length == firstarg + 5) && (float.TryParse(args[firstarg + 3], out float argz)))
+            {
                 z = argz;
+            }
+
             if ((args.Length == firstarg + 5) && (uint.TryParse(args[firstarg + 4], out uint argzoneId)))
+            {
                 zoneId = argzoneId;
+            }
             // If not using the current location, set the rotation to zero
             if (args.Length == firstarg + 5)
-                zRot = 0 ;
+            {
+                zRot = 0;
+            }
 
             targetPlayer.Portals.AddPrivatePortal(x, y, z, zRot, zoneId, portalName);
             if (character.Id != targetPlayer.Id)

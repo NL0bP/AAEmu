@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
@@ -58,6 +58,8 @@ namespace AAEmu.Game.Core.Managers
                             };
 
                             _animations.Add(template.Id, template);
+                            if (_animationsByName.ContainsKey(template.Name))
+                                continue;
                             _animationsByName.Add(template.Name, template);
                         }
                     }

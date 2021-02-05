@@ -58,7 +58,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
                 return;
             }
 
-            Item powderItem = character.Inventory.GetItemById(powderSkillItem.ItemId);
+            var powderItem = character.Inventory.GetItemById(powderSkillItem.ItemId);
             if (powderItem == null)
             {
                 return;

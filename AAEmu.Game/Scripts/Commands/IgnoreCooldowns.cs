@@ -1,8 +1,6 @@
 ﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -10,7 +8,7 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            string[] name = { "ignoreskillcds", "disablecooldowns", "ignorecooldowns", "ignorecd"};
+            string[] name = { "ignoreskillcds", "disablecooldowns", "ignorecooldowns", "ignorecd" };
             CommandManager.Instance.Register(name, this);
         }
 
@@ -33,9 +31,13 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             if (bool.TryParse(args[0], out var ignoreCooldowns))
+            {
                 character.IgnoreSkillCooldowns = ignoreCooldowns;
+            }
             else
+            {
                 character.SendMessage("|cFFFF0000[IgnoreCooldowns] Throw parse bool!|r");
+            }
         }
     }
 }

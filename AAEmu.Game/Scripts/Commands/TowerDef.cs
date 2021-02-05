@@ -1,9 +1,8 @@
-using AAEmu.Game.Core.Managers;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.TowerDefs;
-using AAEmu.Game.Utils.Scripts;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -11,7 +10,7 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            CommandManager.Instance.Register(new []{"tower_def", "td", "towerdef"}, this);
+            CommandManager.Instance.Register(new[] { "tower_def", "td", "towerdef" }, this);
         }
 
         public string GetCommandLineHelp()
@@ -38,7 +37,10 @@ namespace AAEmu.Game.Scripts.Commands
                     break;
                 case "start":
                     if (!uint.TryParse(args[1], out var startId))
+                    {
                         return;
+                    }
+
                     var startPacket = new SCTowerDefStartPacket(new TowerDefKey()
                     {
                         TowerDefId = startId,
@@ -48,7 +50,10 @@ namespace AAEmu.Game.Scripts.Commands
                     break;
                 case "end":
                     if (!uint.TryParse(args[1], out var endId))
+                    {
                         return;
+                    }
+
                     var endPacket = new SCTowerDefEndPacket(new TowerDefKey()
                     {
                         TowerDefId = endId,
@@ -58,9 +63,15 @@ namespace AAEmu.Game.Scripts.Commands
                     break;
                 case "next":
                     if (!uint.TryParse(args[1], out var nextId))
+                    {
                         return;
+                    }
+
                     if (!uint.TryParse(args[2], out var step))
+                    {
                         return;
+                    }
+
                     var nextPacket = new SCTowerDefWaveStartPacket(new TowerDefKey()
                     {
                         TowerDefId = nextId,

@@ -228,15 +228,15 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             switch (ItemType)
             {
                 case 1:
-                    WeaponTemplate weaponTemplate = (WeaponTemplate)item.Template;
+                    var weaponTemplate = (WeaponTemplate)item.Template;
                     slotTypeId = weaponTemplate.HoldableTemplate.SlotTypeId;
                     break;
                 case 2:
-                    ArmorTemplate armorTemplate = (ArmorTemplate)item.Template;
+                    var armorTemplate = (ArmorTemplate)item.Template;
                     slotTypeId = armorTemplate.SlotTemplate.SlotTypeId;
                     break;
                 case 24:
-                    AccessoryTemplate accessoryTemplate = (AccessoryTemplate)item.Template;
+                    var accessoryTemplate = (AccessoryTemplate)item.Template;
                     slotTypeId = accessoryTemplate.SlotTemplate.SlotTypeId;
                     break;
             }

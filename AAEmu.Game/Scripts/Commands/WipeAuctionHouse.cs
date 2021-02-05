@@ -1,19 +1,14 @@
-﻿using System.Collections.Generic;
-using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
-    class WipeAuctionHouse : ICommand
+    internal class WipeAuctionHouse : ICommand
     {
         public void OnLoad()
         {
-            string[] name = { "wipeauctionhouse", "wipeah"};
+            string[] name = { "wipeauctionhouse", "wipeah" };
             CommandManager.Instance.Register(name, this);
         }
 

@@ -1,14 +1,6 @@
-﻿using System;
-using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Core.Packets.G2C;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Expeditions;
-using AAEmu.Game.Models.Game.Faction;
-using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -39,10 +31,13 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             var guildName = string.Empty;
-            foreach(var a in args)
+            foreach (var a in args)
             {
                 if (guildName != string.Empty)
+                {
                     guildName += " ";
+                }
+
                 guildName += a;
             }
 

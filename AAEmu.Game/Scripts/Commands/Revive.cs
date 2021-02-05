@@ -29,12 +29,12 @@ namespace AAEmu.Game.Scripts.Commands
             Character targetPlayer = WorldManager.Instance.GetTargetOrSelf(character, args.Length > 0 ? args[0] : null, out var _);
             if (targetPlayer != null)
             {
-                if(targetPlayer.Hp == 0)
+                if (targetPlayer.Hp == 0)
                 {
                     targetPlayer.Hp = targetPlayer.MaxHp;
                     targetPlayer.Mp = targetPlayer.MaxMp;
                     targetPlayer.BroadcastPacket(new SCCharacterResurrectedPacket(targetPlayer.ObjId, targetPlayer.Position.X, targetPlayer.Position.Y, targetPlayer.Position.Z, targetPlayer.Position.RotationZ), true);
-                    targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp), true);
+                    targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp, targetPlayer.HighAbilityRsc), true);
                 }
                 else
                 {

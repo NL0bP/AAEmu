@@ -19,6 +19,7 @@ using InstanceWorld = AAEmu.Game.Models.Game.World.World;
 using AAEmu.Game.Models.Game.Housing;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using AAEmu.Game.Models.Game.Gimmicks;
 
 namespace AAEmu.Game.Core.Managers.World
 {
@@ -37,6 +38,8 @@ namespace AAEmu.Game.Core.Managers.World
         private readonly ConcurrentDictionary<uint, Npc> _npcs;
         private readonly ConcurrentDictionary<uint, Character> _characters;
         private readonly ConcurrentDictionary<uint, AreaShape> _areaShapes;
+        private readonly ConcurrentDictionary<uint, Transfer> _transfers;
+        private readonly ConcurrentDictionary<uint, Gimmick> _gimmicks;
 
         public const int REGION_SIZE = 64;
         public const int CELL_SIZE = 1024 / REGION_SIZE;
@@ -56,6 +59,8 @@ namespace AAEmu.Game.Core.Managers.World
             _npcs = new ConcurrentDictionary<uint, Npc>();
             _characters = new ConcurrentDictionary<uint, Character>();
             _areaShapes = new ConcurrentDictionary<uint, AreaShape>();
+            _transfers = new ConcurrentDictionary<uint, Transfer>();
+            _gimmicks = new ConcurrentDictionary<uint, Gimmick>();
         }
 
         public void ActiveRegionTick(TimeSpan delta)
@@ -308,7 +313,7 @@ namespace AAEmu.Game.Core.Managers.World
         public Region GetRegion(GameObject obj)
         {
             obj = GetRootObj(obj);
-            InstanceWorld world = GetWorld(obj.Position.WorldId);
+            var world = GetWorld(obj.Position.WorldId);
             return GetRegion(world, obj.Position.X, obj.Position.Y);
         }
 
@@ -375,7 +380,7 @@ namespace AAEmu.Game.Core.Managers.World
             FirstNonNameArgument = 0;
             if ((TargetName != null) && (TargetName != string.Empty))
             {
-                Character player = WorldManager.Instance.GetCharacter(TargetName);
+                var player = WorldManager.Instance.GetCharacter(TargetName);
                 if (player != null)
                 {
                     FirstNonNameArgument = 1;
@@ -667,7 +672,7 @@ namespace AAEmu.Game.Core.Managers.World
         public void OnPlayerJoin(Character character)
         {
             //turn snow on off 
-            Snow(character);
+            //Snow(character); // не нашел такого пакета в 3.0.3.0
            
             //family stuff
             if (character.Family > 0)
@@ -713,7 +718,7 @@ namespace AAEmu.Game.Core.Managers.World
         
         public AreaShape GetAreaShapeById(uint id)
         {
-            if (_areaShapes.TryGetValue(id, out AreaShape res))
+            if (_areaShapes.TryGetValue(id, out var res))
                 return res;
             return null;
         }

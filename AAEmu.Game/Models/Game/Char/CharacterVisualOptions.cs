@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 
 namespace AAEmu.Game.Models.Game.Char
 {
@@ -10,6 +10,7 @@ namespace AAEmu.Game.Models.Game.Char
         public bool BackHoldable;
         public bool Cosplay;
         public bool CosplayBackpack;
+        public bool CosplayVisual;
 
         public override void Read(PacketStream stream)
         {
@@ -24,6 +25,8 @@ namespace AAEmu.Game.Models.Game.Char
                 Cosplay = stream.ReadBoolean();
             if ((_flag & 16) == 16)
                 CosplayBackpack = stream.ReadBoolean();
+            if ((_flag & 0x20) == 0x20)
+                CosplayVisual = stream.ReadBoolean(); // cosplay_visual, added in 1.7
         }
 
         public override PacketStream Write(PacketStream stream)
@@ -44,6 +47,8 @@ namespace AAEmu.Game.Models.Game.Char
                 stream.Write(Cosplay);
             if ((flag & 16) == 16)
                 stream.Write(CosplayBackpack);
+            if ((flag & 0x20) == 0x20)
+                stream.Write(CosplayVisual); // cosplay_visual, added in 1.7
             return stream;
         }
     }

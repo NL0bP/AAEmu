@@ -14,7 +14,7 @@ namespace AAEmu.Game.Models.Game.Items.Actions
         /// <param name="count">Amount to add or subtract</param>
         public ItemCountUpdate(Item item, int count)
         {
-            _type = ItemAction.AddStack;
+            _type = ItemAction.AddStack; // 4
             _item = item;
             _count = count;
         }

@@ -60,7 +60,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.BigMonster
 
         private List<BigMonsterCombatSkill> RequestAvailableSkills(BigMonsterAiParams aiParams, float trgDist)
         {
-            int healthRatio = (int)(((float)Ai.Owner.Hp / Ai.Owner.MaxHp) * 100);
+            var healthRatio = (int)(((float)Ai.Owner.Hp / Ai.Owner.MaxHp) * 100);
             
             var baseList = aiParams.CombatSkills.AsEnumerable();
 

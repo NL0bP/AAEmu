@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Units.Static
+﻿namespace AAEmu.Game.Models.Game.Units.Static
 {
     public enum KillReason
     {
@@ -21,6 +21,6 @@ namespace AAEmu.Game.Models.Game.Units.Static
         Drowning = 0x10,
         BadGuardTower = 0x11,
         SlaveEquipmentRandomDestroy = 0x12,
-        SiegeEnd = 0x13,
+        SiegeEnd = 0x13
     }
 }

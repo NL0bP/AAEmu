@@ -1,16 +1,12 @@
 ﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
+
 using NLog;
-using System;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -37,10 +33,12 @@ namespace AAEmu.Game.Scripts.Commands
 
         public void SpawnDoodad(uint unitId, Character character, float newX, float newY)
         {
-            var doodadSpawner = new DoodadSpawner();
-            doodadSpawner.Id = 0;
-            doodadSpawner.UnitId = unitId;
-            doodadSpawner.Position = character.Position.Clone();
+            var doodadSpawner = new DoodadSpawner
+            {
+                Id = 0,
+                UnitId = unitId,
+                Position = character.Position.Clone()
+            };
             doodadSpawner.Position.Y = newY;
             doodadSpawner.Position.X = newX;
             double angle = MathUtil.CalculateAngleFrom(doodadSpawner.Position.Y, doodadSpawner.Position.X, character.Position.Y, character.Position.X);
@@ -51,12 +49,14 @@ namespace AAEmu.Game.Scripts.Commands
             doodadSpawner.Spawn(0);
         }
 
-        public void SpawnNPC(uint unitId,Character character,float newX, float newY)
+        public void SpawnNPC(uint unitId, Character character, float newX, float newY)
         {
-            var npcSpawner = new NpcSpawner();
-            npcSpawner.Id = 0;
-            npcSpawner.UnitId = unitId;
-            npcSpawner.Position = character.Position.Clone();
+            var npcSpawner = new NpcSpawner
+            {
+                Id = 0,
+                UnitId = unitId,
+                Position = character.Position.Clone()
+            };
             npcSpawner.Position.Y = newY;
             npcSpawner.Position.X = newX;
             var angle = MathUtil.CalculateAngleFrom(npcSpawner.Position.X, npcSpawner.Position.Y, character.Position.X, character.Position.Y);
@@ -76,23 +76,31 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             string action = args[0].ToLower();
-            uint templateId ;
+            uint templateId;
             uint columns;
             uint rows;
             float spacing;
-            if (!uint.TryParse(args[1],out templateId) || !uint.TryParse(args[2], out columns) || !uint.TryParse(args[3], out rows) || !float.TryParse(args[4], out spacing))
+            if (!uint.TryParse(args[1], out templateId) || !uint.TryParse(args[2], out columns) || !uint.TryParse(args[3], out rows) || !float.TryParse(args[4], out spacing))
             {
                 character.SendMessage("|cFFFF0000[Spawn] Parse error|r");
                 return;
             }
-            if (columns < 1) 
+            if (columns < 1)
+            {
                 columns = 1;
-            if (rows < 1)
-                rows = 1;
-            if (spacing < 0.1f)
-                spacing = 0.1f;
+            }
 
-            switch(action)
+            if (rows < 1)
+            {
+                rows = 1;
+            }
+
+            if (spacing < 0.1f)
+            {
+                spacing = 0.1f;
+            }
+
+            switch (action)
             {
                 case "npc":
                     if (!NpcManager.Instance.Exist(templateId))
@@ -130,7 +138,7 @@ namespace AAEmu.Game.Scripts.Commands
                     float posX = (x * spacing) - (sizeX / 2);
                     (newX, newY) = MathUtil.AddDistanceToFront(posY, startX, startY, character.Position.RotationZ);
                     (newX, newY) = MathUtil.AddDistanceToRight(posX, newX, newY, character.Position.RotationZ);
-                    switch(action)
+                    switch (action)
                     {
                         case "npc":
                             SpawnNPC(templateId, character, newX, newY);

@@ -25,10 +25,10 @@ namespace AAEmu.Game.Models.Game.Char
 
             unreadMailCount = new CountUnreadMail
             {
-                Sent = 0,
-                Received = 0,
-                MiaReceived = 0,
-                CommercialReceived = 0
+                TotalSent = 0,
+                TotalReceived = 0,
+                TotalMiaReceived = 0,
+                TotalCommercialReceived = 0
             };
         }
 
@@ -62,7 +62,7 @@ namespace AAEmu.Game.Models.Game.Char
             {
                 if ((mail.Header.Status == MailStatus.Unread) && !isSent)
                 {
-                    unreadMailCount.Received -= 1;
+                    unreadMailCount.TotalReceived -= 1;
                     mail.OpenDate = DateTime.UtcNow;
                     mail.Header.Status = MailStatus.Read;
                     mail.IsDelivered = true;
@@ -134,7 +134,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             if (MailManager.Instance._allPlayerMails.TryGetValue(mailId, out var thisMail))
             {
-                bool tookMoney = false;
+                var tookMoney = false;
                 if ((thisMail.MailType == MailType.AucOffSuccess) && (thisMail.Body.CopperCoins > 0) && takeMoney)
                 {
                     if (Self.LaborPower <= 1)
@@ -245,7 +245,7 @@ namespace AAEmu.Game.Models.Game.Char
                 if ((thisMail.Header.Status == MailStatus.Unread) && (tookMoney || (itemSlotList.Count > 0)))
                 {
                     thisMail.Header.Status = MailStatus.Read;
-                    unreadMailCount.Received--;
+                    unreadMailCount.TotalReceived--;
                     Self.SendPacket(new SCMailStatusUpdatedPacket(false, mailId, MailStatus.Read));
                     SendUnreadMailCount();
                 }
@@ -265,7 +265,7 @@ namespace AAEmu.Game.Models.Game.Char
                 {
                     if (MailManager.Instance._allPlayerMails[id].Header.Status != MailStatus.Read)
                     {
-                        unreadMailCount.Received--;
+                        unreadMailCount.TotalReceived--;
                         Self.SendPacket(new SCMailDeletedPacket(isSent, id, true, unreadMailCount));
                     }
                     else

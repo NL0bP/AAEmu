@@ -1,8 +1,6 @@
 ﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -10,7 +8,7 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            string[] name = { "resetcd", "resetskillcooldowns", "rcd"};
+            string[] name = { "resetcd", "resetskillcooldowns", "rcd" };
             CommandManager.Instance.Register(name, this);
         }
 

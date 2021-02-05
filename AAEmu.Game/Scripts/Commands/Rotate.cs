@@ -1,18 +1,14 @@
-﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Models.Game.Units.Movements;
+﻿using System;
+
+using AAEmu.Commons.Utils;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.DoodadObj;
-using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.World;
+using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Utils;
-using AAEmu.Commons.Utils;
+
 using NLog;
-using System;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -48,14 +44,14 @@ namespace AAEmu.Game.Scripts.Commands
 
                 var Seq = (uint)Rand.Next(0, 10000);
                 var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
-                
+
                 moveType.X = character.CurrentTarget.Position.X;
                 moveType.Y = character.CurrentTarget.Position.Y;
                 moveType.Z = character.CurrentTarget.Position.Z;
 
                 var angle = MathUtil.CalculateAngleFrom(character.CurrentTarget, character);
                 var rotZ = MathUtil.ConvertDegreeToDirection(angle);
-                if (args.Length > 0) 
+                if (args.Length > 0)
                 {
                     sbyte.TryParse(args[0], out rotZ);
                 }
@@ -66,19 +62,21 @@ namespace AAEmu.Game.Scripts.Commands
 
                 character.CurrentTarget.Position.RotationZ = rotZ;
 
-                moveType.Flags = 5;
+                moveType.ActorFlags = ActorMoveType.Walk; // 5-walk, 4-run, 3-stand still
                 moveType.DeltaMovement = new sbyte[3];
                 moveType.DeltaMovement[0] = 0;
                 moveType.DeltaMovement[1] = 0;
                 moveType.DeltaMovement[2] = 0;
-                moveType.Stance = 1; //combat=0, idle=1
-                moveType.Alertness = 0; //idle=0, combat=2
-                moveType.Time = Seq;
+                moveType.Stance = EStance.Idle; //combat=0, idle=1
+                moveType.Alertness = AiAlertness.Idle; //idle=0, combat=2
+                moveType.Time = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
 
                 character.BroadcastPacket(new SCOneUnitMovementPacket(character.CurrentTarget.ObjId, moveType), true);
             }
             else
+            {
                 character.SendMessage("[Rotate] You need to target something first");
+            }
         }
     }
 }

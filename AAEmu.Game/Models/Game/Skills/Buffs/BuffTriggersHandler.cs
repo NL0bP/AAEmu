@@ -19,7 +19,7 @@ namespace AAEmu.Game.Models.Game.Skills.Buffs
 
         public void SubscribeEvents()
         {
-            uint buffId = _owner.Template.BuffId;
+            var buffId = _owner.Template.BuffId;
 
             var triggerTemplates = SkillManager.Instance.GetBuffTriggerTemplates(buffId);
 

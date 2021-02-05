@@ -20,10 +20,10 @@ namespace AAEmu.Game.Core.Managers
 
             #region FileManager
             _configurations = new Dictionary<string, string>();
-            Dictionary<string, string> d = new Dictionary<string, string>();
+            var d = new Dictionary<string, string>();
             try
             {
-                string data = File.ReadAllText("Data/configurations.json");
+                var data = File.ReadAllText("Data/configurations.json");
                 d = JsonConvert.DeserializeObject<Dictionary<string, string>>(data);
                 foreach (var entry in d)
                     _configurations.Add(entry.Key,entry.Value);

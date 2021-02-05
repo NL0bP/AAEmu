@@ -1,11 +1,11 @@
-using AAEmu.Game.Models.Game.Formulas;
+﻿using AAEmu.Game.Models.Game.Formulas;
 
 namespace AAEmu.Game.Models.Game.Items
 {
     public class Holdable
     {
         public uint Id { get; set; }
-        public uint KindId { get; set; }
+        //public uint KindId { get; set; } // there is no such field in the database for version 3030
         public int Speed { get; set; }
         public int ExtraDamagePierceFactor { get; set; }
         public int ExtraDamageSlashFactor { get; set; }

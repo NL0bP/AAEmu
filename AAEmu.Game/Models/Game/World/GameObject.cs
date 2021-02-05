@@ -27,11 +27,11 @@ namespace AAEmu.Game.Models.Game.World
         /// <summary>
         /// Object AI
         /// </summary>
-        public ACreatureAi Ai { get; protected set; }
+        public ACreatureAi Ai_old { get; protected set; }
         /// <summary>
         /// Cast object AI as Visible AI
         /// </summary>
-        public AVisibleObjectAi VisibleAi => Ai;
+        public AVisibleObjectAi VisibleAi => Ai_old;
         /// <summary>
         /// Object family
         /// </summary>

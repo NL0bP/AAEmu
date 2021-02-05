@@ -97,6 +97,8 @@ namespace AAEmu.Game.Core.Managers.World
                             _relations.Add(relation);
 
                             var faction = _systemFactions[relation.Id];
+                            if (faction.Relations.ContainsKey(relation.Id2))
+                                continue;
                             faction.Relations.Add(relation.Id2, relation);
                             faction = _systemFactions[relation.Id2];
                             faction.Relations.Add(relation.Id, relation);

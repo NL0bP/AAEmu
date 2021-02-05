@@ -210,8 +210,8 @@ namespace AAEmu.Game.Core.Managers
             }
 
             // Check the number of members in the party that meet the requirements
-            List<TeamMember> validMembers = new List<TeamMember>();
-            List<TeamMember> teamMembers = new List<TeamMember>();
+            var validMembers = new List<TeamMember>();
+            var teamMembers = new List<TeamMember>();
             teamMembers.AddRange(team.Members.ToList());
 
             foreach (var m in teamMembers)
@@ -486,7 +486,7 @@ namespace AAEmu.Game.Core.Managers
                 owner.SendErrorMessage(ErrorMessageType.OnlyExpeditionOwner);
                 return false;
             }
-            for (int i = guild.Members.Count - 1; i >= 0; i--)
+            for (var i = guild.Members.Count - 1; i >= 0; i--)
             {
                 var c = WorldManager.Instance.GetCharacterById(guild.Members[i].CharacterId);
                 if (c != null)

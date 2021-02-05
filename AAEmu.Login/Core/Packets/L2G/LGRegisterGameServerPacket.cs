@@ -15,7 +15,7 @@ namespace AAEmu.Login.Core.Packets.L2G
 
         public override PacketStream Write(PacketStream stream)
         {
-            stream.Write((byte) _result);
+            stream.Write((byte)_result);
             return stream;
         }
     }

@@ -7,6 +7,7 @@ using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Funcs;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
@@ -92,8 +93,6 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                             template.DespawnOnCollision = reader.GetBoolean("despawn_on_collision", true);
                             template.NoCollision = reader.GetBoolean("no_collision", true);
                             template.RestrictZoneId = reader.IsDBNull("restrict_zone_id") ? 0 : reader.GetUInt32("restrict_zone_id");
-
-
 
                             _templates.Add(template.Id, template);
                         }
@@ -228,9 +227,10 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                         {
                             var func = new DoodadFuncAttachment();
                             func.Id = reader.GetUInt32("id");
-                            func.AttachPointId = reader.GetByte("attach_point_id");
+                            func.AttachPointId = (AttachPointKind)reader.GetByte("attach_point_id");
                             func.Space = reader.GetInt32("space");
                             func.BondKindId = reader.GetByte("bond_kind_id");
+                            func.AnimActionId = reader.GetByte("anim_action_id");
                             _funcTemplates["DoodadFuncAttachment"].Add(func.Id, func);
                         }
                     }

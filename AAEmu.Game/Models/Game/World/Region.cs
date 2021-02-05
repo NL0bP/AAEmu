@@ -6,6 +6,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
@@ -123,34 +124,33 @@ namespace AAEmu.Game.Models.Game.World
                 return;
 
             // show the player all the facilities in the region
-            if (obj is Character character1)
+            if (obj is Character character)
             {
                 var units = GetList(new List<Unit>(), obj.ObjId);
                 foreach (var t in units)
                 {
                     // turn on the motion of the visible NPC
-                    if (t is Npc npc)
+                    switch (t)
                     {
-                        if (npc.Ai != null)
-                            npc.Ai.ShouldTick = true;
-                        character1.SendPacket(new SCUnitStatePacket(npc));
-                    }
-                    else
-                    {
-                        
-                        if (t is House house)
-                        {
-                            character1.SendPacket(new SCUnitStatePacket(t));
-                            character1.SendPacket(new SCHouseStatePacket(house));
-                        }
-                        else if (t is Slave slave)
-                        {
-                            slave.AddVisibleObject(character1);
-                        }
-                        else
-                        {
-                            character1.SendPacket(new SCUnitStatePacket(t));
-                        }
+                        case Npc npc:
+                            character.SendPacket(new SCUnitStatePacket(npc));
+                            break;
+                        case House house:
+                            character.SendPacket(new SCUnitStatePacket(t));
+                            character.SendPacket(new SCHouseStatePacket(house));
+                            break;
+                        case Slave slave:
+                            slave.AddVisibleObject(character);
+                            break;
+                        case Gimmick gimmick:
+                            gimmick.AddVisibleObject(character);
+                            break;
+                        case Transfer transfer:
+                            transfer.AddVisibleObject(character);
+                            break;
+                        default:
+                            character.SendPacket(new SCUnitStatePacket(t));
+                            break;
                     }
                 }
                 var doodads = GetList(new List<Doodad>(), obj.ObjId).ToArray();
@@ -159,13 +159,13 @@ namespace AAEmu.Game.Models.Game.World
                     var count = doodads.Length - i;
                     var temp = new Doodad[count <= 30 ? count : 30];
                     Array.Copy(doodads, i, temp, 0, temp.Length);
-                    character1.SendPacket(new SCDoodadsCreatedPacket(temp));
+                    character.SendPacket(new SCDoodadsCreatedPacket(temp));
                 }
             }
             // show the object to all players in the region
-            foreach (var character in GetList(new List<Character>(), obj.ObjId))
+            foreach (var character2 in GetList(new List<Character>(), obj.ObjId))
             {
-                obj.AddVisibleObject(character);
+                obj.AddVisibleObject(character2);
             }
         }
 

@@ -27,7 +27,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         {
             stream.Write(_page);
             stream.Write(_count);
-            Random random = new Random();
+            var random = new Random();
 
             if (_count > 0)
             {

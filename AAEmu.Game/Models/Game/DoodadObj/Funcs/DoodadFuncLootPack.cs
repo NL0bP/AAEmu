@@ -18,9 +18,9 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
         {
             _log.Debug("DoodadFuncLootPack : LootPackId {0}, SkillId {1}", LootPackId, skillId);
 
-            Character character = (Character)caster;
-            LootPacks[] lootPacks = ItemManager.Instance.GetLootPacks(LootPackId);
-            Random itemQuantity = new Random();
+            var character = (Character)caster;
+            var lootPacks = ItemManager.Instance.GetLootPacks(LootPackId);
+            var itemQuantity = new Random();
             var count = 0;
             if (character.Inventory.Bag.FreeSlotCount >= lootPacks.Length)
             {

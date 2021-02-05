@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Items
+﻿namespace AAEmu.Game.Models.Game.Items
 {
     public class EquipItemsTemplate
     {
@@ -34,5 +34,7 @@ namespace AAEmu.Game.Models.Game.Items
         public byte RangedGrade { get; set; }
         public uint Musical { get; set; }
         public byte MusicalGrade { get; set; }
+        public uint Stabilizer { get; set; }
+        public byte StabilizerGrade { get; set; }
     }
 }

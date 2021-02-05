@@ -339,7 +339,7 @@ namespace AAEmu.Game.Core.Managers
         /// <returns>ChatChannel based on your position inside a Raid</returns>
         public ChatChannel GetPartyChat(Team party, Character myChar)
         {
-            uint partyId = party.Id << 6;
+            var partyId = party.Id << 6;
             // Find my position inside the raid
             uint partyNumber = 0;
             for(uint i = 0; i < party.Members.Length;i++)

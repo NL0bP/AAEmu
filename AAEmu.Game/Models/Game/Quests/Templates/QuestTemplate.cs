@@ -38,7 +38,7 @@ namespace AAEmu.Game.Models.Game.Quests.Templates
         }
         public QuestComponent[] GetComponents(QuestComponentKind step)
         {
-            QuestComponent[] qcl = new QuestComponent[0];
+            var qcl = new QuestComponent[0];
             foreach (var component in Components.Values)
                 if (component.KindId == step)
                 {

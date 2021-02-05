@@ -46,8 +46,8 @@ namespace AAEmu.Game.Scripts.Commands
         {
             string nameFile = "movefile";
             string cmd = "";
-            Simulation moveTo;
-            bool run = true;
+            SimulationNpc moveTo;
+            //bool run = true;
             // bool walk = false;
             if (args.Length < 1)
             {
@@ -70,7 +70,7 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             character.SendMessage("[MoveTo] cmd: {0}, nameFile: {1}", cmd, nameFile);
-            moveTo = character.Simulation; // take the AI ​​movement
+            moveTo = character.SimulationNpc; // take the AI ​​movement
             moveTo.npc = (Npc)character.CurrentTarget;
             if (moveTo.npc == null)
             {
@@ -103,12 +103,12 @@ namespace AAEmu.Game.Scripts.Commands
                         break;
                     case "run":
                         character.SendMessage("[MoveTo] turned on running mode...");
-                        moveTo.runningMode = run;
+                        moveTo.RunningMode = true;
                         break;
-                    //case "walk":
-                    //    character.SendMessage("[MoveTo] turned off running mode...");
-                    //    moveTo.runningMode = walk;
-                    //    break;
+                    case "walk":
+                        character.SendMessage("[MoveTo] turned off running mode...");
+                        moveTo.RunningMode = false;
+                        break;
                     case "stop":
                         character.SendMessage("[MoveTo] standing still...");
                         moveTo.StopMove((Npc)character.CurrentTarget);

@@ -2,12 +2,16 @@
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+
 using AAEmu.Commons.IO;
+using AAEmu.Commons.Utils;
 using AAEmu.Login.Models;
 using AAEmu.Login.Utils;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using NLog;
 using NLog.Config;
 
@@ -15,20 +19,25 @@ namespace AAEmu.Login
 {
     public static class Program
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
-        private static Thread _thread = Thread.CurrentThread;
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
+        private static readonly Thread _thread = Thread.CurrentThread;
         private static DateTime _startTime;
         private static string Name => Assembly.GetExecutingAssembly().GetName().Name;
         private static string Version => Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
-        public static int UpTime => (int) (DateTime.UtcNow - _startTime).TotalSeconds;
+        public static int UpTime => (int)(DateTime.Now - _startTime).TotalSeconds;
 
         public static async Task Main(string[] args)
         {
+            CliUtil.WriteHeader("Login", ConsoleColor.DarkGreen);
+            CliUtil.LoadingTitle();
+
             Initialization();
 
             if (FileManager.FileExists(FileManager.AppPath + "Config.json"))
+            {
                 Configuration(args);
+            }
             else
             {
                 _log.Error($"{FileManager.AppPath}Config.json doesn't exist!");
@@ -68,7 +77,7 @@ namespace AAEmu.Login
         private static void Initialization()
         {
             _thread.Name = "AA.LoginServer Base Thread";
-            _startTime = DateTime.UtcNow;
+            _startTime = DateTime.Now;
         }
 
         private static void Configuration(string[] args)

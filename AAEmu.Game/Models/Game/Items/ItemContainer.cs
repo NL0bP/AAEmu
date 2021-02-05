@@ -72,7 +72,7 @@ namespace AAEmu.Game.Models.Game.Items
             Items.Sort();
             var usedSlots = from iSlot in Items select iSlot.Slot;
             var res = 0;
-            for (int i = 0; i < _containerSize; i++)
+            for (var i = 0; i < _containerSize; i++)
             {
                 if (!usedSlots.Contains(i))
                     res++;
@@ -98,7 +98,7 @@ namespace AAEmu.Game.Models.Game.Items
                 return preferredSlot > highestSlot ? preferredSlot : highestSlot;
             }
             // Check the preferred slot to see if it's free, or if we need to assign a new one
-            bool needNewSlot = false;
+            var needNewSlot = false;
             if (preferredSlot < 0)
             {
                 needNewSlot = true;
@@ -118,7 +118,7 @@ namespace AAEmu.Game.Models.Game.Items
             if (needNewSlot)
             {
                 var usedSlots = from iSlot in Items where iSlot.Slot != preferredSlot select iSlot.Slot;
-                for (int i = 0; i < ContainerSize; i++)
+                for (var i = 0; i < ContainerSize; i++)
                 {
                     if (!usedSlots.Contains(i))
                     {
@@ -187,13 +187,13 @@ namespace AAEmu.Game.Models.Game.Items
             if (item == null)
                 return false;
 
-            ItemContainer sourceContainer = item?._holdingContainer;
-            byte sourceSlot = (byte)item.Slot;
-            SlotType sourceSlotType = item.SlotType;
+            var sourceContainer = item?._holdingContainer;
+            var sourceSlot = (byte)item.Slot;
+            var sourceSlotType = item.SlotType;
 
             var currentPreferredSlotItem = GetItemBySlot(preferredSlot);
             var newSlot = -1;
-            bool canAddToSameSlot = false;
+            var canAddToSameSlot = false;
             // When adding wearables to equipment container, for the slot numbers if needed
             if ((ContainerType == SlotType.Equipment) && (item is EquipItem eItem) && (preferredSlot < 0))
             {
@@ -294,7 +294,7 @@ namespace AAEmu.Game.Models.Game.Items
         public bool RemoveItem(ItemTaskType task, Item item, bool releaseIdAsWell)
         {
             Owner?.Inventory.OnConsumedItem(item, item.Count);
-            bool res = item._holdingContainer.Items.Remove(item);
+            var res = item._holdingContainer.Items.Remove(item);
             if (res && task != ItemTaskType.Invalid)
                 item._holdingContainer?.Owner?.SendPacket(new SCItemTaskSuccessPacket(task, new List<ItemTask> { new ItemRemoveSlot(item) }, new List<ulong>()));
             if (res && releaseIdAsWell)
@@ -518,7 +518,7 @@ namespace AAEmu.Game.Models.Game.Items
         public List<Item> GetSlottedItemsList()
         {
             var res = new List<Item>(ContainerSize);
-            for(int i = 0; i < ContainerSize;i++)
+            for(var i = 0; i < ContainerSize;i++)
                 res.Add(GetItemBySlot(i));
             return res;
         }

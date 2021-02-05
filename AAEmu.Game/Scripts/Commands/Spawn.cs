@@ -1,16 +1,14 @@
 ﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils;
+
 using NLog;
-using System;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -70,10 +68,12 @@ namespace AAEmu.Game.Scripts.Commands
                             character.SendMessage("|cFFFF0000[Spawn] NPC {0} don't exist|r", unitId);
                             return;
                         }
-                        var npcSpawner = new NpcSpawner();
-                        npcSpawner.Id = 0;
-                        npcSpawner.UnitId = unitId;
-                        npcSpawner.Position = character.Position.Clone();
+                        var npcSpawner = new NpcSpawner
+                        {
+                            Id = 0,
+                            UnitId = unitId,
+                            Position = character.Position.Clone()
+                        };
                         (newX, newY) = MathUtil.AddDistanceToFront(3f, character.Position.X, character.Position.Y, character.Position.RotationZ);
                         npcSpawner.Position.Y = newY;
                         npcSpawner.Position.X = newX;
@@ -95,10 +95,12 @@ namespace AAEmu.Game.Scripts.Commands
                             character.SendMessage("|cFFFF0000[Spawn] Doodad {0} don't exist|r", unitId);
                             return;
                         }
-                        var doodadSpawner = new DoodadSpawner();
-                        doodadSpawner.Id = 0;
-                        doodadSpawner.UnitId = unitId;
-                        doodadSpawner.Position = character.Position.Clone();
+                        var doodadSpawner = new DoodadSpawner
+                        {
+                            Id = 0,
+                            UnitId = unitId,
+                            Position = character.Position.Clone()
+                        };
                         (newX, newY) = MathUtil.AddDistanceToFront(3f, character.Position.X, character.Position.Y, character.Position.RotationZ);
                         doodadSpawner.Position.Y = newY;
                         doodadSpawner.Position.X = newX;
@@ -109,7 +111,10 @@ namespace AAEmu.Game.Scripts.Commands
                             character.SendMessage("[Spawn] Doodad {0} using user provided angle {1}°", unitId, angle);
                         }
                         else
+                        {
                             character.SendMessage("[Spawn] Doodad {0} facing you, using characters angle {1}°", unitId, angle);
+                        }
+
                         newRotZ = MathUtil.ConvertDegreeToDoodadDirection(angle);
                         doodadSpawner.Position.RotationX = 0;
                         doodadSpawner.Position.RotationY = 0;
@@ -119,7 +124,9 @@ namespace AAEmu.Game.Scripts.Commands
                 }
             }
             else
+            {
                 character.SendMessage("|cFFFF0000[Spawn] Throw parse unitId|r");
+            }
         }
     }
 }

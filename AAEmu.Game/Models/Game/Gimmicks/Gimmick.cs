@@ -5,6 +5,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.AI;
+using AAEmu.Game.Models.Game.AI_old;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
@@ -39,8 +40,8 @@ namespace AAEmu.Game.Models.Game.Gimmicks
 
         public Gimmick()
         {
-            //Ai = new GimmickAi(this, 50f);
-            //UnitType = BaseUnitType.Transfer; // TODO какое на самом деле?
+            Ai_old = new GimmickAi(this, 50f);
+            UnitType = BaseUnitType.Transfer; // TODO какое на самом деле?
             Position = new Point();
             WorldPos = new WorldPos();
 

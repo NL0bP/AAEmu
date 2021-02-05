@@ -21,13 +21,13 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
         {
             _log.Debug("PutDownBackpackEffect");
 
-            Character character = (Character)caster;
+            var character = (Character)caster;
             if (character == null) return;
 
-            SkillItem packItem = (SkillItem)casterObj;
+            var packItem = (SkillItem)casterObj;
             if (packItem == null) return;
 
-            Item item = character.Inventory.Equipment.GetItemByItemId(packItem.ItemId);
+            var item = character.Inventory.Equipment.GetItemByItemId(packItem.ItemId);
             if (item == null) return;
 
             if (character.Inventory.SystemContainer.AddOrMoveExistingItem(Items.Actions.ItemTaskType.DropBackpack, item, (int)EquipmentItemSlot.Backpack))

@@ -68,8 +68,8 @@ namespace AAEmu.Game.Models.Game.Units.Route
         public int PointsCount { get; set; }              // number of points in the process of recording the path
         public bool SavePathEnabled { get; set; }         // flag, path recording
         public bool MoveToPathEnabled { get; set; }       // flag, road traffic
-        public bool MoveToForward { get; set; }           // movement direction true -> forward, true -> back
-        public bool RunningMode { get; set; } = false;    // movement mode true -> run, true -> walk
+        public bool MoveToForward { get; set; }           // movement direction true -> forward, false -> back
+        public bool RunningMode { get; set; } = false;    // movement mode true -> run, false -> walk
         public bool Move { get; set; } = false;           // movement mode true -> moving to the point #, false -> get next point #
         public int MoveStepIndex { get; set; }            // current checkpoint (where are we running now)
 

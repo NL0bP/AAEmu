@@ -27,13 +27,13 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
 
         public override void Use(Unit caster, Doodad owner, uint skillId, int nextPhase = 0)
         {
-            Character character = (Character)caster;
+            var character = (Character)caster;
             if (character == null) return;
 
-            int chance = Rand.Next(0, 10000);
+            var chance = Rand.Next(0, 10000);
             if (chance > Percent) return;
 
-            int count = Rand.Next(CountMin, CountMax);
+            var count = Rand.Next(CountMin, CountMax);
             if (!character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.AutoLootDoodadItem, ItemId, count))
                 character.SendErrorMessage(ErrorMessageType.BagFull);
             // else

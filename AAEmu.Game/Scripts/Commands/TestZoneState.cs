@@ -1,13 +1,8 @@
-﻿using System;
-using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.UnitManagers;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World.Zones;
-using AAEmu.Game.Core.Packets.G2C;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -55,17 +50,23 @@ namespace AAEmu.Game.Scripts.Commands
 
             byte zonestate = 0;
             if ((args.Length > 0) && (byte.TryParse(args[0], out byte argzonestate)))
+            {
                 zonestate = argzonestate;
+            }
 
             ushort zonegroupid = 0;
             if ((args.Length > 1) && (ushort.TryParse(args[1], out ushort argzonegroupid)))
+            {
                 zonegroupid = argzonegroupid;
+            }
 
             if (zonegroupid <= 0)
             {
                 var thiszone = ZoneManager.Instance.GetZoneByKey(character.Position.ZoneId);
                 if (thiszone != null)
+                {
                     zonegroupid = (ushort)(thiszone.GroupId);
+                }
             }
 
             if (zonegroupid > 0)

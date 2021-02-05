@@ -233,7 +233,7 @@ namespace AAEmu.Game.Core.Managers.World
             // Our backpack isn't null, we have the NPC, time to calculate the profits
 
             // TODO: Get crafter ID of tradepack
-            uint crafterId = backpack.MadeUnitId != player.Id ? backpack.MadeUnitId : 0 ;
+            var crafterId = backpack.MadeUnitId != player.Id ? backpack.MadeUnitId : 0 ;
             var sellerShare = 0.80f; // 80% default, set this to 1f for packs that don't share profit
 
             var interestRate = 5;

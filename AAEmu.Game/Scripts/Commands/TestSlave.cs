@@ -27,19 +27,21 @@ namespace AAEmu.Game.Scripts.Commands
 
         public void Execute(Character character, string[] args)
         {
-            var slave = new Slave();
-            slave.TemplateId = 6;
-            slave.ModelId = 654;
-            slave.ObjId = ObjectIdManager.Instance.GetNextId();
-            slave.TlId = (ushort)TlIdManager.Instance.GetNextId();
-            slave.Faction = FactionManager.Instance.GetFaction(143);
-            slave.Level = 50;
-            slave.Position = character.Position.Clone();
+            var slave = new Slave
+            {
+                TemplateId = 6,
+                ModelId = 654,
+                ObjId = ObjectIdManager.Instance.GetNextId(),
+                TlId = (ushort)TlIdManager.Instance.GetNextId(),
+                Faction = FactionManager.Instance.GetFaction(143),
+                Level = 50,
+                Position = character.Position.Clone()
+            };
             slave.Position.X += 5f; // spawn_x_offset
             slave.Position.Y += 5f; // spawn_Y_offset
             slave.MaxHp = slave.Hp = 5000;
             slave.ModelParams = new UnitCustomModelParams();
-            
+
             slave.Spawn();
         }
     }

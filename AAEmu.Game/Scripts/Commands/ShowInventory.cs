@@ -1,14 +1,10 @@
-﻿using System.Collections.Generic;
-using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
+﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -39,11 +35,17 @@ namespace AAEmu.Game.Scripts.Commands
                 foreach (var item in targetContainer.Items)
                 {
                     if (unit is Npc npc)
+                    {
                         templateName = string.Format("|nc;@NPC_NAME({0})|r", npc.TemplateId);
+                    }
+
                     var slotName = ((EquipmentItemSlot)item.Slot).ToString();
                     var countName = "|ng;" + item.Count.ToString() + "|r x ";
                     if (item.Count == 1)
+                    {
                         countName = string.Empty;
+                    }
+
                     character.SendMessage("[{0}][{1}] {2}|nn;{3}|r = @ITEM_NAME({3})", templateName, slotName, countName, item.TemplateId);
                 }
                 character.SendMessage("[ShowInv][{0}][{1}] {2} entries", templateName, targetContainer.ContainerType, targetContainer.Items.Count);
@@ -55,14 +57,18 @@ namespace AAEmu.Game.Scripts.Commands
                 Character targetPlayer = character;
                 var firstarg = 0;
                 if (args.Length > 0)
+                {
                     targetPlayer = WorldManager.Instance.GetTargetOrSelf(character, args[0], out firstarg);
+                }
 
                 var containerId = SlotType.Inventory;
 
                 if ((args.Length > firstarg + 0) && (uint.TryParse(args[firstarg + 0], out uint argcontainerId)))
                 {
                     if (((argcontainerId >= 0) && (argcontainerId <= (byte)SlotType.Mail)) || (argcontainerId == (byte)SlotType.System))
+                    {
                         containerId = (SlotType)argcontainerId;
+                    }
                     else
                     {
                         character.SendMessage("|cFFFF0000[ShowInv] Invalid container Id |r");
@@ -78,10 +84,16 @@ namespace AAEmu.Game.Scripts.Commands
                     {
                         var slotName = targetContainer.ContainerType.ToString() + "-" + item.Slot.ToString();
                         if (item.SlotType == SlotType.Equipment)
+                        {
                             slotName = ((EquipmentItemSlot)item.Slot).ToString();
+                        }
+
                         var countName = "|ng;" + item.Count.ToString() + "|r x ";
                         if (item.Count == 1)
+                        {
                             countName = string.Empty;
+                        }
+
                         character.SendMessage("[|nd;{0}|r][{1}] |nb;{2}|r {3}|nn;{4}|r = @ITEM_NAME({4})",
                             targetPlayer.Name, slotName,
                             item.Id, countName, item.TemplateId

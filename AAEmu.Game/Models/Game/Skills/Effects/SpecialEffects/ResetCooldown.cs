@@ -26,9 +26,9 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             int value3,
             int value4)
         {
-            uint skillId = (uint)value1;
-            uint tagId = (uint)value2;
-            bool gcd = value3 == 1;
+            var skillId = (uint)value1;
+            var tagId = (uint)value2;
+            var gcd = value3 == 1;
             if (caster is Character character)
             {
                 if (value1 != 0)

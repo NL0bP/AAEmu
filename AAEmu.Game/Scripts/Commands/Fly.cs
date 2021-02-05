@@ -1,8 +1,8 @@
 ﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -34,9 +34,13 @@ namespace AAEmu.Game.Scripts.Commands
             Character targetPlayer = WorldManager.Instance.GetTargetOrSelf(character, args[0], out var firstarg);
 
             if (bool.TryParse(args[firstarg + 0], out var isFlying))
+            {
                 targetPlayer.SendPacket(new SCUnitFlyingStateChangedPacket(targetPlayer.ObjId, isFlying));
+            }
             else
+            {
                 character.SendMessage("|cFFFF0000[Fly] Throw parse bool!|r");
+            }
         }
     }
 }

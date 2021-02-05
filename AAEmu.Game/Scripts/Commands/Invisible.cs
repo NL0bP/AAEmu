@@ -30,7 +30,9 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             if (bool.TryParse(args[0], out var value))
+            {
                 character.SetInvisible(value);
+            }
         }
     }
 }

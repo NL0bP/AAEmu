@@ -1,11 +1,11 @@
 ﻿using System.Text;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Core.Managers.UnitManagers;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -96,10 +96,10 @@ namespace AAEmu.Game.Scripts.Commands
                     break;
 
                 default:
-                    character.SendMessage("|cFFFF0000[Around] Unknown object type {0} !|r",args[0]);
+                    character.SendMessage("|cFFFF0000[Around] Unknown object type {0} !|r", args[0]);
                     break;
             }
-            
+
         }
     }
 }

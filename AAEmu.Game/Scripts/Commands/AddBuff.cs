@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Tasks.Skills;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -40,7 +41,7 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             Unit sourceUnit = character;
-            Unit targetUnit = null ;
+            Unit targetUnit = null;
 
             if (!(character.CurrentTarget is Unit selectedUnit))
             {
@@ -61,11 +62,19 @@ namespace AAEmu.Game.Scripts.Commands
                 {
                     character.SendMessage("[AddBuff] Listing buffs for {0} - {1} !", selectedUnit.ObjId, selectedUnit.Name);
                     foreach (var b in goodBuffs)
+                    {
                         character.SendMessage("[AddBuff] |cFF00FF00{0} - {1}|r", b.Template.Id, LocalizationManager.Instance.Get("buffs", "name", b.Template.Id));
+                    }
+
                     foreach (var b in badBuffs)
+                    {
                         character.SendMessage("[AddBuff] |cFFFF0000{0} - {1}|r", b.Template.Id, LocalizationManager.Instance.Get("buffs", "name", b.Template.Id));
+                    }
+
                     foreach (var b in hiddenBuffs)
+                    {
                         character.SendMessage("[AddBuff] |cFF6666FF{0} - {1}|r", b.Template.Id, LocalizationManager.Instance.Get("buffs", "name", b.Template.Id));
+                    }
                 }
                 else
                 {
@@ -94,12 +103,16 @@ namespace AAEmu.Game.Scripts.Commands
                 return;
             }
 
-            var abLevel = 1u;
+            short abLevel = 1;
             if (args.Length > firstArg + 1)
-                if (!uint.TryParse(args[firstArg + 1], out abLevel))
-                    abLevel = 1u;
+            {
+                if (!short.TryParse(args[firstArg + 1], out abLevel))
+                {
+                    abLevel = 1;
+                }
+            }
 
-            uint buffId = (uint)Math.Abs(buffIdInt);
+            var buffId = (uint)Math.Abs(buffIdInt);
 
             var buffTemplate = SkillManager.Instance.GetBuffTemplate(buffId);
             if (buffTemplate == null)
@@ -124,7 +137,9 @@ namespace AAEmu.Game.Scripts.Commands
             if (buffIdInt < 0)
             {
                 if (selectedUnit.Buffs.CheckBuff(buffId))
+                {
                     selectedUnit.Buffs.RemoveBuff(buffId);
+                }
                 else
                 {
                     character.SendMessage("|cFFFF0000[AddBuff] Target didn't have buff to remove|r", buffId);

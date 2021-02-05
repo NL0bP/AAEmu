@@ -104,10 +104,11 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
             SetEquipItemTemplate(npc, template.Items.Ranged, EquipmentItemSlot.Ranged);
             SetEquipItemTemplate(npc, template.Items.Musical, EquipmentItemSlot.Musical);
             SetEquipItemTemplate(npc, template.Items.Cosplay, EquipmentItemSlot.Cosplay);
+            //SetEquipItemTemplate(npc, template.Items.Stabilizer, EquipmentItemSlot.Stabilizer);
 
             for (var i = 0; i < 7; i++)
             {
-                EquipmentItemSlot slot = (EquipmentItemSlot)(i + 19);
+                var slot = (EquipmentItemSlot)(i + 19);
                 if ((slot == EquipmentItemSlot.Hair) && (template.ModelParams != null))
                     SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
                 else
@@ -557,7 +558,7 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                     }
                                 }
                             }
-                            _templates.Add(template.Id, template);
+                            //_templates.Add(template.Id, template);
 
                             if (clothPack > 0)
                             {
@@ -595,6 +596,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                             template.Items.UndershirtsGrade = reader2.GetByte("undershirt_grade_id");
                                             template.Items.Underpants = reader2.GetUInt32("underpants_id");
                                             template.Items.UnderpantsGrade = reader2.GetByte("underpants_grade_id");
+                                            template.Items.Stabilizer = reader2.GetUInt32("stabilizer_id");
+                                            template.Items.StabilizerGrade = reader2.GetByte("stabilizer_grade_id");
                                         }
                                     }
                                 }
@@ -693,6 +696,8 @@ namespace AAEmu.Game.Core.Managers.UnitManagers
                                 }
                             }
 
+                            if (_templates.ContainsKey(template.Id))
+                                continue;
                             _templates.Add(template.Id, template);
                         }
                     }

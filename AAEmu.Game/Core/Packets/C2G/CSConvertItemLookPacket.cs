@@ -22,8 +22,8 @@ namespace AAEmu.Game.Core.Packets.C2G
 
             var character = Connection.ActiveChar;
 
-            Item toImage = character.Inventory.GetItemById(baseId);
-            Item imageItem = character.Inventory.GetItemById(lookId);
+            var toImage = character.Inventory.GetItemById(baseId);
+            var imageItem = character.Inventory.GetItemById(lookId);
 
             if (toImage == null || imageItem == null) return;
 

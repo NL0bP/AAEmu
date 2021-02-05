@@ -106,7 +106,7 @@ namespace AAEmu.Game.Models.Game.World
         {
             if (SkillTargetingUtil.IsRelationValid(TargetRelation, Caster, unit))
                 InsideBuffTemplate?.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.UtcNow);
-            // unit.Effects.AddEffect(new Effect(Owner, Caster, new SkillCasterUnit(Caster.ObjId), InsideBuffTemplate, null, DateTime.UtcNow));
+            unit.Buffs.AddBuff(new Buff(Owner, Caster, new SkillCasterUnit(Caster.ObjId), InsideBuffTemplate, null, DateTime.UtcNow));
         }
 
         public void OnLeave(Unit unit)

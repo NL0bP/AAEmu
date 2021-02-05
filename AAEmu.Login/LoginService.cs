@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+
 using AAEmu.Login.Core.Controllers;
 using AAEmu.Login.Core.Network.Internal;
 using AAEmu.Login.Core.Network.Login;
+
 using Microsoft.Extensions.Hosting;
+
 using NLog;
 
 namespace AAEmu.Login
 {
     public class LoginService : IHostedService, IDisposable
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
 
         public Task StartAsync(CancellationToken cancellationToken)
         {

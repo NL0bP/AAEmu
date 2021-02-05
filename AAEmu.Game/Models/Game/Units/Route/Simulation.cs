@@ -1000,7 +1000,7 @@ namespace AAEmu.Game.Models.Game.Units.Route
                 }
                 //var vector2 = vTarget - vPosition;
                 var vector1 = new Vector2(-1, 0); // 12 o'clock == 0°, assuming that y goes from bottom to top
-                double angleInRadians = Math.Atan2(direction.Y, direction.X) - Math.Atan2(vector1.Y, vector1.X);
+                var angleInRadians = Math.Atan2(direction.Y, direction.X) - Math.Atan2(vector1.Y, vector1.X);
                 var c1 = MathUtil.RadianToDegree(angleInRadians);
 
                 // проверяю какой у меня угол получается по сравнению с настоящим

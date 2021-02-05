@@ -8,7 +8,7 @@ namespace AAEmu.Game.Models.Game.Items.Actions
 
         public ItemAdd(Item item)
         {
-            _type = ItemAction.Create;
+            _type = ItemAction.Create; // 5
             _item = item;
         }
 

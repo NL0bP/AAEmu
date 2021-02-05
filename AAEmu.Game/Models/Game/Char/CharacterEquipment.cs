@@ -120,7 +120,7 @@ namespace AAEmu.Game.Models.Game.Char
                             var newEffect =
                                 new Buff(this, this, new SkillCasterUnit(ObjId), buffTemplate, null, DateTime.UtcNow)
                                 {
-                                    AbLevel = itemLevels[setCount.Key]
+                                    AbLevel = (short)itemLevels[setCount.Key]
                                 };
                             Buffs.AddBuff(newEffect);
                             appliedBuffs.Add(bonus.BuffId);
@@ -247,7 +247,7 @@ namespace AAEmu.Game.Models.Game.Char
                 var newEffect =
                     new Buff(this, this, new SkillCasterUnit(), buffTemplate, null, DateTime.UtcNow)
                     {
-                        AbLevel = (uint)gradeBuffAbLevel
+                        AbLevel = (short)gradeBuffAbLevel
                     };
 
                 Buffs.AddBuff(newEffect);
@@ -280,7 +280,7 @@ namespace AAEmu.Game.Models.Game.Char
                     var newEffect =
                         new Buff(this, this, new SkillCasterUnit(), itemAddedBuff, null, DateTime.UtcNow)
                         {
-                            AbLevel = (uint)itemAdded.Template.Level
+                            AbLevel = (short)itemAdded.Template.Level
                         };
 
                     Buffs.AddBuff(newEffect);
@@ -300,7 +300,7 @@ namespace AAEmu.Game.Models.Game.Char
                         var newEffect =
                             new Buff(this, this, new SkillCasterUnit(), buffTemplate, null, DateTime.UtcNow)
                             {
-                                AbLevel = (uint)item.Template.Level
+                                AbLevel = (short)item.Template.Level
                             };
 
                         Buffs.AddBuff(newEffect);

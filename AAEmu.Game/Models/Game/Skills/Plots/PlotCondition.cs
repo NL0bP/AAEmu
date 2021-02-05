@@ -128,7 +128,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots
             // 1 = 1handed
             // 2 = 2handed
             // 3 = duel-wielded
-            WeaponWieldKind wieldKind = (WeaponWieldKind)weaponEquipStatus;
+            var wieldKind = (WeaponWieldKind)weaponEquipStatus;
             if (caster is Character character)
             {
                 return character.GetWeaponWieldKind() == wieldKind;
@@ -208,9 +208,9 @@ namespace AAEmu.Game.Models.Game.Skills.Plots
         private static bool ConditionVariable(Unit caster, SkillCaster casterCaster, BaseUnit target,
             SkillCastTarget targetCaster, SkillObject skillObject, int unk1, int unk2, int unk3)
         {
-            int index = unk1;
-            int operation = unk2;
-            int value = unk3;
+            var index = unk1;
+            var operation = unk2;
+            var value = unk3;
             //There is a high chance this is not implemented correctly..
             //If refactoring. See SpecialEffect -> SetVariable as well
             if (operation == 1)

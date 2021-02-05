@@ -17,7 +17,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             Owner = owner;
             Abilities = new Dictionary<AbilityType, Ability>();
-            for (var i = 1; i < 11; i++)
+            for (var i = 1; i < 13; i++) //1.2 = 10 ability, 3.0.3.0 = 12 ability
             {
                 var id = (AbilityType) i;
                 Abilities[id] = new Ability(id);

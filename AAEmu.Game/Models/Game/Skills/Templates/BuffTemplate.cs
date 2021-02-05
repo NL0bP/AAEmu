@@ -179,7 +179,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                 return; //TODO send error?
             //if (target.Buffs.CheckBuffImmune(Id))
             //    return; //TODO  error of immune?
-            uint abLevel = 1;
+            short abLevel = 1;
             if (caster is Character character)
             {
                 if (source.Skill != null)
@@ -187,12 +187,12 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                     var template = source.Skill.Template;
                     var abilityLevel = character.GetAbLevel((AbilityType)source.Skill.Template.AbilityId);
                     if (template.LevelStep != 0)
-                        abLevel = (uint)((abilityLevel / template.LevelStep) * template.LevelStep);
+                        abLevel = (short)((abilityLevel / template.LevelStep) * template.LevelStep);
                     else
-                        abLevel = (uint)template.AbilityLevel;
+                        abLevel = (short)template.AbilityLevel;
 
                     //Dont allow lower than minimum ablevel for skill or infinite debuffs can happen
-                    abLevel = (uint)Math.Max(template.AbilityLevel, (int)abLevel);
+                    abLevel = (short)Math.Max(template.AbilityLevel, (int)abLevel);
                 }
                 else if (source.Buff != null)
                 {
@@ -203,7 +203,7 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
             {
                 if (source.Skill != null)
                 {
-                    abLevel = (uint)source.Skill.Template.AbilityLevel;
+                    abLevel = (short)source.Skill.Template.AbilityLevel;
                 }
             }
             target.Buffs.AddBuff(new Buff(target, caster, casterObj, this, source?.Skill, time) { AbLevel = abLevel });
@@ -306,14 +306,14 @@ namespace AAEmu.Game.Models.Game.Skills.Templates
                 owner.BroadcastPacket(new SCBuffRemovedPacket(owner.ObjId, buff.Index), true);
         }
 
-        public void WriteData(PacketStream stream, uint abLevel)
+        public void WriteData(PacketStream stream, short abLevel)
         {
             stream.WritePisc(0, GetDuration(abLevel) / 10, 0, (long) (Tick / 10)); // unk, Duration, unk / 10, Tick
         }
 
-        public int GetDuration(uint abLevel)
+        public int GetDuration(short abLevel)
         {
-            return Math.Max(0, (LevelDuration * (int)abLevel) + Duration);
+            return Math.Max(0, (LevelDuration * abLevel) + Duration);
         }
 
         public double GetTick()

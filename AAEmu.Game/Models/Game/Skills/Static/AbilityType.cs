@@ -1,6 +1,6 @@
 ﻿namespace AAEmu.Game.Models.Game.Skills.Static
 {
-    public enum AbilityType : byte
+    public enum AbilityType
     {
         General = 0,
         Fight = 1,

@@ -1,9 +1,9 @@
 ﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Skills;
-using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Skills.Static;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -55,30 +55,40 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 var expfora1 = ExpirienceManager.Instance.GetExpNeededToGivenLevel(targetPlayer.Abilities.Abilities[targetPlayer.Ability1].Exp, level);
                 if (expfora1 > maxexptoadd)
+                {
                     maxexptoadd = expfora1;
+                }
             }
 
             if (targetPlayer.Ability2 != AbilityType.None)
             {
                 var expfora2 = ExpirienceManager.Instance.GetExpNeededToGivenLevel(targetPlayer.Abilities.Abilities[targetPlayer.Ability2].Exp, level);
                 if (expfora2 > maxexptoadd)
+                {
                     maxexptoadd = expfora2;
+                }
             }
 
             if (targetPlayer.Ability3 != AbilityType.None)
             {
                 var expfora3 = ExpirienceManager.Instance.GetExpNeededToGivenLevel(targetPlayer.Abilities.Abilities[targetPlayer.Ability3].Exp, level);
                 if (expfora3 > maxexptoadd)
+                {
                     maxexptoadd = expfora3;
+                }
             }
 
             var expforlevel = ExpirienceManager.Instance.GetExpForLevel(level) - targetPlayer.Expirience;
             if (expforlevel > maxexptoadd)
+            {
                 maxexptoadd = expforlevel;
+            }
 
             // Add maximum required xp to get to target levels
             if (maxexptoadd > 0)
+            {
                 targetPlayer.AddExp(maxexptoadd, true);
+            }
 
             // If the target level is bigger than player's current level, refill HP/MP and send level-up packet
             if (level > targetPlayer.Level)

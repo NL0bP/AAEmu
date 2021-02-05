@@ -1,25 +1,30 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+
 using AAEmu.Commons.Utils;
 using AAEmu.Login.Core.Network.Connections;
 using AAEmu.Login.Core.Packets.L2C;
 using AAEmu.Login.Core.Packets.L2G;
 using AAEmu.Login.Models;
 using AAEmu.Login.Utils;
+
 using NLog;
 
 namespace AAEmu.Login.Core.Controllers
 {
     public class GameController : Singleton<GameController>
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
-        private Dictionary<byte, GameServer> _gameServers;
-        private Dictionary<byte, byte> _mirrorsId;
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
+        private readonly Dictionary<byte, GameServer> _gameServers;
+        private readonly Dictionary<byte, byte> _mirrorsId;
 
         public byte? GetParentId(byte gsId)
         {
             if (_mirrorsId.ContainsKey(gsId))
+            {
                 return _mirrorsId[gsId];
+            }
+
             return null;
         }
 
@@ -83,7 +88,9 @@ namespace AAEmu.Login.Core.Controllers
         public void Remove(byte gsId)
         {
             if (!_gameServers.ContainsKey(gsId))
+            {
                 return;
+            }
 
             var gameServer = _gameServers[gsId];
             gameServer.Connection = null;
@@ -91,7 +98,9 @@ namespace AAEmu.Login.Core.Controllers
             foreach (var mirrorId in gameServer.MirrorsId)
             {
                 if (_gameServers.ContainsKey(mirrorId))
+                {
                     _gameServers[mirrorId].Connection = null;
+                }
 
                 _mirrorsId.Remove(mirrorId);
             }
@@ -109,7 +118,10 @@ namespace AAEmu.Login.Core.Controllers
                 {
                     var value = gameServers[i];
                     if (!value.Active)
+                    {
                         continue;
+                    }
+
                     var chars = !connection.Characters.ContainsKey(value.Id);
                     value.SendPacket(
                         new LGRequestInfoPacket(connection.Id, requestIds[i], chars ? connection.AccountId : 0));
@@ -124,7 +136,6 @@ namespace AAEmu.Login.Core.Controllers
                 connection.SendPacket(new ACWorldListPacket(gsList, connection.GetCharacters()));
             }
         }
-
         public void SetLoad(byte gsId, byte load)
         {
             lock (_gameServers)
@@ -136,10 +147,16 @@ namespace AAEmu.Login.Core.Controllers
         public void RequestEnterWorld(LoginConnection connection, byte gsId)
         {
             if (!_gameServers.ContainsKey(gsId))
+            {
                 return;
+            }
+
             var gs = _gameServers[gsId];
             if (!gs.Active)
+            {
                 return;
+            }
+
             gs.SendPacket(new LGPlayerEnterPacket(connection.AccountId, connection.Id));
         }
 

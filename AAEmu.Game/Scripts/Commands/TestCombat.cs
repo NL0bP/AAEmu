@@ -40,7 +40,9 @@ namespace AAEmu.Game.Scripts.Commands
                         character.SendPacket(new SCCombatEngagedPacket(character.CurrentTarget.ObjId));
                     }
                     else
+                    {
                         character.SendMessage("[TestCombat] not have target");
+                    }
 
                     break;
                 case "cleared": // TODO Battle End
@@ -50,15 +52,22 @@ namespace AAEmu.Game.Scripts.Commands
                         character.SendPacket(new SCCombatClearedPacket(character.CurrentTarget.ObjId));
                     }
                     else
+                    {
                         character.SendMessage("[TestCombat] not have target");
+                    }
 
                     break;
-                case "first_hit": 
+                case "first_hit":
                     if (character.CurrentTarget != null)
+                    {
                         character.SendPacket(new SCCombatFirstHitPacket(character.ObjId, character.CurrentTarget.ObjId,
                             0));
+                    }
                     else
+                    {
                         character.SendMessage("[TestCombat] not have target");
+                    }
+
                     break;
                 case "text": // TODO Combat Effect
                     character.SendPacket(new SCCombatTextPacket(0, character.ObjId, 0));

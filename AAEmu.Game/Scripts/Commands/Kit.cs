@@ -1,15 +1,16 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+
 using AAEmu.Commons.IO;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Core.Managers.World;
+
 using Newtonsoft.Json;
+
 using NLog;
 
 namespace AAEmu.Game.Scripts.Commands
@@ -26,7 +27,7 @@ namespace AAEmu.Game.Scripts.Commands
             public uint itemId { get; set; }
             [JsonProperty("grade")]
             public byte itemGrade { get; set; }
-            [JsonProperty("count")] 
+            [JsonProperty("count")]
             public int itemCount { get; set; }
 
             public GMItemKitItem()
@@ -39,14 +40,14 @@ namespace AAEmu.Game.Scripts.Commands
 
             public GMItemKitItem(string kit, uint id, byte grade = 0, int count = 1)
             {
-                this.kitnames.Clear();
-                this.kitnames.Add(kit.ToLower());
-                this.itemId = id;
-                this.itemGrade = grade;
-                this.itemCount = count;
+                kitnames.Clear();
+                kitnames.Add(kit.ToLower());
+                itemId = id;
+                itemGrade = grade;
+                itemCount = count;
             }
         }
-        
+
         public class GMItemKitConfig
         {
             [JsonProperty("itemkits")]
@@ -62,7 +63,7 @@ namespace AAEmu.Game.Scripts.Commands
         }
 
         public GMItemKitConfig kitconfig = new GMItemKitConfig();
-        
+
         public void OnLoad()
         {
             string[] name = { "kit", "addkit", "add_kit" };
@@ -96,14 +97,19 @@ namespace AAEmu.Game.Scripts.Commands
             int itemsAdded = 0;
 
             if (args.Length > firstarg + 0)
+            {
                 kitname = args[firstarg + 0].ToLower();
+            }
 
             if (kitname == "?")
             {
                 character.SendMessage("[Items] " + CommandManager.CommandPrefix + "kit has the following kits registered:");
                 string s = string.Empty;
                 foreach (var n in kitconfig.itemkitnames)
+                {
                     s += n + "  ";
+                }
+
                 character.SendMessage("|cFFFFFFFF" + s + "|r");
                 return;
             }
@@ -113,7 +119,9 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 //_log.Debug("kit.kitname: " + kit.kitname);
                 if (!kit.kitnames.Contains(kitname))
+                {
                     continue;
+                }
 
                 //_log.Debug("kit.itemID: " + kit.itemID.ToString());
 
@@ -162,17 +170,20 @@ namespace AAEmu.Game.Scripts.Commands
         {
             //_log.Info("Init");
             kitconfig.Clear();
-            
+
             GMItemKitConfig jsonkit = new GMItemKitConfig();
             try
             {
                 // string data = File.ReadAllText("Scripts\\Commands\\kits.json");
                 // _log.Info("data: " + data);
                 // jsonkit = JsonConvert.DeserializeObject<GMItemKitConfig>(data);
-                
+
                 var contents = FileManager.GetFileContents($"{FileManager.AppPath}Scripts/Commands/kits.json");
                 if (string.IsNullOrWhiteSpace(contents))
+                {
                     throw new IOException($"File {FileManager.AppPath}Scripts/Commands/kits.json doesn't exists or is empty.");
+                }
+
                 jsonkit = JsonConvert.DeserializeObject<GMItemKitConfig>(contents);
 
                 // if (!JsonHelper.TryDeserializeObject(contents, out _config, out _)) // TODO here can out Exception
@@ -184,13 +195,17 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 _log.Error("Exception: " + x.Message);
             }
-            
+
             // Create a enum for our "/kit ?" help command
-            foreach(var kit in kitconfig.itemkits)
+            foreach (var kit in kitconfig.itemkits)
             {
                 foreach (var kn in kit.kitnames)
+                {
                     if (!kitconfig.itemkitnames.Contains(kn))
+                    {
                         kitconfig.itemkitnames.Add(kn);
+                    }
+                }
             }
             kitconfig.itemkitnames.Sort();
 

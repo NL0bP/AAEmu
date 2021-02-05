@@ -1,13 +1,14 @@
 ﻿using System;
+
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Tasks.Skills;
-using AAEmu.Game.Models.Game.Skills;
-using AAEmu.Game.Models.Game.Skills.Templates;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -35,7 +36,10 @@ namespace AAEmu.Game.Scripts.Commands
             Unit source = character;
             Unit target = character.CurrentTarget == null ? character : (Unit)character.CurrentTarget;
 
-            if (target == null) return;
+            if (target == null)
+            {
+                return;
+            }
 
             if (args.Length == 0)
             {
@@ -57,7 +61,9 @@ namespace AAEmu.Game.Scripts.Commands
                 {
                     var skillTemplate2 = SkillManager.Instance.GetSkillTemplate(skillIdAoe);
                     if (skillTemplate2 != null)
+                    {
                         DoAoe(character, skillTemplate2);
+                    }
                 }
                 return;
             }
@@ -69,11 +75,15 @@ namespace AAEmu.Game.Scripts.Commands
 
             uint skillId;
             if (!uint.TryParse(args[argsIdx], out skillId))
+            {
                 return;
+            }
 
             var skillTemplate = SkillManager.Instance.GetSkillTemplate(skillId);
             if (skillTemplate == null)
+            {
                 return;
+            }
 
             var useSkill = new Skill(skillTemplate);
             TaskManager.Instance.Schedule(new UseSkillTask(useSkill, source, casterObj, target, targetObj, skillObject), TimeSpan.FromMilliseconds(0));

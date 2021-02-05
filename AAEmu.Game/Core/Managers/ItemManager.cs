@@ -160,7 +160,7 @@ namespace AAEmu.Game.Core.Managers
                 return items;
             }
             items = new List<Item>();
-            ulong itemId = ((ulong)npcId << 32) + 65536;
+            var itemId = ((ulong)npcId << 32) + 65536;
             foreach (var lootPackDroppingNpc in lootPackDroppingNpcs)
             {
                 var lootPacks = GetLootPacks(lootPackDroppingNpc.LootPackId);
@@ -175,7 +175,7 @@ namespace AAEmu.Game.Core.Managers
                 {
                     if (lootPacks[uii].DropRate + dropRateItemId >= dropRateItem)
                     {
-                        Item item = new Item();
+                        var item = new Item();
                         item.TemplateId = lootPacks[uii].ItemId;
                         item.WorldId = 1;
                         item.CreateTime = DateTime.UtcNow;
@@ -225,7 +225,7 @@ namespace AAEmu.Game.Core.Managers
              * -> click for manual loot doesn't trigger a new packet. so it won't loot
              * Note: Re-opening the loot window lets you loot the remaining items
             */
-            bool isDone = true;
+            var isDone = true;
             var lootDropItems = ItemManager.Instance.GetLootDropItems(id);
             if (lootAll)
             {
@@ -596,30 +596,28 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            var template = new Holdable
-                            {
-                                Id = reader.GetUInt32("id"),
-                                KindId = reader.GetUInt32("kind_id"),
-                                Speed = reader.GetInt32("speed"),
-                                ExtraDamagePierceFactor = reader.GetInt32("extra_damage_pierce_factor"),
-                                ExtraDamageSlashFactor = reader.GetInt32("extra_damage_slash_factor"),
-                                ExtraDamageBluntFactor = reader.GetInt32("extra_damage_blunt_factor"),
-                                MaxRange = reader.GetInt32("max_range"),
-                                Angle = reader.GetInt32("angle"),
-                                EnchantedDps1000 = reader.GetInt32("enchanted_dps1000"),
-                                SlotTypeId = reader.GetUInt32("slot_type_id"),
-                                DamageScale = reader.GetInt32("damage_scale"),
-                                FormulaDps = new Formula(reader.GetString("formula_dps")),
-                                FormulaMDps = new Formula(reader.GetString("formula_mdps")),
-                                FormulaArmor = new Formula(reader.GetString("formula_armor")),
-                                MinRange = reader.GetInt32("min_range"),
-                                SheathePriority = reader.GetInt32("sheathe_priority"),
-                                DurabilityRatio = reader.GetFloat("durability_ratio"),
-                                RenewCategory = reader.GetInt32("renew_category"),
-                                ItemProcId = reader.GetInt32("item_proc_id"),
-                                StatMultiplier = reader.GetInt32("stat_multiplier"),
-                                FormulaHDps = new Formula(reader.GetString("formula_hdps"))
-                            };
+                            var template = new Holdable();
+                            template.Id = reader.GetUInt32("id");
+                            //template.KindId = reader.GetUInt32("kind_id"); // there is no such field in the database for version 3030
+                            template.Speed = reader.GetInt32("speed");
+                            template.ExtraDamagePierceFactor = reader.GetInt32("extra_damage_pierce_factor");
+                            template.ExtraDamageSlashFactor = reader.GetInt32("extra_damage_slash_factor");
+                            template.ExtraDamageBluntFactor = reader.GetInt32("extra_damage_blunt_factor");
+                            template.MaxRange = reader.GetInt32("max_range");
+                            template.Angle = reader.GetInt32("angle");
+                            template.EnchantedDps1000 = reader.GetInt32("enchanted_dps1000");
+                            template.SlotTypeId = reader.GetUInt32("slot_type_id");
+                            template.DamageScale = reader.GetInt32("damage_scale");
+                            template.FormulaDps = new Formula(reader.GetString("formula_dps"));
+                            template.FormulaMDps = new Formula(reader.GetString("formula_mdps"));
+                            template.FormulaArmor = new Formula(reader.GetString("formula_armor"));
+                            template.MinRange = reader.GetInt32("min_range");
+                            template.SheathePriority = reader.GetInt32("sheathe_priority");
+                            template.DurabilityRatio = reader.GetFloat("durability_ratio");
+                            template.RenewCategory = reader.GetInt32("renew_category");
+                            template.ItemProcId = reader.GetInt32("item_proc_id");
+                            template.StatMultiplier = reader.GetInt32("stat_multiplier");
+                            template.FormulaHDps = new Formula(reader.GetString("formula_hdps"));
 
                             _holdables.Add(template.Id, template);
                         }
@@ -751,7 +749,7 @@ namespace AAEmu.Game.Core.Managers
                     {
                         while (reader.Read())
                         {
-                            uint id = reader.GetUInt32("equip_item_set_id");
+                            var id = reader.GetUInt32("equip_item_set_id");
                             if (!_equipItemSets.ContainsKey(id))
                                 _equipItemSets.Add(id, new EquipItemSet { Id = id });
 
@@ -1070,23 +1068,23 @@ namespace AAEmu.Game.Core.Managers
                     }
                 }
                 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT * FROM item_socket_chances";
-                    command.Prepare();
-                    using (var sqliteReader = command.ExecuteReader())
-                    using (var reader = new SQLiteWrapperReader(sqliteReader))
-                    {
-                        while (reader.Read())
-                        {
-                            var numSockets = reader.GetUInt32("num_sockets");
-                            var chance = reader.GetUInt32("success_ratio");
+                //using (var command = connection.CreateCommand())
+                //{
+                //    command.CommandText = "SELECT * FROM item_socket_chances";
+                //    command.Prepare();
+                //    using (var sqliteReader = command.ExecuteReader())
+                //    using (var reader = new SQLiteWrapperReader(sqliteReader))
+                //    {
+                //        while (reader.Read())
+                //        {
+                //            var numSockets = reader.GetUInt32("num_sockets");
+                //            var chance = reader.GetUInt32("success_ratio");
 
-                            if (!_socketChance.ContainsKey(numSockets))
-                                _socketChance.Add(numSockets, chance);
-                        }
-                    }
-                }
+                //            if (!_socketChance.ContainsKey(numSockets))
+                //                _socketChance.Add(numSockets, chance);
+                //        }
+                //    }
+                //}
 
                 using (var command = connection.CreateCommand())
                 {

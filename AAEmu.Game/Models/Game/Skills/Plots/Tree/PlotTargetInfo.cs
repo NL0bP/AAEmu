@@ -99,7 +99,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
 
         private BaseUnit UpdateAreaTarget(PlotTargetAreaParams args, PlotState state, PlotEventTemplate plotEvent)
         {
-            BaseUnit posUnit = new BaseUnit();
+            var posUnit = new BaseUnit();
             posUnit.ObjId = uint.MaxValue;
             posUnit.Region = Target.Region;
             posUnit.Position = new Point();
@@ -188,7 +188,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
 
         private BaseUnit UpdateRandomAreaTarget(PlotTargetRandomAreaParams args, PlotState state, PlotEventTemplate plotEvent)
         {
-            BaseUnit posUnit = new BaseUnit();
+            var posUnit = new BaseUnit();
             posUnit.ObjId = uint.MaxValue;
             posUnit.Region = PreviousTarget.Region;
             posUnit.Position = new Point();
@@ -197,12 +197,12 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
 
             //TODO Optimize rotation calc 
             var rotZ = PreviousTarget.Position.RotationZ;
-            int angle = Rand.Next(-180, 180);
+            var angle = Rand.Next(-180, 180);
             if (angle != 0)
                 rotZ = MathUtil.ConvertDegreeToDirection(angle + MathUtil.ConvertDirectionToDegree(PreviousTarget.Position.RotationZ));
 
             float x, y;
-            float distance = Rand.Next(0, (float)args.Distance);
+            var distance = Rand.Next(0, (float)args.Distance);
             if (distance != 0)
                 (x, y) = MathUtil.AddDistanceToFront(distance / 1000, PreviousTarget.Position.X, PreviousTarget.Position.Y, rotZ);
             else

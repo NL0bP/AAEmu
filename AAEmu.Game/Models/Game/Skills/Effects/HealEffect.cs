@@ -93,7 +93,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
                 }
             }
 
-            bool criticalHeal = Rand.Next(0f, 100f) < caster.HealCritical;
+            var criticalHeal = Rand.Next(0f, 100f) < caster.HealCritical;
             
             var value = (int)Rand.Next(min, max);
 
@@ -117,7 +117,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects
             
             value = (int) (value * caster.HealMul);
 
-            byte healHitType = criticalHeal ? (byte)11 : (byte)13;
+            var healHitType = criticalHeal ? (byte)11 : (byte)13;
 
             var packet = new SCUnitHealedPacket(castObj, casterObj, target.ObjId, 0, healHitType, value);
             if (packetBuilder != null)

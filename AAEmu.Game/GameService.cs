@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using AAEmu.Commons.Cryptography;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
@@ -104,6 +105,7 @@ namespace AAEmu.Game
 
             AccessLevelManager.Instance.Load();
             CashShopManager.Instance.Load();
+            EncryptionManager.Instance.Load();
             ScriptCompiler.Compile();
 
             TimeManager.Instance.Start();

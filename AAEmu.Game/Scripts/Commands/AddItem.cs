@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game;
-using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Items.Actions;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game;
+using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items;
+using AAEmu.Game.Models.Game.Items.Actions;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -42,14 +39,20 @@ namespace AAEmu.Game.Scripts.Commands
             int count = 1;
             byte grade = 0;
 
-            if ( (args.Length > firstarg + 0) && (uint.TryParse(args[firstarg + 0], out uint argitemId)) )
+            if ((args.Length > firstarg + 0) && (uint.TryParse(args[firstarg + 0], out uint argitemId)))
+            {
                 itemId = argitemId;
+            }
 
             if ((args.Length > firstarg + 1) && (int.TryParse(args[firstarg + 1], out int argcount)))
+            {
                 count = argcount;
+            }
 
             if ((args.Length > firstarg + 2) && (byte.TryParse(args[firstarg + 2], out byte arggrade)))
+            {
                 grade = arggrade;
+            }
 
             if (grade > (byte)ItemGrade.Mythic || grade < (byte)ItemGrade.Crude)
             {

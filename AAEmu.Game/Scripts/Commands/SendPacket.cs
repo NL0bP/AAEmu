@@ -1,9 +1,10 @@
-﻿using AAEmu.Game.Core.Managers;
+﻿using System;
+using System.IO;
+
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using System;
-using System.IO;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -11,7 +12,7 @@ namespace AAEmu.Game.Scripts.Commands
     {
         public void OnLoad()
         {
-            string[] name = { "packet"};
+            string[] name = { "packet" };
             CommandManager.Instance.Register(name, this);
         }
 
@@ -45,15 +46,15 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 hex = args[0];
             }
-            
-            if ((hex.Length & 1) != 0) 
+
+            if ((hex.Length & 1) != 0)
             {
                 character.SendMessage("[Packet] " + CommandManager.CommandPrefix + "packet <hex (must be even in length and greater than 2 bytes)>");
                 return;
             }
 
             bool valid = true;
-            foreach(var c in hex)
+            foreach (var c in hex)
             {
                 valid = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 
@@ -68,16 +69,16 @@ namespace AAEmu.Game.Scripts.Commands
 
             for (int i = 0; i < raw.Length; i++)
             {
-                int high = hex[i*2];
-                int low = hex[i*2+1];
+                int high = hex[i * 2];
+                int low = hex[i * 2 + 1];
                 high = (high & 0xf) + ((high & 0x40) >> 6) * 9;
                 low = (low & 0xf) + ((low & 0x40) >> 6) * 9;
 
                 raw[i] = (byte)((high << 4) | low);
             }
 
-            ushort typeId = (ushort)( (ushort)raw[0] | (ushort)raw[1] << 8 );
-            var payload = new byte[(hex.Length - 4)/2];       
+            ushort typeId = (ushort)(raw[0] | raw[1] << 8);
+            var payload = new byte[(hex.Length - 4) / 2];
             Array.Copy(raw, 2, payload, 0, payload.Length);
 
             var p = new SCRawPacket(typeId, payload);

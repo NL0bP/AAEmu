@@ -41,7 +41,7 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects
             if (lootPacks != null)
             {
                 var totalDropRate = (int)lootPacks.Sum(c => c.DropRate); //Adds the total drop rate of all possible items from a skill
-                Random rand = new Random();
+                var rand = new Random();
                 var randChoice = rand.Next(totalDropRate);
 
                 LootPacks lootpack = null;

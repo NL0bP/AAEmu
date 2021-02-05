@@ -8,7 +8,7 @@ namespace AAEmu.Game.Models.Game.Items.Actions
 
         public ItemBuyback(Item item)
         {
-            _type = ItemAction.Take;
+            _type = ItemAction.Take; // 6
             _item = item;
         }
 

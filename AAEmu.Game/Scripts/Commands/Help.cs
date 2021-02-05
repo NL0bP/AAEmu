@@ -1,8 +1,6 @@
-﻿using System.Text;
-using AAEmu.Game.Core.Managers;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -33,7 +31,7 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 var thisCommand = args[0].ToLower();
                 bool foundIt = false;
-                foreach(var command in list)
+                foreach (var command in list)
                 {
                     if (command == thisCommand)
                     {
@@ -45,7 +43,10 @@ namespace AAEmu.Game.Scripts.Commands
                     }
                 }
                 if (!foundIt)
+                {
                     character.SendMessage("Command not found: " + CommandManager.CommandPrefix + thisCommand);
+                }
+
                 return;
             }
 
@@ -53,16 +54,25 @@ namespace AAEmu.Game.Scripts.Commands
             foreach (var command in list)
             {
                 if (command == "help")
+                {
                     continue;
+                }
+
                 if (AccessLevel.getLevel(command) > character.AccessLevel)
+                {
                     continue;
+                }
 
                 var cmd = CommandManager.Instance.GetCommandInterfaceByName(command);
                 var arghelp = cmd.GetCommandLineHelp();
                 if (arghelp != string.Empty)
+                {
                     character.SendMessage(CommandManager.CommandPrefix + command + " |cFF999999" + arghelp + "|r");
+                }
                 else
+                {
                     character.SendMessage(CommandManager.CommandPrefix + command);
+                }
             }
         }
 

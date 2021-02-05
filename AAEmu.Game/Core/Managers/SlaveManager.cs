@@ -11,6 +11,7 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Mails;
 using AAEmu.Game.Models.Game.Skills;
@@ -22,6 +23,7 @@ using AAEmu.Game.Models.Tasks.Slave;
 using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
 using NLog;
+using AttachPointKind = AAEmu.Game.Models.Game.DoodadObj.Static.AttachPointKind;
 
 namespace AAEmu.Game.Core.Managers
 {
@@ -76,25 +78,25 @@ namespace AAEmu.Game.Core.Managers
         public void UnbindSlave(Character character, uint tlId)
         {
             var slave = _tlSlaves[tlId];
-            character.BroadcastPacket(new SCUnitDetachedPacket(character.ObjId, 5), true);
+            character.BroadcastPacket(new SCUnitDetachedPacket(character.ObjId, AttachUnitReason.SlaveBinding), true);
             // slave.Driver = null;
             var attachPoint = slave.AttachedCharacters.FirstOrDefault(x => x.Value == character).Key;
             if (attachPoint != default)
                 slave.AttachedCharacters.Remove(attachPoint);
         }
         
-        public void BindSlave(Character character, uint objId, byte attachPointId, byte bondKind)
+        public void BindSlave(Character character, uint objId, AttachPointKind attachPointId, AttachUnitReason bondKind)
         {
             var slave = GetActiveSlaveByObjId(objId);
 
-            if (slave.AttachedCharacters.ContainsKey((AttachPointKind)attachPointId))
+            if (slave.AttachedCharacters.ContainsKey(attachPointId))
                 return;
             
             character.BroadcastPacket(new SCUnitAttachedPacket(character.ObjId, attachPointId, bondKind, objId), true);
-            if (attachPointId == (int) AttachPointKind.Driver)
+            if (attachPointId == AttachPointKind.Driver)
                 character.BroadcastPacket(new SCSlaveBoundPacket(character.Id, objId), true);
             // slave.Driver = character;
-            slave.AttachedCharacters.Add((AttachPointKind)attachPointId, character);
+            slave.AttachedCharacters.Add(attachPointId, character);
         }
 
         public void BindSlave(GameConnection connection, uint tlId)
@@ -104,7 +106,7 @@ namespace AAEmu.Game.Core.Managers
             if (slave.AttachedCharacters.ContainsKey(AttachPointKind.Driver))
                 return;
                 
-            unit.BroadcastPacket(new SCUnitAttachedPacket(unit.ObjId, 1, 6, slave.ObjId), true);
+            unit.BroadcastPacket(new SCUnitAttachedPacket(unit.ObjId, AttachPointKind.Driver, AttachUnitReason.NewMaster, slave.ObjId), true);
             unit.BroadcastPacket(new SCTargetChangedPacket(unit.ObjId, slave.ObjId), true);
             unit.CurrentTarget = slave;
             unit.BroadcastPacket(new SCSlaveBoundPacket(unit.Id, slave.ObjId), true);
@@ -268,13 +270,13 @@ namespace AAEmu.Game.Core.Managers
                     AttachedSlaves = new List<Slave>(),
                     AttachedCharacters = new Dictionary<AttachPointKind, Character>(),
                     SpawnTime = DateTime.UtcNow,
-                    AttachPointId = (sbyte) slaveBinding.AttachPointId,
+                    AttachPointId = slaveBinding.AttachPointId,
                     OwnerObjId = template.ObjId
                 };
                 
                 if (_attachPoints.ContainsKey(template.ModelId))
                 {
-                    if (_attachPoints[template.ModelId].ContainsKey((int) slaveBinding.AttachPointId))
+                    if (_attachPoints[template.ModelId].ContainsKey((int)slaveBinding.AttachPointId))
                     {
                         var attachPoint = _attachPoints[template.ModelId][(int) slaveBinding.AttachPointId];
                         // childSlave.AttachPosition = _attachPoints[template.ModelId][(int) slaveBinding.AttachPointId];
@@ -352,14 +354,14 @@ namespace AAEmu.Game.Core.Managers
 
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
-                            var template = new SlaveInitialBuffs
-                            {
-                                Id = reader.GetUInt32("id"),
-                                SlaveId = reader.GetUInt32("slave_id"),
-                                BuffId = reader.GetUInt32("buff_id")
-                            };
+                            var template = new SlaveInitialBuffs();
+                            template.Id = step++;
+                            //template.Id = reader.GetUInt32("id");
+                            template.SlaveId = reader.GetUInt32("slave_id");
+                            template.BuffId = reader.GetUInt32("buff_id");
                             if (_slaveTemplates.ContainsKey(template.SlaveId))
                             {
                                 _slaveTemplates[template.SlaveId].InitialBuffs.Add(template);
@@ -375,15 +377,15 @@ namespace AAEmu.Game.Core.Managers
 
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
-                            var template = new SlavePassiveBuffs
-                            {
-                                Id = reader.GetUInt32("id"),
-                                OwnerId = reader.GetUInt32("owner_id"),
-                                OwnerType = reader.GetString("owner_type"),
-                                PassiveBuffId = reader.GetUInt32("passive_buff_id")
-                            };
+                            var template = new SlavePassiveBuffs();
+                            template.Id = step++;
+                            //template.Id = reader.GetUInt32("id");
+                            template.OwnerId = reader.GetUInt32("owner_id");
+                            template.OwnerType = reader.GetString("owner_type");
+                            template.PassiveBuffId = reader.GetUInt32("passive_buff_id");
                             if (_slaveTemplates.ContainsKey(template.OwnerId))
                             {
                                 _slaveTemplates[template.OwnerId].PassiveBuffs.Add(template);
@@ -428,17 +430,17 @@ namespace AAEmu.Game.Core.Managers
 
                     using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
                     {
+                        var step = 0u;
                         while (reader.Read())
                         {
-                            var template = new SlaveBindings()
-                            {
-                                Id = reader.GetUInt32("id"),
-                                OwnerId = reader.GetUInt32("owner_id"),
-                                OwnerType = reader.GetString("owner_type"),
-                                AttachPointId = reader.GetUInt32("attach_point_id"),
-                                SlaveId = reader.GetUInt32("slave_id")
-                            };
-                            
+                            var template = new SlaveBindings();
+                            template.Id = step++;
+                            //template.Id = reader.GetUInt32("id");
+                            template.OwnerId = reader.GetUInt32("owner_id");
+                            template.OwnerType = reader.GetString("owner_type");
+                            template.AttachPointId = (AttachPointKind)reader.GetUInt32("attach_point_id");
+                            template.SlaveId = reader.GetUInt32("slave_id");
+
                             if (_slaveTemplates.ContainsKey(template.OwnerId))
                             {
                                 _slaveTemplates[template.OwnerId].SlaveBindings.Add(template);

@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Skills.Static
+﻿namespace AAEmu.Game.Models.Game.Skills.Static
 {
     public enum BuffAttribute
     {

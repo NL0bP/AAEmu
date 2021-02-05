@@ -1,8 +1,8 @@
 ﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.NPChar;
 
 namespace AAEmu.Game.Scripts.Commands
@@ -40,7 +40,7 @@ namespace AAEmu.Game.Scripts.Commands
                 else
                 {
                     npcChar.Hp = npcChar.MaxHp;
-                    npcChar.BroadcastPacket(new SCUnitPointsPacket(npcChar.ObjId, npcChar.Hp, npcChar.Mp), true);
+                    npcChar.BroadcastPacket(new SCUnitPointsPacket(npcChar.ObjId, npcChar.Hp, npcChar.Mp, npcChar.HighAbilityRsc), true);
                 }
             }
             else if (targetPlayer is Character)
@@ -54,7 +54,7 @@ namespace AAEmu.Game.Scripts.Commands
                 {
                     targetPlayer.Hp = targetPlayer.MaxHp;
                     targetPlayer.Mp = targetPlayer.MaxMp;
-                    targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp), true);
+                    targetPlayer.BroadcastPacket(new SCUnitPointsPacket(targetPlayer.ObjId, targetPlayer.Hp, targetPlayer.Mp, targetPlayer.HighAbilityRsc), true);
                 }
             }
         }

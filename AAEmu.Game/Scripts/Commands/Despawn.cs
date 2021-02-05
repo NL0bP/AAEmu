@@ -1,16 +1,12 @@
 ﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.World;
-using AAEmu.Game.Utils;
+
 using NLog;
-using System;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -36,7 +32,7 @@ namespace AAEmu.Game.Scripts.Commands
         {
             if (args.Length < 2)
             {
-                character.SendMessage("[Despawn] " + CommandManager.CommandPrefix + "despawn "+ GetCommandLineHelp());
+                character.SendMessage("[Despawn] " + CommandManager.CommandPrefix + "despawn " + GetCommandLineHelp());
                 return;
             }
 
@@ -49,7 +45,7 @@ namespace AAEmu.Game.Scripts.Commands
                 character.SendMessage("|cFFFF0000[Despawn] Parse error unitId|r");
                 return;
             }
-            if ((args.Length >= 3) && (!float.TryParse(args[2],out radius)))
+            if ((args.Length >= 3) && (!float.TryParse(args[2], out radius)))
             {
                 character.SendMessage("|cFFFF0000[Despawn] Parse error radius|r");
                 return;

@@ -17,19 +17,17 @@
 * 
 */
 
-using System.Collections.Generic;
+using System;
+using System.Drawing;
+
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using System;
-using AAEmu.Game.Models.Game.Chat;
-using System.Collections.Concurrent;
-using AAEmu.Game.Core.Managers.World;
-using System.Drawing;
 
 namespace AAEmu.Game.Scripts.Commands
-         
+
 {
     public class Announce : ICommand
     {
@@ -63,7 +61,9 @@ namespace AAEmu.Game.Scripts.Commands
             {
                 Color nameCol = Color.FromName(hex.ToLower());
                 if ((nameCol.R != 0) || (nameCol.G != 0) || (nameCol.B != 0))
+                {
                     return nameCol; // Only accept try by name when it didn't return pure black
+                }
 
                 //remove the # at the front
                 hex = hex.Replace("#", "");
@@ -99,7 +99,7 @@ namespace AAEmu.Game.Scripts.Commands
         {
             //if no arguments send help information
             if (args.Length == 0)
-            {                                
+            {
                 character.SendMessage("[Announce] syntax: " + CommandManager.CommandPrefix + "announce [<NoticeType> <Color> <VisibleTime>] <message>");
                 character.SendMessage("[Announce] example1: " + CommandManager.CommandPrefix + "announce 3 FFFF00 2500 Text here is in yellow");
                 character.SendMessage("[Announce] example2: " + CommandManager.CommandPrefix + "announce 3 red 2500 Text here is in red");
@@ -117,7 +117,9 @@ namespace AAEmu.Game.Scripts.Commands
                 string _message = "";
 
                 if (byte.TryParse(args[0], out byte typeval))
+                {
                     _type = typeval;
+                }
 
                 if ((_type < 1) || (_type > 3))
                 {
@@ -129,12 +131,16 @@ namespace AAEmu.Game.Scripts.Commands
                 {
                     _color = NameOrHexColor(args[1]);
                     if (Int32.TryParse(args[2], out Int32 vistimeval))
+                    {
                         _visibletime = vistimeval;
+                    }
                 }
 
                 int x = firstArg;
                 for (; x < args.Length; x++)
+                {
                     _message += args[x] + " ";
+                }
 
                 //broadcast to all online clients in server
                 WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(_type, _color, _visibletime, _message));

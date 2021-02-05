@@ -22,6 +22,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         private float _scale;
 
         private static Logger _log = LogManager.GetCurrentClassLogger();
+        public byte Flag { get; set; }
         public uint TemplateId { get; set; }
         public uint DbId { get; set; }
         public DoodadTemplate Template { get; set; }
@@ -238,40 +239,36 @@ namespace AAEmu.Game.Models.Game.DoodadObj
         public PacketStream Write(PacketStream stream)
         {
             stream.WriteBc(ObjId); //The object # in the list
-            stream.Write(TemplateId); //The template id needed for that object, the client then uses the template configurations, not the server
-            stream.WriteBc(OwnerObjId); //The creator of the object
-            stream.WriteBc(ParentObjId); //Things like boats or cars,
-            stream.Write(AttachPoint); // attachPoint, relative to the parentObj, (Door or window on a house)
-            if (AttachPoint != 255 && AttachPosition != null)
-            {
-                stream.WritePositionBc(AttachPosition.X, AttachPosition.Y, AttachPosition.Z);
-                stream.Write(Helpers.ConvertRotation(AttachPosition.RotationX)); //''
-                stream.Write(Helpers.ConvertRotation(AttachPosition.RotationY)); //''
-                stream.Write(Helpers.ConvertRotation(AttachPosition.RotationZ)); //''
-            }
-            else
-            {
-                stream.WritePositionBc(Position.X, Position.Y, Position.Z); //self explanatory
-                stream.Write(Helpers.ConvertRotation(Position.RotationX)); //''
-                stream.Write(Helpers.ConvertRotation(Position.RotationY)); //''
-                stream.Write(Helpers.ConvertRotation(Position.RotationZ)); //''
-            }
 
-            stream.Write(Scale); //The size of the object
-            stream.Write(false); // hasLootItem
-            stream.Write(CurrentPhaseId); // doodad_func_group_id
-            stream.Write(OwnerId); // characterId (Database relative)
-            stream.Write(ItemId); // ?? must be ulong though (ItemId seems to be the only ulong)
-            stream.Write(0u); //??type1
-            stream.Write(0u); //??type2
-            stream.Write(TimeLeft); // growing
-            stream.Write(PlantTime); //Time stamp of when it was planted
-            stream.Write(QuestGlow); //When this is higher than 0 it shows a blue orb over the doodad
-            stream.Write(0); // family TODO
-            stream.Write(-1); // puzzleGroup /for instances maybe?
+            var hasLootItrem = 0; //false;
+            // TemplateId - The template id needed for that object, the client then uses the template configurations, not the server
+            // FuncGroupId - doodad_func_group_id
+            // QuestGlow - When this is higher than 0 it shows a blue orb over the doodad
+            stream.WritePisc(TemplateId, FuncGroupId, hasLootItrem, QuestGlow);
+            //stream.WritePisc(TemplateId, FuncGroupId, 0, 0);
+            stream.Write(Flag);
+
+            stream.WriteBc(OwnerObjId);  //The creator of the object
+            stream.WriteBc(ParentObjId); //Things like boats or cars,
+            stream.Write(AttachPoint);   // attachPoint, relative to the parentObj, (Door or window on a house)
+
+            stream.WritePositionBc(Position.X, Position.Y, Position.Z);
+
+            stream.Write(Helpers.ConvertRotation(Position.RotationX));
+            stream.Write(Helpers.ConvertRotation(Position.RotationY));
+            stream.Write(Helpers.ConvertRotation(Position.RotationZ));
+
+            stream.Write(Scale);           //The size of the object
+            stream.Write(OwnerId);         // characterId
+            stream.Write(ItemId);          // type(id)
+            stream.Write(0u);              // type(id)
+            stream.Write(TimeLeft);        // growing
+            stream.Write(PlantTime);       // plantTime
+            stream.Write(0);               // family
+            stream.Write(-1);              // puzzleGroup
             stream.Write((byte)OwnerType); // ownerType
-            stream.Write(DbHouseId); // dbHouseId
-            stream.Write(Data); // data
+            stream.Write(DbHouseId);       // dbHouseId
+            stream.Write(Data);            // data
 
             return stream;
         }

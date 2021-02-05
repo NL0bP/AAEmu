@@ -14,13 +14,14 @@ namespace AAEmu.Game.Models.Game.Team
         public TeamMember[] Members { get; set; }
         public LootingRule LootingRule { get; set; }
         public (byte, uint)[] MarksList { get; set; }
-        public Point PingPosition { get; set; }
+        //public Point PingPosition { get; set; }
+        public PingPosition PingPosition { get; set; }
 
         public Team()
         {
             Members = new TeamMember[50];
             ResetMarks();
-            PingPosition = new Point(0, 0, 0);
+            PingPosition = new PingPosition();
         }
 
         public void ResetMarks()
@@ -196,16 +197,16 @@ namespace AAEmu.Game.Models.Game.Team
             stream.Write(OwnerId);
             stream.Write(IsParty);
 
-            foreach (var count in GetPartyCounts())
-                stream.Write(count);
+            foreach (var count in GetPartyCounts()) // max 10
+                stream.Write(count); //num
 
-            foreach (var member in Members)
+            foreach (var member in Members) // max 50
             {
                 stream.Write(member?.Character?.Id ?? 0u);
                 stream.Write(member?.Character?.IsOnline ?? false);
             }
 
-            for (var i = 0; i < 12; i++)
+            for (var i = 0; i < 12; i++) // max 12
             {
                 var type = MarksList[i].Item1;
                 var obj = MarksList[i].Item2;

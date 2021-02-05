@@ -1,15 +1,10 @@
 ﻿using System;
-using AAEmu.Game.Core.Packets.G2C;
+
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Mails;
-using AAEmu.Game.Models.Game.Housing;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -65,24 +60,33 @@ namespace AAEmu.Game.Scripts.Commands
                     case "list":
                         character.SendMessage("[TestMail] List of Mails");
                         foreach (var m in MailManager.Instance.GetCurrentMailList(character))
+                        {
                             character.SendMessage("{0} - {1} - ({3}) {2}", m.Value.Id, m.Value.MailType, m.Value.Title, m.Value.Header.Status);
+                        }
+
                         character.SendMessage("[TestMail] End of List");
                         return;
                     case "clear":
                         character.SendMessage("[TestMail] Clear List of Mails");
                         foreach (var m in MailManager.Instance.GetCurrentMailList(character))
+                        {
                             character.Mails.DeleteMail(m.Value.Id, false);
+                        }
+
                         return;
                     case "tax":
                         character.SendMessage("[TestMail] This command is deprecated, please use \"/house taxmail\" instead.");
                         return;
                     case "check":
                         character.Mails.SendUnreadMailCount();
-                        character.SendMessage("[TestMail] {0} unread mails", character.Mails.unreadMailCount.Received);
+                        character.SendMessage("[TestMail] {0} unread mails", character.Mails.unreadMailCount.TotalReceived);
                         return;
                     default:
                         if (MailType.TryParse(args[0], out MailType mTypeByName))
+                        {
                             mType = mTypeByName;
+                        }
+
                         break;
                 }
             }
@@ -96,11 +100,12 @@ namespace AAEmu.Game.Scripts.Commands
             character.SendMessage("[TestMail] Testing type: {0}", mType);
             try
             {
-                var mail = new BaseMail();
-
-                mail.MailType = mType;
-                mail.Title = "TestMail " + mType.ToString();
-                mail.ReceiverName = character.Name;
+                var mail = new BaseMail
+                {
+                    MailType = mType,
+                    Title = "TestMail " + mType.ToString(),
+                    ReceiverName = character.Name
+                };
 
                 mail.Header.SenderId = character.Id;
                 mail.Header.SenderName = character.Name;
@@ -165,10 +170,10 @@ namespace AAEmu.Game.Scripts.Commands
 
                 if (args.Length > 6)
                 {
-                    for(var a = 6; a < args.Length-1;a += 2)
+                    for (var a = 6; a < args.Length - 1; a += 2)
                     {
                         var iStr = args[a];
-                        var cStr = args[a+1];
+                        var cStr = args[a + 1];
                         if (uint.TryParse(iStr, out var itemId))
                         {
                             if (int.TryParse(cStr, out var itemCount))
@@ -181,13 +186,21 @@ namespace AAEmu.Game.Scripts.Commands
                                 }
 
                                 if (itemCount < 1)
+                                {
                                     itemCount = 1;
+                                }
+
                                 if (itemCount > itemTemplate.MaxCount)
+                                {
                                     itemCount = itemTemplate.MaxCount;
+                                }
 
                                 var itemGrade = itemTemplate.FixedGrade;
                                 if (itemGrade <= 0)
+                                {
                                     itemGrade = 0;
+                                }
+
                                 var newItem = ItemManager.Instance.Create(itemId, itemCount, (byte)itemGrade, true);
                                 newItem.OwnerId = character.Id;
                                 newItem.SlotType = SlotType.Mail;

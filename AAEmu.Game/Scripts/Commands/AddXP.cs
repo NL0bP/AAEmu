@@ -1,8 +1,7 @@
 ﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -41,7 +40,9 @@ namespace AAEmu.Game.Scripts.Commands
             }
 
             if (xptoadd > 0)
+            {
                 targetPlayer.AddExp(xptoadd, true);
+            }
         }
     }
 }

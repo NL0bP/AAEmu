@@ -47,6 +47,8 @@ namespace AAEmu.Game.Utils.Scripts
             {
                 if (type.IsNested)
                     continue;
+                if (type.Namespace == null) // исправление компиляции скриптов, так как находит еще что-то чего нет в папке /scripts
+                    continue;
                 var obj = Activator.CreateInstance(type);
                 var script = new ScriptObject(type, obj);
                 _scriptsObjects.Add(script.Name, script);

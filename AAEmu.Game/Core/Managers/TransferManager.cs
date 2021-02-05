@@ -13,6 +13,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
@@ -265,7 +266,7 @@ namespace AAEmu.Game.Core.Managers
             //                             idx,  path.WorldPos
             var listPaths = new Dictionary<int, List<Point>>();
 
-            int idx = 0;
+            var idx = 0;
             // ищем транспорт с нужным templateId
             foreach (var (id, transferTemplate) in _templates.Where(paths => paths.Key == templateId))
             {
@@ -605,7 +606,7 @@ namespace AAEmu.Game.Core.Managers
                 ModelId = Carriage.ModelId, // modelId
                 Template = Carriage,
                 BondingObjId = 0,    // objId
-                AttachPointId = 255, // point
+                AttachPointId = AttachPointKind.System, // point 255(-1)
                 Level = 1
             };
             owner.Hp = owner.MaxHp;
@@ -619,8 +620,8 @@ namespace AAEmu.Game.Core.Managers
             //owner.Faction = FactionManager.Instance.GetFaction(1);
             owner.Patrol = null;
             // add effect
-            //var buffId = 545u; //BUFF: Untouchable (Unable to attack this target)
-            //owner.Effects.AddEffect(new Effect(owner, owner, SkillCaster.GetByType(EffectOriginType.Skill), SkillManager.Instance.GetBuffTemplate(buffId), null, DateTime.Now));
+            var buffId = 545u; //BUFF: Untouchable (Unable to attack this target)
+            owner.Buffs.AddBuff(new Buff(owner, owner, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(buffId), null, DateTime.UtcNow));
 
             // create Carriage like a normal object.
             owner.Spawn();
@@ -657,8 +658,8 @@ namespace AAEmu.Game.Core.Managers
             transfer.Faction = new SystemFaction();
             transfer.Patrol = null;
             // add effect
-            //buffId = 545u; //BUFF: Untouchable (Unable to attack this target)
-            //transfer.Effects.AddEffect(new Effect(transfer, transfer, SkillCaster.GetByType(EffectOriginType.Skill), SkillManager.Instance.GetBuffTemplate(buffId), null, DateTime.Now));
+            buffId = 545u; //BUFF: Untouchable (Unable to attack this target)
+            transfer.Buffs.AddBuff(new Buff(transfer, transfer, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(buffId), null, DateTime.UtcNow));
             owner.Bounded = transfer; // запомним параметры связанной части в родителе
 
             // create a boardingPart and indicate that we attach to the Carriage object 
@@ -748,7 +749,7 @@ namespace AAEmu.Game.Core.Managers
                                 //Id = step++,
                                 OwnerId = reader.GetUInt32("owner_id"),
                                 OwnerType = reader.GetString("owner_type"),
-                                AttachPointId = reader.GetByte("attach_point_id"),
+                                AttachPointId = (AttachPointKind)reader.GetByte("attach_point_id"),
                                 TransferId = reader.GetUInt32("transfer_id")
                             };
                             if (_templates.ContainsKey(template.OwnerId))

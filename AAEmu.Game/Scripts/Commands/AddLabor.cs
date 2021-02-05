@@ -1,7 +1,7 @@
 ﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Core.Managers.World;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -41,12 +41,16 @@ namespace AAEmu.Game.Scripts.Commands
             short count = 0;
 
             if ((args.Length > firstarg + 0) && (short.TryParse(args[firstarg + 0], out short argcount)))
+            {
                 count = argcount;
+            }
 
             int vocationSkillId = 0;
 
             if ((args.Length > firstarg + 1) && (int.TryParse(args[firstarg + 1], out int argvocationSkillId)))
+            {
                 vocationSkillId = argvocationSkillId;
+            }
 
             targetPlayer.ChangeLabor(count, vocationSkillId);
             if (character.Id != targetPlayer.Id)

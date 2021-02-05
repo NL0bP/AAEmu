@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Skills.Templates;
+﻿using AAEmu.Game.Models.Game.Skills.Templates;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects
 {

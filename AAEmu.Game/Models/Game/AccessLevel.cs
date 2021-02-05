@@ -9,7 +9,7 @@ namespace AAEmu.Game.Models.Game
         public static List<Command> CMD = new List<Command>();
 
         public static int getLevel(string commandstr){
-            Command result = CMD.Find(o => o.command == commandstr);
+            var result = CMD.Find(o => o.command == commandstr);
                 if(result != null)
                     return result.level;
             

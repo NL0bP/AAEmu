@@ -1,15 +1,10 @@
 ﻿using System;
-using AAEmu.Game.Core.Packets.G2C;
+
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.UnitManagers;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.Items;
-using AAEmu.Game.Models.Game.Mails;
 using AAEmu.Game.Models.Game.Housing;
+using AAEmu.Game.Models.Game.Mails;
 
 namespace AAEmu.Game.Scripts.Commands
 {
@@ -69,9 +64,14 @@ namespace AAEmu.Game.Scripts.Commands
                         HousingManager.Instance.CalculateBuildingTaxInfo(house.AccountId, house.Template, false, out var totalTaxAmountDue, out var heavyTaxHouseCount, out var normalTaxHouseCount, out var hostileTaxRate);
 
                         if (house.TaxDueDate > DateTime.UtcNow)
+                        {
                             character.SendMessage("[House] Tax Due: {0}{1} by {2}", totalTaxAmountDue, house.Template.HeavyTax ? "" : "(no heavy tax)", house.TaxDueDate);
+                        }
                         else
+                        {
                             character.SendMessage("[House] Tax Due: {0}{1}, demolition at {2}", totalTaxAmountDue, house.Template.HeavyTax ? "" : "(no heavy tax)", house.ProtectionEndDate);
+                        }
+
                         break;
                     case "taxmail":
                         var newMail = new MailForTax(house);
@@ -123,7 +123,9 @@ namespace AAEmu.Game.Scripts.Commands
                             }
                         }
                         if (buyerId <= 0)
+                        {
                             buyer = "anyone";
+                        }
 
                         if (price > 0)
                         {
@@ -134,9 +136,13 @@ namespace AAEmu.Game.Scripts.Commands
                                 return;
                             }
                             if (HousingManager.Instance.SetForSale(house, price, buyerId, null))
+                            {
                                 character.SendMessage("[House] Setting {0} for sale with a price of {1} to buy for {2}.", house.Name, price, buyer);
+                            }
                             else
+                            {
                                 character.SendMessage("[House] Failed to set {0} for sale !", house.Name);
+                            }
                         }
                         else
                         {
@@ -146,10 +152,14 @@ namespace AAEmu.Game.Scripts.Commands
                                 return;
                             }
                             // Remove sale (for GM commands we don't return certificates)
-                            if (HousingManager.Instance.CancelForSale(house,false))
+                            if (HousingManager.Instance.CancelForSale(house, false))
+                            {
                                 character.SendMessage("[House] {0} is no longer for sale", house.Name);
+                            }
                             else
+                            {
                                 character.SendMessage("[House] Failed to remove sale from {0} !", house.Name);
+                            }
                         }
 
                         break;

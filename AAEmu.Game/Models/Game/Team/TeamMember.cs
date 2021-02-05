@@ -25,7 +25,7 @@ namespace AAEmu.Game.Models.Game.Team
             stream.Write((byte)Character.Gender);
             stream.Write(Character.Level);
             stream.Write((byte)Role);
-            stream.WriteBc(Character.ObjId);
+            stream.WriteBc(Character.ObjId); // uid
             return stream;
         }
 
@@ -34,15 +34,23 @@ namespace AAEmu.Game.Models.Game.Team
             stream.Write(Character.Id);
             stream.Write((ulong)0); // zi
             stream.Write(Character.Level);
-            stream.Write(Character.Hp);
-            stream.Write(Character.MaxHp);
-            stream.Write(Character.Mp);
-            stream.Write(Character.MaxMp);
+            stream.WritePisc(Character.Hp, Character.MaxHp, Character.Mp, Character.MaxMp);
+
+            //stream.Write(Character.Hp);
+            //stream.Write(Character.MaxHp);
+            //stream.Write(Character.Mp);
+            //stream.Write(Character.MaxMp);
+
             stream.WritePositionBc(Character.Position.X, Character.Position.Y, Character.Position.Z);
             stream.Write(MathUtil.ConvertDirectionToDegree(Character.Position.RotationZ)); // angZ
             stream.Write((byte)Character.Ability1);
             stream.Write((byte)Character.Ability2);
             stream.Write((byte)Character.Ability3);
+
+            stream.Write((byte)0); // HighAbilityRsc added in 3.0.3.0
+            stream.Write((byte)0); // HighAbilityRsc
+            stream.Write((byte)0); // HighAbilityRsc
+
             stream.Write(!Character.IsOnline);
             return stream;
         }

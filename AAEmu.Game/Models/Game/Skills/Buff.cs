@@ -29,7 +29,7 @@ namespace AAEmu.Game.Models.Game.Skills
         public DateTime EndTime { get; set; }
         public int Charge { get; set; }
         public bool Passive { get; set; }
-        public uint AbLevel { get; set; }
+        public short AbLevel { get; set; } // in 1.2 uint, in 3.0.3.0 short
         public BuffEvents Events { get;}
         public BuffTriggersHandler Triggers { get;}
 
@@ -38,6 +38,7 @@ namespace AAEmu.Game.Models.Game.Skills
             Owner = owner;
             Caster = caster;
             SkillCaster = skillCaster;
+            SkillCaster.ObjId = Owner.ObjId; // add in 3.0.3.0
             Template = template;
             Skill = skill;
             StartTime = time;
@@ -199,7 +200,7 @@ namespace AAEmu.Game.Models.Game.Skills
         {
             stream.WritePisc(Charge, Duration / 10, 0, (long)(Template.Tick / 10));
         }
-        
+
         /// <summary>
         /// Consumes as much charge as possible. Remainder is returned
         /// </summary>

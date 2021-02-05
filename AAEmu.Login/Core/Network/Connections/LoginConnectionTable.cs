@@ -1,12 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+
 using AAEmu.Commons.Utils;
 
 namespace AAEmu.Login.Core.Network.Connections
 {
     public class LoginConnectionTable : Singleton<LoginConnectionTable>
     {
-        private ConcurrentDictionary<uint, LoginConnection> _connections;
+        private readonly ConcurrentDictionary<uint, LoginConnection> _connections;
 
         private LoginConnectionTable()
         {

@@ -1,5 +1,6 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Threading.Tasks;
+
 using AAEmu.Login.Utils;
 
 namespace AAEmu.Login.Core.Controllers
@@ -9,8 +10,8 @@ namespace AAEmu.Login.Core.Controllers
         private static RequestController _instance;
         private const uint firstId = 0x00000001;
         private const uint lastId = 0x00FFFFFF;
-        private static uint[] exclude = { };
-        private static string[,] objTables = {{ }};
+        private static readonly uint[] exclude = { };
+        private static readonly string[,] objTables = { { } };
         private readonly ConcurrentDictionary<uint, TaskCompletionSource<bool>> _requests;
         public static RequestController Instance => _instance ?? (_instance = new RequestController());
 

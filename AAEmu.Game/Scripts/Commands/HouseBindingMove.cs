@@ -48,18 +48,27 @@ namespace AAEmu.Game.Scripts.Commands
                         attachPointObj.Position.Z = z;
 
                         house.Spawn();
-                        
+
                         character.CurrentTarget = house;
 
                         character
                             .BroadcastPacket(
                                 new SCTargetChangedPacket(character.ObjId, character.CurrentTarget?.ObjId ?? 0), true);
-                    } else
+                    }
+                    else
+                    {
                         character.SendMessage("|cFFFF0000[HouseBindings] Not found this attach doodad|r");
-                } else
+                    }
+                }
+                else
+                {
                     character.SendMessage("|cFFFF0000[HouseBindings] Throw parse args|r");
-            } else
+                }
+            }
+            else
+            {
                 character.SendMessage("|cFFFF0000[HouseBindings] First select house|r");
+            }
         }
     }
 }

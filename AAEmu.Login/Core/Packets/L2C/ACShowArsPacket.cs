@@ -12,7 +12,7 @@ namespace AAEmu.Login.Core.Packets.L2C
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write(""); // num
-            stream.Write((uint) 0); // timeout
+            stream.Write((uint)0); // timeout
 
             return stream;
         }

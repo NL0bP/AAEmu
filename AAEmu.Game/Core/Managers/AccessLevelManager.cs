@@ -16,20 +16,20 @@ namespace AAEmu.Game.Core.Managers
         
         public void Load()
         {
-            Dictionary<string, int> dic = readSettings();
+            var dic = readSettings();
 
             _log.Info("Loading CommandAccessLevels...");
 
-            foreach(KeyValuePair<string, int> entry in dic)
+            foreach(var entry in dic)
                 CMD.Add(new Command{ command = entry.Key, level = entry.Value });
 
             _log.Info("Loaded {0} CommandAccessLevels", CMD.Count);
         }
 
         public static Dictionary<string, int> readSettings(){
-            Dictionary<string, int> d = new Dictionary<string, int>();
+            var d = new Dictionary<string, int>();
             try{
-                string data = File.ReadAllText("AccessLevels.json");
+                var data = File.ReadAllText("AccessLevels.json");
                 d = JsonConvert.DeserializeObject<Dictionary<string, int>>(data);
             }
             catch{}

@@ -1,17 +1,12 @@
-﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Managers.World;
+﻿using System;
+
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.UnitManagers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
-using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.World;
-using AAEmu.Game.Utils;
-using NLog;
-using System;
-using AAEmu.Game.Models.Game.Units.Movements;
 
 
 namespace AAEmu.Game.Scripts.Commands
@@ -42,17 +37,19 @@ namespace AAEmu.Game.Scripts.Commands
             Character targetPlayer = character;
             var firstarg = 0;
             if (args.Length > 0)
+            {
                 targetPlayer = WorldManager.Instance.GetTargetOrSelf(character, args[0], out firstarg);
+            }
 
             if ((args.Length > firstarg) && (args[firstarg] == "testpos"))
             {
                 targetPlayer.DisabledSetPosition = true;
-                targetPlayer.SendPacket(new SCTeleportUnitPacket(0, 0, 22500f, 18500f, 10f, 0f));
+                targetPlayer.SendPacket(new SCUnitTeleportPacket(0, 0, 22500f, 18500f, 10f, 0f));
                 targetPlayer.SendMessage("[Move] |cFFFFFFFF{0}|r moved to X: {1}, Y: {2}, Z: {3}", targetPlayer.Name, 22500f, 18500f, 10f);
             }
             else
             if ((args.Length > firstarg) && (args[firstarg] == "mark"))
-            { 
+            {
                 // Place markers
                 var rX = (int)Math.Floor(targetPlayer.Position.X);
                 rX = rX - (rX % 2);
@@ -60,16 +57,19 @@ namespace AAEmu.Game.Scripts.Commands
                 rY = rY - (rY % 2);
                 uint unitId = 5622;
                 for (var y = rY - 10; y <= rY + 10; y += 2)
+                {
                     for (var x = rX - 10; x <= rX + 10; x += 2)
                     {
                         if (!DoodadManager.Instance.Exist(unitId))
                         {
                             return;
                         }
-                        var doodadSpawner = new DoodadSpawner();
-                        doodadSpawner.Id = 0;
-                        doodadSpawner.UnitId = unitId;
-                        doodadSpawner.Position = character.Position.Clone();
+                        var doodadSpawner = new DoodadSpawner
+                        {
+                            Id = 0,
+                            UnitId = unitId,
+                            Position = character.Position.Clone()
+                        };
                         doodadSpawner.Position.X = x;
                         doodadSpawner.Position.Y = y;
                         doodadSpawner.Position.Z = WorldManager.Instance.GetWorldByZone(targetPlayer.Position.ZoneId).GetHeight(x, y);
@@ -78,7 +78,7 @@ namespace AAEmu.Game.Scripts.Commands
                         doodadSpawner.Position.RotationZ = 0;
                         doodadSpawner.Spawn(0);
                     }
-
+                }
             }
             else
             if ((args.Length > firstarg) && (args[firstarg] == "line"))
@@ -98,10 +98,12 @@ namespace AAEmu.Game.Scripts.Commands
                     {
                         return;
                     }
-                    var doodadSpawner = new DoodadSpawner();
-                    doodadSpawner.Id = 0;
-                    doodadSpawner.UnitId = unitId;
-                    doodadSpawner.Position = character.Position.Clone();
+                    var doodadSpawner = new DoodadSpawner
+                    {
+                        Id = 0,
+                        UnitId = unitId,
+                        Position = character.Position.Clone()
+                    };
                     doodadSpawner.Position.X = x;
                     doodadSpawner.Position.Y = rY;
                     doodadSpawner.Position.Z = WorldManager.Instance.GetWorldByZone(targetPlayer.Position.ZoneId).GetHeight(x, rY);
@@ -116,10 +118,12 @@ namespace AAEmu.Game.Scripts.Commands
                     {
                         return;
                     }
-                    var doodadSpawner = new DoodadSpawner();
-                    doodadSpawner.Id = 0;
-                    doodadSpawner.UnitId = unitId;
-                    doodadSpawner.Position = character.Position.Clone();
+                    var doodadSpawner = new DoodadSpawner
+                    {
+                        Id = 0,
+                        UnitId = unitId,
+                        Position = character.Position.Clone()
+                    };
                     doodadSpawner.Position.X = rX;
                     doodadSpawner.Position.Y = y;
                     doodadSpawner.Position.Z = WorldManager.Instance.GetWorldByZone(targetPlayer.Position.ZoneId).GetHeight(rX, y);

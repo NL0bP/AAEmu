@@ -1,21 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
+
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.Id;
-using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
-using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Auction;
+using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Scripts.Commands
 {
-    class TestAuctionHouse : ICommand
+    internal class TestAuctionHouse : ICommand
     {
         public void OnLoad()
         {
-            string[] name = { "testauctionhouse","testah" };
+            string[] name = { "testauctionhouse", "testah" };
             CommandManager.Instance.Register(name, this);
         }
 
@@ -33,7 +29,7 @@ namespace AAEmu.Game.Scripts.Commands
         {
             var allItems = ItemManager.Instance.GetAllItems();
             character.SendMessage($"Trying to add {allItems.Count} items to the Auction House!");
-            
+
             var amount = 0;
             foreach (var item in allItems)
             {
@@ -66,7 +62,7 @@ namespace AAEmu.Game.Scripts.Commands
                     Extra = 0,
                     IsDirty = true
                 };
-                
+
                 AuctionManager.Instance.AddAuctionItem(newAuctionItem);
                 amount++;
             }

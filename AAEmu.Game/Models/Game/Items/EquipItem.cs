@@ -9,11 +9,11 @@ namespace AAEmu.Game.Models.Game.Items
     {
         public override ItemDetailType DetailType => ItemDetailType.Equipment;
 
-        public byte Durability { get; set; }
-        public uint RuneId { get; set; }
-        public uint[] GemIds { get; set; }
-        public ushort TemperPhysical { get; set; }
-        public ushort TemperMagical { get; set; }
+        //public byte Durability { get; set; }
+        //public uint RuneId { get; set; }
+        //public uint[] GemIds { get; set; }
+        //public ushort TemperPhysical { get; set; }
+        //public ushort TemperMagical { get; set; }
 
         public virtual int Str => 0;
         public virtual int Dex => 0;
@@ -40,46 +40,59 @@ namespace AAEmu.Game.Models.Game.Items
 
         public EquipItem()
         {
-            GemIds = new uint[7];
+            GemIds = new uint[16];
         }
 
         public EquipItem(ulong id, ItemTemplate template, int count) : base(id, template, count)
         {
-            GemIds = new uint[7];
+            GemIds = new uint[16];
         }
 
         public override void ReadDetails(PacketStream stream)
         {
-            ImageItemTemplateId = stream.ReadUInt32();
-            Durability = stream.ReadByte();
-            stream.ReadInt16();
-            RuneId = stream.ReadUInt32();
+            Durability = stream.ReadByte();       // durability
+            ChargeCount = stream.ReadInt16();     // chargeCount
+            ChargeTime = stream.ReadDateTime();   // chargeTime
+            TemperPhysical = stream.ReadUInt16(); // scaledA
+            TemperMagical = stream.ReadUInt16();  // scaledB
 
-            stream.ReadBytes(12);
+            var mGems = stream.ReadPisc(4);
+            GemIds[0] = (uint)mGems[0];
+            GemIds[1] = (uint)mGems[1];
+            GemIds[2] = (uint)mGems[2];
+            GemIds[3] = (uint)mGems[3];
 
-            for (var i = 0; i < GemIds.Length; i++)
-                GemIds[i] = stream.ReadUInt32();
+            mGems = stream.ReadPisc(4);
+            GemIds[4] = (uint)mGems[0];
+            GemIds[5] = (uint)mGems[1];
+            GemIds[6] = (uint)mGems[2];
+            GemIds[7] = (uint)mGems[3];
 
-            TemperPhysical = stream.ReadUInt16();
-            TemperMagical = stream.ReadUInt16();
+            mGems = stream.ReadPisc(4);
+            GemIds[8] = (uint)mGems[0];
+            GemIds[9] = (uint)mGems[1];
+            GemIds[10] = (uint)mGems[2];
+            GemIds[11] = (uint)mGems[3];
+
+            mGems = stream.ReadPisc(4);
+            GemIds[12] = (uint)mGems[0];
+            GemIds[13] = (uint)mGems[1];
+            GemIds[14] = (uint)mGems[2];
+            GemIds[15] = (uint)mGems[3];
         }
 
         public override void WriteDetails(PacketStream stream)
         {
-            stream.Write(ImageItemTemplateId);
-            stream.Write(Durability);
-            stream.Write((short)0);
-            stream.Write(RuneId);
+            stream.Write(Durability);     // durability
+            stream.Write(ChargeCount);    // chargeCount
+            stream.Write(ChargeTime);     // chargeTime
+            stream.Write(TemperPhysical); // scaledA
+            stream.Write(TemperMagical);  // scaledB
 
-            stream.Write((uint)0);
-            stream.Write((uint)0);
-            stream.Write((uint)0);
-
-            foreach (var gemId in GemIds)
-                stream.Write(gemId);
-
-            stream.Write(TemperPhysical);
-            stream.Write(TemperMagical);
+            stream.WritePisc(GemIds[0], GemIds[1], GemIds[2], GemIds[3]);
+            stream.WritePisc(GemIds[4], GemIds[5], GemIds[6], GemIds[7]);
+            stream.WritePisc(GemIds[8], GemIds[9], GemIds[10], GemIds[11]);
+            stream.WritePisc(GemIds[12], GemIds[13], GemIds[14], GemIds[15]);
         }
     }
 }

@@ -3,18 +3,18 @@ using System.Net;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Commons.Utils;
 using AAEmu.Login.Core.Packets.G2L;
-using AAEmu.Login.Core.Packets.L2G;
 using AAEmu.Login.Models;
+
 using NLog;
 
 namespace AAEmu.Login.Core.Network.Internal
 {
     public class InternalNetwork : Singleton<InternalNetwork>
     {
-        private static Logger _log = LogManager.GetCurrentClassLogger();
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
 
         private Server _server;
-        private InternalProtocolHandler _handler;
+        private readonly InternalProtocolHandler _handler;
 
         public InternalNetwork()
         {
@@ -23,7 +23,7 @@ namespace AAEmu.Login.Core.Network.Internal
             RegisterPacket(0x00, typeof(GLRegisterGameServerPacket));
             RegisterPacket(0x01, typeof(GLPlayerEnterPacket));
             RegisterPacket(0x02, typeof(GLPlayerReconnectPacket));
-            RegisterPacket(0x03, typeof(LGRequestInfoPacket));
+            RegisterPacket(0x03, typeof(GLRequestInfoPacket));
         }
 
         public void Start()
@@ -41,7 +41,9 @@ namespace AAEmu.Login.Core.Network.Internal
         public void Stop()
         {
             if (_server.IsStarted)
+            {
                 _server.Stop();
+            }
 
             _log.Info("InternalNetwork stoped");
         }

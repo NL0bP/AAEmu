@@ -194,8 +194,8 @@ namespace AAEmu.Game.Core.Managers
 
         public List<AuctionItem> GetAuctionItems(AuctionSearchTemplate searchTemplate)
         {
-            List<AuctionItem> auctionItemsFound = new List<AuctionItem>();
-            bool myListing = false;
+            var auctionItemsFound = new List<AuctionItem>();
+            var myListing = false;
 
             if (searchTemplate.ItemName == "" && searchTemplate.CategoryA == 0 && searchTemplate.CategoryB == 0 && searchTemplate.CategoryC == 0)
             {
@@ -259,7 +259,7 @@ namespace AAEmu.Game.Core.Managers
             {
                 var tempList = new List<AuctionItem>();
 
-                for (int i = 0; i < 9; i++)
+                for (var i = 0; i < 9; i++)
                 {
                     tempList.Add(auctionItemsFound[i]);
                 }

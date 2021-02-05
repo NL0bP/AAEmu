@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
@@ -149,7 +150,7 @@ namespace AAEmu.Game.Core.Managers.World
         
         public void ComputeThrottle(Slave slave)
         {
-            int throttleAccel = 6;
+            var throttleAccel = 6;
             if (slave.ThrottleRequest > slave.Throttle)
             {
                 slave.Throttle = (sbyte) Math.Min(sbyte.MaxValue, slave.Throttle + throttleAccel);
@@ -174,7 +175,7 @@ namespace AAEmu.Game.Core.Managers.World
         
         public void ComputeSteering(Slave slave)
         {
-            int steeringAccel = 6;
+            var steeringAccel = 6;
             if (slave.SteeringRequest > slave.Steering)
             {
                 slave.Steering = (sbyte) Math.Min(sbyte.MaxValue, slave.Steering + steeringAccel);

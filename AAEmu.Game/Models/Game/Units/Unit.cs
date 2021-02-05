@@ -188,15 +188,6 @@ namespace AAEmu.Game.Models.Game.Units
         public ushort TlId { get; set; }
         public ItemContainer Equipment { get; set; }
         public GameConnection Connection { get; set; }
-
-        /// <summary>
-        /// Unit巡逻
-        /// Unit patrol
-        /// 指明Unit巡逻路线及速度、是否正在执行巡逻等行为
-        /// Indicates the route and speed of the Unit patrol, whether it is performing patrols, etc.
-        /// </summary>
-        public Patrol Patrol { get; set; }
-        public Simulation Simulation { get; set; }
         
         public UnitProcs Procs { get; set; }
         public object ChargeLock { get; set; }

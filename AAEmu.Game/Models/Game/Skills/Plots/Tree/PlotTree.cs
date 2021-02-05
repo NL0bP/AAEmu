@@ -133,7 +133,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree
 
                     if (queue.Count > 0)
                     {
-                        int delay = (int)queue.Min(o => (o.timestamp - DateTime.UtcNow).TotalMilliseconds);
+                        var delay = (int)queue.Min(o => (o.timestamp - DateTime.UtcNow).TotalMilliseconds);
                         delay = Math.Max(delay, 0);
 
                         //await Task.Delay(delay).ConfigureAwait(false);

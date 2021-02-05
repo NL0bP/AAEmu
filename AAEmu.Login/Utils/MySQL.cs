@@ -1,6 +1,9 @@
-using System;
+﻿using System;
+
 using AAEmu.Login.Models;
+
 using MySql.Data.MySqlClient;
+
 using NLog;
 
 namespace AAEmu.Login.Utils

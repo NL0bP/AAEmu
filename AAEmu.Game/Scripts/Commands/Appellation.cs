@@ -34,12 +34,18 @@ namespace AAEmu.Game.Scripts.Commands
             if (uint.TryParse(args[0], out var id))
             {
                 if (CharacterManager.Instance.GetAppellationsTemplate(id) == null)
+                {
                     character.SendMessage("[Title] <titleId> {0} doesn't exist in the database ...", id);
+                }
                 else
+                {
                     character.Appellations.Add(id);
+                }
             }
             else
+            {
                 character.SendMessage("|cFFFF0000[Title] Error parsing <titleId> !|r");
+            }
         }
     }
 }

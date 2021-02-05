@@ -6,20 +6,15 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.AI;
-using AAEmu.Game.Models.Game.AI.Framework;
-using AAEmu.Game.Models.Game.AI.v2;
 using AAEmu.Game.Models.Game.AI.v2.Framework;
+using AAEmu.Game.Models.Game.AI_old;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
-using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.World;
-using AAEmu.Game.Models.Json;
-using AAEmu.Game.Models.Tasks.UnitMove;
 using AAEmu.Game.Utils;
 using NLog;
 using static AAEmu.Game.Models.Game.Skills.SkillControllers.SkillController;
@@ -33,18 +28,13 @@ namespace AAEmu.Game.Models.Game.NPChar
         public override UnitTypeFlag TypeFlag { get; } = UnitTypeFlag.Npc;
         public uint TemplateId { get; set; }
         public NpcTemplate Template { get; set; }
-        //public Item[] Equip { get; set; }
         public NpcSpawner Spawner { get; set; }
-
         public override UnitCustomModelParams ModelParams => Template.ModelParams;
         public override float Scale => Template.Scale;
-
         public override byte RaceGender => (byte)(16 * Template.Gender + Template.Race);
-
         public NpcAi Ai { get; set; } // New framework
         public ConcurrentDictionary<uint, Aggro> AggroTable { get; }
         public uint CurrentAggroTarget { get; set; }
-
         // ---
         public WorldPos Pos { get; set; }
         public Quaternion Rot { get; set; }
@@ -712,7 +702,8 @@ namespace AAEmu.Game.Models.Game.NPChar
         {
             Name = "";
             AggroTable = new ConcurrentDictionary<uint, Aggro>();
-            //Equip = new Item[28];
+            Ai_old = new NpcAi_old(this, 100f); //Template.AggroLinkHelpDist);
+            UnitType = BaseUnitType.Npc;
         }
 
         public override void DoDie(Unit killer)

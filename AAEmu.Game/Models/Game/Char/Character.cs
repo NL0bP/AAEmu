@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -11,6 +12,7 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.AI_old;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Expeditions;
@@ -19,15 +21,19 @@ using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Items.Templates;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Static;
+using AAEmu.Game.Models.Game.Team;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Utils.DB;
+
 using MySql.Data.MySqlClient;
+
 using NLog;
 
 namespace AAEmu.Game.Models.Game.Char
@@ -90,6 +96,7 @@ namespace AAEmu.Game.Models.Game.Char
         public int VocationPoint { get; set; }
         public short CrimePoint { get; set; }
         public int CrimeRecord { get; set; }
+        public short CrimeScore { get; set; }
         public DateTime DeleteRequestTime { get; set; }
         public DateTime TransferRequestTime { get; set; }
         public DateTime DeleteTime { get; set; }
@@ -135,7 +142,9 @@ namespace AAEmu.Game.Models.Game.Char
         public CharacterCraft Craft { get; set; }
 
         public int AccessLevel { get; set; }
-        public Point LocalPingPosition { get; set; } // added as a GM command helper
+        //public Point LocalPingPosition { get; set; } // added as a GM command helper
+        public PingPosition LocalPingPosition { get; set; }
+
         private ConcurrentDictionary<uint, DateTime> _hostilePlayers { get; set; }
 
         private bool _inParty;
@@ -174,7 +183,7 @@ namespace AAEmu.Game.Models.Game.Char
                 if (_isOnline == value) return;
                 // TODO - GUILD STATUS CHANGE
                 FriendMananger.Instance.SendStatusChange(this, true, value);
-                if(!value) TeamManager.Instance.SetOffline(this);
+                if (!value) TeamManager.Instance.SetOffline(this);
                 _isOnline = value;
             }
         }
@@ -261,6 +270,7 @@ namespace AAEmu.Game.Models.Game.Char
             }
         }
 
+        [UnitAttribute(UnitAttribute.Spi)]
         public int Spi
         {
             get
@@ -432,7 +442,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                double res = 0d;
+                var res = 0d;
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingDamageMul);
                 res = res / 1000;
                 res = 1 + res;
@@ -445,7 +455,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                double res = 0d;
+                var res = 0d;
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingMeleeDamageMul);
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingDamageMul);
                 res = res / 1000;
@@ -459,7 +469,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                double res = 0d;
+                var res = 0d;
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingRangedDamageMul);
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingDamageMul);
                 res = res / 1000;
@@ -473,7 +483,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                double res = 0d;
+                var res = 0d;
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingSpellDamageMul);
                 res = CalculateWithBonuses(res, UnitAttribute.IncomingDamageMul);
                 res = res / 1000;
@@ -487,7 +497,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             get
             {
-                double res = 0d;
+                var res = 0d;
                 res = CalculateWithBonuses(res, UnitAttribute.CastingTimeMul);
                 res = (res + 1000.00000000) / 1000;
                 return (float)Math.Max(res, 0f);
@@ -505,7 +515,7 @@ namespace AAEmu.Game.Models.Game.Char
                 return (float)res;
             }
         }
-        
+
         [UnitAttribute(UnitAttribute.RangedDamageMul)]
         public override float RangedDamageMul
         {
@@ -517,7 +527,7 @@ namespace AAEmu.Game.Models.Game.Char
                 return (float)res;
             }
         }
-        
+
         [UnitAttribute(UnitAttribute.SpellDamageMul)]
         public override float SpellDamageMul
         {
@@ -529,7 +539,7 @@ namespace AAEmu.Game.Models.Game.Char
                 return (float)res;
             }
         }
-        
+
         [UnitAttribute(UnitAttribute.IncomingHealMul)]
         public override float IncomingHealMul
         {
@@ -541,7 +551,7 @@ namespace AAEmu.Game.Models.Game.Char
                 return (float)res;
             }
         }
-        
+
         [UnitAttribute(UnitAttribute.HealMul)]
         public override float HealMul
         {
@@ -1155,7 +1165,7 @@ namespace AAEmu.Game.Models.Game.Char
                 return (float)res;
             }
         }
-        
+
         [UnitAttribute(UnitAttribute.LungCapacity)]
         public uint LungCapacity
         {
@@ -1179,8 +1189,11 @@ namespace AAEmu.Game.Models.Game.Char
 
             ModelParams = modelParams;
             Subscribers = new List<IDisposable>();
-            
+
             ChargeLock = new object();
+
+            Ai_old = new PlayerAi(this, 500);
+            UnitType = BaseUnitType.Character;
         }
 
         public WeaponWieldKind GetWeaponWieldKind()
@@ -1220,7 +1233,7 @@ namespace AAEmu.Game.Models.Game.Char
 
         public bool IsActivelyHostile(Character target)
         {
-            if(_hostilePlayers.TryGetValue(target.ObjId, out var value))
+            if (_hostilePlayers.TryGetValue(target.ObjId, out var value))
             {
                 //Maybe get the time to stay hostile from db?
                 return value.AddSeconds(30) > DateTime.UtcNow;
@@ -1282,7 +1295,7 @@ namespace AAEmu.Game.Models.Game.Char
         public bool ChangeMoney(SlotType typeFrom, SlotType typeTo, int amount, ItemTaskType itemTaskType = ItemTaskType.DepositMoney)
         {
             var itemTasks = new List<ItemTask>();
-            switch(typeFrom)
+            switch (typeFrom)
             {
                 case SlotType.Inventory:
                     if (amount > Money)
@@ -1318,7 +1331,7 @@ namespace AAEmu.Game.Models.Game.Char
             return true;
         }
 
-        public bool AddMoney(SlotType moneyLocation,int amount, ItemTaskType itemTaskType = ItemTaskType.DepositMoney)
+        public bool AddMoney(SlotType moneyLocation, int amount, ItemTaskType itemTaskType = ItemTaskType.DepositMoney)
         {
             if (amount < 0)
                 return false;
@@ -1365,7 +1378,7 @@ namespace AAEmu.Game.Models.Game.Char
             var skillIds = SkillManager.Instance.GetSkillsByTag(playerSkillsTag);
 
             var packets = new CompressedGamePackets();
-            foreach(var skillId in skillIds)
+            foreach (var skillId in skillIds)
             {
                 packets.AddPacket(new SCSkillCooldownResetPacket(this, skillId, 0, triggerGcd));
             }
@@ -1390,7 +1403,7 @@ namespace AAEmu.Game.Models.Game.Char
             BroadcastPacket(new SCUnitFactionChangedPacket(ObjId, Name, Faction.Id, factionId, false), true);
             Faction = FactionManager.Instance.GetFaction(factionId);
         }
-        
+
         public override void SetPosition(float x, float y, float z, sbyte rotationX, sbyte rotationY, sbyte rotationZ)
         {
             var moved = !Position.X.Equals(x) || !Position.Y.Equals(y) || !Position.Z.Equals(z);
@@ -1401,7 +1414,7 @@ namespace AAEmu.Game.Models.Game.Char
                 IsUnderWater = true;
             else if (IsUnderWater && Position.Z > 98)
                 IsUnderWater = false;
-            
+
             if (!moved)
                 return;
 
@@ -1409,8 +1422,8 @@ namespace AAEmu.Game.Models.Game.Char
 
             if (Position.ZoneId == lastZoneKey)
                 return;
-            
-            OnZoneChange(lastZoneKey,Position.ZoneId);
+
+            OnZoneChange(lastZoneKey, Position.ZoneId);
         }
 
         public void OnZoneChange(uint lastZoneKey, uint newZoneKey)
@@ -1579,7 +1592,7 @@ namespace AAEmu.Game.Models.Game.Char
         }
 
         public uint Breath { get; set; }
-        
+
         public bool IsDrowning
         {
             get { return (Breath <= 0); }
@@ -1596,7 +1609,7 @@ namespace AAEmu.Game.Models.Game.Char
             else
             {
                 Breath -= 1000; //1 second
-                SendPacket(new SCSetBreathPacket(Breath));   
+                SendPacket(new SCSetBreathPacket(Breath));
             }
         }
 
@@ -1805,14 +1818,14 @@ namespace AAEmu.Game.Models.Game.Char
         {
             var template = CharacterManager.Instance.GetTemplate((byte)Race, (byte)Gender);
             ModelId = template.ModelId;
-            BuyBackItems = new ItemContainer(this, SlotType.None,false);
+            BuyBackItems = new ItemContainer(this, SlotType.None, false);
             Slots = new ActionSlot[85];
             for (var i = 0; i < Slots.Length; i++)
                 Slots[i] = new ActionSlot();
 
             Craft = new CharacterCraft(this);
             Procs = new UnitProcs(this);
-            LocalPingPosition = new Point();
+            LocalPingPosition = new PingPosition();
 
             using (var connection = MySQL.CreateConnection())
             {
@@ -1835,8 +1848,6 @@ namespace AAEmu.Game.Models.Game.Char
                 Quests.Load(connection);
                 Mates = new CharacterMates(this);
                 Mates.Load(connection);
-
-                
 
                 using (var command = connection.CreateCommand())
                 {
@@ -1883,7 +1894,7 @@ namespace AAEmu.Game.Models.Game.Char
                     catch
                     {
                         saved = false;
-                        _log.Error(string.Format("Character save failed for {0} - {1}",Id, Name));
+                        _log.Error(string.Format("Character save failed for {0} - {1}", Id, Name));
                         try
                         {
                             transaction.Rollback();
@@ -2039,11 +2050,12 @@ namespace AAEmu.Game.Models.Game.Char
                 character.SendPacket(new SCTargetChangedPacket(character.ObjId, 0));
             }
 
-            character.SendPacket(new SCUnitsRemovedPacket(new[] {ObjId}));
+            character.SendPacket(new SCUnitsRemovedPacket(new[] { ObjId }));
         }
 
         public PacketStream Write(PacketStream stream)
         {
+            #region Character_List_Packet_48B0
             stream.Write(Id);
             stream.Write(Name);
             stream.Write((byte)Race);
@@ -2057,14 +2069,96 @@ namespace AAEmu.Game.Models.Game.Char
             stream.Write(Expedition?.Id ?? 0);
             stream.Write(Family);
 
-            var items = Inventory.Equipment.GetSlottedItemsList();
-            foreach (var item in items)
-            {
-                if (item == null)
-                    stream.Write(0);
-                else
-                    stream.Write(item);
-            }
+            #region CharacterInfo_3EB0
+
+            Inventory_Equip(stream);
+
+            //// calculate validFlags
+            //var index = 0;
+            //var validFlags = 0;
+            //var items = Inventory.Equipment.GetSlottedItemsList();
+            //foreach (var item in items)
+            //{
+            //    if (item != null)
+            //    {
+            //        validFlags |= 1 << index;
+            //    }
+            //    index++;
+            //}
+            //stream.Write((uint)validFlags); // validFlags for 3.0.3.0
+
+            // in 1.2 max 28 items, in 3.0.3.0 max 29 items
+            //for (var i = 0; i < Inventory.Equipment.GetSlottedItemsList().Count; i++)
+            //{
+            //    var item = Inventory.Equipment.GetItemBySlot(i);
+            //    if (item is BodyPart)
+            //    {
+            //        stream.Write(item.TemplateId);
+            //    }
+            //    else if (item != null)
+            //    {
+            //        stream.Write(item);
+            //    }
+            //    else
+            //    {
+            //        stream.Write(0);
+            //    }
+            //}
+
+            //var itemSlot = EquipmentItemSlot.Head;
+            //foreach (var item in items)
+            //{
+            //    if (item == null)
+            //    {
+            //        itemSlot++;
+            //        continue;
+            //    }
+            //    switch (itemSlot)
+            //    {
+            //        case EquipmentItemSlot.Head:
+            //        case EquipmentItemSlot.Neck:
+            //        case EquipmentItemSlot.Chest:
+            //        case EquipmentItemSlot.Waist:
+            //        case EquipmentItemSlot.Legs:
+            //        case EquipmentItemSlot.Hands:
+            //        case EquipmentItemSlot.Feet:
+            //        case EquipmentItemSlot.Arms:
+            //        case EquipmentItemSlot.Back:
+            //        case EquipmentItemSlot.Undershirt:
+            //        case EquipmentItemSlot.Underpants:
+            //        case EquipmentItemSlot.Mainhand:
+            //        case EquipmentItemSlot.Offhand:
+            //        case EquipmentItemSlot.Ranged:
+            //        case EquipmentItemSlot.Musical:
+            //        case EquipmentItemSlot.Cosplay:
+            //            stream.Write(item);
+            //            break;
+            //        case EquipmentItemSlot.Face:
+            //        case EquipmentItemSlot.Hair:
+            //        case EquipmentItemSlot.Glasses:
+            //        case EquipmentItemSlot.Horns:
+            //        case EquipmentItemSlot.Tail:
+            //        case EquipmentItemSlot.Body:
+            //        case EquipmentItemSlot.Beard:
+            //            stream.Write(item.TemplateId);
+            //            break;
+            //        case EquipmentItemSlot.Ear1:
+            //        case EquipmentItemSlot.Ear2:
+            //        case EquipmentItemSlot.Finger1:
+            //        case EquipmentItemSlot.Finger2:
+            //        case EquipmentItemSlot.Backpack:
+            //        case EquipmentItemSlot.Stabilizer:
+            //            break;
+            //        default:
+            //            throw new ArgumentOutOfRangeException();
+            //    }
+            //    itemSlot++;
+            //}
+            //if (validFlags != 0)
+            //{
+            //    stream.Write((uint)0); // flags for 3.0.3.0
+            //}
+            #endregion CharacterInfo_3EB0
 
             stream.Write((byte)Ability1);
             stream.Write((byte)Ability2);
@@ -2082,12 +2176,12 @@ namespace AAEmu.Game.Models.Game.Char
             stream.Write(RezWaitDuration);
             stream.Write(RezTime);
             stream.Write(RezPenaltyDuration);
-            stream.Write(LeaveTime); // lastWorldLeaveTime
-            stream.Write(Money);
-            stream.Write(0L); // moneyAmount
+            stream.Write(LeaveTime);  // lastWorldLeaveTime
+            stream.Write(Money);      // moneyAmount
+            stream.Write(0L);         // moneyAmount
             stream.Write(CrimePoint);
             stream.Write(CrimeRecord);
-            stream.Write((short)0); // crimeScore
+            stream.Write(CrimeScore); // crimeScore for 1.2
             stream.Write(DeleteRequestTime);
             stream.Write(TransferRequestTime);
             stream.Write(DeleteTime); // deleteDelay
@@ -2101,7 +2195,52 @@ namespace AAEmu.Game.Models.Game.Char
             stream.Write(Gift);
             stream.Write(Updated);
             stream.Write((byte)0); // forceNameChange
+            stream.Write(HighAbilityRsc); // highAbilityRsc for 3.0.3.0
             return stream;
+            #endregion
+        }
+
+        private void Inventory_Equip(PacketStream stream)
+        {
+            #region Inventory_Equip
+
+            var index = 0;
+            var validFlags = 0;
+            // calculate validFlags
+            var items = Inventory.Equipment.GetSlottedItemsList();
+            foreach (var item in items)
+            {
+                if (item != null)
+                {
+                    validFlags |= 1 << index;
+                }
+
+                index++;
+            }
+
+            stream.Write((uint)validFlags); // validFlags for 3.0.3.0
+            foreach (var item in items)
+            {
+                if (item != null)
+                {
+                    stream.Write(item);
+                }
+            }
+
+            index = 0;
+            validFlags = 0;
+
+            foreach (var item in Inventory.Equipment.GetSlottedItemsList())
+            {
+                if (item == null) { continue; }
+
+                var _tmp = (int)item.ItemFlags << index;
+                ++index;
+                validFlags |= _tmp;
+            }
+            stream.Write(validFlags); //  ItemFlags flags for 3.0.3.0
+
+            #endregion Inventory_Equip
         }
     }
 }
