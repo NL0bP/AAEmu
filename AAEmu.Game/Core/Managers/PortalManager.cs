@@ -228,8 +228,10 @@ namespace AAEmu.Game.Core.Managers
             // TODO - UnitPortalUsed
             // TODO - Maybe need unitstate?
             // TODO - Reason, ErrorMessage
-            character.SendPacket(new SCUnitTeleportPacket(0, 0, portalInfo.TeleportPosition.X,
-                portalInfo.TeleportPosition.Y, portalInfo.TeleportPosition.Z, portalInfo.TeleportPosition.RotationZ));
+            character.SendPacket(new SCUnitTeleportPacket(0, 0,
+                portalInfo.TeleportPosition.X, portalInfo.TeleportPosition.Y, portalInfo.TeleportPosition.Z,
+                portalInfo.TeleportPosition.RotationZ));
+            //character.SetPosition(portalInfo.TeleportPosition.X, portalInfo.TeleportPosition.Y, portalInfo.TeleportPosition.Z);
         }
 
         public void DeletePortal(Character owner, byte type, uint id)

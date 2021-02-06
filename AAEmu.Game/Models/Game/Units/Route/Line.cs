@@ -12,7 +12,6 @@ namespace AAEmu.Game.Models.Game.Units.Route
     class Line : Patrol
     {
         float distance = 0f;
-        float MovingDistance = 0.27f;
         public Point Position { get; set; }
 
         public override void Execute(Npc npc)

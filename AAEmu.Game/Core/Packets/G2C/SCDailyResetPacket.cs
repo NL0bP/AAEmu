@@ -1,5 +1,6 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Models.Game.Char.Static;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
@@ -7,9 +8,9 @@ namespace AAEmu.Game.Core.Packets.G2C
     {
         private readonly byte _kind;
 
-        public SCDailyResetPacket(byte kind) : base(SCOffsets.SCDailyResetPacket, 5)
+        public SCDailyResetPacket(DailyResetKind kind) : base(SCOffsets.SCDailyResetPacket, 5)
         {
-            _kind = kind;
+            _kind = (byte)kind;
         }
 
         public override PacketStream Write(PacketStream stream)

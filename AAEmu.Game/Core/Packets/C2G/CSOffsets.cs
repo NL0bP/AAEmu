@@ -135,8 +135,8 @@
         public const ushort CSPacketUnknown0x166Packet = 0x166;
         public const ushort CSCreateCharacterPacket = 0x179;
         public const ushort CSEditCharacterPacket = 0x82;
-        public const ushort CSBroadcastVisualOption_0_Packet = 0x31;
-        public const ushort CSSpawnCharacterPacket = 0x15a;
+        public const ushort CSSpawnCharacterPacket = 0x031;
+        public const ushort CSTeleportEndedPacket = 0x15a; //CSSpawnCharacterPacket
         public const ushort CSNotifySubZonePacket = 0x1ab;
         public const ushort CSSaveTutorialPacket = 0x23;
         public const ushort CSRequestUIDataPacket = 0x50;
@@ -423,7 +423,6 @@
         public const ushort CSSpecialtyRecordLoadPacket = 0x0ffff;
         public const ushort CSStartInteractionPacket = 0x0ffff;
         public const ushort CSTakedownTradeItemPacket = 0x0ffff;
-        public const ushort CSTeleportEndedPacket = 0x0ffff;
         public const ushort CSThisTimeUnpackItemPacket = 0x0ffff;
         public const ushort CSUpdateDominionTaxRatePacket = 0x0ffff;
         public const ushort CSUpdateNationalTaxRatePacket = 0x0ffff;

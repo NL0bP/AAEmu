@@ -136,21 +136,38 @@ namespace AAEmu.Game.Models.Game.Units
         /// <param name="npc"></param>
         public void Apply(BaseUnit unit)
         {
-            //如果NPC不存在或不处于巡航模式或者当前执行次数不为0
-            //If NPC does not exist or is not in cruise mode or the current number of executions is not zero
-            if (unit.Patrol == null || (unit.Patrol.Running == false && this != unit.Patrol) || (unit.Patrol.Running == true && this == unit.Patrol))
+            // If NPC does not exist or is not in cruise mode or the current number of executions is not zero
+            if (unit.Patrol != null &&
+                (unit.Patrol.Running || this == unit.Patrol) &&
+                (!unit.Patrol.Running || this != unit.Patrol))
             {
-                //如果上次巡航模式处于暂停状态则保存上次巡航模式
-                //If the last cruise mode is suspended, save the last cruise mode
-                if (unit.Patrol != null && unit.Patrol != this && !unit.Patrol.Abandon)
-                {
-                    LastPatrol = unit.Patrol;
-                }
-                ++Count;
-                Seq = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
-                Running = true;
-                unit.Patrol = this;
-                Execute(unit);
+                return;
+            }
+
+            // If the last cruise mode is suspended, save the last cruise mode
+            if (unit.Patrol != null && unit.Patrol != this && !unit.Patrol.Abandon)
+            {
+                LastPatrol = unit.Patrol;
+            }
+            ++Count;
+            Seq = (uint)(DateTime.UtcNow - DateTime.Today).TotalMilliseconds;
+            Running = true;
+            unit.Patrol = this;
+            //UpdateTime = DateTime.Now;
+            switch (unit)
+            {
+                case Gimmick gimmick:
+                    Execute(gimmick);
+                    break;
+                case Transfer transfer:
+                    Execute(transfer);
+                    break;
+                case Npc npc:
+                    Execute(npc);
+                    break;
+                default:
+                    Execute(unit);
+                    break;
             }
         }
 
@@ -163,9 +180,36 @@ namespace AAEmu.Game.Models.Game.Units
         /// <param name="patrol"></param>
         public void Repeat(BaseUnit unit, double time = 100, Patrol patrol = null)
         {
-            if (!(patrol ?? this).Abandon)
+            switch (unit)
             {
-                TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, unit), TimeSpan.FromMilliseconds(time));
+                case Npc npc:
+                    if (!(patrol ?? this).Abandon)
+                    {
+                        TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, npc), TimeSpan.FromMilliseconds(time));
+                    }
+
+                    break;
+                case Gimmick gimmick:
+                    if (!(patrol ?? this).Abandon)
+                    {
+                        TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, gimmick), TimeSpan.FromMilliseconds(time));
+                    }
+
+                    break;
+                case Transfer transfer:
+                    if (!(patrol ?? this).Abandon)
+                    {
+                        TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, transfer), TimeSpan.FromMilliseconds(time));
+                    }
+
+                    break;
+                default:
+                    if (!(patrol ?? this).Abandon)
+                    {
+                        TaskManager.Instance.Schedule(new UnitMove(patrol ?? this, unit), TimeSpan.FromMilliseconds(time));
+                    }
+
+                    break;
             }
         }
 
@@ -207,7 +251,7 @@ namespace AAEmu.Game.Models.Game.Units
             // If the last cruise is not null
             if (LastPatrol != null && Running == false)
             {
-                if (unit.Position.X == LastPatrol.PausePosition.X && unit.Position.Y == LastPatrol.PausePosition.Y && unit.Position.Z == LastPatrol.PausePosition.Z)
+                if (Math.Abs(unit.Position.X - LastPatrol.PausePosition.X) < Tolerance && Math.Abs(unit.Position.Y - LastPatrol.PausePosition.Y) < Tolerance && Math.Abs(unit.Position.Z - LastPatrol.PausePosition.Z) < Tolerance)
                 {
                     LastPatrol.Running = true;
                     unit.Patrol = LastPatrol;
@@ -224,10 +268,12 @@ namespace AAEmu.Game.Models.Game.Units
                     // Uninterrupted, unaffected by external forces and attacks
                     line.Interrupt = true;
                     line.Loop = false;
+                    line.Abandon = false;
                     line.LastPatrol = LastPatrol;
                     // 指定目标Point
                     // Specify target point
                     line.Position = LastPatrol.PausePosition;
+                    line.PausePosition = LastPatrol.PausePosition;
                     // 恢复上次巡航
                     // Resume last cruise
                     Repeat(unit, 500, line);

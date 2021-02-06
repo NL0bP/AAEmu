@@ -112,7 +112,7 @@ namespace AAEmu.Game.Core.Network.Game
             //RegisterPacket(CSOffsets.CSCheckDemoModePacket, 5, typeof(CSCheckDemoModePacket));
             //RegisterPacket(CSOffsets.CSDemoCharResetPacket, 5, typeof(CSDemoCharResetPacket));
             RegisterPacket(CSOffsets.CSConsoleCmdUsedPacket, 5, typeof(CSConsoleCmdUsedPacket));
-            RegisterPacket(CSOffsets.CSEditorGameModePacket, 5, typeof(CSEditorGameModePacket));
+            RegisterPacket(CSOffsets.CSTeleportEndedPacket, 5, typeof(CSTeleportEndedPacket));
             //RegisterPacket(CSOffsets.CSInteractGimmickPacket, 5, typeof(CSInteractGimmickPacket));
             //RegisterPacket(CSOffsets.CSWorldRaycastingPacket, 5, typeof(CSWorldRaycastingPacket));
             //RegisterPacket(CSOffsets.CSOpenExpeditionImmigrationRequestPacket, 5, typeof(CSOpenExpeditionImmigrationRequestPacket));
@@ -156,7 +156,6 @@ namespace AAEmu.Game.Core.Network.Game
             RegisterPacket(CSOffsets.CSPacketUnknown0x166Packet, 5, typeof(CSPacketUnknown0x166Packet));
             RegisterPacket(CSOffsets.CSCreateCharacterPacket, 5, typeof(CSCreateCharacterPacket));
             RegisterPacket(CSOffsets.CSEditCharacterPacket, 5, typeof(CSEditCharacterPacket));
-            RegisterPacket(CSOffsets.CSBroadcastVisualOption_0_Packet, 5, typeof(CSBroadcastVisualOption_0_Packet));
             RegisterPacket(CSOffsets.CSSpawnCharacterPacket, 5, typeof(CSSpawnCharacterPacket));
             RegisterPacket(CSOffsets.CSNotifySubZonePacket, 5, typeof(CSNotifySubZonePacket));
             RegisterPacket(CSOffsets.CSSaveTutorialPacket, 5, typeof(CSSaveTutorialPacket));

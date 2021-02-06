@@ -380,7 +380,7 @@ namespace AAEmu.Game.Core.Managers.World
             FirstNonNameArgument = 0;
             if ((TargetName != null) && (TargetName != string.Empty))
             {
-                var player = WorldManager.Instance.GetCharacter(TargetName);
+                var player = Instance.GetCharacter(TargetName);
                 if (player != null)
                 {
                     FirstNonNameArgument = 1;
@@ -691,17 +691,17 @@ namespace AAEmu.Game.Core.Managers.World
         public void ResendVisibleObjectsToCharacter(Character character)
         {
             // Re-send visible flags to character getting out of cinema
-            var stuffs = WorldManager.Instance.GetAround<Unit>(character, 1000f);
+            var stuffs = Instance.GetAround<Unit>(character, 1000f);
             foreach (var stuff in stuffs)
             {
-                if (stuff is House)
-                    character.SendPacket(new SCHouseStatePacket((House)stuff));
+                if (stuff is House house)
+                    character.SendPacket(new SCHouseStatePacket(house));
                 else
-                if (stuff is Unit)
-                    character.SendPacket(new SCUnitStatePacket((Unit)stuff));
+                if (stuff != null && !(stuff is Gimmick))
+                    character.SendPacket(new SCUnitStatePacket(stuff));
             }
 
-            var doodads = WorldManager.Instance.GetAround<Doodad>(character, 1000f).ToArray();
+            var doodads = Instance.GetAround<Doodad>(character, 1000f).ToArray();
             for (var i = 0; i < doodads.Length; i += 30)
             {
                 var count = doodads.Length - i;

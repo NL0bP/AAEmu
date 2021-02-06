@@ -24,15 +24,15 @@ namespace AAEmu.Game.Models.Game.AI_old
             switch (someone.UnitType)
             {
                 case BaseUnitType.Character:
-                    //var gimmick = (Gimmick)Owner;
-                    //if (gimmick.Patrol != null) { return; }
+                    var gimmick = (Gimmick)Owner;
+                    if (gimmick.Patrol != null) { return; }
 
-                    //var quill = new QuillZ { Interrupt = false, Loop = true, Abandon = false };
-                    //patrol = quill;
-                    //patrol.Pause(gimmick);
-                    //gimmick.Patrol = patrol;
-                    //gimmick.Patrol.LastPatrol = patrol;
-                    //patrol.Recovery(gimmick);
+                    var quill = new QuillZ { Interrupt = false, Loop = true, Abandon = false };
+                    patrol = quill;
+                    patrol.Pause(gimmick);
+                    gimmick.Patrol = patrol;
+                    gimmick.Patrol.LastPatrol = patrol;
+                    patrol.Recovery(gimmick);
                     break;
                 case BaseUnitType.Npc:
                     break;
@@ -56,12 +56,12 @@ namespace AAEmu.Game.Models.Game.AI_old
             switch (someone.UnitType)
             {
                 case BaseUnitType.Character:
-                    //var chr = (Character)someone;
-                    //var gimmick = (Gimmick)Owner;
-                    //if (gimmick.Patrol != null)
-                    //{
-                    //    gimmick.Patrol = null; // останавливаем
-                    //}
+                    var chr = (Character)someone;
+                    var gimmick = (Gimmick)Owner;
+                    if (gimmick.Patrol != null)
+                    {
+                        gimmick.Patrol = null; // останавливаем
+                    }
                     break;
                 case BaseUnitType.Npc:
                     break;

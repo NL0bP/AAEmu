@@ -236,26 +236,26 @@ namespace AAEmu.Game.Core.Managers.World
             //        spawner.SpawnAll();
             //    }
             //}
-            //foreach (var (worldId, worldSpawners) in _gimmickSpawners)
-            //{
-            //    foreach (var spawner in worldSpawners.Values)
-            //    {
-            //        spawner.Spawn(0);
-            //    }
-            //}
+            foreach (var (worldId, worldSpawners) in _gimmickSpawners)
+            {
+                foreach (var spawner in worldSpawners.Values)
+                {
+                    spawner.Spawn(0);
+                }
+            }
             // нужно для создания файла transfer_paths_original.json
             //var result = TransfersPath.Paths.OrderBy(x => x.Type).ToList();
             //var serialized = JsonConvert.SerializeObject(result, Formatting.Indented);
             //FileManager.SaveFile(serialized, string.Format("{0}transfer_paths_original.json", FileManager.AppPath));
 
-            //Task.Run(() =>
-            //{
-            //    foreach (var doodad in _playerDoodads)
-            //    {
-            //        doodad.DoPhase(null, 0);
-            //        doodad.Spawn();
-            //    }
-            //});
+            Task.Run(() =>
+            {
+                foreach (var doodad in _playerDoodads)
+                {
+                    doodad.DoPhase(null, 0);
+                    doodad.Spawn();
+                }
+            });
         }
 
         public void Stop()

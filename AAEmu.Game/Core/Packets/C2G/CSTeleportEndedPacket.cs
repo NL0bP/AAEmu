@@ -16,7 +16,8 @@ namespace AAEmu.Game.Core.Packets.C2G
             var x = Helpers.ConvertLongX(stream.ReadInt64());
             var y = Helpers.ConvertLongY(stream.ReadInt64());
             var z = stream.ReadSingle();
-            var ori = stream.ReadBytes(16); // TODO example: 00000000 00000000 00000000 0000803F
+            //var ori = stream.ReadBytes(16); // TODO example: 00000000 00000000 00000000 0000803F
+            var ori = stream.ReadQuaternionWithScalarSingle();
 
             Connection.ActiveChar.DisabledSetPosition = false;
             _log.Warn("TeleportEnded, X: {0}, Y: {1}, Z: {2}", x, y, z);
