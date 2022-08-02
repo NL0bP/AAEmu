@@ -16,7 +16,7 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
         public bool DropWhenDestroy { get; set; }
         public bool DestroyWhenDrop { get; set; }
 
-        public override bool Use(Character character, Quest quest, int objective)
+        public override bool Use(ICharacter character, Quest quest, int objective)
         {
             _log.Warn("QuestActSupplyItem");
             if (objective >= Count) // checking for call recursion
@@ -24,11 +24,27 @@ namespace AAEmu.Game.Models.Game.Quests.Acts
                 return true;
             }
 
+            var acquireSuccessful = false;
             if (ItemManager.Instance.IsAutoEquipTradePack(ItemId))
             {
-                return character.Inventory.TryEquipNewBackPack(ItemTaskType.QuestSupplyItems, ItemId, Count, GradeId);
+                acquireSuccessful = character.Inventory.TryEquipNewBackPack(ItemTaskType.QuestSupplyItems, ItemId, Count, GradeId);
             }
-            return character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.QuestSupplyItems, ItemId, Count, GradeId);
+            else
+            {
+                acquireSuccessful = character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.QuestSupplyItems, ItemId, Count, GradeId);
+            }
+
+            if (!acquireSuccessful)
+            {
+                var amountFree = character.Inventory.Bag.SpaceLeftForItem(ItemId);
+                if (amountFree < Count)
+                {
+                    character.SendErrorMessage(ErrorMessageType.BagFull);
+                }
+            }
+
+            return acquireSuccessful;
+            
             //    /*
             //    var template = ItemManager.Instance.GetTemplate(ItemId);
             //    if (template is BackpackTemplate backpackTemplate)
