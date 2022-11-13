@@ -1,0 +1,291 @@
+[
+	{
+		"Title": "Наименование пункта Fsets (строка опциональна)",
+		"Feature": "siege",
+		"Enabled": true
+	},
+	{
+		"Feature": "allowFamilyChanges",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_0_2",
+		"Enabled": false
+	},
+	{
+		"Feature": "houseSale",
+		"Enabled": false
+	},
+	{
+		"Feature": "premium",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_0_5",
+		"Enabled": false
+	},
+	{
+		"Feature": "nations",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_0_7",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_0 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_2 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_3 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_4 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_5 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_6 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_2_7 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_0 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_2 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_3 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_4 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_5 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_6 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_3_7 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_4_0 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_4_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_4_2 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_4_3 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "ranking ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_4_5 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "ingamecashshop ",
+		"Enabled": false
+	},
+	{
+		"Feature": "customUiButton ",
+		"Enabled": false
+	},
+	{
+		"Feature": "customsaveload ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_5_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_5_2 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "bm_mileage ",
+		"Enabled": false
+	},
+	{
+		"Feature": "aaPoint ",
+		"Enabled": false
+	},
+	{
+		"Feature": "itemSecure ",
+		"Enabled": false
+	},
+	{
+		"Feature": "secondpass ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_5_7 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "slave_customize ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_6_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_6_2 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_6_3 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "beautyshopBypass ",
+		"Enabled": false
+	},
+	{
+		"Feature": "freeLpRaise ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_6_6 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "ingameshopSecondpass ",
+		"Enabled": false
+	},
+	{
+		"Feature": "backpackProfitShare ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_7_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "sensitiveOpeartion ",
+		"Enabled": false
+	},
+	{
+		"Feature": "taxItem ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_7_4 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_7_5 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_7_6 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "achievement ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_9_0 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_9_1 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "dwarfWarborn ",
+		"Enabled": false
+	},
+	{
+		"Feature": "mailCoolTime ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_9_4 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_9_5 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_9_6 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_9_7 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_10_0_DO_NOT_USE ",
+		"Enabled": false
+	},
+	{
+		"Feature": "hudAuctionButton ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_10_2 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "auctionPostBuff ",
+		"Enabled": false
+	},
+	{
+		"Feature": "houseTaxPrepay ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_10_5 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_10_6 ",
+		"Enabled": false
+	},
+	{
+		"Feature": "flag_10_7 ",
+		"Enabled": false
+	}
+]
