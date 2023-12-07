@@ -27,12 +27,11 @@ namespace AAEmu.Game.Core.Packets.Proxy
                     }
                     else
                     {
-                        levelname = "w_hanuimaru_1";
+                        levelname = "loginbg4";
                     }
                     Connection.SendPacket(new SetGameTypePacket(levelname, 0, 1)); // TODO - level
                     Connection.SendPacket(new SCInitialConfigPacket());
-                    Connection.SendPacket(new SCAccountInfoPacket((int)Connection.Payment.Method, Connection.Payment.Location, Connection.Payment.StartTime, Connection.Payment.EndTime)
-                    );
+                    Connection.SendPacket(new SCAccountInfoPacket((int)Connection.Payment.Method, Connection.Payment.Location, Connection.Payment.StartTime, Connection.Payment.EndTime));
                     Connection.SendPacket(new SCChatSpamDelayPacket());
                     break;
                 case 1:

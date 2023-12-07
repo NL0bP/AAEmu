@@ -6,7 +6,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CARequestReconnectPacket : LoginPacket
     {
-        public CARequestReconnectPacket() : base(0x0b) // в версии 0.5.1.101.406
+        public CARequestReconnectPacket() : base(0x0A) // в версии 0.5.1.35870
         { }
 
         public override void Read(PacketStream stream)

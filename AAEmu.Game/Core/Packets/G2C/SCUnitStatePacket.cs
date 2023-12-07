@@ -83,7 +83,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                     var npc = (Npc)_unit;
                     stream.WriteBc(npc.ObjId);    // objId
                     stream.Write(npc.TemplateId); // npc templateId
-                    stream.Write(0u);             // type(id)
+                    //stream.Write(0u);             // type(id)
                     //stream.Write((byte)0);        // clientDriven
                     break;
                 case BaseUnitType.Slave:
@@ -101,7 +101,7 @@ namespace AAEmu.Game.Core.Packets.G2C
 
                     stream.Write(house.TlId);       // tl
                     stream.Write(house.TemplateId); // house templateId
-                    stream.Write((short)buildStep); // buildstep
+                    //stream.Write((short)buildStep); // buildstep
                     break;
                 case BaseUnitType.Transfer:
                     var transfer = (Transfer)_unit;
@@ -161,6 +161,23 @@ namespace AAEmu.Game.Core.Packets.G2C
                         stream.Write(0);
                     }
                 }
+                //var items = character.Inventory.Equipment.GetSlottedItemsList();
+                //var idx = 0;
+                //do
+                //{
+                //    if (idx is < 19 or > 25)
+                //    {
+                //        if (items[idx] == null)
+                //            stream.Write(0u);
+                //        else
+                //            stream.Write(items[idx]);
+                //    }
+                //    else
+                //    {
+                //        stream.Write(items[idx] == null ? 0u : items[idx].TemplateId);
+                //    }
+                //    idx++;
+                //} while (idx < 28);
 
             }
             else if (_unit is Npc)
@@ -305,6 +322,8 @@ namespace AAEmu.Game.Core.Packets.G2C
                     break;
             }
 
+            stream.Write(1.0f); // scaleVel
+            stream.Write(1.0f); // targetScale
             stream.Write(_unit.ActiveWeapon);
 
             if (_unit is Character)
@@ -356,7 +375,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                 stream.WritePisc(0, 0, 0, 0); // pisc
             }
 
-            stream.WritePisc(_unit.Faction?.Id ?? 0, _unit.Expedition?.Id ?? 0, 0, 0); // pisc 4
+            stream.WritePisc(_unit.Faction?.Id ?? 0, _unit.Expedition?.Id ?? 0, 0); // pisc 3
 
             if (_unit is Character)
             {
@@ -408,7 +427,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                     stream.Write((byte)ability);
                 }
 
-                stream.WriteBc(0);
+                //stream.WriteBc(0);
 
                 //character.VisualOptions.Write(stream, 31);
 
@@ -416,7 +435,7 @@ namespace AAEmu.Game.Core.Packets.G2C
 
                 for (var i = 0; i < 6; i++)
                 {
-                    stream.Write(0); // pStat
+                    stream.Write((byte)0); // Stp
                 }
                 stream.Write(false); // helmet
             }

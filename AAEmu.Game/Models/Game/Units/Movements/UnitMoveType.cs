@@ -43,10 +43,10 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             {
                 GcFlags = stream.ReadByte();          // actor.gcFlags
                 GcPartId = stream.ReadUInt16();       // actor.gcPartId
-                (X2, Y2, Z2) = stream.ReadPositionBc(); // ix, iy, iz
-                RotationX2 = stream.ReadSByte();      // rot.x
-                RotationY2 = stream.ReadSByte();      // rot.y
-                RotationZ2 = stream.ReadSByte();      // rot.z
+                //(X2, Y2, Z2) = stream.ReadPositionBc(); // ix, iy, iz
+                //RotationX2 = stream.ReadSByte();      // rot.x
+                //RotationY2 = stream.ReadSByte();      // rot.y
+                //RotationZ2 = stream.ReadSByte();      // rot.z
             }
             if ((Flags & 0x60) == 0x60)
                 GcId = stream.ReadUInt32();      // actor.gcId
@@ -76,10 +76,10 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             {
                 stream.Write(GcFlags);
                 stream.Write(GcPartId);
-                stream.WritePositionBc(X2, Y2, Z2);
-                stream.Write(RotationX2);
-                stream.Write(RotationY2);
-                stream.Write(RotationZ2);
+                //stream.WritePositionBc(X2, Y2, Z2);
+                //stream.Write(RotationX2);
+                //stream.Write(RotationY2);
+                //stream.Write(RotationZ2);
             }
             if ((Flags & 0x60) == 0x60)
                 stream.Write(GcId);

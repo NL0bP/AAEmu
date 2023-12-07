@@ -9,7 +9,7 @@ namespace AAEmu.Login.Core.Packets.L2C
         private readonly byte[] _wsk;
         private readonly byte _slotCount;
 
-        public ACAuthResponsePacket(uint accountId, byte slotCount) : base(0x03)
+        public ACAuthResponsePacket(uint accountId, byte slotCount) : base(0x03) // в версии 0.5.1.35870
         {
             _accountId = accountId;
             _wsk = new byte[32];
@@ -20,7 +20,6 @@ namespace AAEmu.Login.Core.Packets.L2C
         {
             stream.Write(_accountId);
             stream.Write(_wsk, true);
-            //stream.Write(_slotCount); // нет в 0.5.1.101406
 
             return stream;
         }

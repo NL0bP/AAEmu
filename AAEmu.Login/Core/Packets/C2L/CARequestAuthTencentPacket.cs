@@ -5,7 +5,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CARequestAuthTencentPacket : LoginPacket
     {
-        public CARequestAuthTencentPacket() : base(0x02) // в версии 0.5.1.101.406
+        public CARequestAuthTencentPacket() : base(0x02) // в версии 0.5.1.35870
         {
         }
 

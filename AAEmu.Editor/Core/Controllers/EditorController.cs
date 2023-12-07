@@ -49,8 +49,8 @@ namespace AAEmu.Editor.Core.Controllers
                         connection.LastEditor = DateTime.Now;
                         connection.LastIp = connection.Ip;
 
-                        //connection.SendPacket(new ECEditorResponsePacket(0, @"g:\Games\Archeage1.0\dedicated\bin32\dedicatedserver.exe"));
-                        connection.SendPacket(new ECEditorResponsePacket(0, @"g:\Games\Archeage1.0\game\db\compact.sqlite3 "));
+                        connection.SendPacket(new ECEditorResponsePacket(0, @"d:\ArcheAge\bin32"));
+                        //connection.SendPacket(new ECEditorResponsePacket(0, @"d:\Archeage\game\db\compact.sqlite3 "));
                     }
                 }
             }

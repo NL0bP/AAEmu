@@ -76,7 +76,7 @@ namespace AAEmu.Game.Core.Managers.World
                             var relation = new FactionRelation();
                             relation.Id = reader.GetUInt32("faction1_id");
                             relation.Id2 = reader.GetUInt32("faction2_id");
-                            relation.Friendship = (RelationState) reader.GetByte("friendship");
+                            //relation.Friendship = (RelationState) reader.GetByte("friendship");
                             _relations.Add(relation);
 
                             var faction = _systemFactions[relation.Id];

@@ -15,13 +15,9 @@ namespace AAEmu.Game.Core.Packets.G2C
 
         public override PacketStream Write(PacketStream stream)
         {
-            for (var i = 0; i < 6; i++)
+            for (var i = 0; i < 5; i++)
                 stream.Write(_character.HonorPoint);    // uint honor
-            
-            //stream.Write(_character.VocationPoint);
 
-            for (var i = 0; i < 3; i++)
-                stream.Write(0u); // uint living
             return stream;
         }
     }

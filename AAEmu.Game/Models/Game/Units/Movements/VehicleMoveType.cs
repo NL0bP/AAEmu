@@ -31,7 +31,7 @@ namespace AAEmu.Game.Models.Game.Units.Movements
             RotationY = stream.ReadInt16();
             RotationZ = stream.ReadInt16();
 
-            AngVelX = stream.ReadSingle();
+            AngVelX = stream.ReadSingle(); // vector3
             AngVelY = stream.ReadSingle();
             AngVelZ = stream.ReadSingle();
             //Steering = stream.ReadSingle();

@@ -32,6 +32,9 @@ namespace AAEmu.Game.Core.Packets.C2G
                 RemoveEffects(mateInfo, moveType);
                 mateInfo.SetPosition(moveType.X, moveType.Y, moveType.Z, moveType.RotationX, moveType.RotationY, moveType.RotationZ);
                 mateInfo.BroadcastPacket(new SCOneUnitMovementPacket(objId, moveType), myObjId);
+                
+                var movements = new (uint id, MoveType type)[] {(objId, moveType)};
+                mateInfo.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
 
                 if (mateInfo.Att1 > 0)
                 {
@@ -41,7 +44,10 @@ namespace AAEmu.Game.Core.Packets.C2G
                     {
                         RemoveEffects(owner, moveType);
                         owner.SetPosition(moveType.X, moveType.Y, moveType.Z, moveType.RotationX, moveType.RotationY, moveType.RotationZ);
-                        owner.BroadcastPacket(new SCOneUnitMovementPacket(owner.ObjId, moveType), false);
+                        //owner.BroadcastPacket(new SCOneUnitMovementPacket(owner.ObjId, moveType), false);
+
+                        movements = new (uint id, MoveType type)[] {(owner.ObjId, moveType)};
+                        owner.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
                     }
                 }
 
@@ -52,7 +58,10 @@ namespace AAEmu.Game.Core.Packets.C2G
                     {
                         RemoveEffects(passenger, moveType);
                         passenger.SetPosition(moveType.X, moveType.Y, moveType.Z, moveType.RotationX, moveType.RotationY, moveType.RotationZ);
-                        passenger.BroadcastPacket(new SCOneUnitMovementPacket(passenger.ObjId, moveType), false);
+                        //passenger.BroadcastPacket(new SCOneUnitMovementPacket(passenger.ObjId, moveType), false);
+
+                        movements = new (uint id, MoveType type)[] {(passenger.ObjId, moveType)};
+                        passenger.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
                     }
                 }
             }
@@ -74,7 +83,10 @@ namespace AAEmu.Game.Core.Packets.C2G
                         .SetPosition(moveType.X, moveType.Y, moveType.Z, moveType.RotationX, moveType.RotationY, moveType.RotationZ);
                     
                 }
-                Connection.ActiveChar.BroadcastPacket(new SCOneUnitMovementPacket(objId, moveType), false);
+                //Connection.ActiveChar.BroadcastPacket(new SCOneUnitMovementPacket(objId, moveType), false);
+                
+                var movements = new (uint id, MoveType type)[] {(objId, moveType)};
+                Connection.ActiveChar.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
             }
         }
 

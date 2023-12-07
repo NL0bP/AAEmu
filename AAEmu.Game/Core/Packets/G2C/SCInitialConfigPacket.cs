@@ -42,7 +42,8 @@ namespace AAEmu.Game.Core.Packets.G2C
             // stream.Write(new byte[] {0x11, 0x37, 0x0F, 0x0F, 0x79, 0x69, 0xb3, 0x8d, 0x32, 0x0c, 0x1a}, true); // fset
             //var fset = new FeatureSet();
             //fset.Write(stream);
-            stream.Write(new byte[] { 0x11, 0x37, 0x0F, 0x0F, 0x79 }, true); // fset
+            stream.Write(new byte[] { 0xff, 0xff }, true); // fset
+            //stream.Write(new byte[] { 0x11, 0x37, 0x0F, 0x0F, 0x79 }, true); // fset
 
             /*
                 {
@@ -86,7 +87,7 @@ namespace AAEmu.Game.Core.Packets.G2C
             //stream.Write(true); // canUseCopper
 
             //stream.Write((byte)2); // secondPriceType
-            ///*
+            // /*
             // * 0 - kr aapoint
             // * 1 - ru aapoint
             // * 2 - na loyalt token

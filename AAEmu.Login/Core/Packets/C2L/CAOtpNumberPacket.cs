@@ -5,7 +5,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CAOtpNumberPacket : LoginPacket
     {
-        public CAOtpNumberPacket() : base(0x05) // в версии 0.5.1.101.406
+        public CAOtpNumberPacket() : base(0x05) // в версии 0.5.1.35870
         {
         }
 

@@ -6,7 +6,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CAEnterWorldPacket : LoginPacket
     {
-        public CAEnterWorldPacket() : base(0x09) // в версии 0.5.1.101.406
+        public CAEnterWorldPacket() : base(0x08) // в версии 0.5.1.35870
         {
         }
 

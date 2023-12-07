@@ -5,7 +5,7 @@ namespace AAEmu.Login.Core.Packets.L2C
 {
     public class ACChallengePacket : LoginPacket
     {
-        public ACChallengePacket() : base(0x02) // в версии 0.5.1.101.406
+        public ACChallengePacket() : base(0x02) // в версии 0.5.1.35870
         {
         }
 

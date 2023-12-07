@@ -5,7 +5,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CACancelEnterWorldPacket : LoginPacket
     {
-        public CACancelEnterWorldPacket() : base(0x0a) // в версии 0.5.1.101.406
+        public CACancelEnterWorldPacket() : base(0x09) // в версии 0.5.1.35870
         {
         }
 

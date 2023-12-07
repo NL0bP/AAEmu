@@ -24,13 +24,13 @@ namespace AAEmu.Game.Models.Game.Units
         public override void Read(PacketStream stream)
         {
             AssetId = stream.ReadUInt32();
-            AssetWeight = stream.ReadSingle();
+            //AssetWeight = stream.ReadSingle();
         }
 
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write(AssetId);
-            stream.Write(AssetWeight);
+            //stream.Write(AssetWeight);
             return stream;
         }
     }
@@ -60,7 +60,7 @@ namespace AAEmu.Game.Models.Game.Units
 
         public FaceModel()
         {
-            FixedDecalAsset = new FixedDecalAsset[4]; // в 0.5.1.101.406 = 4
+            FixedDecalAsset = new FixedDecalAsset[4]; // в 0.5.1.35870 = 4
             for (var i = 0; i < FixedDecalAsset.Length; i++)
                 FixedDecalAsset[i] = new FixedDecalAsset();
 
@@ -81,7 +81,7 @@ namespace AAEmu.Game.Models.Game.Units
         public override void Read(PacketStream stream)
         {
             MovableDecalAssetId = stream.ReadUInt32();
-            MovableDecalWeight = stream.ReadSingle();
+            //MovableDecalWeight = stream.ReadSingle();
             MovableDecalScale = stream.ReadSingle();
             MovableDecalRotate = stream.ReadSingle();
             MovableDecalMoveX = stream.ReadInt16();
@@ -95,12 +95,12 @@ namespace AAEmu.Game.Models.Game.Units
             DiffuseMapId = stream.ReadUInt32();
             NormalMapId = stream.ReadUInt32();
             EyelashMapId = stream.ReadUInt32();
-            NormalMapWeight = stream.ReadSingle();
+            //NormalMapWeight = stream.ReadSingle();
             LipColor = stream.ReadUInt32();
             LeftPupilColor = stream.ReadUInt32();
             RightPupilColor = stream.ReadUInt32();
             EyebrowColor = stream.ReadUInt32();
-            DecoColor = stream.ReadUInt32();
+            //DecoColor = stream.ReadUInt32();
 
             Modifier = stream.ReadBytes();
         }
@@ -108,7 +108,7 @@ namespace AAEmu.Game.Models.Game.Units
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write(MovableDecalAssetId);
-            stream.Write(MovableDecalWeight);
+            //stream.Write(MovableDecalWeight);
             stream.Write(MovableDecalScale);
             stream.Write(MovableDecalRotate);
             stream.Write(MovableDecalMoveX);
@@ -122,12 +122,12 @@ namespace AAEmu.Game.Models.Game.Units
             stream.Write(DiffuseMapId);
             stream.Write(NormalMapId);
             stream.Write(EyelashMapId);
-            stream.Write(NormalMapWeight);
+            //stream.Write(NormalMapWeight);
             stream.Write(LipColor);
             stream.Write(LeftPupilColor);
             stream.Write(RightPupilColor);
             stream.Write(EyebrowColor);
-            stream.Write(DecoColor);
+            //stream.Write(DecoColor);
 
             stream.Write(Modifier, true);
             return stream;

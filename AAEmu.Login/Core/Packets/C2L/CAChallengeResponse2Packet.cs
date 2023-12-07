@@ -6,16 +6,16 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CAChallengeResponse2Packet : LoginPacket
     {
-        public CAChallengeResponse2Packet() : base(0x04) // в версии 0.5.1.101.406
+        public CAChallengeResponse2Packet() : base(0x04) // в версии 0.5.1.35870
         {
         }
 
         public override void Read(PacketStream stream)
         {
             for (var i = 0; i < 8; i++)
-                stream.ReadUInt32(); // hc
+                stream.ReadUInt32(); // ch
 
-            Connection.SendPacket(new ACLoginDeniedPacket(2));
+            //Connection.SendPacket(new ACLoginDeniedPacket(2));
         }
     }
 }

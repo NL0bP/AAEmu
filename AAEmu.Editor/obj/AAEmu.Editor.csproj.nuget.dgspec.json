@@ -1,32 +1,36 @@
 {
   "format": 1,
   "restore": {
-    "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj": {}
+    "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Editor\\AAEmu.Editor.csproj": {}
   },
   "projects": {
-    "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
-      "version": "0.5.0-alpha",
+    "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Commons\\AAEmu.Commons.csproj": {
+      "version": "0.5.1.35870-alpha",
       "restore": {
-        "projectUniqueName": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj",
+        "projectUniqueName": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Commons\\AAEmu.Commons.csproj",
         "projectName": "AAEmu.Commons",
-        "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj",
-        "packagesPath": "C:\\Users\\NLObP\\.nuget\\packages\\",
-        "outputPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\obj\\",
+        "projectPath": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Commons\\AAEmu.Commons.csproj",
+        "packagesPath": "C:\\Users\\user-2903\\.nuget\\packages\\",
+        "outputPath": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Commons\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "O:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\NLObP\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\user-2903\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "netcoreapp2.2"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "netcoreapp2.2": {
-            "targetAlias": "netcoreapp2.2",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {}
           }
         },
@@ -37,26 +41,20 @@
         }
       },
       "frameworks": {
-        "netcoreapp2.2": {
-          "targetAlias": "netcoreapp2.2",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
-            "Microsoft.NETCore.App": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.2.0, )",
-              "autoReferenced": true
-            },
             "MySql.Data": {
               "target": "Package",
-              "version": "[8.0.13, )"
+              "version": "[8.0.31, )"
             },
             "NLog": {
               "target": "Package",
-              "version": "[4.5.11, )"
+              "version": "[5.2.5, )"
             },
             "Newtonsoft.Json": {
               "target": "Package",
-              "version": "[12.0.1, )"
+              "version": "[13.0.3, )"
             }
           },
           "imports": [
@@ -65,96 +63,50 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.100\\RuntimeIdentifierGraph.json"
-        }
-      },
-      "runtimes": {
-        "alpine-x64": {
-          "#import": []
-        },
-        "alpine.3.7-x64": {
-          "#import": []
-        },
-        "centos.7-x64": {
-          "#import": []
-        },
-        "debian.9-x64": {
-          "#import": []
-        },
-        "sles-x64": {
-          "#import": []
-        },
-        "sles.12-x64": {
-          "#import": []
-        },
-        "sles.12.1-x64": {
-          "#import": []
-        },
-        "sles.12.2-x64": {
-          "#import": []
-        },
-        "sles.12.3-x64": {
-          "#import": []
-        },
-        "ubuntu.18.04-x64": {
-          "#import": []
-        },
-        "win10-x64": {
-          "#import": []
-        },
-        "win10-x86": {
-          "#import": []
-        },
-        "win7-x64": {
-          "#import": []
-        },
-        "win7-x86": {
-          "#import": []
-        },
-        "win8-x64": {
-          "#import": []
-        },
-        "win8-x86": {
-          "#import": []
-        },
-        "win81-x64": {
-          "#import": []
-        },
-        "win81-x86": {
-          "#import": []
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj": {
-      "version": "0.5.0-alpha",
+    "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Editor\\AAEmu.Editor.csproj": {
+      "version": "0.5.1.35870-alpha",
       "restore": {
-        "projectUniqueName": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
+        "projectUniqueName": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Editor\\AAEmu.Editor.csproj",
         "projectName": "AAEmu.Editor",
-        "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\AAEmu.Editor.csproj",
-        "packagesPath": "C:\\Users\\NLObP\\.nuget\\packages\\",
-        "outputPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Editor\\obj\\",
+        "projectPath": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Editor\\AAEmu.Editor.csproj",
+        "packagesPath": "C:\\Users\\user-2903\\.nuget\\packages\\",
+        "outputPath": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Editor\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "O:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\NLObP\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\user-2903\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "netcoreapp2.2"
+          "net8.0"
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "netcoreapp2.2": {
-            "targetAlias": "netcoreapp2.2",
+          "net8.0": {
+            "targetAlias": "net8.0",
             "projectReferences": {
-              "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj": {
-                "projectPath": "d:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop\\AAEmu.Commons\\AAEmu.Commons.csproj"
+              "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Commons\\AAEmu.Commons.csproj": {
+                "projectPath": "O:\\DEVELOPMENT\\archeage\\SRC\\0500\\AAEmu-develop — 0.5.1.35870_OBT_2012.12.04\\AAEmu.Commons\\AAEmu.Commons.csproj"
               }
             }
           }
@@ -166,42 +118,36 @@
         }
       },
       "frameworks": {
-        "netcoreapp2.2": {
-          "targetAlias": "netcoreapp2.2",
+        "net8.0": {
+          "targetAlias": "net8.0",
           "dependencies": {
             "Microsoft.Extensions.Configuration": {
               "target": "Package",
-              "version": "[5.0.0, )"
+              "version": "[8.0.0-rc.2.23479.6, )"
             },
             "Microsoft.Extensions.Configuration.Binder": {
               "target": "Package",
-              "version": "[5.0.0, )"
+              "version": "[8.0.0-rc.2.23479.6, )"
             },
             "Microsoft.Extensions.Configuration.CommandLine": {
               "target": "Package",
-              "version": "[5.0.0, )"
+              "version": "[8.0.0-rc.2.23479.6, )"
             },
             "Microsoft.Extensions.Configuration.EnvironmentVariables": {
               "target": "Package",
-              "version": "[5.0.0, )"
+              "version": "[8.0.0-rc.2.23479.6, )"
             },
             "Microsoft.Extensions.Configuration.Json": {
               "target": "Package",
-              "version": "[5.0.0, )"
+              "version": "[8.0.0-rc.2.23479.6, )"
             },
             "Microsoft.Extensions.Hosting": {
               "target": "Package",
-              "version": "[5.0.0, )"
-            },
-            "Microsoft.NETCore.App": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.2.0, )",
-              "autoReferenced": true
+              "version": "[8.0.0-rc.2.23479.6, )"
             },
             "NLog": {
               "target": "Package",
-              "version": "[4.7.5, )"
+              "version": "[5.2.7, )"
             },
             "System.Runtime.Loader": {
               "target": "Package",
@@ -214,67 +160,17 @@
             "net47",
             "net471",
             "net472",
-            "net48"
+            "net48",
+            "net481"
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.100\\RuntimeIdentifierGraph.json"
-        }
-      },
-      "runtimes": {
-        "alpine-x64": {
-          "#import": []
-        },
-        "alpine.3.7-x64": {
-          "#import": []
-        },
-        "centos.7-x64": {
-          "#import": []
-        },
-        "debian.9-x64": {
-          "#import": []
-        },
-        "sles-x64": {
-          "#import": []
-        },
-        "sles.12-x64": {
-          "#import": []
-        },
-        "sles.12.1-x64": {
-          "#import": []
-        },
-        "sles.12.2-x64": {
-          "#import": []
-        },
-        "sles.12.3-x64": {
-          "#import": []
-        },
-        "ubuntu.18.04-x64": {
-          "#import": []
-        },
-        "win10-x64": {
-          "#import": []
-        },
-        "win10-x86": {
-          "#import": []
-        },
-        "win7-x64": {
-          "#import": []
-        },
-        "win7-x86": {
-          "#import": []
-        },
-        "win8-x64": {
-          "#import": []
-        },
-        "win8-x86": {
-          "#import": []
-        },
-        "win81-x64": {
-          "#import": []
-        },
-        "win81-x86": {
-          "#import": []
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.100\\RuntimeIdentifierGraph.json"
         }
       }
     }

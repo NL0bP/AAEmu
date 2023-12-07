@@ -1498,13 +1498,22 @@ namespace AAEmu.Game.Models.Game.Char
             stream.Write(Family);
 
             var items = Inventory.Equipment.GetSlottedItemsList();
-            foreach (var item in items)
+            var idx = 0;
+            do
             {
-                if (item == null)
-                    stream.Write(0);
+                if (idx is < 19 or > 25)
+                {
+                    if (items[idx] == null)
+                        stream.Write(0u);
+                    else
+                        stream.Write(items[idx]);
+                }
                 else
-                    stream.Write(item);
-            }
+                {
+                    stream.Write(items[idx] == null ? 0u : items[idx].TemplateId);
+                }
+                idx++;
+            } while (idx < 28);
 
             stream.Write((byte)Ability1);
             stream.Write((byte)Ability2);
@@ -1518,11 +1527,6 @@ namespace AAEmu.Game.Models.Game.Char
 
             stream.Write(LaborPower);          // laborPower
             stream.Write(LaborPowerModified);  // lastLaborPowerModified
-            stream.Write(DeadCount);           // deadCount
-            stream.Write(DeadTime);            // deadTime
-            stream.Write(RezWaitDuration);     // rezWaitDuration
-            stream.Write(RezTime);             // rezTime
-            stream.Write(RezPenaltyDuration);  // rezPenaltyDuration
             stream.Write(LeaveTime);           // lastWorldLeaveTime
             stream.Write(Money);               // moneyAmount
             stream.Write(0L);                  // moneyAmount
@@ -1530,8 +1534,6 @@ namespace AAEmu.Game.Models.Game.Char
             stream.Write(CrimeRecord);         // crimeRecord
             stream.Write((short)0);            // crimeScore
             stream.Write(DeleteRequestTime);   // deleteRequestedTime
-            stream.Write(TransferRequestTime); // transferRequestedTime
-            stream.Write(DeleteTime);          // deleteDelay
             stream.Write(ConsumedLaborPower);  // consumedLp
 
             return stream;

@@ -26,12 +26,12 @@ namespace AAEmu.Login.Core.Network.Login
             //RegisterPacket(0x05, typeof(CARequestAuthMailRuPacket)); // TODO +
             RegisterPacket(0x03, typeof(CAChallengeResponsePacket));
             RegisterPacket(0x04, typeof(CAChallengeResponse2Packet));
-            RegisterPacket(0x05, typeof(CAOtpNumberPacket));
-            RegisterPacket(0x07, typeof(CAPcCertNumberPacket));
-            RegisterPacket(0x08, typeof(CAListWorldPacket));
-            RegisterPacket(0x09, typeof(CAEnterWorldPacket));
-            RegisterPacket(0x0a, typeof(CACancelEnterWorldPacket));
-            RegisterPacket(0x0b, typeof(CARequestReconnectPacket));
+            //RegisterPacket(0x05, typeof(CAOtpNumberPacket));
+            //RegisterPacket(0x07, typeof(CAPcCertNumberPacket));
+            RegisterPacket(0x07, typeof(CAListWorldPacket));
+            RegisterPacket(0x08, typeof(CAEnterWorldPacket));
+            RegisterPacket(0x09, typeof(CACancelEnterWorldPacket));
+            RegisterPacket(0x0A, typeof(CARequestReconnectPacket));
         }
 
         public void Start()

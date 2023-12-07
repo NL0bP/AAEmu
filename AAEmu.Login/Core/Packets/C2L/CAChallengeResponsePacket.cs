@@ -7,17 +7,18 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CAChallengeResponsePacket : LoginPacket
     {
-        public CAChallengeResponsePacket() : base(0x03) // в версии 0.5.1.101.406
+        public CAChallengeResponsePacket() : base(0x03) // в версии 0.5.1.35870
         {
         }
 
         public override void Read(PacketStream stream)
         {
             for (var i = 0; i < 4; i++)
-                stream.ReadUInt32(); // responses
+                stream.ReadUInt32(); // ch
             var password = stream.ReadBytes(); // TODO or bytes? length 32
             var bytes = Convert.FromBase64String("jZae727K08KaOmKSgOaGzww/XVqGr/PKEgIMkjrcbJI=");
-            Connection.SendPacket(new ACLoginDeniedPacket(3));
+            
+            //Connection.SendPacket(new ACLoginDeniedPacket(3));
         }
     }
 }

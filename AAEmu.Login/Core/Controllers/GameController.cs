@@ -18,8 +18,8 @@ namespace AAEmu.Login.Core.Controllers
 
         public byte? GetParentId(byte gsId)
         {
-            if (_mirrorsId.ContainsKey(gsId))
-                return _mirrorsId[gsId];
+            if (_mirrorsId.TryGetValue(gsId, out var id))
+                return id;
             return null;
         }
 
@@ -90,8 +90,8 @@ namespace AAEmu.Login.Core.Controllers
 
             foreach (var mirrorId in gameServer.MirrorsId)
             {
-                if (_gameServers.ContainsKey(mirrorId))
-                    _gameServers[mirrorId].Connection = null;
+                if (_gameServers.TryGetValue(mirrorId, out var server))
+                    server.Connection = null;
 
                 _mirrorsId.Remove(mirrorId);
             }
@@ -111,8 +111,7 @@ namespace AAEmu.Login.Core.Controllers
                     if (!value.Active)
                         continue;
                     var chars = !connection.Characters.ContainsKey(value.Id);
-                    value.SendPacket(
-                        new LGRequestInfoPacket(connection.Id, requestIds[i], chars ? connection.AccountId : 0));
+                    value.SendPacket(new LGRequestInfoPacket(connection.Id, requestIds[i], chars ? connection.AccountId : 0));
                 }
 
                 await task;
@@ -147,9 +146,9 @@ namespace AAEmu.Login.Core.Controllers
         {
             if (result == 0)
             {
-                if (_gameServers.ContainsKey(gsId))
+                if (_gameServers.TryGetValue(gsId, out var server))
                 {
-                    connection.SendPacket(new ACWorldCookiePacket((int)connection.Id, _gameServers[gsId]));
+                    connection.SendPacket(new ACWorldCookiePacket((int)connection.Id, server));
                 }
                 else
                 {

@@ -6,7 +6,7 @@ namespace AAEmu.Login.Core.Packets.C2L
 {
     public class CAListWorldPacket : LoginPacket
     {
-        public CAListWorldPacket() : base(0x08) // в версии 0.5.1.101.406
+        public CAListWorldPacket() : base(0x07) // в версии 0.5.1.35870
         {
         }
 

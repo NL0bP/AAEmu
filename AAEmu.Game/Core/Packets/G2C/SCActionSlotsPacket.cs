@@ -20,8 +20,8 @@ namespace AAEmu.Game.Core.Packets.G2C
             foreach (var slot in _slots) // TODO max 85
             {
                 stream.Write((byte)slot.Type);
-                if (slot.Type != ActionSlotType.None)
-                    stream.Write(slot.ActionId);
+                //if (slot.Type != ActionSlotType.None)
+                //    stream.Write(slot.ActionId);
 
                 switch (slot.Type)
                 {
@@ -34,9 +34,7 @@ namespace AAEmu.Game.Core.Packets.G2C
                         stream.Write((long)slot.ActionId); // UInt64 itemId
                         break;
                     case ActionSlotType.None:
-                        break;
                     case ActionSlotType.Unk3:
-                        break;
                     default:
                         break;
                 }

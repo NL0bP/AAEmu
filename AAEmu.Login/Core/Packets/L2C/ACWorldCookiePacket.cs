@@ -1,5 +1,4 @@
 ﻿using AAEmu.Commons.Network;
-using AAEmu.Commons.Utils;
 using AAEmu.Login.Core.Network.Login;
 using AAEmu.Login.Models;
 
@@ -10,7 +9,7 @@ namespace AAEmu.Login.Core.Packets.L2C
         private readonly int _cookie;
         private readonly GameServer _gs;
 
-        public ACWorldCookiePacket(int cookie, GameServer gs) : base(0x0A)
+        public ACWorldCookiePacket(int cookie, GameServer gs) : base(0x09) // в версии 0.5.1.35870
         {
             _cookie = cookie;
             _gs = gs;

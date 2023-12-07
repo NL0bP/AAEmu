@@ -165,65 +165,65 @@ namespace AAEmu.Game.Models.Game.Items
 
         public virtual void ReadDetails(PacketStream stream)
         {
-//            var mDetailLength = 0;
-//            switch (DetailType)
-//            {
-//                case 1:
-//                    mDetailLength = 20; //55; // 20
-//                    goto Label_32;
-//                case 2:
-//                    mDetailLength = 30;
-//                    goto Label_32;
-//                case 3:
-//                    mDetailLength = 7;
-//                    goto Label_32;
-//                case 4:
-//                    mDetailLength = 9;
-//                    goto Label_32;
-//                case 5:
-//                    mDetailLength = 25;
-//                    goto Label_32;
-//                case 6:
-//                    mDetailLength = 8;
-//Label_32:
-//                    mDetailLength -= 1;
-//                    Detail = stream.ReadBytes(mDetailLength);
-//                    break;
-//                default:
-//                    break;
-//            }
+            var mDetailLength = 0;
+            switch (DetailType)
+            {
+                case 1:
+                    mDetailLength = 20; //55; // 20
+                    goto Label_32;
+                case 2:
+                    mDetailLength = 30;
+                    goto Label_32;
+                case 3:
+                    mDetailLength = 7;
+                    goto Label_32;
+                case 4:
+                    mDetailLength = 9;
+                    goto Label_32;
+                case 5:
+                    mDetailLength = 25;
+                    goto Label_32;
+                case 6:
+                    mDetailLength = 8;
+Label_32:
+                    mDetailLength -= 1;
+                    Detail = stream.ReadBytes(mDetailLength);
+                    break;
+                default:
+                    break;
+            }
         }
 
         public virtual void WriteDetails(PacketStream stream)
         {
-//            var mDetailLength = 0;
-//            switch (DetailType)
-//            {
-//                case 1:
-//                    mDetailLength = 55; // 20
-//                    goto Label_32;
-//                case 2:
-//                    mDetailLength = 30;
-//                    goto Label_32;
-//                case 3:
-//                    mDetailLength = 7;
-//                    goto Label_32;
-//                case 4:
-//                    mDetailLength = 9;
-//                    goto Label_32;
-//                case 5:
-//                    mDetailLength = 25;
-//                    goto Label_32;
-//                case 6:
-//                    mDetailLength = 8;
-//Label_32:
-//                    mDetailLength -= 1;
-//                    //stream.Write(Detail);
-//                    stream.Write(new byte[mDetailLength]);
-//                    break;
-//                default:
-//                    break;
-//            }
+            var mDetailLength = 0;
+            switch (DetailType)
+            {
+                case 1:
+                    mDetailLength = 20; // 55
+                    goto Label_32;
+                case 2:
+                    mDetailLength = 30;
+                    goto Label_32;
+                case 3:
+                    mDetailLength = 7;
+                    goto Label_32;
+                case 4:
+                    mDetailLength = 9;
+                    goto Label_32;
+                case 5:
+                    mDetailLength = 25;
+                    goto Label_32;
+                case 6:
+                    mDetailLength = 8;
+Label_32:
+                    mDetailLength -= 1;
+                    //stream.Write(Detail);
+                    stream.Write(new byte[mDetailLength]);
+                    break;
+                default:
+                    break;
+            }
         }
 
         public virtual bool HasFlag(ItemFlag flag)

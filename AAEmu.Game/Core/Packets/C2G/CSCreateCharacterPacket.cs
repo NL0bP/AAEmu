@@ -17,16 +17,19 @@ namespace AAEmu.Game.Core.Packets.C2G
             var name = stream.ReadString();
             var race = stream.ReadByte();
             var gender = stream.ReadByte();
-            var items = new uint[7];
-            for (var i = 0; i < 7; i++)
-                items[i] = stream.ReadUInt32();
+            var body = new uint[7];
+            for (var i = 0; i < 28; i++)
+            {
+                if (i is < 19 or > 25)
+                {
+                    stream.ReadUInt32();
+                }
+                else
+                {
+                    body[i - 19] = stream.ReadUInt32();
+                }
+            }
 
-            //var template = CharacterManager.Instance.GetTemplate(race, gender);
-            //for (var i = 0; i < 7; i++)
-            //{
-            //    template.BodyItems.Items[i].ModelId = stream.ReadUInt32();
-            //    template.BodyItems.Items[i].NpcOnly = false;
-            //}
             var customModel = new UnitCustomModelParams();
             customModel.Read(stream);
 
@@ -35,7 +38,7 @@ namespace AAEmu.Game.Core.Packets.C2G
             var ability3 = stream.ReadByte();
             var level = stream.ReadByte();
 
-            CharacterManager.Instance.Create(Connection, name, race, gender, items, customModel, ability1);
+            CharacterManager.Instance.Create(Connection, name, race, gender, body, customModel, ability1);
         }
     }
 }

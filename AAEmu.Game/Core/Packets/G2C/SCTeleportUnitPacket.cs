@@ -1,6 +1,7 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Models.Game.Char.Templates;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
@@ -27,9 +28,14 @@ namespace AAEmu.Game.Core.Packets.G2C
         public override PacketStream Write(PacketStream stream)
         {
             stream.Write(_reason);
-            stream.Write(_errorMessage);
-            stream.WritePositionBc(_x, _y, _z);
+            stream.Write(true);
+            stream.Write(Helpers.ConvertLongX(_x));
+            stream.Write(Helpers.ConvertLongY(_y));
+            stream.Write(_z);
+            //stream.WritePositionBc(_x, _y, _z);
             stream.Write(_z2);
+            stream.Write(false);
+
             return stream;
         }
     }

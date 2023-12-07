@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Skills;
 using MySql.Data.MySqlClient;
@@ -14,7 +14,7 @@ namespace AAEmu.Game.Models.Game.Char
         {
             Owner = owner;
             Abilities = new Dictionary<AbilityType, Ability>();
-            for (var i = 1; i < 11; i++)
+            for (var i = 1; i < 12; i++) // 11
             {
                 var id = (AbilityType) i;
                 Abilities[id] = new Ability(id);
