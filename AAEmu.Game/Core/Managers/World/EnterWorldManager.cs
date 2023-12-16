@@ -63,7 +63,19 @@ namespace AAEmu.Game.Core.Managers.World
             }
             else
             {
-                // TODO ...
+                // TODO ... если cookie = 0
+                _accounts.Remove((uint)cookie);
+
+                connection.AccountId = accountId;
+                connection.State = GameState.Lobby;
+
+                AccountManager.Instance.Add(connection);
+                StreamManager.Instance.AddToken(connection.AccountId, connection.Id);
+
+                var port = AppConfiguration.Instance.StreamNetwork.Port;
+                var gm = connection.GetAttribute("gmFlag") != null;
+                connection.SendPacket(new X2WorldToClientPacket(0, gm, connection.Id, port));
+                connection.SendPacket(new ChangeStatePacket(0));
             }
         }
 

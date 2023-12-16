@@ -11,7 +11,7 @@
  Target Server Version : 80012
  File Encoding         : 65001
 
- Date: 28/11/2020 23:26:59
+ Date: 06/12/2020 16:49:49
 */
 
 SET NAMES utf8mb4;
@@ -50,12 +50,12 @@ CREATE TABLE `users`  (
   `updated_at` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `username`(`username`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = COMPACT;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = COMPACT;
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES (1, 'administrator', '', '', 0, ' ', 0, 0);
+INSERT INTO `users` VALUES (1, 'administrator', 'n4bQgYhMfWWaL+qgxVrQFaO/TxsrC4Is0V1sFbDwCgg=', '', 0, ' ', 0, 0);
 INSERT INTO `users` VALUES (4, 'test', 'n4bQgYhMfWWaL+qgxVrQFaO/TxsrC4Is0V1sFbDwCgg=', '', 0, '', 0, 0);
 
 SET FOREIGN_KEY_CHECKS = 1;
