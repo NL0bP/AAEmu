@@ -25,3 +25,13 @@ AAEmu.Login/Config.json
 publish/
 *.old
 *.cd
+/AAEmu.Editor/obj/AAEmu.Editor.csproj.nuget.dgspec.json
+/AAEmu.Editor/obj/AAEmu.Editor.csproj.nuget.g.props
+/AAEmu.Editor/obj/AAEmu.Editor.csproj.nuget.g.targets
+/AAEmu.Editor/obj/project.assets.json
+/AAEmu.Editor/obj/project.nuget.cache
+/AAEmu.Editor/obj/AAEmu.Editor.csproj.nuget.dgspec.json
+/AAEmu.Editor/obj/AAEmu.Editor.csproj.nuget.g.props
+/AAEmu.Editor/obj/AAEmu.Editor.csproj.nuget.g.targets
+/AAEmu.Editor/obj/project.assets.json
+/AAEmu.Editor/obj/project.nuget.cache
