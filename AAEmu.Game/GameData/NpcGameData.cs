@@ -200,4 +200,23 @@ public class NpcGameData : Singleton<NpcGameData>, IGameDataLoader
 
         return null;
     }
+
+    public void AddNpcSpawner(NpcSpawnerTemplate template)
+    {
+        _npcSpawnerTemplates.Add(template.Id, template);
+    }
+
+    public void AddNpcSpawnerNpc(NpcSpawnerNpc nsn)
+    {
+        _npcSpawnerTemplateNpcs.Add(nsn.Id, nsn);
+        //_npcSpawnerTemplates[nsn.NpcSpawnerTemplateId].Npcs.Add(nsn);
+    }
+
+    public void AddMemberAndSpawnerTemplateIds(NpcSpawnerNpc nsn)
+    {
+        if (!_npcMemberAndSpawnerTemplateIds.ContainsKey(nsn.MemberId))
+            _npcMemberAndSpawnerTemplateIds.Add(nsn.MemberId, new List<uint> { nsn.NpcSpawnerTemplateId });
+        else
+            _npcMemberAndSpawnerTemplateIds[nsn.MemberId].Add(nsn.NpcSpawnerTemplateId);
+    }
 }

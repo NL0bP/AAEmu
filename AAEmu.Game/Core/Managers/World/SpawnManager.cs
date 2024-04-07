@@ -48,6 +48,7 @@ public class SpawnManager : Singleton<SpawnManager>
     private List<Doodad> _playerDoodads;
 
     private uint _nextId = 1u;
+    private uint _fakeSpawnerId = 9000001u;
 
     public void AddNpcSpawner(NpcSpawner npcSpawner)
     {
@@ -55,16 +56,44 @@ public class SpawnManager : Singleton<SpawnManager>
         if (npcSpawner.NpcSpawnerIds.Count == 0)
         {
             var npcSpawnerIds = NpcGameData.Instance.GetSpawnerIds(npcSpawner.UnitId);
-            // TODO добавил список спавнеров // added a list of spawners
             var spawners = new List<NpcSpawner>();
-            foreach (var id in npcSpawnerIds)
+            if (npcSpawnerIds == null)
             {
+                Logger.Warn($"SpawnerIds for Npc={npcSpawner.UnitId} doesn't exist");
+                Logger.Warn($"Generate Spawner for Npc={npcSpawner.UnitId}...");
+                var id = _fakeSpawnerId;
                 npcSpawner.NpcSpawnerIds.Add(id);
                 npcSpawner.Id = id;
-                npcSpawner.Template = NpcGameData.Instance.GetNpcSpawnerTemplate(id);
-                foreach (var n in npcSpawner.Template.Npcs)
+                var tmpTemplate = NpcGameData.Instance.GetNpcSpawnerTemplate(1); // id=1 Test Warrior
+                npcSpawner.Template = Helpers.Clone(tmpTemplate);
+                npcSpawner.Template.Id = id;
+
+                var tmpNpc = new NpcSpawnerNpc();
+                tmpNpc.Position = npcSpawner.Position;
+                tmpNpc.MemberId = npcSpawner.UnitId;
+                tmpNpc.Id = id;
+                tmpNpc.MemberType = "Npc";
+                tmpNpc.Weight = 1f;
+                tmpNpc.NpcSpawnerTemplateId = id;
+                npcSpawner.Template.Npcs = new List<NpcSpawnerNpc> { tmpNpc }; // replace it with a copy
+                NpcGameData.Instance.AddNpcSpawnerNpc(tmpNpc);// add information about the fake Npc to the database
+                NpcGameData.Instance.AddMemberAndSpawnerTemplateIds(tmpNpc);
+
+                NpcGameData.Instance.AddNpcSpawner(npcSpawner.Template);// add a fake spawner to the Template database
+                _fakeSpawnerId++;
+            }
+            else
+            {
+                // TODO добавил список спавнеров // added a list of spawners
+                foreach (var id in npcSpawnerIds)
                 {
-                    n.Position = npcSpawner.Position;
+                    npcSpawner.NpcSpawnerIds.Add(id);
+                    npcSpawner.Id = id;
+                    npcSpawner.Template = NpcGameData.Instance.GetNpcSpawnerTemplate(id);
+                    foreach (var n in npcSpawner.Template.Npcs)
+                    {
+                        n.Position = npcSpawner.Position;
+                    }
                 }
             }
             spawners.Add(npcSpawner);
