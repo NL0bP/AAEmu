@@ -3047,8 +3047,7 @@ public class DoodadManager : Singleton<DoodadManager>
     /// <summary>
     /// Saves and creates a doodad
     /// </summary>
-    public static Doodad CreatePlayerDoodad(Character character, uint id, float x, float y, float z, float zRot,
-        float scale, ulong itemId)
+    public static Doodad CreatePlayerDoodad(Character character, uint id, float x, float y, float z, float zRot, float scale, ulong itemId, uint farmType = 0)
     {
         Logger.Warn($"{character.Name} is placing a doodad {id} at position {x} {y} {z}");
 
@@ -3062,6 +3061,7 @@ public class DoodadManager : Singleton<DoodadManager>
         doodad.Transform.Local.SetZRotation(zRot);
         doodad.ItemId = itemId;
         doodad.PlantTime = DateTime.UtcNow;
+        doodad.FarmType = farmType;
         if (targetHouse != null)
         {
             doodad.OwnerDbId = targetHouse.Id;
