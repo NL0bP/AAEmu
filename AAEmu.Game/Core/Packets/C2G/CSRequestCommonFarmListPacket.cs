@@ -5,10 +5,10 @@ using AAEmu.Game.Core.Packets.G2C;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSRequestCommonFarmList : GamePacket
+public class CSRequestCommonFarmListPacket : GamePacket
 {
 
-    public CSRequestCommonFarmList() : base(CSOffsets.CSRequestCommonFarmList, 1)
+    public CSRequestCommonFarmListPacket() : base(CSOffsets.CSRequestCommonFarmListPacket, 1)
     {
 
     }

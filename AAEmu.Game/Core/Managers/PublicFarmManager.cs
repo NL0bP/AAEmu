@@ -113,7 +113,7 @@ namespace AAEmu.Game.Core.Managers
             {
                 if (doodadList.Count >= CommonFarmGameData.Instance.GetFarmGroupMaxCount(farmType))
                 {
-                    character.SendErrorMessage(Models.Game.ErrorMessageType.CommonFarmCountOver);
+                    character.SendErrorMessage(ErrorMessageType.CommonFarmCountOver);
                     return false;
                 }
             }
@@ -128,7 +128,7 @@ namespace AAEmu.Game.Core.Managers
                 }
             }
 
-            character.SendErrorMessage(Models.Game.ErrorMessageType.CommonFarmNotAllowedType);
+            character.SendErrorMessage(ErrorMessageType.CommonFarmNotAllowedType);
             return false;
         }
 

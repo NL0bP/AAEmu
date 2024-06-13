@@ -4,7 +4,7 @@ using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.G2C
 {
-    public class SCShowCommonFarmPacket : GamePacket
+    public class SCShowCommonFarmShapePacket : GamePacket
     {
         private readonly int _farmType;
         private readonly int _count;
@@ -12,7 +12,7 @@ namespace AAEmu.Game.Core.Packets.G2C
         private readonly float _y;
         private readonly float _z;
 
-        public SCShowCommonFarmPacket(int farmType, int count, float x, float y, float z) : base(SCOffsets.SCShowCommonFarmPacket, 1)
+        public SCShowCommonFarmShapePacket(int farmType, int count, float x, float y, float z) : base(SCOffsets.SCShowCommonFarmShapePacket, 1)
         {
             _farmType = farmType;
             _count = count;

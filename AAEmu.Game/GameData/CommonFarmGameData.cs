@@ -19,7 +19,7 @@ public class CommonFarmGameData : Singleton<CommonFarmGameData>, IGameDataLoader
     private Dictionary<uint, FarmGroup> _farmGroup;
     private Dictionary<uint, FarmGroupDoodads> _farmGroupDoodads;
 
-    public void Load(SqliteConnection connection)
+    public void Load(SqliteConnection connection, SqliteConnection connection2)
     {
         _farmGroup = new Dictionary<uint, FarmGroup>();
         _farmGroupDoodads = new Dictionary<uint, FarmGroupDoodads>();
