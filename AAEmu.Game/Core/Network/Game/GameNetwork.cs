@@ -150,7 +150,7 @@ public class GameNetwork : Singleton<GameNetwork>
         //RegisterPacket(CSOffsets.CSBuyAaPointPacket, 5, typeof(CSBuyAaPointPacket));
         //RegisterPacket(CSOffsets.CSRequestTencentFatigueInfoPacket, 5, typeof(CSRequestTencentFatigueInfoPacket));
         RegisterPacket(CSOffsets.CSPremiumServiceListPacket, 5, typeof(CSPremiumServiceListPacket));
-        //RegisterPacket(CSOffsets.CSRequestSysInstanceIndexPacket, 5, typeof(CSRequestSysInstanceIndexPacket));
+        RegisterPacket(CSOffsets.CSRequestSysInstanceIndexPacket, 5, typeof(CSRequestSysInstanceIndexPacket));
         RegisterPacket(CSOffsets.CSQuitResponsePacket, 5, typeof(CSQuitResponsePacket));
         RegisterPacket(CSOffsets.CSSecurityReportPacket, 5, typeof(CSSecurityReportPacket));
         RegisterPacket(CSOffsets.CSEnprotectStubCallResponsePacket, 5, typeof(CSEnprotectStubCallResponsePacket));

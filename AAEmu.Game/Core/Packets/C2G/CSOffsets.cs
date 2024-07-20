@@ -134,7 +134,7 @@ public static class CSOffsets
     public const ushort CSBuyAaPointPacket = 0x144;
     public const ushort CSRequestTencentFatigueInfoPacket = 0x13A;
     public const ushort CSPremiumServiceListPacket = 0x0AF;
-    public const ushort CSRequestSysInstanceIndexPacket = 0x1AD;
+    public const ushort CSRequestSysInstanceIndexPacket = 0x123;
     public const ushort CSQuitResponsePacket = 0x181;
     public const ushort CSSecurityReportPacket = 0x022;
     public const ushort CSEnprotectStubCallResponsePacket = 0x0E1;
