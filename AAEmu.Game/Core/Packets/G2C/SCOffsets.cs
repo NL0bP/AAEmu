@@ -129,7 +129,7 @@ public static class SCOffsets
     public const ushort SCUnitInvisiblePacket = 0x18F;
     public const ushort SCUnitFlyingStateChangedPacket = 0x0D7;
     public const ushort SCTargetChangedPacket = 0x06C;
-    public const ushort SCUnitEquipmentsRndAttrUnitModifierAvtivateChangedPacket = 0x05F;
+    public const ushort SCUnitEquipmentsRndAttrUnitModifierActivateChangedPacket = 0x05F;
     public const ushort SCUnitEquipmentIdsPacket = 0x2D0;
     public const ushort SCSplitCofferItemResultPacket = 0x0D8;
     public const ushort SCSyncItemLifespanPacket = 0x058;
@@ -192,7 +192,7 @@ public static class SCOffsets
     public const ushort SCTeamMemberLeavedPacket = 0x1AA;
     public const ushort SCTeamOwnerChangedPacket = 0x170;
     public const ushort SCTeamMemberRoleChangedPacket = 0x1D2;
-    public const ushort SCTeamBecameRaidteamPacket = 0x0FA;
+    public const ushort SCTeamBecameRaidTeamPacket = 0x0FA;
     public const ushort SCTeamMemberMovedPacket = 0x027;
     public const ushort SCRefreshTeamMemberPacket = 0x115;
     public const ushort SCTeamRemoteMembersExPacket = 0x22A;
@@ -220,7 +220,7 @@ public static class SCOffsets
     public const ushort SCNpcFriendshipListPacket = 0x2BB;
     public const ushort SCNpcFriendshipChangedPacket = 0x083;
     public const ushort SCCompletedQuestsPacket = 0x0E0;
-    public const ushort SCCraftItemNulockPacket = 0x0C0;
+    public const ushort SCCraftItemUnlockPacket = 0x0C0;
     public const ushort SCLootableStatePacket = 0x1D3;
     public const ushort SCUnitLootingStatePacket = 0x23A;
     public const ushort SCLootItemTookPacket = 0x0B7;
@@ -374,7 +374,7 @@ public static class SCOffsets
     public const ushort SCSuspectGoingBotTrialPacket = 0xfff;
     public const ushort SCUnderWaterPacket = 0x2BA;
     public const ushort SCCharacterGamePointsPacket = 0x0EA;
-    public const ushort SCGamePointInitedPacket = 0x164;
+    public const ushort SCCharacterGamePointsChangedPacket = 0x164;
     public const ushort SCJuryPointChangedPacket = 0x20D;
     public const ushort SCAppliedToInstantGamePacket = 0x2C4;
     public const ushort SCCancelInstantGamePacket = 0x06B;
@@ -749,7 +749,7 @@ public static class SCOffsets
     public const ushort SCItemSocketingLunastoneResultPacket = 0xfff;
     public const ushort SCGradeEnchantBroadcastPacket = 0xfff;
     public const ushort SCHouseBuildPayChangedPacket = 0xfff;
-    public const ushort SCTeamBecameRaidTeamPacket = 0xfff;
+    //public const ushort SCTeamBecameRaidTeamPacket = 0xfff;
     //public const ushort SCAttachmentTakenPacket = 0xfff;
     //public const ushort SCBondDoodadPacket = 0x205; // SCAttachToDoodadPacket
     //public const ushort SCUnbondDoodadPacket = 0x06a; //SCDetachFromDoodadPacket
