@@ -19,15 +19,14 @@ namespace AAEmu.Game.Core.Packets.C2G
             var owningPlayerId = stream.ReadUInt32();
             // Slave tl
             var slaveTl = stream.ReadUInt16();
-            // Should be Passenger PlayerId, but still reports 0 even when the seat is taken
-            // Maybe this was planned to be used if somehow somebody else than the owner is equipping gear onto the mount
-            var passengerPlayerId = stream.ReadUInt32();
+            // dbSlaveId = 0
+            var dbSlaveId = stream.ReadUInt32();
             // Seems to be always 0
             var bts = stream.ReadBoolean();
             // Always 1 for 1 item at a time
             var itemCount = stream.ReadByte();
 
-            Logger.Debug($"ChangeSlaveEquipment - TlId: {slaveTl}, Owner: {owningPlayerId}, Id2: {passengerPlayerId}, BTS: {bts}, Count: {itemCount}");
+            Logger.Debug($"ChangeSlaveEquipment - TlId: {slaveTl}, Owner: {owningPlayerId}, dbSlaveId: {dbSlaveId}, BTS: {bts}, Count: {itemCount}");
 
             var character = Connection.ActiveChar;
             var slave = SlaveManager.Instance.GetSlaveByTlId(slaveTl);
@@ -87,11 +86,11 @@ namespace AAEmu.Game.Core.Packets.C2G
                     // character.SendMessage($"SCMateEquipmentChanged - {(isEquip ? playerItem : mateItem)} -> {(isEquip ? mateItem : playerItem)}, MateTl: {mateTl} => Success {res}");
                     if (!res)
                     {
-                        character.SendPacket(new SCMateEquipmentChangedPacket(
+                        character.SendPacket(new SCSlaveEquipmentChangedPacket(
                             isEquip ? playerItem : mateItem,
                             isEquip ? mateItem : playerItem,
                             slaveTl,
-                            owningPlayerId, passengerPlayerId,
+                            owningPlayerId, dbSlaveId,
                             bts, res));
                     }
                 }
