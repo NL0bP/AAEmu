@@ -16,7 +16,7 @@ public class SCScheduleItemUpdatePacket : GamePacket
 
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write(_scheduleItems.Count);
+        stream.Write((byte)_scheduleItems.Count);
         foreach (var item in _scheduleItems)
         {
             stream.Write(item);

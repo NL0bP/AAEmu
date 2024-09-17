@@ -59,8 +59,6 @@ public class CharacterOnlineTrackingTask : Task
                     Updated = DateTime.UtcNow
                 };
                 character.SendPacket(new SCScheduleItemUpdatePacket([si]));
-                character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.TodayAssignmentSupplyItems, [], []));
-
             }
         }
 
