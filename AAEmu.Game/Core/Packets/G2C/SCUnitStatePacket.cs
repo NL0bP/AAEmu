@@ -420,7 +420,7 @@ public class SCUnitStatePacket : GamePacket
                      * 0x0100 - Бит 8: {isBit8Set} 256 // 16bit - дополнительно 3 байт (bc), firstHitterTeamId(uint)
                      * 0x0200 - Бит 9: {isBit9Set} 512
                      * 0x0400 - Бит 10: {isBit10Set} 1024 // 14bit - надпись "Отсутсвует" под именем
-                     * 0x0800 - Бит 11: {isBit11Set} 2048
+                     * 0x0800 - Бит 11: {isBit11Set} 2048 // для Slave - призыв осуществляется из портала
                      * 0x1000 - Бит 12: {isBit12Set} 4096
                      * 0x2000 - Бит 13: {isBit13Set} 8192
                      * 0x4000 - Бит 14: {isBit14Set} 16384
@@ -442,7 +442,10 @@ public class SCUnitStatePacket : GamePacket
                 //}
                 stream.Write((ushort)8192); // flags - нейтральный флаг, нет дополнительных данных в пакете
                 break;
-            default:
+             case Slave:
+                stream.Write((ushort)0x800); // flags - Spawn is done from the portal
+                break;
+           default:
                 stream.Write((ushort)0); // flags
                 break;
         }
