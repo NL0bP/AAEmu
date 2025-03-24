@@ -30,8 +30,8 @@ public class ChatChannel
         if (character == null)
             return false;
 
-        if (Members.Contains(character))
-            return false;
+        //if (Members.Contains(character))
+        //    return false;
 
         // character.SendDebugMessage(ChatType.System, "ChatManager.JoinChannel {0} - {1} - {2}", chatType, internalId, internalName);
         Members.Add(character);
@@ -44,8 +44,10 @@ public class ChatChannel
     {
         if (character == null)
             return false;
+
         // character.SendDebugMessage(ChatType.System, "ChatManager.LeaveChannel {0} - {1} - {2}", chatType, internalId, internalName);
-        if (Members.Remove(character))
+        var removedCount = Members.RemoveAll(m => m == character);
+        if (removedCount > 0)
         {
             character.SendPacket(new SCLeavedChatChannelPacket(ChatType, SubType, Faction));
             return true;
