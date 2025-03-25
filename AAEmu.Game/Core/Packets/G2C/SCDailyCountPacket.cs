@@ -5,11 +5,11 @@ namespace AAEmu.Game.Core.Packets.G2C;
 
 public class SCDailyCountPacket : GamePacket
 {
-    private readonly int _totalCount;
-    private readonly int _dailyCount;
-    private readonly int _dailyMaxCount;
+    private readonly byte _totalCount;
+    private readonly byte _dailyCount;
+    private readonly byte _dailyMaxCount;
 
-    public SCDailyCountPacket(int totalCount, int dailyCount, int dailyMaxCount) : base(SCOffsets.SCDailyCountPacket, 5)
+    public SCDailyCountPacket(byte totalCount, byte dailyCount, byte dailyMaxCount) : base(SCOffsets.SCDailyCountPacket, 5)
     {
         _totalCount = totalCount;
         _dailyCount = dailyCount;

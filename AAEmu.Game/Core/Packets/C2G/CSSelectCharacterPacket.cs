@@ -12,12 +12,8 @@ using AAEmu.Game.Models.Game.Units.Route;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSSelectCharacterPacket : GamePacket
+public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterPacket, 5)
 {
-    public CSSelectCharacterPacket() : base(CSOffsets.CSSelectCharacterPacket, 5)
-    {
-    }
-
     public override void Read(PacketStream stream)
     {
         var characterId = stream.ReadUInt32();
@@ -77,7 +73,7 @@ public class CSSelectCharacterPacket : GamePacket
             Connection.ActiveChar.Inventory.Send();
             Connection.SendPacket(new SCCharacterGamePointsPacket(character));
             // move to CSSpawnCharacter
-            Connection.SendPacket(new SCActionSlotsPacket(Connection.ActiveChar.Slots));
+            //Connection.SendPacket(new SCActionSlotsPacket(Connection.ActiveChar.Slots));
             // added in 5.0.7.0
             Connection.SendPacket(new SCIncreasedFavoritePortalLimitPacket(0));
             //Connection.ActiveChar.Portals.SendIndunZone();

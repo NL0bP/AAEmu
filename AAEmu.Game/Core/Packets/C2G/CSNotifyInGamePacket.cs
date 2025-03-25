@@ -4,7 +4,6 @@ using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Char.Static;
 using AAEmu.Game.Models.Game.Chat;
 
 namespace AAEmu.Game.Core.Packets.C2G;
@@ -41,10 +40,10 @@ public class CSNotifyInGamePacket : GamePacket
         //TeamManager.Instance.UpdateAtLogin(Connection.ActiveChar);
         //Connection.ActiveChar.Expedition?.OnCharacterLogin(Connection.ActiveChar);
         //ExpeditionManager.SendMyExpeditionDescInfo(Connection.ActiveChar);
-        
-        Connection.ActiveChar.SendPacket(new SCDailyCountPacket(0, 0, 5));
-        Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.Instance));
-        Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.AbilitySetFreeActivationCount));
+
+        //Connection.ActiveChar.SendPacket(new SCDailyCountPacket(0, 0, 5));
+        //Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.Instance));
+        //Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.AbilitySetFreeActivationCount));
         Connection.ActiveChar.SendPacket(new SCCurServerTimePacket(DateTime.UtcNow));
 
         if (Connection.ActiveChar.Attendances.Attendances?.Count == 0)

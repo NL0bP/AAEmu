@@ -53,7 +53,7 @@
         public const ushort off_39E81EF4 = 0x002; // CSStartReinforceLevelup_0x002
         public const ushort CSEventCenterAddAttendancePacket = 0x16C;
         public const ushort CSRequestGameEventInfoPacket = 0x05B;
-        public const ushort off_39E822E0 = 0x18A;
+        public const ushort CSGameEventPacket = 0x18A; //off_39E822E0
         public const ushort off_39E822F0 = 0x168;
         public const ushort CSChangeMateNamePacket = 0x03E;
         public const ushort CSSendNationMemberCountListPacket = 0x09F;
@@ -143,7 +143,7 @@
         public const ushort CSUnhangPacket = 0x1CD; // CSFollow_0x080
         public const ushort CSChangeAppellationPacket = 0x098;
         public const ushort off_39E9A1CC = 0x0B8; // CSSetAppellationStamp_0x0B8
-        public const ushort CSQuestStartContext3 = 0x00E; //off_39E9A1DC
+        public const ushort CSQuestStartContext = 0x00E; //off_39E9A1DC
         //public const ushort CSHgResponsePacket = 0x13E;
         public const ushort CSBroadcastVisualOptionPacket = 0x037;
         public const ushort CSBroadcastOpenEquipInfoPacket = 0x061;

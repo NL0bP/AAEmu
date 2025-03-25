@@ -56,8 +56,8 @@ public partial class Quest
         Step = QuestComponentKind.Start;
         // Send the first components, or the one that's used to start this ?
         ComponentId = stepStart.Components.Values.FirstOrDefault()?.Template.Id ?? 0;
-        Owner.SendPacket(new SCQuestContextStartedPacket(this, ComponentId));
         Owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.QuestStart, [], [], 4195393552));
+        Owner.SendPacket(new SCQuestContextStartedPacket(this, ComponentId));
         Logger.Debug($"StartQuest, Quest:{TemplateId}, Player {Owner.Name} ({Owner.Id})");
         return true;
     }

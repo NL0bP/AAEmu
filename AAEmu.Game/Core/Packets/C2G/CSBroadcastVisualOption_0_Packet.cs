@@ -7,18 +7,15 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Char.Static;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Observers;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSBroadcastVisualOption_0_Packet : GamePacket
+public class CSBroadcastVisualOption_0_Packet() : GamePacket(CSOffsets.CSBroadcastVisualOption_0_Packet, 5)
 {
-    public CSBroadcastVisualOption_0_Packet() : base(CSOffsets.CSBroadcastVisualOption_0_Packet, 5)
-    {
-    }
-
     public override void Read(PacketStream stream)
     {
         Connection.State = GameState.World;
@@ -43,17 +40,22 @@ public class CSBroadcastVisualOption_0_Packet : GamePacket
         //Connection.ActiveChar.Buffs.AddBuff((uint)SkillConstants.AuctionLicense, Connection.ActiveChar);
 
         Connection.SendPacket(new SCUnitStatePacket(Connection.ActiveChar));
-
-        Connection.ActiveChar.PushSubscriber(TimeManager.Instance.Subscribe(Connection, new TimeOfDayObserver(Connection.ActiveChar)));
-
         Connection.SendPacket(new SCCooldownsPacket(Connection.ActiveChar));
         Connection.SendPacket(new SCListSkillActiveTypsPacket([]));
-        Connection.SendPacket(new SCDetailedTimeOfDayPacket(12f));
+
+        Connection.ActiveChar.PushSubscriber(TimeManager.Instance.Subscribe(Connection, new TimeOfDayObserver(Connection.ActiveChar)));
+        //Connection.SendPacket(new SCDetailedTimeOfDayPacket(12f));
+
+        Connection.ActiveChar.SendPacket(new SCDailyCountPacket(0, 0, 5));
+        Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.Instance));
+        Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.AbilitySetFreeActivationCount));
+
         Connection.SendPacket(new SCActionSlotsPacket(Connection.ActiveChar.Slots));
 
         Connection.ActiveChar.BroadcastPacket(new SCReputationChangedPacket(DateTime.UtcNow, false), true);
         // TODO здесь шлем пустой таск с номером 143 (пока не знаю точно, что это)
-        Connection.ActiveChar.BroadcastPacket(new SCItemTaskSuccessPacket(ItemTaskType.ItemTaskBattleCoin, [], []), true);
+        Connection.ActiveChar.BroadcastPacket(new SCItemTaskSuccessPacket((ItemTaskType)143, [], []), true);
+        Connection.ActiveChar.BroadcastPacket(new SCAbilitySetAllInfoPacket(), true);
 
         Connection.ActiveChar.BroadcastPacket(new SCUnitVisualOptionsPacket(Connection.ActiveChar.ObjId, Connection.ActiveChar.VisualOptions), true);
 

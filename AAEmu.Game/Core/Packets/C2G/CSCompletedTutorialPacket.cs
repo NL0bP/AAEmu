@@ -5,12 +5,8 @@ using AAEmu.Game.Models.Game.Items.Actions;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSCompletedTutorialPacket : GamePacket
+public class CSCompletedTutorialPacket() : GamePacket(CSOffsets.CSCompletedTutorialPacket, 5)
 {
-    public CSCompletedTutorialPacket() : base(CSOffsets.CSCompletedTutorialPacket, 5)
-    {
-    }
-
     public override void Read(PacketStream stream)
     {
         var id = stream.ReadUInt32();
@@ -21,7 +17,7 @@ public class CSCompletedTutorialPacket : GamePacket
         var body = new byte[8];
         completedQuestBlock.Body.CopyTo(body, 0);
 
+        Connection.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.QuestComplete, [], [], 3));
         Connection.SendPacket(new SCTutorialCompletedPacket(id, body));
-        Connection.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.QuestComplete, [], []));
     }
 }

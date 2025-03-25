@@ -385,6 +385,12 @@ public class SCUnitStatePacket : GamePacket
                                                                                                                // PvP Honor gained and PvP Kills
             stream.WritePisc(character.HonorGainedInCombat, character.HostileFactionKills, 0, 0); // pisc
         }
+        else if (_unit is Npc)
+        {
+            stream.WritePisc(0, npc.Spawner.SpawnerId, 0, 0); // TODO второе число больше нуля, что это за число? это spawnerId
+            stream.WritePisc((uint)(_unit.Faction?.Id ?? 0), (uint)(_unit.Expedition?.Id ?? 0), 0, 0); // pisc
+            stream.WritePisc(0, 0, 0, 0); // pisc
+        }
         else
         {
             stream.WritePisc(0, 0, 0, 0); // TODO второе число больше нуля, что это за число?
