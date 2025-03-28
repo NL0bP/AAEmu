@@ -3,18 +3,16 @@ using AAEmu.Game.Core.Network.Game;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSStartQuestContextPacket : GamePacket
+public class CSStartQuestContextPacket() : GamePacket(CSOffsets.CSStartQuestContextPacket, 5)
 {
     private uint _questContextId;
     private uint _npcObjId;
     private uint _doodadObjId;
     private uint _sphereId;
-    public CSStartQuestContextPacket() : base(CSOffsets.CSStartQuestContextPacket, 5)
-    {
-    }
 
     public override void Read(PacketStream stream)
     {
+        Logger.Debug("Entering in CSStartQuestContext...");
         _questContextId = stream.ReadUInt32(); // questContextId
         _npcObjId = stream.ReadBc();           // npcObjId
         _doodadObjId = stream.ReadBc();        // doodadObjId

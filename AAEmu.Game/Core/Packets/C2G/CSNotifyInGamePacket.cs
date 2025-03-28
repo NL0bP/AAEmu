@@ -20,6 +20,7 @@ public class CSNotifyInGamePacket : GamePacket
 
     public override void Execute()
     {
+        Logger.Debug("Entering in CSNotifyInGame...");
         Connection.ActiveChar.IsOnline = true;
 
         Connection.ActiveChar.Spawn();

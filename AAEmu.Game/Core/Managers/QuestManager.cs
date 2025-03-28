@@ -833,6 +833,8 @@ public partial class QuestManager : Singleton<QuestManager>, IQuestManager
                     var template = new QuestActConAcceptNpc(parentComponent);
                     template.DetailId = actId;
                     template.NpcId = reader.GetUInt32("npc_id");
+                    template.QuestActObjAliasId = reader.GetUInt32("quest_act_obj_alias_id", 0);
+                    template.UseAlias = reader.GetBoolean("use_alias", true);
                     AddActTemplate(template);
                 }
             }
@@ -1521,6 +1523,7 @@ public partial class QuestManager : Singleton<QuestManager>, IQuestManager
                     template.NpcId = reader.GetUInt32("npc_id");
                     template.Count = reader.GetInt32("count");
                     template.UseAlias = reader.GetBoolean("use_alias", true);
+                    template.LongDist = reader.GetBoolean("long_dist", true);
                     template.QuestActObjAliasId = reader.GetUInt32("quest_act_obj_alias_id", 0);
                     template.HighlightDoodadId = reader.GetUInt32("highlight_doodad_id", 0);
                     template.HighlightDoodadPhase = reader.GetInt32("highlight_doodad_phase", -1); // TODO phase = 0?

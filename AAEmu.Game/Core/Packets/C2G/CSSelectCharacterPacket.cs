@@ -16,6 +16,7 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
 {
     public override void Read(PacketStream stream)
     {
+        Logger.Debug("Entering in CSSelectCharacter...");
         var characterId = stream.ReadUInt32();
         var gm = stream.ReadBoolean();
         stream.ReadByte();

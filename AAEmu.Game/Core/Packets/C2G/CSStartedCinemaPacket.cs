@@ -4,16 +4,12 @@ using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSStartedCinemaPacket : GamePacket
+public class CSStartedCinemaPacket() : GamePacket(CSOffsets.CSStartedCinemaPacket, 5)
 {
-    public CSStartedCinemaPacket() : base(CSOffsets.CSStartedCinemaPacket, 5)
-    {
-    }
-
     public override void Read(PacketStream stream)
     {
         // Empty struct
-        Logger.Warn("StartedCinema");
+        Logger.Debug("Entering in StartedCinema...");
         Connection.ActiveChar.Events.OnCinemaStarted(Connection.ActiveChar, new OnCinemaStartedArgs() { CinemaId = Connection.ActiveChar.CurrentlyPlayingCinemaId });
     }
 }

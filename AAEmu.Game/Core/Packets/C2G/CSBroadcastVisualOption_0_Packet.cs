@@ -18,6 +18,7 @@ public class CSBroadcastVisualOption_0_Packet() : GamePacket(CSOffsets.CSBroadca
 {
     public override void Read(PacketStream stream)
     {
+        Logger.Debug("Entering in CSBroadcastVisualOption_0_...");
         Connection.State = GameState.World;
         var character = Connection.ActiveChar;
 

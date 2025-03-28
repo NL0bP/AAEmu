@@ -13,11 +13,7 @@ public class CSCompletedTutorialPacket() : GamePacket(CSOffsets.CSCompletedTutor
 
         Logger.Debug($"SaveTutorial, Id: {id}");
 
-        var completedQuestBlock = Connection.ActiveChar.Quests.SetCompletedQuestFlag(id, true);
-        var body = new byte[8];
-        completedQuestBlock.Body.CopyTo(body, 0);
-
         Connection.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.QuestComplete, [], [], 3));
-        Connection.SendPacket(new SCTutorialCompletedPacket(id, body));
+        Connection.SendPacket(new SCTutorialCompletedPacket(id));
     }
 }

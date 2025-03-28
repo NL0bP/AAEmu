@@ -6,6 +6,8 @@ namespace AAEmu.Game.Models.Game.Quests.Acts;
 public class QuestActConAcceptNpc(QuestComponentTemplate parentComponent) : QuestActTemplate(parentComponent)
 {
     public uint NpcId { get; set; }
+    public uint QuestActObjAliasId { get; set; }
+    public bool UseAlias { get; set; }
 
     /// <summary>
     /// Checks if the Acceptor is the specified NPC

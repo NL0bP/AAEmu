@@ -17,6 +17,7 @@ public class CSAesXorKeyPacket : GamePacket
 
     public override void Read(PacketStream stream)
     {
+        Logger.Debug("Entering in CSAesXorKey...");
         var len = stream.ReadInt32();    // lenAES?
         var len2 = stream.ReadInt16();  // lenXOR?
 

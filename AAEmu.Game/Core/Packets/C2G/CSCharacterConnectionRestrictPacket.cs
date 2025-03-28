@@ -12,6 +12,7 @@ public class CSCharacterConnectionRestrictPacket : GamePacket
 
     public override void Read(PacketStream stream)
     {
+        Logger.Debug("Entering in CSCharacterConnectionRestrict...");
         var characterId = stream.ReadUInt32();
 
         Logger.Info("CSCharacterConnectionRestrictPacket");

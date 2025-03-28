@@ -12,7 +12,7 @@ public class CSRequestGameEventInfoPacket() : GamePacket(CSOffsets.CSRequestGame
     public override void Read(PacketStream stream)
     {
         // empty
-        Logger.Warn("CSRequestGameEventInfoPacket");
+        Logger.Debug("Entering in CSRequestGameEventInfo...");
 
         var count = 0;
         var loadedTime = DateTime.UtcNow;

@@ -9,7 +9,7 @@ public class CSGameEventPacket() : GamePacket(CSOffsets.CSGameEventPacket, 5)
     public override void Read(PacketStream stream)
     {
         // empty
-        Logger.Warn("CSGameEventPacket");
+        Logger.Debug("Entering in CSGameEvent...");
 
         Connection.SendPacket(new SCGameEvent2Packet());
     }

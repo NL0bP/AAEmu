@@ -8,6 +8,7 @@ public class QuestActObjMonsterHunt(QuestComponentTemplate parentComponent) : Qu
     public override bool CountsAsAnObjective => true;
     public uint NpcId { get; set; }
     public bool UseAlias { get; set; }
+    public bool LongDist { get; set; }
     public uint QuestActObjAliasId { get; set; }
     public uint HighlightDoodadId { get; set; }
     public int HighlightDoodadPhase { get; set; }

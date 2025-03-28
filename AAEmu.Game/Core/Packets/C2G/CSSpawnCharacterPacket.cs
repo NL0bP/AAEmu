@@ -14,6 +14,7 @@ public class CSSpawnCharacterPacket : GamePacket
 
     public override void Read(PacketStream stream)
     {
+        Logger.Debug("Entering in CSSpawnCharacter...");
         Connection.State = GameState.World;
         var x = Helpers.ConvertLongX(stream.ReadInt64());
         var y = Helpers.ConvertLongY(stream.ReadInt64());

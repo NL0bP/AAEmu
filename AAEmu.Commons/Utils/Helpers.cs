@@ -220,6 +220,35 @@ public static class Helpers
             .ToArray();
     }
 
+    public static byte[] HexStringToByteArray(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+        {
+            throw new ArgumentException("Input string cannot be null or empty.", nameof(hex));
+        }
+
+        var length = hex.Length;
+        var byteArray = new byte[length / 2];
+        var byteIndex = 0;
+
+        for (var i = 0; i < length; i += 2)
+        {
+            if (hex[i] == ' ')
+            {
+                i++;
+            }
+            byteArray[byteIndex++] = (byte)((GetHexValue(hex[i]) << 4) + GetHexValue(hex[i + 1]));
+        }
+
+        return byteArray;
+    }
+
+    private static int GetHexValue(char hex)
+    {
+        int val = hex;
+        return val - (val < 58 ? 48 : (val < 97 ? 55 : 87));
+    }
+
     public static byte[] ConvertIp(string ip)
     {
         var result = IPAddress.Parse(ip);

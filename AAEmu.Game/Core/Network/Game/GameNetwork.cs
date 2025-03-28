@@ -78,7 +78,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSRankCharacterPacket, 5, typeof(CSRankCharacterPacket));
         RegisterPacket(CSOffsets.CSRankSnapshotPacket, 5, typeof(CSRankSnapshotPacket));
         RegisterPacket(CSOffsets.CSHeroRequestRankDataPacket, 5, typeof(CSHeroRequestRankDataPacket));
-        //RegisterPacket(CSOffsets.CSGetRankerInformationPacket, 5, typeof(CSGetRankerInformationPacket));
+        RegisterPacket(CSOffsets.CSGetRankerInformationPacket, 5, typeof(CSGetRankerInformationPacket));
         //RegisterPacket(CSOffsets.CSRequestRankerAppearancePacket, 5, typeof(CSRequestRankerAppearancePacket));
         RegisterPacket(CSOffsets.CSRequestHousingTradeListPacket, 5, typeof(CSRequestHousingTradeListPacket));
         //RegisterPacket(CSOffsets.CSRequestSecondPassKeyTablesPacket, 5, typeof(CSRequestSecondPassKeyTablesPacket));
@@ -168,6 +168,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSRequestUIDataPacket, 5, typeof(CSRequestUIDataPacket));
         RegisterPacket(CSOffsets.CSSaveUIDataPacket, 5, typeof(CSSaveUIDataPacket));
         RegisterPacket(CSOffsets.CSBeautyShopDataPacket, 5, typeof(CSBeautyshopDataPacket)); // CSBeautyShopDataPacket
+        RegisterPacket(CSOffsets.CSStartedCinema2Packet, 5, typeof(CSStartedCinema2Packet));
         RegisterPacket(CSOffsets.CSDominionUpdateTaxRatePacket, 5, typeof(CSDominionUpdateTaxRatePacket));
         RegisterPacket(CSOffsets.CSDominionUpdateNationalTaxRatePacket, 5, typeof(CSDominionUpdateNationalTaxRatePacket));
         //RegisterPacket(CSOffsets.CSRequestCharacterBriefPacket, 5, typeof(CSRequestCharacterBriefPacket));

@@ -143,7 +143,7 @@
         public const ushort CSUnhangPacket = 0x1CD; // CSFollow_0x080
         public const ushort CSChangeAppellationPacket = 0x098;
         public const ushort off_39E9A1CC = 0x0B8; // CSSetAppellationStamp_0x0B8
-        public const ushort CSQuestStartContext = 0x00E; //off_39E9A1DC
+        public const ushort CSStartedCinemaPacket = 0x00E; //off_39E9A1DC CSQuestStartContextPacket
         //public const ushort CSHgResponsePacket = 0x13E;
         public const ushort CSBroadcastVisualOptionPacket = 0x037;
         public const ushort CSBroadcastOpenEquipInfoPacket = 0x061;
@@ -176,7 +176,7 @@
         public const ushort CSRequestUIDataPacket = 0x0AC;
         public const ushort CSSaveUIDataPacket = 0x0C7;
         public const ushort CSBeautyShopDataPacket = 0x005;
-        public const ushort CSStartedCinemaPacket = 0x071; //off_39EB91BC
+        public const ushort CSStartedCinema2Packet = 0x071; //off_39EB91BC
         public const ushort CSDominionUpdateTaxratePacket = 0x138; //off_39EBAA60
         public const ushort CSDominionUpdateNationalTaxratePacket = 0x048; //off_39EBAA70
         public const ushort CSRequestCharacterBriefPacket = 0x011; //off_39EBAA80

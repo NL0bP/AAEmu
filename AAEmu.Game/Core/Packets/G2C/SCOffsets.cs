@@ -545,7 +545,7 @@
         public const ushort off_39E9C3B8 = 0x01E;
         public const ushort SCRankCharacterPacket = 0x1ED;
         public const ushort SCRankSnapshotPacket = 0x2FE;
-        public const ushort off_39E9C3E8 = 0x2F2;
+        public const ushort SCHeroRankDataPacket = 0x2F2; // off_39E9C3E8
         public const ushort SCAchievementsPacket = 0x30B;
         public const ushort SCAchievementChangedPacket = 0x246;
         public const ushort SCAchievementCompletedPacket = 0x2FF;
@@ -576,7 +576,7 @@
         public const ushort SCExploredRegionsPacket = 0x188;
         public const ushort SCExploredRegionUpdatedPacket = 0x045;
         public const ushort SCUpdateSlaveSourceItemPacket = 0x147;
-        public const ushort SCRequestQuitPacket = 0x2DA;
+        public const ushort SCRequestQuizPacket = 0x2DA;
         public const ushort SCWorldMessagePacket = 0x10F;
         public const ushort SCAccountAttributeRemovedPacket = 0x268;
         //public const ushort SCAccountAttributeConfigPacket = 0x1BF;
@@ -613,7 +613,7 @@
         public const ushort SCTenprotectStubCall4Packet = 0x204;
         public const ushort SCTenprotectStubCall5Packet = 0x26E;
         public const ushort SCRepresentCharacterPacket = 0x054;
-        public const ushort off_39E9C828 = 0x186;
+        public const ushort SCRankerInformationPacket = 0x186; // off_39E9C828
         public const ushort SCAccountAttendancePacket = 0x118;
         public const ushort SCDbAttendanceTimePacket = 0x288;
         public const ushort SCCurServerTimePacket = 0x03C;
@@ -857,7 +857,7 @@
         public const ushort SCCharBriefPacket = 0xFFF;
         public const ushort SCCvFCombatRelationshipPacket = 0xFFF;
         public const ushort SCRefreshInCharacterListPacket = 0x1DB; // то же самое, что SCRaceCongestionPacket
-        public const ushort SCTutorialSavedPacket = 0xFFF;
+        //public const ushort SCTutorialSavedPacket = 0x102;
         public const ushort SCExpeditionListPacket = 0xFFF;
         //public const ushort SCSearchListPacket = 0xFFF;
         public const ushort SCOtherTradeItemTookdownPacket = 0xFFF;
