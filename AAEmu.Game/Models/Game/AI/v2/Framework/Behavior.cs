@@ -83,8 +83,11 @@ public abstract class Behavior
                 delay1 = (int)Rand.Next(Delay1, Delay2);
             }
 
-            Logger.Debug("PickSkillAndUseIt:UseSelfSkill Owner.ObjId {0}, Owner.TemplateId {1}, SkillId {2}", Ai.Owner.ObjId, Ai.Owner.TemplateId, skillTemplateSelf.Id);
-            res = UseSkill(skillSelf, target);
+            if (this.CheckInterval(delay1))
+            {
+                Logger.Debug("PickSkillAndUseIt:UseSelfSkill Owner.ObjId {0}, Owner.TemplateId {1}, SkillId {2}", Ai.Owner.ObjId, Ai.Owner.TemplateId, skillTemplateSelf.Id);
+                res = UseSkill(skillSelf, target);
+            }
             return res;
         }
 
@@ -113,8 +116,11 @@ public abstract class Behavior
             delay2 = (int)Rand.Next(Delay1, Delay2);
         }
 
-        Logger.Debug("PickSkillAndUseIt:UseSkill Owner.ObjId {0}, Owner.TemplateId {1}, SkillId {2} on Target {3}", Ai.Owner.ObjId, Ai.Owner.TemplateId, skillTemplate.Id, target.ObjId);
-        res = UseSkill(skill, target);
+        if (this.CheckInterval(delay2))
+        {
+            Logger.Debug("PickSkillAndUseIt:UseSkill Owner.ObjId {0}, Owner.TemplateId {1}, SkillId {2} on Target {3}", Ai.Owner.ObjId, Ai.Owner.TemplateId, skillTemplate.Id, target.ObjId);
+            res = UseSkill(skill, target);
+        }
 
         return res;
     }
