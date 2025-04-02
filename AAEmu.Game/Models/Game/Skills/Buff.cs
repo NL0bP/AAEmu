@@ -46,6 +46,7 @@ public class Buff
     public BuffTriggersHandler Triggers { get; }
     public Dictionary<uint, FactionsEnum> saveFactions { get; set; }
     public int Stack { get; set; } = 1; // для учета стака баффов в пакете SCBuffCreatedPacket
+    public int Count { get; set; } = 1; // для учета стака баффов в AreaShape
 
     public Buff(IBaseUnit owner, IBaseUnit caster, SkillCaster skillCaster, BuffTemplate template, Skill skill, DateTime time)
     {

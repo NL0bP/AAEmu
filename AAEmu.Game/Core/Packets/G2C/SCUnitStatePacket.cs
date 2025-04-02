@@ -591,11 +591,11 @@ public class SCUnitStatePacket : GamePacket
 
     private void WriteBuff(PacketStream stream, Buff buff)
     {
-        stream.Write(buff.Index);        // Id
-        stream.Write(buff.SkillCaster);  // skillCaster
-        stream.Write(0);                 // type(id)
-        stream.Write(buff.Caster.Level); // sourceLevel
-        stream.Write(buff.AbLevel);      // sourceAbLevel ushort
+        stream.Write(buff.Index);              // Id
+        stream.Write(buff.SkillCaster);        // skillCaster
+        stream.Write(buff.Caster?.Id ?? 0);    // type(id)
+        stream.Write(buff.Caster?.Level ?? 1); // sourceLevel
+        stream.Write(buff.AbLevel);            // sourceAbLevel ushort
         stream.WritePisc(0, buff.GetTimeElapsed(), 0, 0u); // add in 3.0.3.0
         stream.WritePisc(buff.Template.BuffId, 1, 0, 0u);  // add in 3.0.3.0
     }

@@ -19,7 +19,7 @@ public class AreaTrigger
     private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
     public AreaShape Shape { get; set; }
     public Doodad Owner { get; set; }
-    public Unit Caster { get; set; }
+    public BaseUnit Caster { get; set; }
 
     /// <summary>
     /// Units currently inside the Shape
@@ -30,7 +30,7 @@ public class AreaTrigger
     public uint TlId { get; set; }
     public SkillTargetRelation TargetRelation { get; set; }
     public BuffTemplate InsideBuffTemplate { get; set; }
-    public List<EffectTemplate> EffectPerTick { get; set; }
+    public Dictionary<uint, List<EffectTemplate>> EffectsPerBuff { get; set; } = new Dictionary<uint, List<EffectTemplate>>();
     public int TickRate { get; set; }
     private DateTime _lastTick = DateTime.MinValue;
 
@@ -58,12 +58,14 @@ public class AreaTrigger
         foreach (var newUnit in newUnits)
         {
             OnEnter(newUnit);
+            Logger.Debug($"AreaShape Enter {Shape.Id} {Shape.Type} with count {currentUnitsInShape.Count} unit in shape arround {Owner.Transform}");
         }
 
         // Trigger events for units that left
         foreach (var leftUnit in leftUnits)
         {
             OnLeave(leftUnit);
+            Logger.Debug($"AreaShape Leave {Shape.Id} {Shape.Type} with count {currentUnitsInShape.Count} unit in shape arround {Owner.Transform}");
         }
 
         // Save new units list
@@ -72,15 +74,18 @@ public class AreaTrigger
 
     private void OnEnter(Unit unit)
     {
-        if (Caster == null)
+        if (Caster == null || Owner == null || unit == null)
         {
             return;
         }
 
         if (SkillTargetingUtil.IsRelationValid(TargetRelation, Caster, unit))
         {
-            InsideBuffTemplate?.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit,
-                new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.UtcNow);
+            unit.IncrementTriggerCount(InsideBuffTemplate.BuffId);
+            if (unit.GetTriggerCount(InsideBuffTemplate.BuffId) == 1)
+            {
+                InsideBuffTemplate?.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.UtcNow);
+            }
         }
     }
 
@@ -88,7 +93,11 @@ public class AreaTrigger
     {
         if (InsideBuffTemplate != null)
         {
-            unit.Buffs.RemoveBuff(InsideBuffTemplate.BuffId);
+            unit.DecrementTriggerCount(InsideBuffTemplate.BuffId);
+            if (unit.GetTriggerCount(InsideBuffTemplate.BuffId) == 0)
+            {
+                unit.Buffs.RemoveBuff(InsideBuffTemplate.BuffId);
+            }
         }
     }
 
@@ -98,7 +107,11 @@ public class AreaTrigger
         {
             foreach (var unit in Units)
             {
-                OnLeave(unit);
+                unit.DecrementTriggerCount(InsideBuffTemplate.BuffId);
+                if (unit.GetTriggerCount(InsideBuffTemplate.BuffId) == 0)
+                {
+                    unit.Buffs.RemoveBuff(InsideBuffTemplate.BuffId);
+                }
             }
         }
     }
@@ -118,7 +131,7 @@ public class AreaTrigger
         var unitsToApply = SkillTargetingUtil.FilterWithRelation(TargetRelation, Caster, Units);
         foreach (var unit in unitsToApply)
         {
-            foreach (var effect in EffectPerTick)
+            foreach (var effect in EffectsPerBuff[InsideBuffTemplate.BuffId])
             {
                 if (effect is BuffEffect buffEffect && unit.Buffs.CheckBuff(buffEffect.BuffId))
                 {
@@ -136,8 +149,7 @@ public class AreaTrigger
                     castAction = new CastSkill(SkillId, 0);
                 }
 
-                effect.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId),
-                    castAction, new EffectSource(), new SkillObject(), DateTime.UtcNow);
+                effect.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), castAction, new EffectSource(), new SkillObject(), DateTime.UtcNow);
             }
         }
     }

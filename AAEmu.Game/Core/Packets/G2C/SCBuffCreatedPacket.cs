@@ -2,6 +2,7 @@
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Skills;
 
 namespace AAEmu.Game.Core.Packets.G2C;
@@ -18,13 +19,13 @@ public class SCBuffCreatedPacket : GamePacket
 
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write(_buff.SkillCaster);     // skillCaster
-        stream.Write(_buff.Caster is Character character ? character.Id : 0); // casterId
-        stream.WriteBc(_buff.Owner.ObjId);   // targetId
-        stream.Write(_buff.Index);           // buffId
-        stream.Write(_buff.Template.BuffId); // t template buffId
-        stream.Write(_buff.Caster.Level);    // l sourceLevel
-        stream.Write((short)_buff.AbLevel);  // a sourceAbLevel
+        stream.Write(_buff.SkillCaster);        // skillCaster
+        stream.Write(_buff.Caster?.Id ?? 0);    // casterId
+        stream.WriteBc(_buff.Owner.ObjId);      // targetId
+        stream.Write(_buff.Index);              // buffId
+        stream.Write(_buff.Template.BuffId);    // t template buffId
+        stream.Write(_buff.Caster?.Level ?? 1); // l sourceLevel
+        stream.Write(_buff.AbLevel);            // a sourceAbLevel
         //TODO: Fix this applying CD to wrong skill
         if (_buff.Skill is not null && _buff.Skill.Template.ToggleBuffId.Equals(_buff.Template.Id))
             stream.Write(_buff.Skill.Template.Id); // s skillId

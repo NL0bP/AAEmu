@@ -258,11 +258,17 @@ public class BuffTemplate
         CastAction castObj, EffectSource source, SkillObject skillObject, DateTime time,
         CompressedGamePackets packetBuilder = null)
     {
+        if (BuffId > 0 && target.Buffs.CheckBuff(BuffId))
+            return;
+
         if (RequireBuffId > 0 && !target.Buffs.CheckBuff(RequireBuffId))
             return; //TODO send error?
+
         if (target.Buffs.CheckBuffImmune(Id))
             return; //TODO  error of immune?
+
         ushort abLevel = 1;
+
         if (caster is Character character)
         {
             if (source.Skill != null)
