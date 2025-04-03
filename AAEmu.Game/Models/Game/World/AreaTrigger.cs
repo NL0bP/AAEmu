@@ -41,7 +41,7 @@ public class AreaTrigger
 
     private void UpdateUnits()
     {
-        if (!Owner?.IsVisible ?? true)
+        if (Owner == null || Shape == null || !Owner.IsVisible)
         {
             AreaTriggerManager.Instance.RemoveAreaTrigger(this);
             return;
@@ -49,10 +49,15 @@ public class AreaTrigger
 
         // Get units currently in the shape
         var currentUnitsInShape = WorldManager.GetAroundByShape<Unit>(Owner, Shape);
+        if (currentUnitsInShape == null)
+        {
+            return;
+        }
+
         // Check who left since last check
-        var leftUnits = Units.Where(oldU => currentUnitsInShape.All(newU => oldU.ObjId != newU.ObjId));
+        var leftUnits = Units?.Where(oldU => currentUnitsInShape.All(newU => oldU.ObjId != newU.ObjId)) ?? Enumerable.Empty<Unit>();
         // Check who's new in the shape
-        var newUnits = currentUnitsInShape.Where(newU => Units.All(oldU => newU.ObjId != oldU.ObjId));
+        var newUnits = currentUnitsInShape.Where(newU => Units == null || Units.All(oldU => newU.ObjId != oldU.ObjId));
 
         // Trigger events for new units
         foreach (var newUnit in newUnits)
@@ -74,7 +79,7 @@ public class AreaTrigger
 
     private void OnEnter(Unit unit)
     {
-        if (Caster == null || Owner == null || unit == null)
+        if (Caster == null || Owner == null || unit == null || InsideBuffTemplate == null)
         {
             return;
         }
@@ -84,7 +89,7 @@ public class AreaTrigger
             unit.IncrementTriggerCount(InsideBuffTemplate.BuffId);
             if (unit.GetTriggerCount(InsideBuffTemplate.BuffId) == 1)
             {
-                InsideBuffTemplate?.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.UtcNow);
+                InsideBuffTemplate.Apply(Caster, new SkillCasterUnit(Caster.ObjId), unit, new SkillCastUnitTarget(unit.ObjId), null, new EffectSource(), null, DateTime.UtcNow);
             }
         }
     }
@@ -118,12 +123,12 @@ public class AreaTrigger
 
     private void ApplyEffects()
     {
-        if (InsideBuffTemplate == null)
+        if (InsideBuffTemplate == null || Caster == null)
         {
             return;
         }
 
-        if (Caster == null)
+        if (!EffectsPerBuff.ContainsKey(InsideBuffTemplate.BuffId))
         {
             return;
         }
