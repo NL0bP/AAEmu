@@ -3,6 +3,7 @@
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Tasks.Skills;
@@ -19,7 +20,7 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
 
     public override bool Use(BaseUnit caster, Doodad owner)
     {
-        if (caster is not Character)
+        if (caster is not Character character)
         {
             Logger.Trace($"DoodadFuncItemChanger: Id={Id}, ItemCount={ItemCount}, ItemId={ItemId}, NextPhase={NextPhase}, SkillId={SkillId}");
             return false;
@@ -38,8 +39,10 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
             TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, new SkillCasterUnit(caster.ObjId), owner, new SkillCastDoodadTarget { ObjId = owner.ObjId }, null), TimeSpan.FromMilliseconds(0));
         }
 
-        owner.ToNextPhase = SkillId > 0;
+        // Consuming the item
+        character.Inventory.Bag.ConsumeItem(ItemTaskType.DoodadItemChanger, (uint)ItemId, ItemCount, null);
 
+        owner.ToNextPhase = SkillId > 0;
         owner.OverridePhase = NextPhase;
         return true; // we will continue to execute
     }
