@@ -16,7 +16,7 @@ public class DoodadItemChangeEffect : EffectTemplate
         CastAction castObj, EffectSource source, SkillObject skillObject, DateTime time,
         CompressedGamePackets packetBuilder = null)
     {
-        Logger.Debug($"DoodadItemChangeEffect {Idx}");
+        Logger.Debug($"DoodadItemChangeEffect Idx={Idx}");
 
         /*
          * по idx выбирается id

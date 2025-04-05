@@ -335,6 +335,7 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
         _effects.Add("SpawnFishEffect", new Dictionary<uint, EffectTemplate>()); // missing from the effect table
         _effects.Add("ResetAoeDiminishingEffect", new Dictionary<uint, EffectTemplate>()); // missing from the effect table
         _effects.Add("MoveToLocationEffect", new Dictionary<uint, EffectTemplate>()); // missing from the effect table
+        _effects.Add("DoodadItemChangeEffect", new Dictionary<uint, EffectTemplate>()); // missing from the effect table
 
         _buffs = new Dictionary<uint, BuffTemplate>();
         // TODO 
@@ -1251,6 +1252,22 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
                         template.Id = reader.GetUInt32("id");
                         template.FlyingState = reader.GetBoolean("flying_state", true);
                         _effects["FlyingStateChangeEffect"].Add(template.Id, template);
+                    }
+                }
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM doodad_item_change_effects";
+                command.Prepare();
+                using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                {
+                    while (reader.Read())
+                    {
+                        var template = new DoodadItemChangeEffect();
+                        template.Id = reader.GetUInt32("id");
+                        template.Idx = reader.GetInt32("idx");
+                        _effects["DoodadItemChangeEffect"].Add(template.Id, template);
                     }
                 }
             }

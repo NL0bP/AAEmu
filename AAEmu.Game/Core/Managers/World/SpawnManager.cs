@@ -77,7 +77,7 @@ public class SpawnManager : Singleton<SpawnManager>
                 c++;
                 _currentSpawnerIndex++;
 
-                if (stopwatch.Elapsed <= TimeSpan.FromMilliseconds(50))
+                if (stopwatch.Elapsed <= TimeSpan.FromMilliseconds(100))
                     continue;
 
                 Logger.Debug($"Updated {c}/{_currentSpawners.Count} spawners idx={startIndex}->{_currentSpawnerIndex}. Update loop interrupted due to time limit. Elapsed time: {stopwatch.ElapsedMilliseconds} ms.");
@@ -1329,11 +1329,11 @@ public class SpawnManager : Singleton<SpawnManager>
 
         if (!removed)
         {
-            Logger.Warn($"Failed to remove doodad {doodad.ObjId} from player doodads list.");
+            Logger.Trace($"Failed to remove doodad {doodad.ObjId} from player doodads list.");
         }
         else
         {
-            Logger.Trace($"Removed doodad {doodad.ObjId} from player doodads list.");
+            Logger.Debug($"Removed doodad {doodad.ObjId} from player doodads list.");
         }
     }
 

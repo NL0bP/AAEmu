@@ -1,8 +1,11 @@
-﻿using AAEmu.Game.Models.Game.Char;
-using System.Linq;
+﻿using System;
 
+using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Tasks.Skills;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Funcs;
 
@@ -24,7 +27,20 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
 
         Logger.Debug($"DoodadFuncItemChanger: Id={Id}, ItemCount={ItemCount}, ItemId={ItemId}, NextPhase={NextPhase}, SkillId={SkillId}");
 
+        if (SkillId > 0)
+        {
+            var skillTemplate = SkillManager.Instance.GetSkillTemplate((uint)SkillId);
+            if (skillTemplate == null)
+            {
+                return false;
+            }
+            var useSkill = new Skill(skillTemplate);
+            TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, new SkillCasterUnit(caster.ObjId), owner, new SkillCastDoodadTarget { ObjId = owner.ObjId }, null), TimeSpan.FromMilliseconds(0));
+        }
+
+        owner.ToNextPhase = SkillId > 0;
+
         owner.OverridePhase = NextPhase;
-        return true;
+        return true; // we will continue to execute
     }
 }

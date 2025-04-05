@@ -10,5 +10,6 @@ public class DoodadFuncItemChangerUiOpen : DoodadFuncTemplate
     public override void Use(BaseUnit caster, Doodad owner, uint skillId, int nextPhase = 0)
     {
         Logger.Debug("DoodadFuncItemChangerUiOpen");
+        owner.ToNextPhase = false;
     }
 }
