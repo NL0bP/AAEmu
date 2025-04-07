@@ -306,6 +306,7 @@ public class Doodad : BaseUnit
             if (allFuncsForGroup.Count <= 0)
             {
                 // Phase has no functions
+                Logger.Debug($"Doodad: {ObjId}: Phase {FuncGroupId} has no functions.");
                 return;
             }
 
@@ -342,9 +343,9 @@ public class Doodad : BaseUnit
     private void LogUse(BaseUnit caster, uint skillId)
     {
         if (caster is Character)
-            Logger.Warn($"Use: TemplateId {TemplateId}, Using phase {FuncGroupId} with SkillId {skillId}");
+            Logger.Warn($"Doodad: {ObjId}. Use: TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}, SkillId: {skillId}");
         else
-            Logger.Trace($"Use: TemplateId {TemplateId}, Using phase {FuncGroupId} with SkillId {skillId}");
+            Logger.Trace($"Doodad: {ObjId}. Use: TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}, SkillId: {skillId}");
     }
 
     /// <summary>
@@ -358,6 +359,8 @@ public class Doodad : BaseUnit
     {
         foreach (var funcWithoutSkill in allFuncsForGroup.Where(f => f.FuncType is "DoodadFuncLootItem" or "DoodadFuncLootPack" or "DoodadFuncCutdowning"))
         {
+            if (caster is Character)
+                Logger.Debug($"Doodad: {ObjId}. Выполнение функции без навыка: {funcWithoutSkill.FuncType}");
             if (DoFunc(caster, startedSkillId, funcWithoutSkill))
             {
                 ListGroupId.Clear();
@@ -367,10 +370,11 @@ public class Doodad : BaseUnit
 
         return false;
     }
+
     private bool CheckFuncsWithSkill()
     {
         var allFuncsForGroup = DoodadManager.Instance.GetFuncsForGroup(FuncGroupId);
-        var count = allFuncsForGroup.Where(f => f.FuncType is "DoodadFuncUse" /*or "DoodadFuncFakeUse"*/ or "DoodadFuncItemChangerUiOpen").Count();
+        var count = allFuncsForGroup.Where(f => f.FuncType is "DoodadFuncBuildConditionUiOpen" or "DoodadFuncItemChangerUiOpen" or "DoodadFuncResidentTownhallUiOpen").Count();
         return count > 0;
     }
 
@@ -383,6 +387,8 @@ public class Doodad : BaseUnit
     /// <returns>Returns true if the execution of the function is complete.</returns>
     private bool ExecuteFuncWithSkill(BaseUnit caster, uint startedSkillId, DoodadFunc funcWithSkill)
     {
+        if (caster is Character)
+            Logger.Debug($"Doodad: {ObjId}. Выполнение функции: {funcWithSkill.FuncType} с навыком: {startedSkillId}");
         if (DoFunc(caster, startedSkillId, funcWithSkill))
         {
             // FuncGroupId will be either the current phase, func.NextPhase, or OverridePhase
@@ -402,11 +408,11 @@ public class Doodad : BaseUnit
     {
         if (caster is Character)
         {
-            Logger.Debug($"Use: Did not pass the conditions check! TemplateId {TemplateId}, Using phase {FuncGroupId} with SkillId {skillId}");
-            Logger.Debug($"Use: Looking forward to interacting with doodad TemplateId {TemplateId}, Using phase {FuncGroupId}");
+            Logger.Debug($"Doodad: {ObjId}. Use: Не прошел проверку условий! TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}, SkillId: {skillId}");
+            Logger.Debug($"Doodad: {ObjId}. Use: Ожидание взаимодействия с Doodad TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}");
         }
         else
-            Logger.Trace($"Use: Did not pass the conditions check! TemplateId {TemplateId}, Using phase {FuncGroupId} with SkillId {skillId}");
+            Logger.Trace($"Doodad: {ObjId}. Use: Не прошел проверку условий! TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}, SkillId: {skillId}");
     }
 
     /// <summary>
@@ -421,9 +427,11 @@ public class Doodad : BaseUnit
         // If there is no function, complete the cycle
         if (func == null)
         {
-            LogFuncExecution(caster, skillId, "Finished execution with func = null");
+            LogFuncExecution(caster, skillId, "Завершено выполнение с func == null");
             return true;
         }
+
+        LogFuncExecution(caster, skillId, $"Выполнение функции: {func.FuncType}");
 
         // Perform the function
         func.Use(caster, this, skillId, func.NextPhase);
@@ -438,20 +446,22 @@ public class Doodad : BaseUnit
                 // This check is needed for Windstone id=1473
                 if (!HasOnlyGroupKindStart())
                 {
-                    TryCancelFuncTask($"DoFunc::DoodadFuncTimer: The current timer has been canceled. TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {func.NextPhase}");
+                    TryCancelFuncTask($"Doodad: {ObjId}. DoFunc::DoodadFuncTimer: Текущий таймер был отменен. TemplateId: {TemplateId}, ObjId: {ObjId}, nextPhase: {func.NextPhase}");
                     DespawnOrDeleteDoodad();
                 }
 
+                LogFuncExecution(caster, skillId, $"Завершено выполнение c ToNextPhase == true и func.NextPhase == -1");
                 return true;
             }
 
             // Transition to another phase is required
+            LogFuncExecution(caster, skillId, $"Переход к следующей фазе: {func.NextPhase}");
             FuncGroupId = (uint)(OverridePhase > 0 ? OverridePhase : func.NextPhase);
             OverridePhase = 0;
         }
         else
         {
-            LogFuncExecution(caster, skillId, $"Finished execution without ToNextPhase = {ToNextPhase}");
+            LogFuncExecution(caster, skillId, $"Завершено выполнение с ToNextPhase == false");
             return true;
         }
 
@@ -467,9 +477,9 @@ public class Doodad : BaseUnit
     private void LogFuncExecution(BaseUnit caster, uint skillId, string message)
     {
         if (caster is Character)
-            Logger.Debug($"DoFunc: {message}: TemplateId {TemplateId}, Using phase {FuncGroupId} with SkillId {skillId}");
+            Logger.Debug($"Doodad: {ObjId}. DoFunc: {message}: TemplateId {TemplateId}, текущая фаза {FuncGroupId}, SkillId {skillId}");
         else
-            Logger.Trace($"DoFunc: {message}: TemplateId {TemplateId}, Using phase {FuncGroupId} with SkillId {skillId}");
+            Logger.Trace($"Doodad: {ObjId}. DoFunc: {message}: TemplateId {TemplateId}, текущая фаза {FuncGroupId}, SkillId {skillId}");
     }
 
     /// <summary>
@@ -495,6 +505,7 @@ public class Doodad : BaseUnit
             return true;
 
         // Change the phase
+        LogPhaseExecution(caster, $"Переключаемся на фазу: {nextPhase}");
         FuncGroupId = (uint)nextPhase;
 
         if (!ListGroupId.Contains((uint)nextPhase))
@@ -505,7 +516,7 @@ public class Doodad : BaseUnit
             if (funcs.Count > 0)
             {
                 // For example, if this is ID=2231, Target, we need to break the recursion
-                LogPhaseExecution(caster, "Finished execution with recurse");
+                LogPhaseExecution(caster, "Завершено выполнение с рекурсией");
                 ListGroupId.Clear();
                 return true;
             }
@@ -514,9 +525,9 @@ public class Doodad : BaseUnit
             ListGroupId.Clear();
         }
 
-        TryCancelFuncTask($"DoPhaseFuncs:DoodadFuncTimer: The current timer has been canceled. TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}.");
+        TryCancelFuncTask($"Doodad: {ObjId}. DoPhaseFuncs:DoodadFuncTimer: Текущий таймер был отменен. TemplateId: {TemplateId}, ObjId: {ObjId}, nextPhase: {nextPhase}.");
 
-        LogPhaseExecution(caster, $"DoPhaseFuncs: TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}");
+        //LogPhaseExecution(caster, $"DoPhaseFuncs: TemplateId: {TemplateId}, ObjId: {ObjId}, nextPhase: {nextPhase}");
 
         var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(FuncGroupId);
         if (phaseFuncs.Count == 0)
@@ -530,6 +541,7 @@ public class Doodad : BaseUnit
             if (phaseFunc == null)
                 continue;
 
+            LogPhaseExecution(caster, $"Выполнение фазовой функции: {phaseFunc.FuncType}");
             PhaseRatio = Rand.Next(0, 10000); // Check the chance for each phase function
 
             stop = phaseFunc.Use(caster, this);
@@ -539,6 +551,7 @@ public class Doodad : BaseUnit
 
         if (OverridePhase != 0 && stop && FuncGroupId != OverridePhase)
         {
+            LogPhaseExecution(caster, $"После выполнения фазовой функции требуется переход на другую фазу: {OverridePhase}");
             nextPhase = OverridePhase;
             OverridePhase = 0;
             return DoPhaseFuncs(caster, ref nextPhase);
@@ -565,8 +578,8 @@ public class Doodad : BaseUnit
         if (nextPhase <= 0)
             return true;
 
-        TryCancelFuncTask($"DoPhaseFunc:DoodadFuncTimer: The current timer has been canceled. TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}.");
-        LogPhaseExecution(caster, $"DoPhaseFunc: TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}");
+        TryCancelFuncTask($"Doodad: {ObjId}. DoPhaseFunc:DoodadFuncTimer: Текущий таймер был отменен. TemplateId: {TemplateId}, ObjId: {ObjId}, nextPhase: {nextPhase}.");
+        LogPhaseExecution(caster, $"DoPhaseFunc: TemplateId: {TemplateId}, ObjId: {ObjId}, nextPhase: {nextPhase}");
 
         var stop = phaseFunc.Use(caster, this);
 
@@ -578,7 +591,7 @@ public class Doodad : BaseUnit
         }
 
         DoChangePhase(caster, (int)FuncGroupId);
-        
+
         if (!_deleted)
             Save(); // Save the doodad in the database
 
@@ -593,9 +606,9 @@ public class Doodad : BaseUnit
     private void LogPhaseExecution(BaseUnit caster, string message)
     {
         if (caster is Character)
-            Logger.Debug($"{message}: TemplateId {TemplateId}, Using phase {FuncGroupId}");
+            Logger.Debug($"Doodad: {ObjId}. {message}: TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}");
         else
-            Logger.Trace($"{message}: TemplateId {TemplateId}, Using phase {FuncGroupId}");
+            Logger.Trace($"Doodad: {ObjId}. {message}: TemplateId: {TemplateId}, текущая фаза: {FuncGroupId}");
     }
 
     /// <summary>
@@ -632,6 +645,7 @@ public class Doodad : BaseUnit
             stop = DoPhaseFuncs(caster, ref nextPhase);
 
         // The phase change packet call must be after the phase functions to have the correct FuncGroupId in the packet
+        LogPhaseExecution(caster, $"Переключили doodad на фазу: {nextPhase}");
         BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true); // Change the phase to display doodad
 
         return stop; // If true, it did not pass the check for the quest (it must be aborted)
@@ -645,9 +659,9 @@ public class Doodad : BaseUnit
     private void LogPhaseChange(BaseUnit caster, int nextPhase)
     {
         if (caster is Character)
-            Logger.Debug($"DoChangePhase: TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}");
+            Logger.Debug($"Doodad: {ObjId}. DoChangePhase: TemplateId: {TemplateId}, ObjId: {ObjId}, следующая фаза: {nextPhase}");
         else
-            Logger.Trace($"DoChangePhase: TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}");
+            Logger.Trace($"Doodad: {ObjId}. DoChangePhase: TemplateId: {TemplateId}, ObjId: {ObjId}, следующая фаза: {nextPhase}");
     }
 
     /// <summary>
@@ -659,14 +673,11 @@ public class Doodad : BaseUnit
     /// <returns>Returns false if the phase change did not pass the check for the quest (it must be aborted).</returns>
     public bool DoChangeOtherDoodadPhase(BaseUnit caster, Doodad doodad, int nextPhase)
     {
-        //var prevFuncGroupId = FuncGroupId;
         FuncGroupId = (uint)nextPhase;
 
         if (nextPhase <= 0) { return false; }
 
-        Logger.Debug($"DoChangePhase: TemplateId {TemplateId}, ObjId {ObjId}, nextPhase {nextPhase}");
-        //var stop = DoPhaseFuncs(caster, ref nextPhase);
-        // the phase change packet call must be after the phase functions to have the correct FuncGroupId in the packet
+        Logger.Debug($"Doodad: {ObjId}. DoChangePhase: TemplateId: {TemplateId}, ObjId: {ObjId}, следующая фаза: {nextPhase}");
         BroadcastPacket(new SCDoodadPhaseChangedPacket(doodad), true); // change the phase to display doodad
 
         return false; // if true, it did not pass the check for the quest (it must be aborted)
