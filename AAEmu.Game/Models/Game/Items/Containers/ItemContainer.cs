@@ -192,57 +192,31 @@ public class ItemContainer
         // No max size defined, get the highest number and add one
         if (_containerSize < 0)
         {
-            var highestSlot = -1;
-            foreach (var i in Items)
-            {
-                if (i.Slot > highestSlot)
-                {
-                    highestSlot = i.Slot;
-                }
-            }
-
+            var highestSlot = Items.Any() ? Items.Max(i => i.Slot) : -1;
             highestSlot++;
             return preferredSlot > highestSlot ? preferredSlot : highestSlot;
         }
 
-        // Check the preferred slot to see if it's free, or if we need to assign a new one
-        var needNewSlot = false;
-        if (preferredSlot < 0)
-        {
-            needNewSlot = true;
-        }
-        else
-        {
-            foreach (var i in Items)
-            {
-                if (i.Slot == preferredSlot)
-                {
-                    needNewSlot = true;
-                    break;
-                }
-            }
-        }
+        // Используем HashSet для хранения занятых слотов
+        var usedSlots = new HashSet<int>(Items.Select(i => i.Slot));
 
-        // Find a new slot if needed
-        if (needNewSlot)
-        {
-            var usedSlots = (from iSlot in Items where iSlot.Slot != preferredSlot select iSlot.Slot).ToList();
-            for (var i = 0; i < ContainerSize; i++)
-            {
-                if (!usedSlots.Contains(i))
-                {
-                    return i;
-                }
-            }
-
-            // inventory container is full
-            return -1;
-        }
-        // Otherwise just return the preferred slot
-        else
+        // Проверяем предпочитаемый слот
+        if (preferredSlot >= 0 && !usedSlots.Contains(preferredSlot))
         {
             return preferredSlot;
         }
+
+        // Ищем первый свободный слот
+        for (var i = 0; i < _containerSize; i++)
+        {
+            if (!usedSlots.Contains(i))
+            {
+                return i;
+            }
+        }
+
+        // Контейнер заполнен
+        return -1;
     }
 
     private bool TryGetItemBySlot(int slot, out Item theItem)
@@ -791,138 +765,181 @@ public class ItemContainer
     {
         newItemsList = [];
         updatedItemsList = [];
+
+        // If the amount to add is less than or equal to 0, return true as there's nothing to add
         if (amountToAdd <= 0)
         {
             return true;
         }
 
-        //GetAllItemsByTemplate(templateId, gradeToAdd, out var currentItems, out var currentTotalItemCount);
-        GetAllItemsByTemplate(templateId, out var currentItems, out var currentTotalItemCount);
+        // Get the item template based on the templateId
         var template = ItemManager.Instance.GetTemplate(templateId);
         if (template == null)
         {
-            return false; // Invalid item templateId
-        }
-
-        var totalFreeSpaceForThisItem = currentItems.Count * template.MaxCount - currentTotalItemCount + FreeSlotCount * template.MaxCount;
-
-        // Trying to add too many item units to this container ?
-        if (amountToAdd > totalFreeSpaceForThisItem)
-        {
+            Logger.Error($"Invalid item templateId: {templateId}");
             return false;
         }
 
-        // Calculate grade to actually add for new items
-        if (template.FixedGrade >= 0 && template.Gradable == false)
+        // Get all items by the templateId
+        if (!GetAllItemsByTemplate(templateId, out var currentItems, out var currentTotalItemCount))
         {
-            gradeToAdd = template.FixedGrade;
+            Logger.Warn($"No items found with templateId: {templateId}");
+        }
+
+        // Calculate the total free space available for this item
+        var totalFreeSpaceForThisItem = CalculateTotalFreeSpace(currentItems, template, currentTotalItemCount);
+        if (amountToAdd > totalFreeSpaceForThisItem)
+        {
+            Logger.Warn($"Not enough space to add {amountToAdd} items of templateId: {templateId}");
+            return false;
+        }
+
+        // Determine the grade to add for new items
+        gradeToAdd = DetermineGradeToAdd(template, gradeToAdd);
+
+        var itemTasks = new List<ItemTask>();
+
+        // Add to existing items if the container type is not MailAttachment
+        if (ContainerType != SlotType.MailAttachment)
+        {
+            AddToExistingItems(currentItems, ref amountToAdd, itemTasks, updatedItemsList);
+        }
+
+        var syncPackets = new List<GamePacket>();
+
+        // Add new items if there is still amount left to add
+        AddNewItems(templateId, ref amountToAdd, gradeToAdd, crafterId, preferredSlot, itemTasks, newItemsList, syncPackets);
+
+        // Send item task success packet if the task type is not invalid
+        if (taskType != ItemTaskType.Invalid)
+        {
+            Owner?.SendPacket(new SCItemTaskSuccessPacket(taskType, itemTasks, []));
+        }
+
+        // Update the free slot count
+        UpdateFreeSlotCount();
+
+        // Send synchronization packets if needed
+        SendSyncPackets(syncPackets);
+
+        return itemTasks.Count > 0;
+    }
+
+    private int CalculateTotalFreeSpace(List<Item> currentItems, ItemTemplate template, int currentTotalItemCount)
+    {
+        return currentItems.Count * template.MaxCount - currentTotalItemCount + FreeSlotCount * template.MaxCount;
+    }
+
+    private int DetermineGradeToAdd(ItemTemplate template, int gradeToAdd)
+    {
+        if (template.FixedGrade >= 0 && !template.Gradable)
+        {
+            return template.FixedGrade;
         }
 
         if (gradeToAdd == -1)
         {
-            gradeToAdd = template.FixedGrade;
+            return template.FixedGrade >= 0 ? template.FixedGrade : 0;
         }
 
-        if (gradeToAdd < 0)
-        {
-            gradeToAdd = 0;
-        }
+        return gradeToAdd < 0 ? 0 : gradeToAdd;
+    }
 
-        // First try to add to existing item counts
-        var itemTasks = new List<ItemTask>();
-
-        // Never update in mail containers
-        if (ContainerType != SlotType.MailAttachment)
+    /// <summary>
+    /// Adds items to existing stacks in the container if there is free space in those stacks.
+    /// </summary>
+    /// <param name="currentItems">List of current items in the container that match the template and grade.</param>
+    /// <param name="amountToAdd">The amount of items to add. This value will be decremented as items are added to existing stacks.</param>
+    /// <param name="itemTasks">List of item tasks to be updated with the changes made to the items.</param>
+    /// <param name="updatedItemsList">List of items that were updated with the new amounts.</param>
+    private void AddToExistingItems(List<Item> currentItems, ref int amountToAdd, List<ItemTask> itemTasks, List<Item> updatedItemsList)
+    {
+        foreach (var item in currentItems)
         {
-            foreach (var i in currentItems)
+            var freeSpace = item.Template.MaxCount - item.Count;
+            if (freeSpace > 0)
             {
-                var freeSpace = i.Template.MaxCount - i.Count;
-                if (freeSpace > 0)
-                {
-                    var addAmount = Math.Min(freeSpace, amountToAdd);
-                    i.Count += addAmount;
-                    amountToAdd -= addAmount;
-                    itemTasks.Add(new ItemCountUpdate(i, addAmount));
-                    updatedItemsList.Add(i);
-                    Owner?.Inventory.OnAcquiredItem(i, addAmount, true);
-                }
+                var addAmount = Math.Min(freeSpace, amountToAdd);
+                item.Count += addAmount;
+                amountToAdd -= addAmount;
+                itemTasks.Add(new ItemCountUpdate(item, addAmount));
+                updatedItemsList.Add(item);
+                Owner?.Inventory.OnAcquiredItem(item, addAmount, true);
+            }
 
-                if (amountToAdd < 0)
-                {
-                    break;
-                }
+            if (amountToAdd <= 0)
+            {
+                break;
             }
         }
+    }
 
-        var syncPackets = new List<GamePacket>();
+    private void AddNewItems(uint templateId, ref int amountToAdd, int gradeToAdd, uint crafterId, int preferredSlot, List<ItemTask> itemTasks, List<Item> newItemsList, List<GamePacket> syncPackets)
+    {
         while (amountToAdd > 0)
         {
-            var addAmount = Math.Min(amountToAdd, template.MaxCount);
+            var addAmount = Math.Min(amountToAdd, ItemManager.Instance.GetTemplate(templateId).MaxCount);
             var newItem = ItemManager.Instance.Create(templateId, addAmount, (byte)gradeToAdd);
             if (newItem == null)
             {
                 Logger.Error($"Failed to add item with ID {templateId}, possible duplicate entries!");
-                return false;
+                throw new GameException("AcquireDefaultItem(); Unable to add new items");
             }
 
             // Add name if marked as crafter (single stack items only)
             if (crafterId > 0 && newItem.Template.MaxCount == 1)
             {
                 newItem.MadeUnitId = crafterId;
-                newItem.WorldId = (byte)WorldManager.DefaultWorldId; // TODO: proper world id handling, this should actually be the ServerId
+                newItem.WorldId = (byte)WorldManager.DefaultWorldId;
             }
 
             amountToAdd -= addAmount;
-            var prefSlot = preferredSlot;
-            if (newItem.Template is BackpackTemplate && ContainerType == SlotType.Equipment)
-            {
-                prefSlot = (int)EquipmentItemSlot.Backpack;
-            }
+            var prefSlot = newItem.Template is BackpackTemplate && ContainerType == SlotType.Equipment ? (int)EquipmentItemSlot.Backpack : preferredSlot;
 
-            // Timers
-            if (newItem.Template.ExpAbsLifetime > 0)
-            {
-                syncPackets.Add(ItemManager.SetItemExpirationTime(newItem, DateTime.UtcNow.AddMinutes(newItem.Template.ExpAbsLifetime)));
-            }
+            // Set item expiration times if needed
+            SetItemExpirationTimes(newItem, syncPackets);
 
-            if (newItem.Template.ExpOnlineLifetime > 0)
-            {
-                syncPackets.Add(ItemManager.SetItemOnlineExpirationTime(newItem, newItem.Template.ExpOnlineLifetime));
-            }
-
-            if (newItem.Template.ExpDate > 0)
-            {
-                syncPackets.Add(ItemManager.SetItemExpirationTime(newItem, DateTime.UtcNow.AddMinutes(newItem.Template.ExpDate)));
-            }
-
-            if (newItem is EquipItem equipItem && newItem.Template is EquipItemTemplate equipItemTemplate)
-            {
-                equipItem.ChargeCount = equipItemTemplate.ChargeCount;
-                if (equipItemTemplate.ChargeLifetime > 0 && equipItemTemplate.BindType.HasFlag(ItemBindType.BindOnUnpack) == false)
-                {
-                    equipItem.ChargeStartTime = DateTime.UtcNow;
-                }
-            }
-
-            if (AddOrMoveExistingItem(ItemTaskType.Invalid, newItem, prefSlot)) // Task set to invalid as we send our own packets inside this function
+            if (AddOrMoveExistingItem(ItemTaskType.Invalid, newItem, prefSlot))
             {
                 itemTasks.Add(new ItemAdd(newItem));
                 newItemsList.Add(newItem);
             }
             else
             {
-                throw new GameException("AcquireDefaultItem(); Unable to add new items"); // Inventory should have enough space, something went wrong
+                throw new GameException("AcquireDefaultItem(); Unable to add new items");
             }
         }
+    }
 
-        if (taskType != ItemTaskType.Invalid)
+    private void SetItemExpirationTimes(Item newItem, List<GamePacket> syncPackets)
+    {
+        if (newItem.Template.ExpAbsLifetime > 0)
         {
-            Owner?.SendPacket(new SCItemTaskSuccessPacket(taskType, itemTasks, []));
+            syncPackets.Add(ItemManager.SetItemExpirationTime(newItem, DateTime.UtcNow.AddMinutes(newItem.Template.ExpAbsLifetime)));
         }
 
-        UpdateFreeSlotCount();
+        if (newItem.Template.ExpOnlineLifetime > 0)
+        {
+            syncPackets.Add(ItemManager.SetItemOnlineExpirationTime(newItem, newItem.Template.ExpOnlineLifetime));
+        }
 
-        // Send item expire packets if needed
+        if (newItem.Template.ExpDate > 0)
+        {
+            syncPackets.Add(ItemManager.SetItemExpirationTime(newItem, DateTime.UtcNow.AddMinutes(newItem.Template.ExpDate)));
+        }
+
+        if (newItem is EquipItem equipItem && newItem.Template is EquipItemTemplate equipItemTemplate)
+        {
+            equipItem.ChargeCount = equipItemTemplate.ChargeCount;
+            if (equipItemTemplate.ChargeLifetime > 0 && !equipItemTemplate.BindType.HasFlag(ItemBindType.BindOnUnpack))
+            {
+                equipItem.ChargeStartTime = DateTime.UtcNow;
+            }
+        }
+    }
+
+    private void SendSyncPackets(List<GamePacket> syncPackets)
+    {
         foreach (var sync in syncPackets)
         {
             if (sync != null)
@@ -930,8 +947,6 @@ public class ItemContainer
                 Owner?.SendPacket(sync);
             }
         }
-
-        return itemTasks.Count > 0;
     }
 
     /// <summary>

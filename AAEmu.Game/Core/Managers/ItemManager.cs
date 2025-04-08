@@ -44,7 +44,7 @@ public class ItemManager : Singleton<ItemManager>
     private Dictionary<uint, WearableKind> _wearableKinds;
     private Dictionary<uint, WearableSlot> _wearableSlots;
     private Dictionary<uint, AttributeModifiers> _modifiers;
-    private Dictionary<uint, ItemTemplate> _templates;
+    private Dictionary<uint, ItemTemplate> _templates = new();
     private Dictionary<uint, ItemDoodadTemplate> _itemDoodadTemplates;
     private ItemConfig _config;
 

@@ -16,7 +16,7 @@ public class IdManager
     // ReSharper disable once MemberCanBePrivate.Global
     protected static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
 
-    private BitSet _freeIds;
+    private BitSet _freeIds = new(1000);
     private int _freeIdCount;
     private int _nextFreeId;
     private bool _initialized;
