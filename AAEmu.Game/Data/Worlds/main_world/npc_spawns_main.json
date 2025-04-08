@@ -27408,6 +27408,7 @@
     "Id": 90879,
     "UnitId": 987,
     "Title": "Bull Elephant",
+    "FollowPath": "windscour_bull_elephant_1",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 25909.29,
@@ -123078,6 +123079,7 @@
     "Id": 16033,
     "UnitId": 11999,
     "Title": "Forest Keeper Arthur",
+    "FollowPath": "NuiForestkeeperArthur",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 15547.53,
@@ -123198,6 +123200,7 @@
     "Id": 16234,
     "UnitId": 12143,
     "Title": "Woodcutter Solace",
+    //"FollowPath": "aipath_ben_day",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 15529.72,
@@ -179403,6 +179406,7 @@
     "Id": 0,
     "UnitId": 8828,
     "Title": "Crimson Rift",
+    "FollowPath": "razlomPPZden1",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 14808.86,
@@ -179418,6 +179422,7 @@
     "Id": 0,
     "UnitId": 8828,
     "Title": "Crimson Rift",
+    "FollowPath": "razlomPPZden2",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 14797.9395,
@@ -179433,6 +179438,7 @@
     "Id": 0,
     "UnitId": 8828,
     "Title": "Crimson Rift",
+    "FollowPath": "razlomPPZden3",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 14823.28,
@@ -264033,6 +264039,7 @@
     "Id": 0,
     "UnitId": 8123,
     "Title": "Farkrag the Wanderer",
+    "FollowPath": "falcorth_farkrag",
     "NpcSpawnerIds": [],
     "Position": {
       "X": 23719.08,
