@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -1123,9 +1122,11 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
 
         // Also show children
         if (obj.Transform?.Children?.Count > 0)
-            foreach (var child in obj.Transform.Children)
-                if (child != null)
-                    AddVisibleObject(child.GameObject);
+        {
+            var childrenCopy = obj.Transform.Children.ToList();
+            foreach (var child in childrenCopy.Where(child => child != null))
+                AddVisibleObject(child.GameObject);
+        }
 
         //Logger.Warn($" objects={_objects.Count}, doodads={_doodads.Count}, npcs={_npcs.Count}, characters={_characters.Count}");
     }

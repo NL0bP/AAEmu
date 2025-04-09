@@ -35,7 +35,7 @@ public partial class Npc : Unit
     public NpcTemplate Template { get; set; }
     //public Item[] Equip { get; set; }
     public NpcSpawner Spawner { get; set; }
-    public bool IsDespawnScheduled  { get; set; } = false;
+    public bool IsDespawnScheduled { get; set; } = false;
 
     public override UnitCustomModelParams ModelParams => Template.ModelParams;
 
@@ -766,165 +766,19 @@ public partial class Npc : Unit
 
     public override void DoDie(BaseUnit killer, KillReason killReason)
     {
-        var eligiblePlayers = new HashSet<Character>();
-        if (CharacterTagging.TagTeam != 0)
-        {
-            // A team has tagging rights
-            var team = TeamManager.Instance.GetActiveTeam(CharacterTagging.TagTeam);
-            if (team != null)
-            {
+        var eligiblePlayers = GetEligiblePlayers();
 
-                // Just to check the team is still a valid team.
-                foreach (var member in team.Members)
-                {
-                    if (member?.Character != null)
-                    {
-                        if (member.Character.GetDistanceTo(this, true) <= Items.Containers.LootingContainer.MaxLootingRange)
-                        {
-                            eligiblePlayers.Add(member.Character);
-                        }
-                    }
-                }
-            }
-            else if (CharacterTagging.Tagger != null)
-            {
-                // A player has tag rights, but the team is not valid.
-                eligiblePlayers.Add(CharacterTagging.Tagger);
-            }
-        }
-        else if (CharacterTagging.Tagger != null)
+        if (eligiblePlayers.Count == 0 && killer is Character singleKiller)
         {
-            // A player has tag rights
-            eligiblePlayers.Add(CharacterTagging.Tagger);
-        }
-
-        // Logger.Warn($"Eligible killers count is {eligiblePlayers.Count }");
-
-        if (eligiblePlayers.Count == 0 && killer is Character characterKiller)
-        {
-            QuestManager.Instance.DoOnMonsterHuntEvents(characterKiller, this); // No eligible owner, but the killer is a character.
-            characterKiller.AddExp(KillExp, true);
-            var mates = MateManager.Instance.GetActiveMates(characterKiller.ObjId); // в версии 3+ может быть несколько
-            if (mates != null)
-            {
-                foreach (var mate in mates)
-                {
-                    if (mate == null) continue;
-                    mate.AddExp(KillExp);
-                    characterKiller.SendDebugMessage($"Pet gained {KillExp} XP");
-                }
-            }
+            ProcessSingleKill(singleKiller);
         }
         else
         {
-            var isFullTeam = false;
-            var isRaid = false;
-            if (CharacterTagging.TagTeam != 0)
-            {
-                // A team has tagging rights
-                var team = TeamManager.Instance.GetActiveTeam(CharacterTagging.TagTeam);
-                if (team != null)
-                {
-                    if (!team.IsParty)
-                    {
-                        isRaid = true;
-                        // Team is a raid.
-                    }
-                    else if (team.MembersCount() > 3)
-                    {
-                        isFullTeam = true;
-                    }
-                }
-            }
-
-            foreach (var pl in eligiblePlayers)
-            {
-                var plKillXP = 0;
-                var mateKillXP = 0;
-                var plMod = 1f;
-                var mateMod = 1f;
-
-                if (isRaid)
-                {
-                    // Player is in a raid. 1.2, pet XP is capped a full team value, but player gets raid XP regardless of how many raiders are present.
-                    plMod = 0.33f;
-                    mateMod = 0.66f;
-                }
-                else if (isFullTeam)
-                {
-                    // Player is in a team of more than 3 people. Player gets full party XP regardless of how many party members are present.
-                    plMod = 0.66f;
-                    mateMod = 0.66f;
-                }
-
-                else if (eligiblePlayers.Count > 1 && eligiblePlayers.Count <= 3)
-                {
-                    // If players are between 2 and 3, we scale. At this point, the party doesn't matter, just nearby players. 
-                    if (eligiblePlayers.Count == 2)
-                    {
-                        plMod = 0.90f;
-                        mateMod = 0.90f;
-                    }
-                    else if (eligiblePlayers.Count == 3)
-                    {
-                        plMod = 0.875f;
-                        mateMod = 0.875f;
-                    }
-                }
-                else
-                {
-                    // Player is solo, or at least only 1 player is close enough to get rights
-                    plMod = 1f;
-                    mateMod = 1f;
-                }
-
-                // Now we need to scale XP based on level difference, which gets a bit more complex.
-
-
-                if (pl.Level >= this.Level + 10 || pl.Level <= this.Level - 10)
-                {
-                    // No XP for you or your pet. Will check on the +10
-                }
-                else
-                {
-                    var LevDif = 1.0f;
-                    var levelDifference = pl.Level - this.Level;
-
-                    if (levelDifference > 0)
-                    {
-                        // pl.Level is above this.Level
-                        LevDif = 1.0f - (0.1f * levelDifference);
-                    }
-                    else if (levelDifference < 0)
-                    {
-                        // pl.Level is below this.Level
-                        LevDif = 1.0f + (0.1f * -levelDifference);
-                    }
-
-                    plKillXP = (int)((KillExp * plMod) * LevDif);
-                    mateKillXP = (int)((KillExp * mateMod) * LevDif);
-
-                    pl.AddExp(plKillXP, true);
-                    var mates = MateManager.Instance.GetActiveMates(pl.ObjId); // в версии 3+ может быть несколько
-                    if (mates != null)
-                    {
-                        foreach (var mate in mates)
-                        {
-                            if (mate == null) continue;
-                            mate.AddExp(mateKillXP);
-                            pl.SendDebugMessage($"Pet gained {mateKillXP} XP");
-                        }
-                    }
-                }
-                //character.Quests.OnKill(this);
-                // инициируем событие
-                //Task.Run(() => QuestManager.Instance.DoOnMonsterHuntEvents(character, this));
-                QuestManager.Instance.DoOnMonsterHuntEvents(pl, this);
-            }
+            ProcessTeamKill(eligiblePlayers);
         }
+
         base.DoDie(killer, killReason);
         ClearAllAggroTargetsAndCheckCombatState();
-        // AggroTable.Clear();
         CharacterTagging.ClearAllTaggers();
         CurrentAggroTarget = null;
 
@@ -932,9 +786,136 @@ public partial class Npc : Unit
         Ai?.GoToDead();
     }
 
+    private HashSet<Character> GetEligiblePlayers()
+    {
+        var players = new HashSet<Character>();
+
+        if (CharacterTagging.TagTeam != 0)
+        {
+            var team = TeamManager.Instance.GetActiveTeam(CharacterTagging.TagTeam);
+            if (team != null)
+            {
+                foreach (var member in team.Members)
+                {
+                    if (member?.Character != null &&
+                        member.Character.GetDistanceTo(this, true) <= Items.Containers.LootingContainer.MaxLootingRange)
+                    {
+                        players.Add(member.Character);
+                    }
+                }
+            }
+            else if (CharacterTagging.Tagger != null)
+            {
+                players.Add(CharacterTagging.Tagger);
+            }
+        }
+        else if (CharacterTagging.Tagger != null)
+        {
+            players.Add(CharacterTagging.Tagger);
+        }
+
+        return players;
+    }
+
+    private void ProcessSingleKill(Character killerCharacter)
+    {
+        QuestManager.Instance.DoOnMonsterHuntEvents(killerCharacter, this);
+        killerCharacter.AddExp(KillExp, true);
+
+        var mates = MateManager.Instance.GetActiveMates(killerCharacter.ObjId);
+        if (mates != null)
+        {
+            foreach (var mate in mates)
+            {
+                mate?.AddExp(KillExp);
+                killerCharacter.SendDebugMessage($"Pet gained {KillExp} XP");
+            }
+        }
+    }
+
+    private void ProcessTeamKill(HashSet<Character> players)
+    {
+        var isFullTeam = false;
+        var isRaid = false;
+
+        if (CharacterTagging.TagTeam != 0)
+        {
+            var team = TeamManager.Instance.GetActiveTeam(CharacterTagging.TagTeam);
+            if (team != null)
+            {
+                if (!team.IsParty)
+                {
+                    isRaid = true;
+                }
+                else if (team.MembersCount() > 3)
+                {
+                    isFullTeam = true;
+                }
+            }
+        }
+
+        foreach (var player in players)
+        {
+            var plKillXP = 0;
+            var mateKillXP = 0;
+            float plMod = 1f, mateMod = 1f;
+
+            if (isRaid)
+            {
+                plMod = 0.33f;
+                mateMod = 0.66f;
+            }
+            else if (isFullTeam)
+            {
+                plMod = mateMod = 0.66f;
+            }
+            else if (players.Count > 1 && players.Count <= 3)
+            {
+                plMod = (players.Count == 2) ? 0.90f : 0.875f;
+                mateMod = plMod;
+            }
+
+            // Если уровень игрока отличается от уровня NPC более чем на 10 уровней — опыт не начисляется
+            if (player.Level < this.Level - 10 || player.Level >= this.Level + 10)
+            {
+                // Не начислять опыт
+            }
+            else
+            {
+                var levelDiffFactor = 1.0f;
+                var levelDifference = player.Level - this.Level;
+                if (levelDifference > 0)
+                {
+                    levelDiffFactor = 1.0f - 0.1f * levelDifference;
+                }
+                else if (levelDifference < 0)
+                {
+                    levelDiffFactor = 1.0f + 0.1f * -levelDifference;
+                }
+
+                plKillXP = (int)(KillExp * plMod * levelDiffFactor);
+                mateKillXP = (int)(KillExp * mateMod * levelDiffFactor);
+
+                player.AddExp(plKillXP, true);
+
+                var mates = MateManager.Instance.GetActiveMates(player.ObjId);
+                if (mates != null)
+                {
+                    foreach (var mate in mates)
+                    {
+                        mate?.AddExp(mateKillXP);
+                        player.SendDebugMessage($"Pet gained {mateKillXP} XP");
+                    }
+                }
+            }
+
+            QuestManager.Instance.DoOnMonsterHuntEvents(player, this);
+        }
+    }
+
     private void ClearAllAggroTargetsAndCheckCombatState()
     {
-        List<Character> playerAggroList = new();
+        List<Character> playerAggroList = [];
         // Generate a list of all player that we had aggro on
         foreach (var (objId, aggro) in AggroTable)
         {
@@ -969,47 +950,38 @@ public partial class Npc : Unit
     {
         base.RemoveVisibleObject(character);
 
-        character.SendPacket(new SCUnitsRemovedPacket(new[] { ObjId }));
+        character.SendPacket(new SCUnitsRemovedPacket([ObjId]));
     }
 
     public void AddUnitAggro(AggroKind kind, Unit unit, int amount)
     {
-        //var player = unit as Character; // TODO player.Region становится равным null | player.Region becomes null
-        var player = unit as Character;
-        // Character player = null;
-        // if (unit is not Npc and not Units.Mate and not Slave)
-        // {
-        //     player = (Character)unit;
-        // }
-        // player?.SendDebugMessage(ChatType.System, $"AddUnitAggro {player.Name} + {amount} for {this.ObjId}");
+        if (unit == null)
+            return;
 
-        // check self buff tags
-        if (Buffs.CheckBuffTag((uint)TagsEnum.NoFight) || Buffs.CheckBuffTag((uint)TagsEnum.Returning))
+        // Приведение к Character, если применимо
+        var character = unit as Character;
+
+        // Проверка, что ни NPC, ни цель не находятся под эффектами, предотвращающими бой
+        var selfNoFight = Buffs.CheckBuffTag((uint)TagsEnum.NoFight) || Buffs.CheckBuffTag((uint)TagsEnum.Returning);
+        var targetNoFight = unit.Buffs?.CheckBuffTag((uint)TagsEnum.NoFight) == true || unit.Buffs?.CheckBuffTag((uint)TagsEnum.Returning) == true;
+        if (selfNoFight || targetNoFight)
         {
             ClearAggroOfUnit(unit);
             return;
         }
 
-        // check target buff tags
-        if ((unit.Buffs?.CheckBuffTag((uint)TagsEnum.NoFight) ?? false) || (unit.Buffs?.CheckBuffTag((uint)TagsEnum.Returning) ?? false))
-        {
-            ClearAggroOfUnit(unit);
-            return;
-        }
-
-        //Add Tagging if it was damage aggro
+        // Если тип аггро – урон, добавляем теггинг
         if (kind == AggroKind.Damage)
-            CharacterTagging.AddTagger(unit, amount);
-
-
-        amount = (int)(amount * (unit.AggroMul / 100.0f));
-        amount = (int)(amount * (IncomingAggroMul / 100.0f));
-
-        if (AggroTable.TryGetValue(unit.ObjId, out var aggro))
         {
-            aggro.AddAggro(kind, amount);
+            CharacterTagging.AddTagger(unit, amount);
         }
-        else
+
+        // Применяем модификаторы аггро (объединены в одну операцию)
+        var modifier = (unit.AggroMul / 100.0f) * (IncomingAggroMul / 100.0f);
+        amount = (int)(amount * modifier);
+
+        // Попытка получить существующую запись аггро, либо создать новую
+        if (!AggroTable.TryGetValue(unit.ObjId, out var aggro))
         {
             aggro = new Aggro(unit);
             aggro.AddAggro(kind, amount);
@@ -1019,30 +991,33 @@ public partial class Npc : Unit
                 unit.Events.OnDeath += OnAbuserDied;
             }
 
-            // TODO: make this party/raid wide? Take into account pets/slaves?
-            // If there is a quest starter attached to this NPC, start it when unit gets added for the first time
-            // to the aggro list
-            if ((Template.EngageCombatGiveQuestId > 0) && player is not null)
+            // Если у NPC задан идентификатор квеста, добавляем его игроку, если его еще нет
+            if (Template.EngageCombatGiveQuestId > 0 && character != null)
             {
-                if (!player.Quests.IsQuestComplete(Template.EngageCombatGiveQuestId) && !player.Quests.HasQuest(Template.EngageCombatGiveQuestId))
-                    player.Quests.AddQuest(Template.EngageCombatGiveQuestId);
+                if (!character.Quests.IsQuestComplete(Template.EngageCombatGiveQuestId) &&
+                    !character.Quests.HasQuest(Template.EngageCombatGiveQuestId))
+                {
+                    character.Quests.AddQuest(Template.EngageCombatGiveQuestId);
+                }
             }
 
-            // Send initial hit packet as well
-            unit.SendPacketToPlayers([this, unit], new SCCombatFirstHitPacket(this.ObjId, unit.ObjId, 0));
+            // Отправляем пакет начального удара
+            unit.SendPacketToPlayers(new Unit[] { this, unit }, new SCCombatFirstHitPacket(this.ObjId, unit.ObjId, 0));
         }
-
-        if (player == null)
-            return;
-
-        if (aggro.TotalAggro > 0 && !IsDead && Hp > 0 && !player.IsInAggroListOf.ContainsKey(this.ObjId))
+        else
         {
-            player.IsInAggroListOf.Add(this.ObjId, this);
+            aggro.AddAggro(kind, amount);
         }
-        //player?.Quests.OnAggro(this);
-        // инициируем событие
-        //Task.Run(() => QuestManager.Instance.DoOnAggroEvents(player, this));
-        QuestManager.Instance.DoOnAggroEvents(player, this);
+
+        // Если цель является игроком, добавляем NPC в его список аггро (при соблюдении условий)
+        if (character != null)
+        {
+            if (aggro.TotalAggro > 0 && !IsDead && Hp > 0 && !character.IsInAggroListOf.ContainsKey(this.ObjId))
+            {
+                character.IsInAggroListOf.Add(this.ObjId, this);
+            }
+            QuestManager.Instance.DoOnAggroEvents(character, this);
+        }
     }
 
     public void ClearAggroOfUnit(Unit unit)
@@ -1050,21 +1025,14 @@ public partial class Npc : Unit
         if (unit is null)
             return;
 
-        var player = unit as Character;
-        if (player != null && player.IsInAggroListOf.ContainsKey(ObjId))
+        // Удаляем NPC из списка аггро у персонажа, если цель является персонажем
+        if (unit is Character player && player.IsInAggroListOf.ContainsKey(this.ObjId))
         {
-            player.IsInAggroListOf.Remove(ObjId);
+            player.IsInAggroListOf.Remove(this.ObjId);
         }
 
-        // var player = unit as Character;
-        // player?.SendDebugMessage($"ClearAggroOfUnit {player.Name} for {this.ObjId}");
-
-        var lastAggroCount = AggroTable.Count;
-        if (lastAggroCount <= 0)
-        {
-            return;
-        }
-        if (AggroTable.TryRemove(unit.ObjId, out var value))
+        // Попытка удалить аггро для данного юнита
+        if (AggroTable.TryRemove(unit.ObjId, out var removedAggro))
         {
             unit.Events.OnHealed -= OnAbuserHealed;
             unit.Events.OnDeath -= OnAbuserDied;
@@ -1074,12 +1042,14 @@ public partial class Npc : Unit
             Logger.Warn("Failed to remove unit[{0}] aggro from NPC[{1}]", unit.ObjId, this.ObjId);
         }
 
-        if (AggroTable.Count != lastAggroCount)
+        // Если таблица аггро стала пустой, инициируем возвращение NPC на позицию спавна
+        if (AggroTable.IsEmpty)
+        {
             CheckIfEmptyAggroToReturn(unit);
+        }
     }
 
     //Tagging!
-
 
     private static void CheckIfEmptyAggroToReturn(IBaseUnit unit)
     {
@@ -1118,12 +1088,16 @@ public partial class Npc : Unit
 
     public void ClearAllAggro()
     {
-        ///Adding for tagging
+        // Сначала очищаем информацию о теггерах.
         CharacterTagging.ClearAllTaggers();
 
-        foreach (var table in AggroTable)
+        // Получаем список идентификаторов юнитов, имеющих аггро.
+        var unitIds = AggroTable.Keys.ToList();
+
+        // Отписываем обработчики событий для каждого юнита.
+        foreach (var id in unitIds)
         {
-            var unit = WorldManager.Instance.GetUnit(table.Key);
+            var unit = WorldManager.Instance.GetUnit(id);
             if (unit != null)
             {
                 unit.Events.OnHealed -= OnAbuserHealed;
@@ -1131,10 +1105,32 @@ public partial class Npc : Unit
             }
         }
 
-        var lastAggroCount = AggroTable.Count;
-        ClearAllAggroTargetsAndCheckCombatState();
-        if (lastAggroCount > 0)
+        // Формируем список затронутых персонажей.
+        var affectedPlayers = unitIds.Select(id => WorldManager.Instance.GetUnit(id))
+            .OfType<Character>()
+            .Distinct()
+            .ToList();
+
+        // Очищаем таблицу аггро.
+        AggroTable.Clear();
+
+        // Для каждого персонажа очищаем аггро данного NPC и, если он больше не имеет аггро,
+        // завершаем состояние боя.
+        foreach (var player in affectedPlayers)
+        {
+            ClearAggroOfUnit(player);
+            if (player.IsInAggroListOf.Count <= 0)
+            {
+                player.IsInBattle = false;
+            }
+        }
+
+        // Если таблица аггро пуста (что должно быть всегда после Clear),
+        // проверяем расстояние от позиции спавна и инициируем возврат NPC при необходимости.
+        if (AggroTable.IsEmpty)
+        {
             CheckIfEmptyAggroToReturn();
+        }
     }
 
     public void OnAbuserHealed(object sender, OnHealedArgs args)
@@ -1161,70 +1157,73 @@ public partial class Npc : Unit
         //
         //     // TaskManager.Instance.Schedule(new UnitMove(new Track(), this), TimeSpan.FromMilliseconds(100));
         // }
-        AddUnitAggro(AggroKind.Damage, attacker, amount);
-        Ai.OnAggroTargetChanged();
 
+        if (attacker == null || amount <= 0)
+            return;
+
+        // Увеличиваем аггро для атакующего
+        AddUnitAggro(AggroKind.Damage, attacker, amount);
+
+        // Уведомляем AI о возможном изменении цели
+        Ai?.OnAggroTargetChanged();
         /*
-        var topAbuser = AggroTable.GetTopTotalAggroAbuserObjId();
-        if ((CurrentTarget?.ObjId ?? 0) != topAbuser)
-        {
-            CurrentAggroTarget = topAbuser; 
-            var unit = WorldManager.Instance.GetUnit(topAbuser);
-            SetTarget(unit);
-            Ai?.OnAggroTargetChanged();
-        }
+            var topAbuser = AggroTable.GetTopTotalAggroAbuserObjId();
+            if ((CurrentTarget?.ObjId ?? 0) != topAbuser)
+            {
+                CurrentAggroTarget = topAbuser;
+                var unit = WorldManager.Instance.GetUnit(topAbuser);
+                SetTarget(unit);
+                Ai?.OnAggroTargetChanged();
+            }
         */
     }
 
     public void MoveTowards(Vector3 other, float distance, byte actorFlags = 4)
     {
-        distance *= Ai.Owner.MoveSpeedMul; // Apply speed modifier
-        if (distance < 0.01f)
+        const float MinimumMovementDistance = 0.01f;
+        const float MinimumTargetDistance = 1f;
+        const float HeightTolerance = 1f; // порог допуска для корректировки высоты
+        const float interpolationCoefficient = 0.5f; // коэффициент интерполяции
+
+        distance *= Ai.Owner.MoveSpeedMul;
+        if (distance < MinimumMovementDistance)
             return;
 
-        if (Buffs.HasEffectsMatchingCondition(e =>
-                e.Template.Stun
-                || e.Template.Sleep
-                || e.Template.Root
-                || e.Template.Knockdown
-                || e.Template.Fastened)
-            || Ai.Owner.IsDead)
-        {
-            //Logger.Debug($"{ObjId} @NPC_NAME({TemplateId}); is stuck in place");
+        var isImpaired = Buffs.HasEffectsMatchingCondition(e =>
+                            e.Template.Stun ||
+                            e.Template.Sleep ||
+                            e.Template.Root ||
+                            e.Template.Knockdown ||
+                            e.Template.Fastened);
+        if (isImpaired || Ai.Owner.IsDead)
             return;
-        }
 
-        if (Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle)) ||
-            Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare)))
-        {
+        var isShackled = Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle));
+        var isSnared = Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare));
+        if (isShackled || isSnared)
             return;
-        }
 
         if ((ActiveSkillController?.State ?? SkillController.SCState.Ended) == SkillController.SCState.Running)
             return;
 
         var oldPosition = Transform.Local.ClonePosition();
-
-        var targetDist = MathUtil.CalculateDistance(Transform.Local.Position, other, true);
-        if (targetDist <= 1f)
+        var currentPosition = Transform.Local.Position;
+        var targetDistance = MathUtil.CalculateDistance(currentPosition, other, true);
+        if (targetDistance <= MinimumTargetDistance)
             return;
 
-        var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
-
-        var travelDist = Math.Min(targetDist, distance);
-
-        // TODO: Implement proper use for Transform.World.AddDistanceToFront
-        var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, targetDist, Transform.Local.Position, other);
+        var travelDistance = Math.Min(targetDistance, distance);
+        var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDistance, targetDistance, currentPosition, other);
         Transform.Local.SetPosition(newX, newY, newZ);
 
-        // TODO: Implement Transform.World to do proper movement
         if (!CanFly)
         {
-            // try to find Z first in GeoData, and then in HeightMaps, if not found, leave Z as it is
-            var updZ = WorldManager.Instance.GetHeight(Transform.ZoneId, newX, newY);
-            if (updZ != 0 && Math.Abs(newZ - updZ) < 1f)
+            // Используем высоту ближайшего персонажа, если он найден, иначе ландшафт
+            var referenceHeight = GetReferenceHeight(newX, newY);
+            if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
             {
-                Transform.Local.SetHeight(updZ);
+                newZ = Lerp(newZ, referenceHeight, interpolationCoefficient);
+                Transform.Local.SetHeight(newZ);
             }
         }
 
@@ -1233,44 +1232,42 @@ public partial class Npc : Unit
         Transform.Local.SetRotationDegree(0f, 0f, (float)angle - 90);
         var (rx, ry, rz) = Transform.Local.ToRollPitchYawSBytesMovement();
 
+        var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
         moveType.X = Transform.Local.Position.X;
         moveType.Y = Transform.Local.Position.Y;
         moveType.Z = Transform.Local.Position.Z;
         moveType.VelX = (short)velX;
         moveType.VelY = (short)velY;
-        //moveType.VelZ = (short)velZ;
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = actorFlags;     // 5-walk, 4-run, 3-stand still
-        moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // MoveTypeFlags.Stopping;
-
-        moveType.DeltaMovement = new sbyte[3];
-        moveType.DeltaMovement[0] = 0;
-        moveType.DeltaMovement[1] = 127;
-        moveType.DeltaMovement[2] = 0;
-        moveType.Stance = CurrentGameStance;    // COMBAT = 0x0, IDLE = 0x1
+        moveType.ActorFlags = actorFlags;
+        moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0);
+        moveType.DeltaMovement = [0, 127, 0];
+        moveType.Stance = CurrentGameStance;
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
         CheckMovedPosition(oldPosition);
-        //SetPosition(Position);
         BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
     }
 
     public void LookTowards(Vector3 other, byte flags = 4)
     {
-        var oldPosition = Transform.Local.ClonePosition();
+        // Replace the problematic line with the following code:
+        var currentRotation = Transform.Local.Rotation.Z; // Accessing the Z rotation directly from the Rotation property
 
-        var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
+        // Вычисляем целевой угол поворота с поправкой
+        var targetRotation = (float)(MathUtil.CalculateAngleFrom(Transform.Local.Position, other) - 90);
 
-        var angle = MathUtil.CalculateAngleFrom(Transform.Local.Position, other);
-        //var rotZ = MathUtil.ConvertDegreeToSByteDirection(angle);
+        // Плавная интерполяция угла (коэффициент можно настроить)
+        var newRotation = LerpAngle(currentRotation, targetRotation, 0.5f);
+        Transform.Local.SetRotationDegree(0f, 0f, newRotation);
 
-        // TODO: Implement Transform.World to do proper movement
-        Transform.Local.SetRotationDegree(0f, 0f, (float)angle - 90);
         var (rx, ry, rz) = Transform.Local.ToRollPitchYawSBytesMovement();
 
+        // Формирование пакета движения
+        var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
         moveType.X = Transform.Local.Position.X;
         moveType.Y = Transform.Local.Position.Y;
         moveType.Z = Transform.Local.Position.Z;
@@ -1280,42 +1277,55 @@ public partial class Npc : Unit
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
-        moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); ; // 4;
-
-        moveType.DeltaMovement = new sbyte[3];
-        moveType.DeltaMovement[0] = 0;
-        moveType.DeltaMovement[1] = 0;
-        moveType.DeltaMovement[2] = 0;
-        moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
+        moveType.ActorFlags = flags; // напр., 5 - ходьба, 4 - бег, 3 - стоять на месте
+        moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0);
+        moveType.DeltaMovement = [0, 0, 0];
+        moveType.Stance = 0; // COMBAT = 0, IDLE = 1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
-        CheckMovedPosition(oldPosition);
-        //SetPosition(Position);
+        // Отправка пакета после проверки изменений
+        CheckMovedPosition(Transform.Local.ClonePosition());
         BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
+    }
+
+    /// <summary>
+    /// Плавно интерполирует поворот с учётом "обёртки" углов (0-360 градусов).
+    /// </summary>
+    /// <param name="from">Начальный угол.</param>
+    /// <param name="to">Целевой угол.</param>
+    /// <param name="t">Коэффициент интерполяции от 0 до 1.</param>
+    /// <returns>Новый угол.</returns>
+    private float LerpAngle(float from, float to, float t)
+    {
+        // Находим минимальное изменение с учетом оборачивания
+        var delta = ((to - from + 540) % 360) - 180;
+        return from + delta * t;
     }
 
     public void StopMovement()
     {
+        // Кэшируем текущую позицию
+        var pos = Transform.Local.Position;
+        var rollPitchYaw = Transform.Local.ToRollPitchYawSBytesMovement();
+
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
-        moveType.X = Transform.Local.Position.X;
-        moveType.Y = Transform.Local.Position.Y;
-        moveType.Z = Transform.Local.Position.Z;
+        moveType.X = pos.X;
+        moveType.Y = pos.Y;
+        moveType.Z = pos.Z;
         moveType.VelX = 0;
         moveType.VelY = 0;
         moveType.VelZ = 0;
+        // Обнуляем вращение по X и Y, а для Z задаем сохранённое значение
         moveType.RotationX = 0;
         moveType.RotationY = 0;
-        moveType.RotationZ = Transform.Local.ToRollPitchYawSBytesMovement().Item3;
-        moveType.Flags = MoveTypeFlags.Stopping | (IsInBattle ? MoveTypeFlags.InCombat : 0); // 4;
-        moveType.DeltaMovement = new sbyte[3];
-        moveType.DeltaMovement[0] = 0;
-        moveType.DeltaMovement[1] = 0;
-        moveType.DeltaMovement[2] = 0;
-        moveType.Stance = CurrentGameStance;// (sbyte)(CurrentAggroTarget?.ObjId > 0 ? 0 : 1);    // COMBAT = 0x0, IDLE = 0x1
+        moveType.RotationZ = rollPitchYaw.Item3;
+        moveType.Flags = MoveTypeFlags.Stopping | (IsInBattle ? MoveTypeFlags.InCombat : 0);
+        moveType.DeltaMovement = [0, 0, 0];
+        moveType.Stance = CurrentGameStance;
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
+
         BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
     }
 
@@ -1333,18 +1343,34 @@ public partial class Npc : Unit
 
     public void FindPath(Unit abuser)
     {
-        Ai.PathNode.pos1 = new Point(Ai.Owner.Transform.World.Position.X, Ai.Owner.Transform.World.Position.Y, Ai.Owner.Transform.World.Position.Z);
-        Ai.PathNode.pos2 = new Point(abuser.Transform.World.Position.X, abuser.Transform.World.Position.Y, abuser.Transform.World.Position.Z);
+        if (abuser == null)
+            return;
 
+        // Получаем мировые позиции владельца и цели
+        var ownerPos = Ai.Owner.Transform.World.Position;
+        var targetPos = abuser.Transform.World.Position;
+
+        // Создаем точки для начала и конца пути
+        var startPoint = new Point(ownerPos.X, ownerPos.Y, ownerPos.Z);
+        var endPoint = new Point(targetPos.X, targetPos.Y, targetPos.Z);
+
+        // Настраиваем узел пути
+        Ai.PathNode.pos1 = startPoint;
+        Ai.PathNode.pos2 = endPoint;
         Ai.PathNode.ZoneKey = Ai.Owner.Transform.ZoneId;
-        Ai.PathNode.findPath = Ai.PathNode.FindPath(Ai.PathNode.pos1, Ai.PathNode.pos2);
 
-        Logger.Trace($"AStar: points found Total: {Ai.PathNode.findPath?.Count ?? 0}");
+        // Вычисляем путь от точки старта до точки назначения
+        Ai.PathNode.findPath = Ai.PathNode.FindPath(startPoint, endPoint);
+
+        var pathCount = Ai.PathNode.findPath?.Count ?? 0;
+        Logger.Trace($"AStar: points found Total: {pathCount}");
+
         if (Ai.PathNode.findPath != null)
         {
-            for (var i = 0; i < Ai.PathNode.findPath.Count; i++)
+            for (var i = 0; i < pathCount; i++)
             {
-                Logger.Trace($"AStar: point {i} coordinates X:{Ai.PathNode.findPath[i].X}, Y:{Ai.PathNode.findPath[i].Y}, Z:{Ai.PathNode.findPath[i].Z}");
+                var point = Ai.PathNode.findPath[i];
+                Logger.Trace($"AStar: point {i} coordinates X:{point.X}, Y:{point.Y}, Z:{point.Z}");
             }
         }
     }
