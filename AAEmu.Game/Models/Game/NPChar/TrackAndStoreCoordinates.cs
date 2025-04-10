@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Numerics;
 
@@ -15,7 +14,7 @@ namespace AAEmu.Game.Models.Game.NPChar;
 public partial class Npc
 {
     // Method to track and store character coordinates
-    public void TrackAndStoreCharacterCoordinates(Character character)
+    public static void TrackAndStoreCharacterCoordinates(Character character)
     {
         if (character == null)
             return;
@@ -26,10 +25,7 @@ public partial class Npc
         {
             using var connection = MySQL.CreateConnection();
             // Check if record exists
-            var checkCmd = new MySqlCommand(
-                "SELECT COUNT(*) FROM height_maps WHERE character_id = @characterId AND zone_id = @zoneId",
-                connection);
-            checkCmd.Parameters.AddWithValue("@characterId", character.Id);
+            var checkCmd = new MySqlCommand("SELECT COUNT(*) FROM height_maps WHERE zone_id = @zoneId", connection);
             checkCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
 
             var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
@@ -37,25 +33,17 @@ public partial class Npc
             if (exists)
             {
                 // Update existing record
-                var updateCmd = new MySqlCommand(
-                    "UPDATE height_maps SET x = @x, y = @y, z = @z, last_update = NOW() " +
-                    "WHERE character_id = @characterId AND zone_id = @zoneId",
-                    connection);
+                var updateCmd = new MySqlCommand("UPDATE height_maps SET x = @x, y = @y, z = @z, timestamp = NOW() WHERE zone_id = @zoneId", connection);
+                updateCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
                 updateCmd.Parameters.AddWithValue("@x", position.X);
                 updateCmd.Parameters.AddWithValue("@y", position.Y);
                 updateCmd.Parameters.AddWithValue("@z", position.Z);
-                updateCmd.Parameters.AddWithValue("@characterId", character.Id);
-                updateCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
                 updateCmd.ExecuteNonQuery();
             }
             else
             {
                 // Insert new record
-                var insertCmd = new MySqlCommand(
-                    "INSERT INTO height_maps (character_id, zone_id, x, y, z, last_update) " +
-                    "VALUES (@characterId, @zoneId, @x, @y, @z, NOW())",
-                    connection);
-                insertCmd.Parameters.AddWithValue("@characterId", character.Id);
+                var insertCmd = new MySqlCommand("INSERT INTO height_maps (zone_id, x, y, z, timestamp) VALUES (@zoneId, @x, @y, @z, NOW())", connection);
                 insertCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
                 insertCmd.Parameters.AddWithValue("@x", position.X);
                 insertCmd.Parameters.AddWithValue("@y", position.Y);
@@ -69,7 +57,7 @@ public partial class Npc
         }
     }
 
-    private float Lerp(float start, float end, float t)
+    internal float Lerp(float start, float end, float t)
     {
         return start + (end - start) * t;
     }
@@ -196,7 +184,7 @@ public partial class Npc
     }
 
     // Упрощённый метод получения высоты
-    private float GetReferenceHeight(float x, float y)
+    internal float GetReferenceHeight(float x, float y)
     {
         // 1. Проверяем стандартную высоту
         var height = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);

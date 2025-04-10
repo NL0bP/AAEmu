@@ -7,14 +7,15 @@ using System.Numerics;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
-using AAEmu.Game.Models.Game.AI.AStar;
 using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Game.AI.v2.Params;
 using AAEmu.Game.Models.Game.AI.v2.Params.Almighty;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils;
+using Point = AAEmu.Game.Models.Game.AI.AStar.Point;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Behaviors;
 
@@ -61,10 +62,37 @@ public abstract class BaseCombatBehavior : Behavior
                 range *= _maxWeaponRange;
         }
 
-        if (Ai.Owner.Template.BaseSkillId == 2 && Ai.Owner.Template.Skills.Count == 0 && range == 4)
+        if (Ai.Owner.Template.BaseSkillId == 2 && Ai.Owner.Template.Skills.Count == 0 && range <= 4)
         {
             range -= 1f; // Fix that ID=7927, Plateau Earth Elemental can hit with a melee attack
         }
+
+        var currentPosition = new Vector3(Ai.Owner.Transform.Local.Position.X, Ai.Owner.Transform.Local.Position.Y, Ai.Owner.Transform.Local.Position.Z);
+        // TODO взять точку к которой движемся
+        var targetPosition = new Vector3(target.Transform.Local.Position.X, target.Transform.Local.Position.Y, target.Transform.Local.Position.Z);
+        var newZ = targetPosition.Z;
+        if (!Ai.Owner.CanFly)
+        {
+            // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
+            var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
+            if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < Npc.HeightTolerance)
+            {
+                newZ = Ai.Owner.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
+                Ai.Owner.Transform.Local.SetHeight(newZ);
+            }
+            else
+            {
+                targetPosition.Z = referenceHeight;
+                Ai.Owner.Transform.Local.SetHeight(referenceHeight);
+            }
+        }
+
+        if (targetPosition.Z == 0f)
+        {
+            targetPosition.Z = Ai.Owner.Spawner.Position.Z;
+            Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Spawner.Position.Z);
+        }
+
         var speed = Ai.GetRealMovementSpeed(Ai.Owner.BaseMoveSpeed);
         var moveFlags = Ai.GetRealMovementFlags(speed);
         speed *= (delta.Milliseconds / 1000.0);
@@ -73,7 +101,7 @@ public abstract class BaseCombatBehavior : Behavior
         if (AppConfiguration.Instance.World.GeoDataMode && Ai.Owner.Transform.WorldId > 0)
         {
             // TODO найдем путь к abuser, только если координаты цели изменились
-            if (target != null && Ai.PathNode?.pos2 != null && Ai.PathNode != null)
+            if (Ai.PathNode?.pos2 != null && Ai.PathNode != null)
             {
                 if (!Ai.PathNode.pos2.Equals(new Point(target.Transform.World.Position.X, target.Transform.World.Position.Y, target.Transform.World.Position.Z)))
                 {
@@ -90,16 +118,39 @@ public abstract class BaseCombatBehavior : Behavior
                 }
             }
 
-            if (target != null && Ai.PathNode != null)
+            if (Ai.PathNode != null)
             {
                 if (Ai.PathNode.findPath.Count > 0 && !Ai.PathNode.findPath[0].Equals(Point.Zero))
                 {
                     // TODO взять точку к которой движемся
-                    var position = new Vector3(Ai.PathNode.Position.X, Ai.PathNode.Position.Y, Ai.PathNode.Position.Z);
-                    distanceToTarget = MathUtil.CalculateDistance(Ai.Owner.Transform.World.Position, position, true);
+                    targetPosition = new Vector3(Ai.PathNode.Position.X, Ai.PathNode.Position.Y, Ai.PathNode.Position.Z);
+                    newZ = targetPosition.Z;
+                    if (!Ai.Owner.CanFly)
+                    {
+                        // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
+                        var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
+                        if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < Npc.HeightTolerance)
+                        {
+                            newZ = Ai.Owner.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
+                            Ai.Owner.Transform.Local.SetHeight(newZ);
+                        }
+                        else
+                        {
+                            targetPosition.Z = referenceHeight;
+                            Ai.Owner.Transform.Local.SetHeight(referenceHeight);
+                        }
+                    }
+
+                    if (targetPosition.Z == 0f)
+                    {
+                        targetPosition.Z = Ai.Owner.Spawner.Position.Z;
+                        Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Spawner.Position.Z);
+                    }
+
+                    distanceToTarget = MathUtil.CalculateDistance(currentPosition, targetPosition, true);
                     if (distanceToTarget > range)
                     {
-                        Ai.Owner.MoveTowards(position, (float)speed, moveFlags);
+                        Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
                     }
                     else
                     {
@@ -108,7 +159,7 @@ public abstract class BaseCombatBehavior : Behavior
                         if (Ai.PathNode.Current >= Ai.PathNode.findPath.Count)
                         {
                             Ai.Owner.StopMovement();
-                            Ai.PathNode.findPath = new List<Point>();
+                            Ai.PathNode.findPath = [];
                             return;
                         }
 
@@ -125,7 +176,7 @@ public abstract class BaseCombatBehavior : Behavior
             }
             else
             {
-                if (distanceToTarget > range && target != null)
+                if (distanceToTarget > range)
                     Ai.Owner.MoveTowards(target.Transform.World.Position, (float)speed, moveFlags);
                 else
                     Ai.Owner.StopMovement();
@@ -133,7 +184,7 @@ public abstract class BaseCombatBehavior : Behavior
         }
         else
         {
-            if (distanceToTarget > range && target != null)
+            if (distanceToTarget > range)
                 Ai.Owner.MoveTowards(target.Transform.World.Position, (float)speed, moveFlags);
             else
                 Ai.Owner.StopMovement();

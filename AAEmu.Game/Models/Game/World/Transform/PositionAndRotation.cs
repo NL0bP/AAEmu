@@ -57,7 +57,7 @@ public class PositionAndRotation
 
     public void SetHeight(float z)
     {
-        Position = new Vector3(Position.X, Position.Y, z);
+        Position = Position with { Z = z };
     }
 
     public void SetPosition(Vector3 xyz, Vector3 rpy)

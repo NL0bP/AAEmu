@@ -10,6 +10,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Units;
@@ -179,6 +180,9 @@ public class CSMoveUnitPacket : GamePacket
                         // Just forward it to the packet, not safe for exploits/hacking
                         // We moved
                         RemoveEffects(player, _moveType);
+
+                        // TODO: запишем в таблицу координаты игрока, чтобы потом их использовать
+                        Npc.TrackAndStoreCharacterCoordinates(player);
 
                         if (player.IsRiding)
                         {
