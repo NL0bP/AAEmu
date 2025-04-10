@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -14,9 +15,126 @@ namespace AAEmu.Game.Models.Game.NPChar;
 
 public partial class Npc
 {
+    #region дополнительное кэширование данных
+    // Кэш для хранения результатов запросов высот
+    private static ConcurrentDictionary<(uint zoneId, int gridX, int gridY), CachedHeight> HeightCache = new();
+
+    // Размер сетки для кэширования (5x5 метров)
+    private const float CacheGridSize = 5f; // Размер ячейки в метрах
+
+    private class CachedHeight
+    {
+        public float Height { get; set; }
+    }
+
+    // Метод для получения высоты с кэшированием
+    internal float GetReferenceHeight(float x, float y)
+    {
+        var gridKey = GetCacheGridKey(x, y);
+
+        // 1.Пытаемся получить данные из кэша
+        if (HeightCache.TryGetValue((Transform.ZoneId, gridKey.x, gridKey.y), out var cached))
+            return cached.Height;
+
+        // 2. Если нет в кэше, вычисляем и сохраняем
+        var height = CalculateActualHeight(x, y);
+
+        HeightCache[(Transform.ZoneId, gridKey.x, gridKey.y)] = new CachedHeight
+        {
+            Height = height,
+        };
+
+        return height;
+    }
+
+    // Вычисление реальной высоты (без кэша)
+    private float CalculateActualHeight(float x, float y)
+    {
+        // 1. Проверяем стандартную высоту
+        var height = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
+        if (height != 0) return height;
+
+        // 2. Проверяем ближайшие точки в базе
+        var dbHeight = GetHeightFromDatabase(x, y);
+        if (dbHeight != 0) return dbHeight;
+
+        // 3. Проверяем персонажей в памяти
+        return GetHeightFromNearbyCharacters(x, y);
+    }
+
+    // Получение ключа для сетки кэширования
+    private static (int x, int y) GetCacheGridKey(float x, float y)
+    {
+        return ((int)(x / CacheGridSize), (int)(y / CacheGridSize));
+    }
+
+    private float GetHeightFromDatabase(float x, float y)
+    {
+        var (centerCellX, centerCellY) = GetCellKey(x, y);
+        try
+        {
+            using var connection = MySQL.CreateConnection();
+            // Запрашиваем данные для 9 ячеек (3x3 сетка)
+            var cmd = new MySqlCommand(
+                "SELECT cell_x, cell_y, avg_z FROM height_map_cells " +
+                "WHERE zone_id = @zoneId AND " +
+                "cell_x BETWEEN @minX AND @maxX AND " +
+                "cell_y BETWEEN @minY AND @maxY",
+                connection);
+            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
+            cmd.Parameters.AddWithValue("@minX", centerCellX - 1);
+            cmd.Parameters.AddWithValue("@maxX", centerCellX + 1);
+            cmd.Parameters.AddWithValue("@minY", centerCellY - 1);
+            cmd.Parameters.AddWithValue("@maxY", centerCellY + 1);
+
+            var heights = new Dictionary<(int x, int y), float>();
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    heights[(reader.GetInt32("cell_x"), reader.GetInt32("cell_y"))] = reader.GetFloat("avg_z");
+                }
+            }
+
+            // Если нашли данные для ячеек, выполняем билинейную интерполяцию
+            if (heights.Count > 0)
+            {
+                return BilinearInterpolation(x, y, heights, centerCellX, centerCellY);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Ошибка получения высот из БД: {ex.Message}");
+        }
+
+        return 0;
+    }
+    
+    private float GetHeightFromNearbyCharacters(float x, float y)
+    {
+        const float searchRadius = 5f;
+        var nearbyCharacters = WorldManager.GetAround<Character>(this, searchRadius);
+        if (nearbyCharacters.Any())
+        {
+            foreach (var character in nearbyCharacters)
+            {
+                TrackCharacterCoordinates(character);
+            }
+
+            // Берем высоту ближайшего персонажа
+            var nearest = nearbyCharacters
+                .OrderBy(c => MathUtil.CalculateDistance(c.Transform.World.Position, new Vector3(x, y, 0)))
+                .First();
+            return nearest.Transform.World.Position.Z;
+        }
+    
+        return 0f; // Если ничего не найдено
+    }
+    #endregion
+
     #region метод по квадратам
-    // Добавим в класс Npc
-    private const float CellSize = 3f; // Размер ячейки в метрах
+    // Размер сетки для кэширования (5x5 метров)
+    private const float CellSize = CacheGridSize; // Размер ячейки в метрах
 
     // Метод для получения ключа ячейки
     private static (int cellX, int cellY) GetCellKey(float x, float y)
@@ -86,7 +204,7 @@ public partial class Npc
     }
 
     // Модифицированный метод GetReferenceHeight с интерполяцией
-    internal float GetReferenceHeight(float x, float y)
+    internal float GetReferenceHeight2(float x, float y)
     {
         // 1. Сначала получаем высоту ландшафта
         var landscapeHeight = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
@@ -184,13 +302,12 @@ public partial class Npc
         // Возвращаем первую найденную высоту
         return heights.Values.FirstOrDefault();
     }
-
     #endregion
 
     #region упрощенный метод
 
     // Method to track and store character coordinates
-    public static void TrackAndStoreCharacterCoordinates(Character character)
+    public static void TrackAndStoreCharacterCoordinates1(Character character)
     {
         if (character == null)
             return;
@@ -232,102 +349,7 @@ public partial class Npc
             Logger.Error($"Error storing character coordinates: {ex.Message}");
         }
     }
-
-    //private float GetReferenceHeight(float x, float y)
-    //{
-    //    // Сначала пытаемся получить высоту ландшафта
-    //    var landscapeHeight = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
-
-    //    // Если высота ландшафта равна 0, ищем ближайшего персонажа
-    //    if (landscapeHeight == 0)
-    //    {
-    //        const float searchRadius = 5f;
-    //        var nearbyCharacters = WorldManager.GetAround<Character>(this, searchRadius);
-
-    //        if (nearbyCharacters.Any())
-    //        {
-    //            // Выбираем ближайшего персонажа по горизонтали
-    //            var nearest = nearbyCharacters.OrderBy(c => Vector3.DistanceSquared(new Vector3(x, y, 0), c.Transform.World.Position with { Z = 0 })).First();
-    //            return nearest.Transform.World.Position.Z;
-    //        }
-    //    }
-
-    //    // Возвращаем высоту ландшафта, если она не равна 0, или 0, если ничего не найдено
-    //    return landscapeHeight;
-    //}
-
-    // Modified GetReferenceHeight method
-    //private float GetReferenceHeight(float x, float y)
-    //{
-    //    // First try to get landscape height
-    //    var landscapeHeight = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
-
-    //    // If landscape height is 0, try to get height from database
-    //    if (landscapeHeight == 0)
-    //    {
-    //        try
-    //        {
-    //            using var connection = MySQL.CreateConnection();
-    //            // Find nearest character position in database within 5m radius
-    //            var cmd = new MySqlCommand(
-    //                "SELECT x, y, z FROM height_maps " +
-    //                "WHERE zone_id = @zoneId AND " +
-    //                "POW(x - @x, 2) + POW(y - @y, 2) <= POW(5, 2) " + // 5m radius squared
-    //                "ORDER BY (POW(x - @x, 2) + POW(y - @y, 2)) ASC " + // Order by distance
-    //                "LIMIT 1",
-    //                connection);
-    //            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
-    //            cmd.Parameters.AddWithValue("@x", x);
-    //            cmd.Parameters.AddWithValue("@y", y);
-
-    //            using var reader = cmd.ExecuteReader();
-    //            if (reader.Read())
-    //            {
-    //                var storedX = reader.GetFloat("x");
-    //                var storedY = reader.GetFloat("y");
-    //                var storedZ = reader.GetFloat("z");
-
-    //                // Verify the position is reasonably close
-    //                var distance = MathF.Sqrt(MathF.Pow(storedX - x, 2) + MathF.Pow(storedY - y, 2));
-    //                if (distance <= 5f) // within 5m
-    //                {
-    //                    return storedZ;
-    //                }
-    //            }
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            Logger.Error($"Error retrieving character coordinates: {ex.Message}");
-    //        }
-
-    //        // If no database record found, fall back to checking nearby characters in memory
-    //        const float searchRadius = 5f;
-    //        var nearbyCharacters = WorldManager.GetAround<Character>(this, searchRadius);
-
-    //        if (nearbyCharacters.Any())
-    //        {
-    //            // Track coordinates of nearby characters
-    //            foreach (var character in nearbyCharacters)
-    //            {
-    //                TrackAndStoreCharacterCoordinates(character);
-    //            }
-
-    //            // Get height from nearest character
-    //            var nearest = nearbyCharacters
-    //                .OrderBy(c => Vector3.DistanceSquared(new Vector3(x, y, 0),
-    //                    c.Transform.World.Position with { Z = 0 }))
-    //                .First();
-    //            return nearest.Transform.World.Position.Z;
-    //        }
-    //    }
-
-    //    // Return landscape height if it's not 0, or 0 if nothing found
-    //    return landscapeHeight;
-    //}
-
-
-    // Метод для сохранения координат персонажа
-    public void StoreCharacterHeight(Character character)
+    public void StoreCharacterHeight1(Character character)
     {
         if (character == null) return;
 
@@ -355,21 +377,21 @@ public partial class Npc
     }
 
     // Упрощённый метод получения высоты
-    internal float GetReferenceHeight2(float x, float y)
+    internal float GetReferenceHeight1(float x, float y)
     {
         // 1. Проверяем стандартную высоту
         var height = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
         if (height != 0) return height;
 
         // 2. Проверяем ближайшие точки в базе
-        var dbHeight = GetHeightFromDatabase(x, y);
+        var dbHeight = GetHeightFromDatabase1(x, y);
         if (dbHeight != 0) return dbHeight;
 
         // 3. Проверяем персонажей в памяти
-        return GetHeightFromNearbyCharacters(x, y);
+        return GetHeightFromNearbyCharacters1(x, y);
     }
 
-    private float GetHeightFromDatabase(float x, float y)
+    private float GetHeightFromDatabase1(float x, float y)
     {
         const float searchRadius = 5f; // Ищем в радиусе 5 метров
         const int maxPoints = 4; // Максимум 4 ближайшие точки
@@ -403,7 +425,7 @@ public partial class Npc
                 }
             }
 
-            return CalculateHeightFromPoints(x, y, points);
+            return CalculateHeightFromPoints1(x, y, points);
         }
         catch (Exception ex)
         {
@@ -412,7 +434,7 @@ public partial class Npc
         }
     }
 
-    private float GetHeightFromNearbyCharacters(float x, float y)
+    private float GetHeightFromNearbyCharacters1(float x, float y)
     {
         const float searchRadius = 5f;
         var characters = WorldManager.GetAround<Character>(this, searchRadius)
@@ -422,13 +444,13 @@ public partial class Npc
         // Сохраняем найденные точки
         foreach (var pos in characters)
         {
-            StoreCharacterPosition(pos.X, pos.Y, pos.Z);
+            StoreCharacterPosition1(pos.X, pos.Y, pos.Z);
         }
 
-        return CalculateHeightFromPoints(x, y, characters);
+        return CalculateHeightFromPoints1(x, y, characters);
     }
 
-    private void StoreCharacterPosition(float x, float y, float z)
+    private void StoreCharacterPosition1(float x, float y, float z)
     {
         try
         {
@@ -450,7 +472,7 @@ public partial class Npc
         }
     }
 
-    private float CalculateHeightFromPoints(float x, float y, List<Vector3> points)
+    private float CalculateHeightFromPoints1(float x, float y, List<Vector3> points)
     {
         if (points.Count == 0) return 0;
 
