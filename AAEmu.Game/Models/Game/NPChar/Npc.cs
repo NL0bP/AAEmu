@@ -1235,7 +1235,7 @@ public partial class Npc : Unit
             var referenceHeight = GetReferenceHeight(newX, newY);
             if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
             {
-                newZ = Lerp(newZ, referenceHeight, interpolationCoefficient);
+                newZ = MathUtil.Lerp(newZ, referenceHeight, interpolationCoefficient);
                 currentPosition.Z = newZ;
                 Transform.Local.SetHeight(newZ);
             }
@@ -1295,7 +1295,7 @@ public partial class Npc : Unit
             var referenceHeight = GetReferenceHeight(pos.X, pos.Y);
             if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
             {
-                newZ = Lerp(newZ, referenceHeight, interpolationCoefficient);
+                newZ = MathUtil.Lerp(newZ, referenceHeight, interpolationCoefficient);
                 pos.Z = newZ;
                 Transform.Local.SetHeight(newZ);
             }
@@ -1361,7 +1361,7 @@ public partial class Npc : Unit
             var referenceHeight = GetReferenceHeight(pos.X, pos.Y);
             if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
             {
-                newZ = Lerp(newZ, referenceHeight, interpolationCoefficient);
+                newZ = MathUtil.Lerp(newZ, referenceHeight, interpolationCoefficient);
                 pos.Z = newZ;
                 Transform.Local.SetHeight(newZ);
             }

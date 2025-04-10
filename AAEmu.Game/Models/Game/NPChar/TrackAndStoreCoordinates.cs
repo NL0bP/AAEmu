@@ -6,6 +6,7 @@ using System.Numerics;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Utils;
 
 using MySql.Data.MySqlClient;
 
@@ -13,6 +14,181 @@ namespace AAEmu.Game.Models.Game.NPChar;
 
 public partial class Npc
 {
+    #region метод по квадратам
+    // Добавим в класс Npc
+    private const float CellSize = 3f; // Размер ячейки в метрах
+
+    // Метод для получения ключа ячейки
+    private static (int cellX, int cellY) GetCellKey(float x, float y)
+    {
+        return ((int)(x / CellSize), (int)(y / CellSize));
+    }
+
+    // Метод для сохранения координат персонажа с учетом ячеек
+    public static void TrackCharacterCoordinates(Character character)
+    {
+        if (character == null) return;
+
+        var pos = character.Transform.World.Position;
+        var (cellX, cellY) = GetCellKey(pos.X, pos.Y);
+
+        try
+        {
+            using var connection = MySQL.CreateConnection();
+            // Проверяем существование записи для этой ячейки
+            var checkCmd = new MySqlCommand(
+                "SELECT COUNT(*) FROM height_map_cells WHERE " +
+                "zone_id = @zoneId AND cell_x = @cellX AND cell_y = @cellY",
+                connection);
+            checkCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
+            checkCmd.Parameters.AddWithValue("@cellX", cellX);
+            checkCmd.Parameters.AddWithValue("@cellY", cellY);
+
+            var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
+
+            if (exists)
+            {
+                // Обновляем только если новая Z-координата отличается
+                var updateCmd = new MySqlCommand(
+                    "UPDATE height_map_cells SET " +
+                    "avg_z = (avg_z * point_count + @z) / (point_count + 1), " +
+                    "point_count = point_count + 1, " +
+                    "min_z = LEAST(min_z, @z), " +
+                    "max_z = GREATEST(max_z, @z), " +
+                    "last_update = NOW() " +
+                    "WHERE zone_id = @zoneId AND cell_x = @cellX AND cell_y = @cellY",
+                    connection);
+                updateCmd.Parameters.AddWithValue("@z", pos.Z);
+                updateCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
+                updateCmd.Parameters.AddWithValue("@cellX", cellX);
+                updateCmd.Parameters.AddWithValue("@cellY", cellY);
+                updateCmd.ExecuteNonQuery();
+            }
+            else
+            {
+                // Вставляем новую запись для ячейки
+                var insertCmd = new MySqlCommand(
+                    "INSERT INTO height_map_cells " +
+                    "(zone_id, cell_x, cell_y, avg_z, min_z, max_z, point_count, last_update) " +
+                    "VALUES (@zoneId, @cellX, @cellY, @z, @z, @z, 1, NOW())",
+                    connection);
+                insertCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
+                insertCmd.Parameters.AddWithValue("@cellX", cellX);
+                insertCmd.Parameters.AddWithValue("@cellY", cellY);
+                insertCmd.Parameters.AddWithValue("@z", pos.Z);
+                insertCmd.ExecuteNonQuery();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Ошибка сохранения координат персонажа: {ex.Message}");
+        }
+    }
+
+    // Модифицированный метод GetReferenceHeight с интерполяцией
+    internal float GetReferenceHeight(float x, float y)
+    {
+        // 1. Сначала получаем высоту ландшафта
+        var landscapeHeight = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
+        if (landscapeHeight != 0)
+            return landscapeHeight;
+
+        // 2. Получаем ключи для текущей и соседних ячеек
+        var (centerCellX, centerCellY) = GetCellKey(x, y);
+        try
+        {
+            using var connection = MySQL.CreateConnection();
+            // Запрашиваем данные для 9 ячеек (3x3 сетка)
+            var cmd = new MySqlCommand(
+                "SELECT cell_x, cell_y, avg_z FROM height_map_cells " +
+                "WHERE zone_id = @zoneId AND " +
+                "cell_x BETWEEN @minX AND @maxX AND " +
+                "cell_y BETWEEN @minY AND @maxY",
+                connection);
+            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
+            cmd.Parameters.AddWithValue("@minX", centerCellX - 1);
+            cmd.Parameters.AddWithValue("@maxX", centerCellX + 1);
+            cmd.Parameters.AddWithValue("@minY", centerCellY - 1);
+            cmd.Parameters.AddWithValue("@maxY", centerCellY + 1);
+
+            var heights = new Dictionary<(int x, int y), float>();
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    heights[(reader.GetInt32("cell_x"), reader.GetInt32("cell_y"))] =
+                        reader.GetFloat("avg_z");
+                }
+            }
+
+            // Если нашли данные для ячеек, выполняем билинейную интерполяцию
+            if (heights.Count > 0)
+            {
+                return BilinearInterpolation(x, y, heights, centerCellX, centerCellY);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Ошибка получения высот из БД: {ex.Message}");
+        }
+
+        // 3. Fallback: проверяем персонажей в памяти
+        const float searchRadius = 5f;
+        var nearbyCharacters = WorldManager.GetAround<Character>(this, searchRadius);
+        if (nearbyCharacters.Any())
+        {
+            foreach (var character in nearbyCharacters)
+            {
+                TrackCharacterCoordinates(character);
+            }
+
+            // Берем высоту ближайшего персонажа
+            var nearest = nearbyCharacters
+                .OrderBy(c => MathUtil.CalculateDistance(c.Transform.World.Position, new Vector3(x, y, 0)))
+                .First();
+            return nearest.Transform.World.Position.Z;
+        }
+
+        return 0f; // Если ничего не найдено
+    }
+
+    // Билинейная интерполяция для высот
+    private float BilinearInterpolation(float x, float y, Dictionary<(int x, int y), float> heights, int centerCellX, int centerCellY)
+    {
+        // Координаты относительно центральной ячейки
+        float localX = (x - centerCellX * CellSize) / CellSize;
+        float localY = (y - centerCellY * CellSize) / CellSize;
+
+        // Получаем высоты для 4 ближайших ячеек
+        float? z00 = heights.TryGetValue((centerCellX, centerCellY), out var val00) ? val00 : (float?)null;
+        float? z01 = heights.TryGetValue((centerCellX, centerCellY + 1), out var val01) ? val01 : (float?)null;
+        float? z10 = heights.TryGetValue((centerCellX + 1, centerCellY), out var val10) ? val10 : (float?)null;
+        float? z11 = heights.TryGetValue((centerCellX + 1, centerCellY + 1), out var val11) ? val11 : (float?)null;
+
+        // Если есть все 4 точки, делаем полную интерполяцию
+        if (z00.HasValue && z01.HasValue && z10.HasValue && z11.HasValue)
+        {
+            return MathUtil.BilinearInterpolation(z00.Value, z10.Value, z01.Value, z11.Value, localX, localY);
+        }
+
+        // Если есть только центральная точка, возвращаем её
+        if (z00.HasValue) return z00.Value;
+
+        // Если есть соседние точки, делаем частичную интерполяцию
+        if (z01.HasValue && z10.HasValue)
+        {
+            //return MathUtil.Lerp(MathUtil.Lerp(z10.Value, z01.Value, localY), 0.5f);
+            return MathUtil.Lerp(z10.Value, z01.Value, localY);
+        }
+
+        // Возвращаем первую найденную высоту
+        return heights.Values.FirstOrDefault();
+    }
+
+    #endregion
+
+    #region упрощенный метод
+
     // Method to track and store character coordinates
     public static void TrackAndStoreCharacterCoordinates(Character character)
     {
@@ -55,11 +231,6 @@ public partial class Npc
         {
             Logger.Error($"Error storing character coordinates: {ex.Message}");
         }
-    }
-
-    internal float Lerp(float start, float end, float t)
-    {
-        return start + (end - start) * t;
     }
 
     //private float GetReferenceHeight(float x, float y)
@@ -184,7 +355,7 @@ public partial class Npc
     }
 
     // Упрощённый метод получения высоты
-    internal float GetReferenceHeight(float x, float y)
+    internal float GetReferenceHeight2(float x, float y)
     {
         // 1. Проверяем стандартную высоту
         var height = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
@@ -303,4 +474,5 @@ public partial class Npc
 
         return sum / totalWeight;
     }
+    #endregion
 }

@@ -77,7 +77,7 @@ public abstract class BaseCombatBehavior : Behavior
             var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
             if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < Npc.HeightTolerance)
             {
-                newZ = Ai.Owner.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
+                newZ = MathUtil.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
                 Ai.Owner.Transform.Local.SetHeight(newZ);
             }
             else
@@ -131,7 +131,7 @@ public abstract class BaseCombatBehavior : Behavior
                         var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
                         if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < Npc.HeightTolerance)
                         {
-                            newZ = Ai.Owner.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
+                            newZ = MathUtil.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
                             Ai.Owner.Transform.Local.SetHeight(newZ);
                         }
                         else

@@ -182,7 +182,7 @@ public class CSMoveUnitPacket : GamePacket
                         RemoveEffects(player, _moveType);
 
                         // TODO: запишем в таблицу координаты игрока, чтобы потом их использовать
-                        Npc.TrackAndStoreCharacterCoordinates(player);
+                        Npc.TrackCharacterCoordinates(player);
 
                         if (player.IsRiding)
                         {

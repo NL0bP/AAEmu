@@ -121,7 +121,7 @@ public class MathUtil
 
         if (fovScale <= 0.0)
             return false; // if it's 0 or below, it's always false
-        
+
         var degree = ClampDegAngle(CalculateAngleFrom(obj1, obj2));
         return degree >= (-90.0 * fovScale) && degree <= (90.0 * fovScale);
     }
@@ -448,5 +448,17 @@ public class MathUtil
         while (angle < -180.0)
             angle += 360.0;
         return angle;
+    }
+
+    internal static float Lerp(float start, float end, float t)
+    {
+        return start + (end - start) * Math.Clamp(t, 0, 1);
+    }
+
+    public static float BilinearInterpolation(float q11, float q21, float q12, float q22, float x, float y)
+    {
+        float r1 = Lerp(q11, q21, x);
+        float r2 = Lerp(q12, q22, x);
+        return Lerp(r1, r2, y);
     }
 }
