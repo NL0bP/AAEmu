@@ -595,6 +595,10 @@ public class Unit : BaseUnit, IUnit
     {
         AppConfiguration.Instance.World.GeoDataMode = value;
     }
+    public void SetSaveGeoDataMode(bool value)
+    {
+        AppConfiguration.Instance.World.SaveGeoDataMode = value;
+    }
     public void SetGodMode(bool value)
     {
         AppConfiguration.Instance.World.GodMode = value;

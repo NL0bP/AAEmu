@@ -1227,30 +1227,18 @@ public partial class Npc : Unit
 
         var travelDistance = Math.Min(targetDistance, distance);
         var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDistance, targetDistance, currentPosition, other);
-        Transform.Local.SetPosition(newX, newY, newZ);
 
         if (!CanFly)
         {
-            // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
             var referenceHeight = GetReferenceHeight(newX, newY);
-            if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
-            {
-                newZ = MathUtil.Lerp(newZ, referenceHeight, interpolationCoefficient);
-                currentPosition.Z = newZ;
-                Transform.Local.SetHeight(newZ);
-            }
-            else
+            if (referenceHeight != 0)
             {
                 currentPosition.Z = referenceHeight;
-                Transform.Local.SetHeight(referenceHeight);
+                newZ = referenceHeight;
             }
         }
-        
-        if (currentPosition.Z == 0f)
-        {
-            currentPosition.Z = Spawner.Position.Z;
-            Transform.Local.SetHeight(Spawner.Position.Z);
-        }
+
+        Transform.Local.SetPosition(newX, newY, newZ);
 
         var angle = MathUtil.CalculateAngleFrom(currentPosition, other);
         var (velX, velY) = MathUtil.AddDistanceToFront(4000, 0, 0, (float)angle.DegToRad());
@@ -1290,26 +1278,12 @@ public partial class Npc : Unit
         var (rx, ry, rz) = Transform.Local.ToRollPitchYawSBytesMovement();
         if (!CanFly)
         {
-            var newZ = pos.Z;
-            // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
             var referenceHeight = GetReferenceHeight(pos.X, pos.Y);
-            if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
-            {
-                newZ = MathUtil.Lerp(newZ, referenceHeight, interpolationCoefficient);
-                pos.Z = newZ;
-                Transform.Local.SetHeight(newZ);
-            }
-            else
+            if (referenceHeight != 0)
             {
                 pos.Z = referenceHeight;
                 Transform.Local.SetHeight(referenceHeight);
             }
-        }
-
-        if (pos.Z == 0f)
-        {
-            pos.Z = Spawner.Position.Z;
-            Transform.Local.SetHeight(Spawner.Position.Z);
         }
 
         // Формирование пакета движения
@@ -1356,26 +1330,12 @@ public partial class Npc : Unit
         var rollPitchYaw = Transform.Local.ToRollPitchYawSBytesMovement();
         if (!CanFly)
         {
-            var newZ = pos.Z;
-            // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
             var referenceHeight = GetReferenceHeight(pos.X, pos.Y);
-            if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < HeightTolerance)
-            {
-                newZ = MathUtil.Lerp(newZ, referenceHeight, interpolationCoefficient);
-                pos.Z = newZ;
-                Transform.Local.SetHeight(newZ);
-            }
-            else
+            if (referenceHeight != 0)
             {
                 pos.Z = referenceHeight;
                 Transform.Local.SetHeight(referenceHeight);
             }
-        }
-        
-        if (pos.Z == 0f)
-        {
-            pos.Z = Spawner.Position.Z;
-            Transform.Local.SetHeight(Spawner.Position.Z);
         }
 
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);

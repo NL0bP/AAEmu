@@ -182,7 +182,14 @@ public class CSMoveUnitPacket : GamePacket
                         RemoveEffects(player, _moveType);
 
                         // TODO: запишем в таблицу координаты игрока, чтобы потом их использовать
-                        Npc.TrackCharacterCoordinates(player);
+                        try
+                        {
+                            Npc.TrackCharacterCoordinates(character);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Failed to update height map in database");
+                        }
 
                         if (player.IsRiding)
                         {

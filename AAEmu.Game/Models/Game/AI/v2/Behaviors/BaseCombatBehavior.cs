@@ -70,26 +70,20 @@ public abstract class BaseCombatBehavior : Behavior
         var currentPosition = new Vector3(Ai.Owner.Transform.Local.Position.X, Ai.Owner.Transform.Local.Position.Y, Ai.Owner.Transform.Local.Position.Z);
         // TODO взять точку к которой движемся
         var targetPosition = new Vector3(target.Transform.Local.Position.X, target.Transform.Local.Position.Y, target.Transform.Local.Position.Z);
-        var newZ = targetPosition.Z;
         if (!Ai.Owner.CanFly)
         {
-            // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
             var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
-            if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < Npc.HeightTolerance)
-            {
-                newZ = MathUtil.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
-                Ai.Owner.Transform.Local.SetHeight(newZ);
-            }
-            else
+            if (referenceHeight != 0)
             {
                 targetPosition.Z = referenceHeight;
                 Ai.Owner.Transform.Local.SetHeight(referenceHeight);
             }
         }
 
-        if (targetPosition.Z == 0f)
+        if (targetPosition.Z == 0f || currentPosition.Z == 0f)
         {
             targetPosition.Z = Ai.Owner.Spawner.Position.Z;
+            currentPosition.Z = Ai.Owner.Spawner.Position.Z;
             Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Spawner.Position.Z);
         }
 
@@ -124,26 +118,20 @@ public abstract class BaseCombatBehavior : Behavior
                 {
                     // TODO взять точку к которой движемся
                     targetPosition = new Vector3(Ai.PathNode.Position.X, Ai.PathNode.Position.Y, Ai.PathNode.Position.Z);
-                    newZ = targetPosition.Z;
                     if (!Ai.Owner.CanFly)
                     {
-                        // Используем высоту ландшафта, иначе высоту ближайшего персонажа, если он найден
                         var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
-                        if (referenceHeight != 0 && Math.Abs(newZ - referenceHeight) < Npc.HeightTolerance)
-                        {
-                            newZ = MathUtil.Lerp(newZ, referenceHeight, Npc.interpolationCoefficient);
-                            Ai.Owner.Transform.Local.SetHeight(newZ);
-                        }
-                        else
+                        if (referenceHeight != 0)
                         {
                             targetPosition.Z = referenceHeight;
                             Ai.Owner.Transform.Local.SetHeight(referenceHeight);
                         }
                     }
 
-                    if (targetPosition.Z == 0f)
+                    if (targetPosition.Z == 0f || currentPosition.Z == 0f)
                     {
                         targetPosition.Z = Ai.Owner.Spawner.Position.Z;
+                        currentPosition.Z = Ai.Owner.Spawner.Position.Z;
                         Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Spawner.Position.Z);
                     }
 

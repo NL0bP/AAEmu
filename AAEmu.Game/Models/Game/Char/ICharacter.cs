@@ -41,4 +41,5 @@ public interface ICharacter : IUnit
     public void SetLogoutMessage(string value);
     public void SetMotdMessage(string value);
     public void SetGeoDataMode(bool value);
+    public void SetSaveGeoDataMode(bool value);
 }

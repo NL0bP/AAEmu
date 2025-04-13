@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
 
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Utils;
 
 using MySql.Data.MySqlClient;
@@ -15,486 +18,411 @@ namespace AAEmu.Game.Models.Game.NPChar;
 
 public partial class Npc
 {
-    #region дополнительное кэширование данных
-    // Кэш для хранения результатов запросов высот
-    private static ConcurrentDictionary<(uint zoneId, int gridX, int gridY), CachedHeight> HeightCache = new();
+    #region Height Caching System
 
-    // Размер сетки для кэширования (5x5 метров)
-    private const float CacheGridSize = 5f; // Размер ячейки в метрах
+    private const float CacheGridSize = 4f;
+    private const int CacheCleanupIntervalMinutes = 1;
+    private const int CacheEntryLifetimeMinutes = 5;
+    private const float NearbyCharactersSearchRadius = 4f;
+    private const float NearbyNpcSearchRadius = 15f;
+    private const float Tolerance = 1f; // порог допуска для корректировки высоты
+    private const float FloorThreshold = 5.6f;
 
-    private class CachedHeight
+    private static readonly ConcurrentDictionary<(uint ZoneId, int GridX, int GridY), CachedHeight> HeightCache = new();
+    private static readonly Lazy<Timer> CacheCleanupTimer = new(() => new Timer(CleanupCache, null, TimeSpan.FromMinutes(CacheCleanupIntervalMinutes), TimeSpan.FromMinutes(CacheCleanupIntervalMinutes)));
+
+    private sealed class CachedHeight
     {
-        public float Height { get; set; }
+        public float Height { get; }
+        public float HeightMin { get; }
+        public float HeightMax { get; }
+        public DateTime LastAccessTime { get; private set; }
+
+        public CachedHeight(float height)
+        {
+            Height = height;
+            LastAccessTime = DateTime.UtcNow;
+        }
+
+        public CachedHeight(float height, float heightMin, float heightMax)
+        {
+            Height = height;
+            HeightMin = heightMin;
+            HeightMax = heightMax;
+            LastAccessTime = DateTime.UtcNow;
+        }
     }
 
-    // Метод для получения высоты с кэшированием
+    static Npc() => _ = CacheCleanupTimer.Value;
+
+    #endregion
+
+    #region Public API
+
     internal float GetReferenceHeight(float x, float y)
     {
-        var gridKey = GetCacheGridKey(x, y);
+        var cacheKey = GetCacheKey(x, y);
+        if (TryGetFromCacheMultiple(cacheKey, x, y, out var cachedHeight))
+            return cachedHeight;
 
-        // 1.Пытаемся получить данные из кэша
-        if (HeightCache.TryGetValue((Transform.ZoneId, gridKey.x, gridKey.y), out var cached))
-            return cached.Height;
-
-        // 2. Если нет в кэше, вычисляем и сохраняем
-        var height = CalculateActualHeight(x, y);
-
-        HeightCache[(Transform.ZoneId, gridKey.x, gridKey.y)] = new CachedHeight
-        {
-            Height = height,
-        };
-
-        return height;
+        return CalculateAndCacheHeight(x, y, cacheKey);
     }
 
-    // Вычисление реальной высоты (без кэша)
-    private float CalculateActualHeight(float x, float y)
-    {
-        // 1. Проверяем стандартную высоту
-        var height = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
-        if (height != 0) return height;
-
-        // 2. Проверяем ближайшие точки в базе
-        var dbHeight = GetHeightFromDatabase(x, y);
-        if (dbHeight != 0) return dbHeight;
-
-        // 3. Проверяем персонажей в памяти
-        return GetHeightFromNearbyCharacters(x, y);
-    }
-
-    // Получение ключа для сетки кэширования
-    private static (int x, int y) GetCacheGridKey(float x, float y)
-    {
-        return ((int)(x / CacheGridSize), (int)(y / CacheGridSize));
-    }
-
-    private float GetHeightFromDatabase(float x, float y)
-    {
-        var (centerCellX, centerCellY) = GetCellKey(x, y);
-        try
-        {
-            using var connection = MySQL.CreateConnection();
-            // Запрашиваем данные для 9 ячеек (3x3 сетка)
-            var cmd = new MySqlCommand(
-                "SELECT cell_x, cell_y, avg_z FROM height_map_cells " +
-                "WHERE zone_id = @zoneId AND " +
-                "cell_x BETWEEN @minX AND @maxX AND " +
-                "cell_y BETWEEN @minY AND @maxY",
-                connection);
-            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
-            cmd.Parameters.AddWithValue("@minX", centerCellX - 1);
-            cmd.Parameters.AddWithValue("@maxX", centerCellX + 1);
-            cmd.Parameters.AddWithValue("@minY", centerCellY - 1);
-            cmd.Parameters.AddWithValue("@maxY", centerCellY + 1);
-
-            var heights = new Dictionary<(int x, int y), float>();
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    heights[(reader.GetInt32("cell_x"), reader.GetInt32("cell_y"))] = reader.GetFloat("avg_z");
-                }
-            }
-
-            // Если нашли данные для ячеек, выполняем билинейную интерполяцию
-            if (heights.Count > 0)
-            {
-                return BilinearInterpolation(x, y, heights, centerCellX, centerCellY);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Ошибка получения высот из БД: {ex.Message}");
-        }
-
-        return 0;
-    }
-    
-    private float GetHeightFromNearbyCharacters(float x, float y)
-    {
-        const float searchRadius = 5f;
-        var nearbyCharacters = WorldManager.GetAround<Character>(this, searchRadius);
-        if (nearbyCharacters.Any())
-        {
-            foreach (var character in nearbyCharacters)
-            {
-                TrackCharacterCoordinates(character);
-            }
-
-            // Берем высоту ближайшего персонажа
-            var nearest = nearbyCharacters
-                .OrderBy(c => MathUtil.CalculateDistance(c.Transform.World.Position, new Vector3(x, y, 0)))
-                .First();
-            return nearest.Transform.World.Position.Z;
-        }
-    
-        return 0f; // Если ничего не найдено
-    }
     #endregion
 
-    #region метод по квадратам
-    // Размер сетки для кэширования (5x5 метров)
-    private const float CellSize = CacheGridSize; // Размер ячейки в метрах
+    #region Private Implementation
 
-    // Метод для получения ключа ячейки
-    private static (int cellX, int cellY) GetCellKey(float x, float y)
-    {
-        return ((int)(x / CellSize), (int)(y / CellSize));
-    }
-
-    // Метод для сохранения координат персонажа с учетом ячеек
-    public static void TrackCharacterCoordinates(Character character)
-    {
-        if (character == null) return;
-
-        var pos = character.Transform.World.Position;
-        var (cellX, cellY) = GetCellKey(pos.X, pos.Y);
-
-        try
-        {
-            using var connection = MySQL.CreateConnection();
-            // Проверяем существование записи для этой ячейки
-            var checkCmd = new MySqlCommand(
-                "SELECT COUNT(*) FROM height_map_cells WHERE " +
-                "zone_id = @zoneId AND cell_x = @cellX AND cell_y = @cellY",
-                connection);
-            checkCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-            checkCmd.Parameters.AddWithValue("@cellX", cellX);
-            checkCmd.Parameters.AddWithValue("@cellY", cellY);
-
-            var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
-
-            if (exists)
-            {
-                // Обновляем только если новая Z-координата отличается
-                var updateCmd = new MySqlCommand(
-                    "UPDATE height_map_cells SET " +
-                    "avg_z = (avg_z * point_count + @z) / (point_count + 1), " +
-                    "point_count = point_count + 1, " +
-                    "min_z = LEAST(min_z, @z), " +
-                    "max_z = GREATEST(max_z, @z), " +
-                    "last_update = NOW() " +
-                    "WHERE zone_id = @zoneId AND cell_x = @cellX AND cell_y = @cellY",
-                    connection);
-                updateCmd.Parameters.AddWithValue("@z", pos.Z);
-                updateCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-                updateCmd.Parameters.AddWithValue("@cellX", cellX);
-                updateCmd.Parameters.AddWithValue("@cellY", cellY);
-                updateCmd.ExecuteNonQuery();
-            }
-            else
-            {
-                // Вставляем новую запись для ячейки
-                var insertCmd = new MySqlCommand(
-                    "INSERT INTO height_map_cells " +
-                    "(zone_id, cell_x, cell_y, avg_z, min_z, max_z, point_count, last_update) " +
-                    "VALUES (@zoneId, @cellX, @cellY, @z, @z, @z, 1, NOW())",
-                    connection);
-                insertCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-                insertCmd.Parameters.AddWithValue("@cellX", cellX);
-                insertCmd.Parameters.AddWithValue("@cellY", cellY);
-                insertCmd.Parameters.AddWithValue("@z", pos.Z);
-                insertCmd.ExecuteNonQuery();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Ошибка сохранения координат персонажа: {ex.Message}");
-        }
-    }
-
-    // Модифицированный метод GetReferenceHeight с интерполяцией
-    internal float GetReferenceHeight2(float x, float y)
-    {
-        // 1. Сначала получаем высоту ландшафта
-        var landscapeHeight = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
-        if (landscapeHeight != 0)
-            return landscapeHeight;
-
-        // 2. Получаем ключи для текущей и соседних ячеек
-        var (centerCellX, centerCellY) = GetCellKey(x, y);
-        try
-        {
-            using var connection = MySQL.CreateConnection();
-            // Запрашиваем данные для 9 ячеек (3x3 сетка)
-            var cmd = new MySqlCommand(
-                "SELECT cell_x, cell_y, avg_z FROM height_map_cells " +
-                "WHERE zone_id = @zoneId AND " +
-                "cell_x BETWEEN @minX AND @maxX AND " +
-                "cell_y BETWEEN @minY AND @maxY",
-                connection);
-            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
-            cmd.Parameters.AddWithValue("@minX", centerCellX - 1);
-            cmd.Parameters.AddWithValue("@maxX", centerCellX + 1);
-            cmd.Parameters.AddWithValue("@minY", centerCellY - 1);
-            cmd.Parameters.AddWithValue("@maxY", centerCellY + 1);
-
-            var heights = new Dictionary<(int x, int y), float>();
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    heights[(reader.GetInt32("cell_x"), reader.GetInt32("cell_y"))] =
-                        reader.GetFloat("avg_z");
-                }
-            }
-
-            // Если нашли данные для ячеек, выполняем билинейную интерполяцию
-            if (heights.Count > 0)
-            {
-                return BilinearInterpolation(x, y, heights, centerCellX, centerCellY);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Ошибка получения высот из БД: {ex.Message}");
-        }
-
-        // 3. Fallback: проверяем персонажей в памяти
-        const float searchRadius = 5f;
-        var nearbyCharacters = WorldManager.GetAround<Character>(this, searchRadius);
-        if (nearbyCharacters.Any())
-        {
-            foreach (var character in nearbyCharacters)
-            {
-                TrackCharacterCoordinates(character);
-            }
-
-            // Берем высоту ближайшего персонажа
-            var nearest = nearbyCharacters
-                .OrderBy(c => MathUtil.CalculateDistance(c.Transform.World.Position, new Vector3(x, y, 0)))
-                .First();
-            return nearest.Transform.World.Position.Z;
-        }
-
-        return 0f; // Если ничего не найдено
-    }
-
-    // Билинейная интерполяция для высот
-    private float BilinearInterpolation(float x, float y, Dictionary<(int x, int y), float> heights, int centerCellX, int centerCellY)
-    {
-        // Координаты относительно центральной ячейки
-        float localX = (x - centerCellX * CellSize) / CellSize;
-        float localY = (y - centerCellY * CellSize) / CellSize;
-
-        // Получаем высоты для 4 ближайших ячеек
-        float? z00 = heights.TryGetValue((centerCellX, centerCellY), out var val00) ? val00 : (float?)null;
-        float? z01 = heights.TryGetValue((centerCellX, centerCellY + 1), out var val01) ? val01 : (float?)null;
-        float? z10 = heights.TryGetValue((centerCellX + 1, centerCellY), out var val10) ? val10 : (float?)null;
-        float? z11 = heights.TryGetValue((centerCellX + 1, centerCellY + 1), out var val11) ? val11 : (float?)null;
-
-        // Если есть все 4 точки, делаем полную интерполяцию
-        if (z00.HasValue && z01.HasValue && z10.HasValue && z11.HasValue)
-        {
-            return MathUtil.BilinearInterpolation(z00.Value, z10.Value, z01.Value, z11.Value, localX, localY);
-        }
-
-        // Если есть только центральная точка, возвращаем её
-        if (z00.HasValue) return z00.Value;
-
-        // Если есть соседние точки, делаем частичную интерполяцию
-        if (z01.HasValue && z10.HasValue)
-        {
-            //return MathUtil.Lerp(MathUtil.Lerp(z10.Value, z01.Value, localY), 0.5f);
-            return MathUtil.Lerp(z10.Value, z01.Value, localY);
-        }
-
-        // Возвращаем первую найденную высоту
-        return heights.Values.FirstOrDefault();
-    }
-    #endregion
-
-    #region упрощенный метод
-
-    // Method to track and store character coordinates
-    public static void TrackAndStoreCharacterCoordinates1(Character character)
+    internal static void TrackCharacterCoordinates(Character character)
     {
         if (character == null)
             return;
-
-        var position = character.Transform.World.Position;
-
-        try
-        {
-            using var connection = MySQL.CreateConnection();
-            // Check if record exists
-            var checkCmd = new MySqlCommand("SELECT COUNT(*) FROM height_maps WHERE zone_id = @zoneId", connection);
-            checkCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-
-            var exists = Convert.ToInt32(checkCmd.ExecuteScalar()) > 0;
-
-            if (exists)
-            {
-                // Update existing record
-                var updateCmd = new MySqlCommand("UPDATE height_maps SET x = @x, y = @y, z = @z, timestamp = NOW() WHERE zone_id = @zoneId", connection);
-                updateCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-                updateCmd.Parameters.AddWithValue("@x", position.X);
-                updateCmd.Parameters.AddWithValue("@y", position.Y);
-                updateCmd.Parameters.AddWithValue("@z", position.Z);
-                updateCmd.ExecuteNonQuery();
-            }
-            else
-            {
-                // Insert new record
-                var insertCmd = new MySqlCommand("INSERT INTO height_maps (zone_id, x, y, z, timestamp) VALUES (@zoneId, @x, @y, @z, NOW())", connection);
-                insertCmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-                insertCmd.Parameters.AddWithValue("@x", position.X);
-                insertCmd.Parameters.AddWithValue("@y", position.Y);
-                insertCmd.Parameters.AddWithValue("@z", position.Z);
-                insertCmd.ExecuteNonQuery();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Error storing character coordinates: {ex.Message}");
-        }
-    }
-    public void StoreCharacterHeight1(Character character)
-    {
-        if (character == null) return;
+        if (AppConfiguration.Instance.World.SaveGeoDataMode == false)
+            return;
+        if (character.CurrentTarget == null || character.CurrentTarget == character || character.CurrentTarget is Character)
+            return;
 
         var pos = character.Transform.World.Position;
+        var npcs = WorldManager.GetAround<Npc>(character, NearbyNpcSearchRadius);
+        if (!npcs.Any())
+            return;
 
-        try
+        foreach (var npc in npcs)
         {
-            using var connection = MySQL.CreateConnection();
-            // Просто вставляем новую точку (без ячеек и агрегации)
-            var cmd = new MySqlCommand(
-                "INSERT INTO height_maps " +
-                "(zone_id, x, y, z, timestamp) " +
-                "VALUES (@zoneId, @x, @y, @z, NOW())",
-                connection);
-            cmd.Parameters.AddWithValue("@zoneId", character.Transform.ZoneId);
-            cmd.Parameters.AddWithValue("@x", pos.X);
-            cmd.Parameters.AddWithValue("@y", pos.Y);
-            cmd.Parameters.AddWithValue("@z", pos.Z);
-            cmd.ExecuteNonQuery();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Ошибка сохранения высоты персонажа: {ex.Message}");
-        }
-    }
+            if (character.CurrentTarget is not Npc n || n.ObjId != npc.ObjId)
+                continue;
 
-    // Упрощённый метод получения высоты
-    internal float GetReferenceHeight1(float x, float y)
-    {
-        // 1. Проверяем стандартную высоту
-        var height = WorldManager.Instance.GetHeight(Transform.ZoneId, x, y);
-        if (height != 0) return height;
+            var cacheKey = GetCacheKey(pos.X, pos.Y, character.Transform.ZoneId);
 
-        // 2. Проверяем ближайшие точки в базе
-        var dbHeight = GetHeightFromDatabase1(x, y);
-        if (dbHeight != 0) return dbHeight;
+            var candidate = npc.AdjustNpcFloor(pos.Z);
 
-        // 3. Проверяем персонажей в памяти
-        return GetHeightFromNearbyCharacters1(x, y);
-    }
+            UpdateHeightMapInDatabase(character.Transform.ZoneId, cacheKey.GridX, cacheKey.GridY, candidate);
+            HeightCacheAddOrUpdate(pos.Z, cacheKey);
 
-    private float GetHeightFromDatabase1(float x, float y)
-    {
-        const float searchRadius = 5f; // Ищем в радиусе 5 метров
-        const int maxPoints = 4; // Максимум 4 ближайшие точки
+            npc.Transform.Local.Position = npc.Transform.Local.Position with { Z = candidate };
+            npc.Transform.Local.SetPosition(npc.Transform.Local.Position.X, npc.Transform.Local.Position.Y, candidate);
 
-        try
-        {
-            using var connection = MySQL.CreateConnection();
-            var cmd = new MySqlCommand(
-                "SELECT x, y, z FROM height_maps " +
-                "WHERE zone_id = @zoneId AND " +
-                "POW(x - @x, 2) + POW(y - @y, 2) <= @radiusSq " +
-                "ORDER BY (POW(x - @x, 2) + POW(y - @y, 2)) ASC " +
-                "LIMIT @limit",
-                connection);
-            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
-            cmd.Parameters.AddWithValue("@x", x);
-            cmd.Parameters.AddWithValue("@y", y);
-            cmd.Parameters.AddWithValue("@radiusSq", searchRadius * searchRadius);
-            cmd.Parameters.AddWithValue("@limit", maxPoints);
-
-            var points = new List<Vector3>();
-            using (var reader = cmd.ExecuteReader())
-            {
-                while (reader.Read())
-                {
-                    points.Add(new Vector3(
-                        reader.GetFloat("x"),
-                        reader.GetFloat("y"),
-                        reader.GetFloat("z")
-                    ));
-                }
-            }
-
-            return CalculateHeightFromPoints1(x, y, points);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Ошибка чтения высот из БД: {ex.Message}");
-            return 0;
+            character.SendMessage(ChatType.System, "Записываем гео-данные! Не забудьте отключить запись!", Color.White);
+            //character.SendMessage(ChatType.System, "Let's record the geo-data! Don't forget to turn it off!", Color.White);
         }
     }
 
-    private float GetHeightFromNearbyCharacters1(float x, float y)
+    private static (uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null)
     {
-        const float searchRadius = 5f;
-        var characters = WorldManager.GetAround<Character>(this, searchRadius)
-            .Select(c => c.Transform.World.Position)
-            .ToList();
-
-        // Сохраняем найденные точки
-        foreach (var pos in characters)
-        {
-            StoreCharacterPosition1(pos.X, pos.Y, pos.Z);
-        }
-
-        return CalculateHeightFromPoints1(x, y, characters);
+        var gridX = (int)Math.Floor(x / CacheGridSize);
+        var gridY = (int)Math.Floor(y / CacheGridSize);
+        return (zoneId ?? WorldManager.Instance.GetZoneId(0, x, y), gridX, gridY);
     }
 
-    private void StoreCharacterPosition1(float x, float y, float z)
+    private static bool TryGetFromCacheMultiple((uint ZoneId, int GridX, int GridY) centerKey, float x, float y, out float height)
     {
-        try
+        var zoneId = centerKey.ZoneId;
+        var gridX = centerKey.GridX;
+        var gridY = centerKey.GridY;
+
+        var has00 = HeightCache.TryGetValue((zoneId, gridX, gridY), out var cell00);
+        var has10 = HeightCache.TryGetValue((zoneId, gridX + 1, gridY), out var cell10);
+        var has01 = HeightCache.TryGetValue((zoneId, gridX, gridY + 1), out var cell01);
+        var has11 = HeightCache.TryGetValue((zoneId, gridX + 1, gridY + 1), out var cell11);
+
+        if (!has00 && !has10 && !has01 && !has11)
         {
-            using var connection = MySQL.CreateConnection();
-            var cmd = new MySqlCommand(
-                "INSERT INTO height_maps " +
-                "(zone_id, x, y, z, timestamp) " +
-                "VALUES (@zoneId, @x, @y, @z, NOW())",
-                connection);
-            cmd.Parameters.AddWithValue("@zoneId", Transform.ZoneId);
-            cmd.Parameters.AddWithValue("@x", x);
-            cmd.Parameters.AddWithValue("@y", y);
-            cmd.Parameters.AddWithValue("@z", z);
-            cmd.ExecuteNonQuery();
+            height = 0;
+            return false;
         }
-        catch (Exception ex)
+
+        if (has00 && has10 && has01 && has11)
         {
-            Logger.Error($"Ошибка сохранения позиции: {ex.Message}");
+            var localX = (x - gridX * CacheGridSize) / CacheGridSize;
+            var localY = (y - gridY * CacheGridSize) / CacheGridSize;
+            height = MathUtil.BilinearInterpolation(cell00.Height, cell10.Height, cell01.Height, cell11.Height, localX, localY);
+            return true;
         }
-    }
 
-    private float CalculateHeightFromPoints1(float x, float y, List<Vector3> points)
-    {
-        if (points.Count == 0) return 0;
-
-        // Для 1 точки просто возвращаем её высоту
-        if (points.Count == 1) return points[0].Z;
-
-        // Для нескольких точек - взвешенное среднее по расстоянию
         float sum = 0;
-        float totalWeight = 0;
+        var count = 0;
+        if (has00) { sum += cell00.Height; count++; }
+        if (has10) { sum += cell10.Height; count++; }
+        if (has01) { sum += cell01.Height; count++; }
+        if (has11) { sum += cell11.Height; count++; }
 
-        foreach (var point in points)
+        height = sum / count;
+        return true;
+    }
+
+    private float GetHeightFromNearbyCharacters(float x, float y, uint zoneId)
+    {
+        var nearbyCharacters = WorldManager.GetAround<Character>(this, NearbyCharactersSearchRadius);
+        if (!nearbyCharacters.Any())
+            return 0f;
+
+        foreach (var character in nearbyCharacters)
         {
-            var dx = point.X - x;
-            var dy = point.Y - y;
-            var distanceSq = dx * dx + dy * dy;
-            var weight = 1.0f / (distanceSq + 0.0001f); // Добавляем малую величину чтобы избежать деления на 0
-
-            sum += point.Z * weight;
-            totalWeight += weight;
+            var pos = character.Transform.World.Position;
+            var key = GetCacheKey(pos.X, pos.Y, character.Transform.ZoneId);
+            UpdateHeightMapInDatabase(character.Transform.ZoneId, key.GridX, key.GridY, pos.Z);
         }
 
-        return sum / totalWeight;
+        return nearbyCharacters
+            .Select(c => c.Transform.World.Position)
+            .OrderBy(p => MathUtil.CalculateDistance(p, new Vector3(x, y, 0)))
+            .First().Z;
+    }
+
+    private float CalculateAndCacheHeight(float x, float y, (uint ZoneId, int GridX, int GridY) cacheKey)
+    {
+        var pos = Transform.World.Position;
+
+        // 1. Попытка получить высоту от ближайших персонажей
+        float candidate;
+        //candidate = GetHeightFromNearbyCharacters(x, y, cacheKey.ZoneId);
+        //if (candidate != 0f)
+        //{
+        //    candidate = AdjustNpcFloor(candidate);
+        //    HeightCacheAddOrUpdate(candidate, cacheKey);
+        //    return candidate;
+        //}
+
+        // 2. Получение высоты из базы данных
+        var heights = GetHeightsFromDatabase(x, y, cacheKey.ZoneId);
+        if (heights.Item1 != 0/* && Math.Abs(pos.Z - heights.Item1) <= Tolerance*/)
+        {
+            candidate = AdjustNpcFloor(heights.Item1, heights.Item2, heights.Item3);
+            HeightCacheAddOrUpdate(candidate, cacheKey);
+            return candidate;
+        }
+
+        // 3. Получение высоты из WorldManager
+        candidate = WorldManager.Instance.GetHeight(cacheKey.ZoneId, x, y);
+        if (candidate != 0 && Math.Abs(Spawner.Position.Z - candidate) <= Tolerance)
+        {
+            candidate = AdjustNpcFloor(candidate);
+            return candidate;
+        }
+
+        // 4. Берем высоту по умолчанию
+        return Spawner.Position.Z;
+    }
+
+    private float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
+    {
+        var actualMinZ = minZ ?? Math.Min(Spawner.Position.Z, candidate);
+        var actualMaxZ = maxZ ?? Math.Max(Spawner.Position.Z, candidate);
+
+        if (actualMaxZ - actualMinZ >= FloorThreshold)
+        {
+            return Building.GetFloorHeight(actualMinZ, actualMaxZ, Spawner.Position.Z);
+        }
+        return candidate;
+    }
+
+    private static float HeightCacheAddOrUpdate(float height, (uint ZoneId, int GridX, int GridY) cacheKey)
+    {
+        var entry = new CachedHeight(height);
+        HeightCache.AddOrUpdate(cacheKey, entry, (_, __) => entry);
+        return height;
+    }
+
+    private static (float avg, float min, float max) GetHeightsFromDatabase(float x, float y, uint zoneId)
+    {
+        var key = GetCacheKey(x, y, zoneId);
+        try
+        {
+            using var connection = MySQL.CreateConnection();
+            using var transaction = connection.BeginTransaction();
+            var heightCells = QueryHeightsMapCells(connection, transaction, key.ZoneId, key.GridX, key.GridY);
+            transaction.Commit();
+
+            if (heightCells.Count > 0)
+            {
+                var avgHeights = heightCells.ToDictionary(kv => kv.Key, kv => kv.Value.Height);
+                var minHeights = heightCells.ToDictionary(kv => kv.Key, kv => kv.Value.HeightMin);
+                var maxHeights = heightCells.ToDictionary(kv => kv.Key, kv => kv.Value.HeightMax);
+
+                var avg = BilinearInterpolation(x, y, avgHeights, key.GridX, key.GridY);
+                var min = BilinearInterpolation(x, y, minHeights, key.GridX, key.GridY);
+                var max = BilinearInterpolation(x, y, maxHeights, key.GridX, key.GridY);
+
+                return (avg, min, max);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to get heights from database");
+        }
+        return (0f, 0f, 0f);
+    }
+
+    private static Dictionary<(int x, int y), CachedHeight> QueryHeightsMapCells(MySqlConnection connection, MySqlTransaction transaction, uint zoneId, int gridX, int gridY)
+    {
+        var heights = new Dictionary<(int, int), CachedHeight>();
+        using var cmd = new MySqlCommand(
+            @"SELECT cell_x, cell_y, avg_z, min_z, max_z 
+                  FROM height_map_cells 
+                  WHERE zone_id = @zoneId 
+                    AND cell_x BETWEEN @minX AND @maxX 
+                    AND cell_y BETWEEN @minY AND @maxY",
+            connection, transaction);
+
+        cmd.Parameters.AddWithValue("@zoneId", zoneId);
+        cmd.Parameters.AddWithValue("@minX", gridX);
+        cmd.Parameters.AddWithValue("@maxX", gridX + 1);
+        cmd.Parameters.AddWithValue("@minY", gridY);
+        cmd.Parameters.AddWithValue("@maxY", gridY + 1);
+
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            var x = reader.GetInt32("cell_x");
+            var y = reader.GetInt32("cell_y");
+            var avgZ = reader.GetFloat("avg_z");
+            var minZ = reader.GetFloat("min_z");
+            var maxZ = reader.GetFloat("max_z");
+            heights[(x, y)] = new CachedHeight(avgZ, minZ, maxZ);
+        }
+        return heights;
+    }
+
+    private static float BilinearInterpolation(float x, float y,
+        IReadOnlyDictionary<(int x, int y), float> heights,
+        int gridX, int gridY)
+    {
+        var localX = (x - gridX * CacheGridSize) / CacheGridSize;
+        var localY = (y - gridY * CacheGridSize) / CacheGridSize;
+
+        var corners = new[]
+        {
+            (cellX: gridX,     cellY: gridY,     weight: (1 - localX) * (1 - localY)),
+            (cellX: gridX + 1, cellY: gridY,     weight: localX * (1 - localY)),
+            (cellX: gridX,     cellY: gridY + 1, weight: (1 - localX) * localY),
+            (cellX: gridX + 1, cellY: gridY + 1, weight: localX * localY)
+        };
+
+        var hasAllCorners = corners.All(c => heights.ContainsKey((c.cellX, c.cellY)));
+
+        if (hasAllCorners)
+        {
+            var h00 = heights[(corners[0].cellX, corners[0].cellY)];
+            var h10 = heights[(corners[1].cellX, corners[1].cellY)];
+            var h01 = heights[(corners[2].cellX, corners[2].cellY)];
+            var h11 = heights[(corners[3].cellX, corners[3].cellY)];
+
+            return h00 * corners[0].weight +
+                   h10 * corners[1].weight +
+                   h01 * corners[2].weight +
+                   h11 * corners[3].weight;
+        }
+
+        var weightedSum = 0f;
+        var totalWeight = 0f;
+        var availableCorners = 0;
+
+        foreach (var corner in corners)
+        {
+            if (heights.TryGetValue((corner.cellX, corner.cellY), out var height))
+            {
+                weightedSum += height * corner.weight;
+                totalWeight += corner.weight;
+                availableCorners++;
+            }
+        }
+
+        if (availableCorners > 0)
+        {
+            if (totalWeight < 0.1f)
+            {
+                return weightedSum / availableCorners;
+            }
+            return weightedSum / totalWeight;
+        }
+
+        var nearestCorner = corners
+            .OrderBy(c => Math.Pow(localX - (c.cellX - gridX), 2) +
+                          Math.Pow(localY - (c.cellY - gridY), 2))
+            .FirstOrDefault(c => heights.ContainsKey((c.cellX, c.cellY)));
+
+        return nearestCorner != default ?
+            heights[(nearestCorner.cellX, nearestCorner.cellY)] :
+            0f;
+    }
+
+    private static void UpdateHeightMapInDatabase(uint zoneId, int cellX, int cellY, float height)
+    {
+        try
+        {
+            using var connection = MySQL.CreateConnection();
+            using var cmd = new MySqlCommand(
+                @"INSERT INTO height_map_cells 
+                      (zone_id, cell_x, cell_y, avg_z, min_z, max_z, point_count, last_update) 
+                      VALUES (@zoneId, @cellX, @cellY, @z, @z, @z, 1, NOW()) 
+                      ON DUPLICATE KEY UPDATE 
+                        avg_z = (avg_z * point_count + @z) / (point_count + 1), 
+                        point_count = point_count + 1, 
+                        min_z = LEAST(min_z, @z), 
+                        max_z = GREATEST(max_z, @z), 
+                        last_update = NOW()",
+                connection);
+            cmd.Parameters.AddWithValue("@zoneId", zoneId);
+            cmd.Parameters.AddWithValue("@cellX", cellX);
+            cmd.Parameters.AddWithValue("@cellY", cellY);
+            cmd.Parameters.AddWithValue("@z", height);
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to update height map in database");
+        }
+    }
+
+    private static void CleanupCache(object state)
+    {
+        var cutoff = DateTime.UtcNow - TimeSpan.FromMinutes(CacheEntryLifetimeMinutes);
+        foreach (var key in HeightCache.Keys)
+        {
+            if (HeightCache.TryGetValue(key, out var entry) && entry.LastAccessTime < cutoff)
+            {
+                HeightCache.TryRemove(key, out _);
+                Logger.Debug("Removed stale cache entry at {0}", key);
+            }
+        }
     }
     #endregion
+}
+
+public class Building
+{
+    private const float FloorThreshold = 5.6f;
+
+    private static int ComputeFloorCount(float minZ, float maxZ)
+    {
+        var verticalDiff = maxZ - minZ;
+        if (verticalDiff < FloorThreshold)
+            return 1;
+        return (int)(verticalDiff / FloorThreshold) + 1;
+    }
+
+    public static float GetFloorHeight(float minZ, float maxZ, int floorIndex)
+    {
+        var totalFloors = ComputeFloorCount(minZ, maxZ);
+        if (floorIndex < 0 || floorIndex >= totalFloors)
+            throw new ArgumentOutOfRangeException(nameof(floorIndex), "Номер этажа вне диапазона");
+
+        if (totalFloors == 1)
+            return (minZ + maxZ) / 2;
+
+        var delta = (maxZ - minZ) / (totalFloors - 1);
+        return minZ + floorIndex * delta;
+    }
+
+    public static float GetFloorHeight(float minZ, float maxZ, float referenceZ)
+    {
+        var totalFloors = ComputeFloorCount(minZ, maxZ);
+        if (totalFloors == 1)
+            return (minZ + maxZ) / 2;
+
+        var delta = (maxZ - minZ) / (totalFloors - 1);
+        var floorIndex = (int)Math.Round((referenceZ - minZ) / delta);
+
+        floorIndex = Math.Max(0, Math.Min(floorIndex, totalFloors - 1));
+        return minZ + floorIndex * delta;
+    }
 }

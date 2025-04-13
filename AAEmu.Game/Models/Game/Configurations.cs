@@ -64,6 +64,10 @@ public class WorldConfig
     /// Enables the loading of NavMesh data for dungeons
     /// </summary>
     public bool GeoDataMode { get; set; }
+    /// <summary>
+    /// Enables save_geodate mode
+    /// </summary>
+    public bool SaveGeoDataMode { get; set; }
 }
 
 public class AccountDeleteDelayTiming
