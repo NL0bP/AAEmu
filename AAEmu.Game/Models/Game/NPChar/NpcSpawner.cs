@@ -24,6 +24,8 @@ using Newtonsoft.Json;
 
 using NLog;
 
+using static AAEmu.Commons.Utils.Rand;
+
 namespace AAEmu.Game.Models.Game.NPChar;
 
 public class NpcSpawner : Spawner<Npc>
@@ -284,7 +286,7 @@ public class NpcSpawner : Spawner<Npc>
         try
         {
             var totalWeight = SpawnableNpcs.Sum(n => n.Weight);
-            var randomValue = Rand.Next(0, (int)totalWeight);
+            var randomValue = Next(0, (int)totalWeight);
 
             foreach (var npcTemplate in SpawnableNpcs)
             {
@@ -942,6 +944,10 @@ public class NpcSpawner : Spawner<Npc>
                     spawnedNpcs.AddRange(spawned);
                     foreach (var npc in spawned)
                     {
+                        // Adjust position to prevent overlapping
+                        var newPos = AdjustSpawnPosition(npc);
+                        npc.Transform.Local.Position = newPos;
+
                         AddNpcToSpawned(npc.Spawner.SpawnerId, npc);
                     }
 
@@ -1366,5 +1372,50 @@ public class NpcSpawner : Spawner<Npc>
         var inst = obj.GetType().GetMethod("MemberwiseClone", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
 
         return (T)inst?.Invoke(obj, null);
+    }
+
+
+    // Helper to handle NPC spawn position adjustments
+    private static Vector3 AdjustSpawnPosition(Npc npc, int maxAttempts = 10)
+    {
+        var collisionRadius = GetCollisionRadiusForNpc(npc);
+        var originalPos = npc.Transform.CloneAsSpawnPosition();
+        var currentPos = originalPos.ToVector3();
+
+        for (var i = 0; i < maxAttempts; i++)
+        {
+            // Check collisions with existing entities
+            var hasCollision = WorldManager.GetAround<Npc>(npc, collisionRadius * 2)
+                .Where(n => n is not null)
+                .Any(n => CheckCollision(currentPos, n.Transform.Local.Position, collisionRadius));
+
+            if (!hasCollision)
+            {
+                if (i > 0)
+                {
+                    Logger.Debug($"Adjusted NPC position after {i + 1} attempts");
+                }
+                return currentPos;
+            }
+
+            // Generate new position with random offset
+            currentPos = Vector3.Add(originalPos.ToVector3(), new Vector3((float)(NextDouble() * collisionRadius * 2 - collisionRadius), (float)(NextDouble() * collisionRadius * 2 - collisionRadius), 0f));
+        }
+
+        return currentPos;
+    }
+
+    private static bool CheckCollision(Vector3 pos1, Vector3 pos2, float radius)
+    {
+        // Calculate horizontal distance (ignore Z-axis)
+        var dx = pos1.X - pos2.X;
+        var dy = pos1.Y - pos2.Y;
+        return dx * dx + dy * dy < radius * radius;
+    }
+
+    private static float GetCollisionRadiusForNpc(Npc npc)
+    {
+        // Implement NPC size based logic here
+        return npc.ModelSize > 0 ? npc.ModelSize : 1.5f;
     }
 }
