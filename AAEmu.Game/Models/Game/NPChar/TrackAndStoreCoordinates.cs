@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -9,7 +8,6 @@ using System.Threading;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Utils;
 
 using MySql.Data.MySqlClient;
@@ -72,41 +70,7 @@ public partial class Npc
 
     #region Private Implementation
 
-    internal static void TrackCharacterCoordinates(Character character)
-    {
-        if (character == null)
-            return;
-        if (AppConfiguration.Instance.World.SaveGeoDataMode == false)
-            return;
-        if (character.CurrentTarget == null || character.CurrentTarget == character || character.CurrentTarget is Character)
-            return;
-
-        var pos = character.Transform.World.Position;
-        var npcs = WorldManager.GetAround<Npc>(character, NearbyNpcSearchRadius);
-        if (!npcs.Any())
-            return;
-
-        foreach (var npc in npcs)
-        {
-            if (character.CurrentTarget is not Npc n || n.ObjId != npc.ObjId)
-                continue;
-
-            var cacheKey = GetCacheKey(pos.X, pos.Y, character.Transform.ZoneId);
-
-            var candidate = npc.AdjustNpcFloor(pos.Z);
-
-            UpdateHeightMapInDatabase(character.Transform.ZoneId, cacheKey.GridX, cacheKey.GridY, candidate);
-            HeightCacheAddOrUpdate(pos.Z, cacheKey);
-
-            npc.Transform.Local.Position = npc.Transform.Local.Position with { Z = candidate };
-            npc.Transform.Local.SetPosition(npc.Transform.Local.Position.X, npc.Transform.Local.Position.Y, candidate);
-
-            character.SendMessage(ChatType.System, "Записываем гео-данные! Не забудьте отключить запись!", Color.White);
-            //character.SendMessage(ChatType.System, "Let's record the geo-data! Don't forget to turn it off!", Color.White);
-        }
-    }
-
-    private static (uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null)
+    public static (uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null)
     {
         var gridX = (int)Math.Floor(x / CacheGridSize);
         var gridY = (int)Math.Floor(y / CacheGridSize);
@@ -203,7 +167,7 @@ public partial class Npc
         return Spawner.Position.Z;
     }
 
-    private float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
+    public float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
     {
         var actualMinZ = minZ ?? Math.Min(Spawner.Position.Z, candidate);
         var actualMaxZ = maxZ ?? Math.Max(Spawner.Position.Z, candidate);
@@ -215,7 +179,7 @@ public partial class Npc
         return candidate;
     }
 
-    private static float HeightCacheAddOrUpdate(float height, (uint ZoneId, int GridX, int GridY) cacheKey)
+    public static float HeightCacheAddOrUpdate(float height, (uint ZoneId, int GridX, int GridY) cacheKey)
     {
         var entry = new CachedHeight(height);
         HeightCache.AddOrUpdate(cacheKey, entry, (_, __) => entry);
@@ -282,9 +246,7 @@ public partial class Npc
         return heights;
     }
 
-    private static float BilinearInterpolation(float x, float y,
-        IReadOnlyDictionary<(int x, int y), float> heights,
-        int gridX, int gridY)
+    private static float BilinearInterpolation(float x, float y, IReadOnlyDictionary<(int x, int y), float> heights, int gridX, int gridY)
     {
         var localX = (x - gridX * CacheGridSize) / CacheGridSize;
         var localY = (y - gridY * CacheGridSize) / CacheGridSize;
@@ -345,7 +307,7 @@ public partial class Npc
             0f;
     }
 
-    private static void UpdateHeightMapInDatabase(uint zoneId, int cellX, int cellY, float height)
+    public static void UpdateHeightMapInDatabase(uint zoneId, int cellX, int cellY, float height)
     {
         try
         {

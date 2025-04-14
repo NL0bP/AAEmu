@@ -184,7 +184,7 @@ public class CSMoveUnitPacket : GamePacket
                         // TODO: запишем в таблицу координаты игрока, чтобы потом их использовать
                         try
                         {
-                            Npc.TrackCharacterCoordinates(character);
+                           Character.TrackCharacterCoordinates(character);
                         }
                         catch (Exception ex)
                         {
