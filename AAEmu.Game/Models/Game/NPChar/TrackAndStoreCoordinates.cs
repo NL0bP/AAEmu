@@ -1,16 +1,21 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
 
+using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Json;
 using AAEmu.Game.Utils;
 
 using MySql.Data.MySqlClient;
+
+using Newtonsoft.Json;
 
 namespace AAEmu.Game.Models.Game.NPChar;
 
@@ -345,6 +350,152 @@ public partial class Npc
                 HeightCache.TryRemove(key, out _);
                 Logger.Debug("Removed stale cache entry at {0}", key);
             }
+        }
+    }
+
+    // Add this new method to the Npc class
+    ///// <summary>
+    ///// Loads NPC spawns for a specific world.
+    ///// </summary>
+    //private void LoadNpcSpawns(Models.Game.World.World world, string worldPath)
+    //{
+    //    var npcFiles = SpawnManager.GetSpawnFiles(worldPath, "npc_spawns*.json");
+    //    if (npcFiles == null || npcFiles.Length == 0)
+    //        return;
+
+    //    foreach (var jsonFileName in npcFiles)
+    //    {
+    //        if (!File.Exists(jsonFileName))
+    //        {
+    //            Logger.Info($"World {world.Name} is missing {Path.GetFileName(jsonFileName)}");
+    //            continue;
+    //        }
+
+    //        var contents = FileManager.GetFileContents(jsonFileName);
+    //        if (string.IsNullOrWhiteSpace(contents))
+    //        {
+    //            Logger.Warn($"File {jsonFileName} is empty.");
+    //            continue;
+    //        }
+
+    //        if (JsonHelper.TryDeserializeObject(contents, out List<NpcSpawner> npcSpawnersFromFile, out _))
+    //        {
+    //            ProcessNpcSpawners(world, jsonFileName, npcSpawnersFromFile);
+    //        }
+    //        else
+    //        {
+    //            throw new GameException($"SpawnManager: Parse {jsonFileName} file");
+    //        }
+    //    }
+    //}
+
+    ///// <summary>
+    ///// Processes NPC spawners from a file.
+    ///// </summary>
+    //private void ProcessNpcSpawners(Models.Game.World.World world, string jsonFileName, List<NpcSpawner> npcSpawnersFromFile)
+    //{
+    //    var entry = 0;
+    //    foreach (var npcSpawnerFromFile in npcSpawnersFromFile)
+    //    {
+    //        entry++;
+
+    //        //if (IsDuplicateNpcSpawner(world, npcSpawnerFromFile))
+    //        //    continue;
+
+    //        if (!NpcManager.Instance.Exist(npcSpawnerFromFile.UnitId))
+    //        {
+    //            Logger.Trace($"Npc Template {npcSpawnerFromFile.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
+    //            continue;
+    //        }
+
+    //        SetupNpcSpawnerPosition(world, npcSpawnerFromFile);
+    //        AddNpcSpawner(npcSpawnerFromFile);
+    //    }
+    //}
+
+    // Добавляем в класс Npc
+
+    /// <summary>
+    /// Загружает данные спавна NPC из файла
+    /// </summary>
+    public static List<JsonNpcSpawns> LoadSpawnFile()
+    {
+        var spawnsFilePath = Path.Combine(FileManager.AppPath, "Data", "Worlds", "main_world", "npc_spawns_main.json");
+        if (!File.Exists(spawnsFilePath))
+        {
+            Logger.Warn($"Spawn file not found at {spawnsFilePath}");
+            return null;
+        }
+
+        try
+        {
+            var spawnsJson = File.ReadAllText(spawnsFilePath);
+            return JsonConvert.DeserializeObject<List<JsonNpcSpawns>>(spawnsJson);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to load spawn file");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Находит и обновляет высоту для указанного NPC
+    /// </summary>
+    public static bool UpdateSpawnHeight(List<JsonNpcSpawns> spawns, uint unitId, float x, float y, float newZ)
+    {
+        if (spawns == null)
+            return false;
+
+        var spawnToUpdate = spawns.FirstOrDefault(s =>
+            Math.Abs(s.Position.X - x) < 0.1f &&
+            Math.Abs(s.Position.Y - y) < 0.1f &&
+            s.UnitId == unitId);
+
+        if (spawnToUpdate == null)
+        {
+            Logger.Warn($"No matching spawn found for NPC {unitId} at ({x}, {y})");
+            return false;
+        }
+
+        spawnToUpdate.Position.Z = newZ;
+        return true;
+    }
+
+    /// <summary>
+    /// Сохраняет обновленные данные спавна обратно в файл
+    /// </summary>
+    public static void SaveSpawnFile(List<JsonNpcSpawns> spawns)
+    {
+        if (spawns == null)
+            return;
+
+        var spawnsFilePath = Path.Combine(FileManager.AppPath, "Data", "Worlds", "main_world", "npc_spawns_main.json");
+
+        try
+        {
+            var updatedJson = JsonConvert.SerializeObject(spawns, Formatting.Indented);
+            File.WriteAllText(spawnsFilePath, updatedJson);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to save spawn file");
+        }
+    }
+
+    /// <summary>
+    /// Основной метод для обновления высоты в файле спавна
+    /// </summary>
+    public static void UpdateSpawnFileHeight(uint unitId, float x, float y, float newZ)
+    {
+        var spawns = LoadSpawnFile();
+        if (spawns == null)
+            return;
+
+        if (UpdateSpawnHeight(spawns, unitId, x, y, newZ))
+        {
+            SaveSpawnFile(spawns);
+            Logger.Info($"Updated spawn height for NPC {unitId} at ({x}, {y}) to Z={newZ}");
         }
     }
     #endregion

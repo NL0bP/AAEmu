@@ -28,6 +28,7 @@ using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.World.Transform;
+using AAEmu.Game.Models.Json;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Tasks;
 using AAEmu.Game.Models.Tasks.Skills;
@@ -39,7 +40,8 @@ public class Unit : BaseUnit, IUnit
 {
     public virtual UnitTypeFlag TypeFlag { get; } = UnitTypeFlag.None;
     public virtual BaseUnitType BaseUnitType { get; set; } = BaseUnitType.Invalid;
-
+    public static List<JsonNpcSpawns> SpawnFile { get; set; } = new List<JsonNpcSpawns>();
+    public static bool IsDirty { get; set; } = false;
     public virtual UnitEvents Events { get; }
     private Task _regenTask;
     public uint ModelId { get; set; }
@@ -598,6 +600,19 @@ public class Unit : BaseUnit, IUnit
     public void SetSaveGeoDataMode(bool value)
     {
         AppConfiguration.Instance.World.SaveGeoDataMode = value;
+        if (value)
+        {
+            SpawnFile = Npc.LoadSpawnFile();
+            IsDirty = true;
+        }
+        else
+        {
+            if (IsDirty && (SpawnFile != null || SpawnFile?.Count > 0))
+            {
+                Npc.SaveSpawnFile(SpawnFile);
+                IsDirty = false;
+            }
+        }
     }
     public void SetGodMode(bool value)
     {

@@ -284,7 +284,7 @@ public class SpawnManager : Singleton<SpawnManager>
     /// <summary>
     /// Gets spawn files from a directory.
     /// </summary>
-    private static string[] GetSpawnFiles(string worldPath, string searchPattern)
+    public static string[] GetSpawnFiles(string worldPath, string searchPattern)
     {
         try
         {
