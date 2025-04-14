@@ -7,7 +7,7 @@ namespace AAEmu.Game.Scripts.Commands;
 
 public class SaveGeodate : ICommand
 {
-    public string[] CommandNames { get; set; } = ["save_geodate", "sg", "save"];
+    public string[] CommandNames { get; set; } = ["save_geodate", "savegeodate", "sg", "save"];
     protected string Title { get; set; }
 
     public void OnLoad()

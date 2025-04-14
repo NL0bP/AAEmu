@@ -74,6 +74,7 @@
         "useskill": 100,
         "wipeauctionhouse": 100,
         "zonestate": 100,
+        "savegeodate": 100,
         
         // Disabled
         "testtransfer": 999
