@@ -14,6 +14,7 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Utils;
 using Point = AAEmu.Game.Models.Game.AI.AStar.Point;
 
@@ -67,31 +68,14 @@ public abstract class BaseCombatBehavior : Behavior
             range -= 1f; // Fix that ID=7927, Plateau Earth Elemental can hit with a melee attack
         }
 
-        var currentPosition = new Vector3(Ai.Owner.Transform.Local.Position.X, Ai.Owner.Transform.Local.Position.Y, Ai.Owner.Transform.Local.Position.Z);
-        // TODO взять точку к которой движемся
-        var targetPosition = new Vector3(target.Transform.Local.Position.X, target.Transform.Local.Position.Y, target.Transform.Local.Position.Z);
-        if (!Ai.Owner.CanFly)
-        {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
-            if (referenceHeight != 0)
-            {
-                targetPosition.Z = referenceHeight;
-                Ai.Owner.Transform.Local.SetHeight(referenceHeight);
-            }
-        }
-
-        if (targetPosition.Z == 0f || currentPosition.Z == 0f)
-        {
-            targetPosition.Z = Ai.Owner.Spawner.Position.Z;
-            currentPosition.Z = Ai.Owner.Spawner.Position.Z;
-            Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Spawner.Position.Z);
-        }
-
+        // TODO take the current coordinates
+        var currentPosition = Ai.Owner.Transform.Local.ClonePosition();
+        // TODO to take the point we're moving to
+        var targetPosition = target.Transform.Local.ClonePosition();
         var speed = Ai.GetRealMovementSpeed(Ai.Owner.BaseMoveSpeed);
         var moveFlags = Ai.GetRealMovementFlags(speed);
-        speed *= (delta.Milliseconds / 1000.0);
+        speed *= delta.Milliseconds / 1000.0;
         var distanceToTarget = Ai.Owner.GetDistanceTo(target, true);
-
         if (AppConfiguration.Instance.World.GeoDataMode && Ai.Owner.Transform.WorldId > 0)
         {
             // TODO найдем путь к abuser, только если координаты цели изменились
@@ -111,30 +95,12 @@ public abstract class BaseCombatBehavior : Behavior
                     Ai.PathNode.pos2 = new Point(target.Transform.World.Position.X, target.Transform.World.Position.Y, target.Transform.World.Position.Z);
                 }
             }
-
             if (Ai.PathNode != null)
             {
                 if (Ai.PathNode.findPath.Count > 0 && !Ai.PathNode.findPath[0].Equals(Point.Zero))
                 {
                     // TODO взять точку к которой движемся
                     targetPosition = new Vector3(Ai.PathNode.Position.X, Ai.PathNode.Position.Y, Ai.PathNode.Position.Z);
-                    if (!Ai.Owner.CanFly)
-                    {
-                        var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
-                        if (referenceHeight != 0)
-                        {
-                            targetPosition.Z = referenceHeight;
-                            Ai.Owner.Transform.Local.SetHeight(referenceHeight);
-                        }
-                    }
-
-                    if (targetPosition.Z == 0f || currentPosition.Z == 0f)
-                    {
-                        targetPosition.Z = Ai.Owner.Spawner.Position.Z;
-                        currentPosition.Z = Ai.Owner.Spawner.Position.Z;
-                        Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Spawner.Position.Z);
-                    }
-
                     distanceToTarget = MathUtil.CalculateDistance(currentPosition, targetPosition, true);
                     if (distanceToTarget > range)
                     {
@@ -157,7 +123,7 @@ public abstract class BaseCombatBehavior : Behavior
                 else
                 {
                     if (distanceToTarget > range)
-                        Ai.Owner.MoveTowards(target.Transform.World.Position, (float)speed, moveFlags);
+                        Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
                     else
                         Ai.Owner.StopMovement();
                 }
@@ -165,7 +131,7 @@ public abstract class BaseCombatBehavior : Behavior
             else
             {
                 if (distanceToTarget > range)
-                    Ai.Owner.MoveTowards(target.Transform.World.Position, (float)speed, moveFlags);
+                    Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
                 else
                     Ai.Owner.StopMovement();
             }
@@ -173,7 +139,7 @@ public abstract class BaseCombatBehavior : Behavior
         else
         {
             if (distanceToTarget > range)
-                Ai.Owner.MoveTowards(target.Transform.World.Position, (float)speed, moveFlags);
+                Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
             else
                 Ai.Owner.StopMovement();
         }

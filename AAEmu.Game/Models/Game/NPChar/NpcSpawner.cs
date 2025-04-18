@@ -559,17 +559,17 @@ public class NpcSpawner : Spawner<Npc>
     /// <summary>
     /// Spawns all NPCs associated with this spawner.
     /// </summary>
-    public List<Npc> SpawnAll(bool beginning = false)
+    public void SpawnAll(bool beginning = false)
     {
         if (IsSpawningScheduleEnabled())
-            return null;
+            return;
 
         DoSpawn();
 
         if (IsSpawnScheduled)
             IsDespawningScheduleEnabled(SpawnerId);
 
-        return SpawnedNpcs[SpawnerId];
+        return;
     }
 
     /// <summary>
@@ -1376,7 +1376,7 @@ public class NpcSpawner : Spawner<Npc>
 
 
     // Helper to handle NPC spawn position adjustments
-    private static Vector3 AdjustSpawnPosition(Npc npc, int maxAttempts = 10)
+    public static Vector3 AdjustSpawnPosition(Npc npc, int maxAttempts = 10)
     {
         var collisionRadius = GetCollisionRadiusForNpc(npc);
         var originalPos = npc.Transform.CloneAsSpawnPosition();
@@ -1391,10 +1391,10 @@ public class NpcSpawner : Spawner<Npc>
 
             if (!hasCollision)
             {
-                if (i > 0)
-                {
-                    Logger.Debug($"Adjusted NPC position after {i + 1} attempts");
-                }
+                //if (i > 0)
+                //{
+                //    Logger.Debug($"Adjusted NPC position after {i + 1} attempts");
+                //}
                 return currentPos;
             }
 

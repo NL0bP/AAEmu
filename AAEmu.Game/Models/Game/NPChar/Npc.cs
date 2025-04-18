@@ -1080,7 +1080,6 @@ public partial class Npc : Unit
 
     //Tagging!
 
-
     private static void CheckIfEmptyAggroToReturn(IBaseUnit unit)
     {
         if (unit is not Npc npc)
@@ -1203,9 +1202,10 @@ public partial class Npc : Unit
         if ((ActiveSkillController?.State ?? SkillController.SCState.Ended) == SkillController.SCState.Running)
             return;
 
-        var oldPosition = Transform.Local.ClonePosition();
+        // TODO Take the current coordinates
+        var currentPosition = Transform.Local.ClonePosition();
 
-        var targetDist = MathUtil.CalculateDistance(Transform.Local.Position, other, true);
+        var targetDist = MathUtil.CalculateDistance(currentPosition, other, true);
         if (targetDist <= 1f)
             return;
 
@@ -1214,28 +1214,29 @@ public partial class Npc : Unit
         var travelDist = Math.Min(targetDist, distance);
 
         // TODO: Implement proper use for Transform.World.AddDistanceToFront
-        var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, targetDist, Transform.Local.Position, other);
+        var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, targetDist, currentPosition, other);
         Transform.Local.SetPosition(newX, newY, newZ);
-
-        // TODO: Implement Transform.World to do proper movement
+        // TODO to take the point we're moving to
+        var targetPosition =  NpcSpawner.AdjustSpawnPosition(this);
         if (!CanFly)
         {
-            // try to find Z first in GeoData, and then in HeightMaps, if not found, leave Z as it is
-            var updZ = WorldManager.Instance.GetHeight(Transform.ZoneId, newX, newY);
-            if (updZ != 0 && Math.Abs(newZ - updZ) < 1f)
+            var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
+            if (referenceHeight != 0)
             {
-                Transform.Local.SetHeight(updZ);
+                targetPosition.Z = referenceHeight;
+                Transform.Local.SetHeight(referenceHeight);
             }
         }
+        Transform.Local.SetPosition(targetPosition);
 
-        var angle = MathUtil.CalculateAngleFrom(Transform.Local.Position, other);
+        var angle = MathUtil.CalculateAngleFrom(targetPosition, other);
         var (velX, velY) = MathUtil.AddDistanceToFront(4000, 0, 0, (float)angle.DegToRad());
         Transform.Local.SetRotationDegree(0f, 0f, (float)angle - 90);
         var (rx, ry, rz) = Transform.Local.ToRollPitchYawSBytesMovement();
 
-        moveType.X = Transform.Local.Position.X;
-        moveType.Y = Transform.Local.Position.Y;
-        moveType.Z = Transform.Local.Position.Z;
+        moveType.X = targetPosition.X;
+        moveType.Y = targetPosition.Y;
+        moveType.Z = targetPosition.Z;
         moveType.VelX = (short)velX;
         moveType.VelY = (short)velY;
         //moveType.VelZ = (short)velZ;
@@ -1244,36 +1245,41 @@ public partial class Npc : Unit
         moveType.RotationZ = rz;
         moveType.ActorFlags = actorFlags;     // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // MoveTypeFlags.Stopping;
-
-        moveType.DeltaMovement = new sbyte[3];
-        moveType.DeltaMovement[0] = 0;
-        moveType.DeltaMovement[1] = 127;
-        moveType.DeltaMovement[2] = 0;
+        moveType.DeltaMovement = [0, 127, 0];
         moveType.Stance = CurrentGameStance;    // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
-        CheckMovedPosition(oldPosition);
-        //SetPosition(Position);
+        CheckMovedPosition(currentPosition);
         BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
     }
 
     public void LookTowards(Vector3 other, byte flags = 4)
     {
-        var oldPosition = Transform.Local.ClonePosition();
+        // TODO Take the current coordinates
+        var currentPosition = Transform.Local.ClonePosition();
+        if (!CanFly)
+        {
+            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y);
+            if (referenceHeight != 0)
+            {
+                currentPosition.Z = referenceHeight;
+                Transform.Local.SetHeight(referenceHeight);
+            }
+        }
+        Transform.Local.SetPosition(currentPosition);
 
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
-        var angle = MathUtil.CalculateAngleFrom(Transform.Local.Position, other);
-        //var rotZ = MathUtil.ConvertDegreeToSByteDirection(angle);
+        var angle = MathUtil.CalculateAngleFrom(currentPosition, other);
 
         // TODO: Implement Transform.World to do proper movement
         Transform.Local.SetRotationDegree(0f, 0f, (float)angle - 90);
         var (rx, ry, rz) = Transform.Local.ToRollPitchYawSBytesMovement();
 
-        moveType.X = Transform.Local.Position.X;
-        moveType.Y = Transform.Local.Position.Y;
-        moveType.Z = Transform.Local.Position.Z;
+        moveType.X = currentPosition.X;
+        moveType.Y = currentPosition.Y;
+        moveType.Z = currentPosition.Z;
         moveType.VelX = 0;
         moveType.VelY = 0;
         moveType.VelZ = 0;
@@ -1282,22 +1288,31 @@ public partial class Npc : Unit
         moveType.RotationZ = rz;
         moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); ; // 4;
-
-        moveType.DeltaMovement = new sbyte[3];
-        moveType.DeltaMovement[0] = 0;
-        moveType.DeltaMovement[1] = 0;
-        moveType.DeltaMovement[2] = 0;
+        moveType.DeltaMovement = [0, 0, 0];
         moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
-        CheckMovedPosition(oldPosition);
+        CheckMovedPosition(currentPosition);
         //SetPosition(Position);
         BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
     }
 
     public void StopMovement()
     {
+        // TODO Take the current coordinates
+        var currentPosition = Transform.Local.ClonePosition();
+        if (!CanFly)
+        {
+            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y);
+            if (referenceHeight != 0)
+            {
+                currentPosition.Z = referenceHeight;
+                Transform.Local.SetHeight(referenceHeight);
+            }
+        }
+        Transform.Local.SetPosition(currentPosition);
+
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
         moveType.X = Transform.Local.Position.X;
         moveType.Y = Transform.Local.Position.Y;
@@ -1309,10 +1324,7 @@ public partial class Npc : Unit
         moveType.RotationY = 0;
         moveType.RotationZ = Transform.Local.ToRollPitchYawSBytesMovement().Item3;
         moveType.Flags = MoveTypeFlags.Stopping | (IsInBattle ? MoveTypeFlags.InCombat : 0); // 4;
-        moveType.DeltaMovement = new sbyte[3];
-        moveType.DeltaMovement[0] = 0;
-        moveType.DeltaMovement[1] = 0;
-        moveType.DeltaMovement[2] = 0;
+        moveType.DeltaMovement = [0, 0, 0];
         moveType.Stance = CurrentGameStance;// (sbyte)(CurrentAggroTarget?.ObjId > 0 ? 0 : 1);    // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
