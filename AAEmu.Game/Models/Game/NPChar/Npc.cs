@@ -928,7 +928,7 @@ public partial class Npc : Unit
         CharacterTagging.ClearAllTaggers();
         CurrentAggroTarget = null;
 
-        Spawner?.DecreaseCount(this);
+        Spawner?.DoDespawns([this]);
         Ai?.GoToDead();
     }
 
@@ -1217,7 +1217,7 @@ public partial class Npc : Unit
         var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, targetDist, currentPosition, other);
         Transform.Local.SetPosition(newX, newY, newZ);
         // TODO to take the point we're moving to
-        var targetPosition =  NpcSpawner.AdjustSpawnPosition(this);
+        var targetPosition =  NpcSpawner.AdjustMovePosition(this);
         if (!CanFly)
         {
             var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
@@ -1380,7 +1380,7 @@ public partial class Npc : Unit
 
     public void DoDespawn(Npc npc)
     {
-        Spawner.DoDespawn(npc);
+        Spawner.DoDespawns([npc]);
     }
 
     /// <summary>

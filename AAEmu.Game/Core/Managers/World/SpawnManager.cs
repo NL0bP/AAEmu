@@ -439,7 +439,7 @@ public class SpawnManager : Singleton<SpawnManager>
             if (npc.Spawner != null)
             {
                 npc.Spawner.RespawnTime = 9999999;
-                npc.Spawner.DecreaseCount(npc);
+                npc.Spawner.DoDespawns([npc]);
             }
             else
             {
@@ -482,7 +482,7 @@ public class SpawnManager : Singleton<SpawnManager>
                         continue;
                     if (obj is Npc npc)
                     {
-                        Logger.Debug($"Respawning NPC {npc.ObjId}");
+                        //Logger.Debug($"Respawning NPC {npc.ObjId}");
                         npc.Spawner.Respawn(npc);
                     }
                     else if (obj is Doodad doodad)
@@ -513,32 +513,32 @@ public class SpawnManager : Singleton<SpawnManager>
                         continue;
                     if (obj is Npc { Spawner: not null } npc)
                     {
-                        Logger.Debug($"Despawning NPC {npc.ObjId}");
+                        //Logger.Debug($"Despawning NPC {npc.ObjId}");
                         npc.Spawner.Despawn(npc);
                     }
                     else if (obj is Doodad { Spawner: not null } doodad)
                     {
-                        Logger.Trace($"Despawning Doodad {doodad.ObjId}");
+                        //Logger.Trace($"Despawning Doodad {doodad.ObjId}");
                         doodad.Spawner.Despawn(doodad);
                     }
                     else if (obj is Transfer { Spawner: not null } transfer)
                     {
-                        Logger.Trace($"Despawning Transfer {transfer.ObjId}");
+                        //Logger.Trace($"Despawning Transfer {transfer.ObjId}");
                         transfer.Spawner.Despawn(transfer);
                     }
                     else if (obj is Gimmick { Spawner: not null } gimmick)
                     {
-                        Logger.Trace($"Despawning Gimmick {gimmick.ObjId}");
+                        //Logger.Trace($"Despawning Gimmick {gimmick.ObjId}");
                         gimmick.Spawner.Despawn(gimmick);
                     }
                     else if (obj is Slave slave)
                     {
-                        Logger.Trace($"Deleting Slave {slave.ObjId}");
+                        //Logger.Trace($"Deleting Slave {slave.ObjId}");
                         slave.Delete();
                     }
                     else if (obj is Doodad doodad2)
                     {
-                        Logger.Trace($"Deleting Doodad {doodad2.ObjId}");
+                        //Logger.Trace($"Deleting Doodad {doodad2.ObjId}");
                         doodad2.Delete();
                     }
                     else
