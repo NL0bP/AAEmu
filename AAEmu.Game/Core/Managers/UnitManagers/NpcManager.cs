@@ -190,7 +190,7 @@ public class NpcManager : Singleton<NpcManager>
         var _template = new NpcTemplate();
         var totalCustomId = template.TotalCustomId;
 
-        if (totalCustomId != 0 || template.FactionId == FactionsEnum.Monstrosity || template.FactionId == FactionsEnum.Animal) // 115 - Monstrosity, 116 - Animal
+        if (totalCustomId != 0 /*|| template.FactionId == FactionsEnum.Monstrosity*/ || template.FactionId == FactionsEnum.Animal) // 115 - Monstrosity, 116 - Animal
         {
             return template;
         }
