@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace AAEmu.Game.Models;
@@ -16,8 +16,12 @@ internal class Unsubscriber<T> : IDisposable
 
     public void Dispose()
     {
-        if (!_observers.Contains(_observer))
-            return;
-        _observers.Remove(_observer);
+        if (_observer != null && _observers != null)
+        {
+            lock (_observers)
+            {
+                _observers.Remove(_observer);
+            }
+        }
     }
 }

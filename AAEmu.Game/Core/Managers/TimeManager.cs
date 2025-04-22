@@ -33,16 +33,23 @@ public class TimeManager : Singleton<TimeManager>, IObservable<float>
 
     public TimeManager()
     {
-        _observers = new List<IObserver<float>>();
+        _observers = [];
     }
 
     public IDisposable Subscribe(IObserver<float> observer)
     {
-        if (_observers.Contains(observer))
-            return null;
-        _observers.Add(observer);
+        lock (_observers)
+        {
+            if (_observers.Contains(observer))
+            {
+                Logger.Warn($"Наблюдатель {observer.GetType().Name} уже подписан.");
+                return null;
+            }
 
-        return new Unsubscriber<float>(_observers, observer);
+            _observers.Add(observer);
+            Logger.Info($"Наблюдатель {observer.GetType().Name} подписан.");
+            return new Unsubscriber<float>(_observers, observer);
+        }
     }
 
     public IDisposable Subscribe(GameConnection connection, IObserver<float> observer)
@@ -165,5 +172,4 @@ public class TimeManager : Singleton<TimeManager>, IObservable<float>
             }
         }
     }
-
 }
