@@ -537,14 +537,14 @@ public class GameScheduleManager : Singleton<GameScheduleManager>
         }
     }
 
-    private static TimeSpan GetRemainingTimeStart(GameSchedules value)
+    public static TimeSpan GetRemainingTimeStart(GameSchedules value)
     {
         var cronExpression = GetCronExpression(value, true);
         var schedule = CrontabSchedule.Parse(cronExpression, TaskManager.s_crontabScheduleParseOptions);
         return schedule.GetNextOccurrence(DateTime.UtcNow) - DateTime.UtcNow;
     }
 
-    private static TimeSpan GetRemainingTimeEnd(GameSchedules value)
+    public static TimeSpan GetRemainingTimeEnd(GameSchedules value)
     {
         var cronExpression = GetCronExpression(value, false);
         var schedule = CrontabSchedule.Parse(cronExpression, TaskManager.s_crontabScheduleParseOptions);
@@ -552,6 +552,38 @@ public class GameScheduleManager : Singleton<GameScheduleManager>
     }
 
     private static string GetCronExpression(GameSchedules value, bool start = true)
+    {
+        // Validate input
+        if (value.StMonth < 1 || value.StMonth > 12 || value.StDay < 1 || value.StDay > 31 ||
+            value.StHour < 0 || value.StHour > 23 || value.StMin < 0 || value.StMin > 59)
+        {
+            throw new ArgumentException("Invalid GameSchedules data for cron expression.");
+        }
+
+        // Determine time and date components
+        var hour = start ? value.StHour : value.EdHour;
+        var minute = start ? value.StMin : value.EdMin;
+        var day = start ? value.StDay : value.EdDay;
+        var month = start ? value.StMonth : value.EdMonth;
+        var dayOfWeek = value.DayOfWeekId == DayOfWeek.Invalid ? "*" : ((int)value.DayOfWeekId).ToString();
+
+        // Build cron expression
+        var cronExpression = BuildCronExpression(0, minute, hour, day, month, dayOfWeek);
+
+        // Replace unsupported characters
+        cronExpression = cronExpression.Replace("?", "*");
+
+        Logger.Debug($"Generated cron expression: {cronExpression}");
+        return cronExpression;
+    }
+
+    // Helper method to build cron expressions
+    private static string BuildCronExpression(int seconds, int minute, int hour, int day, int month, string dayOfWeek)
+    {
+        return $"{seconds} {minute} {hour} {day} {month} {dayOfWeek}";
+    }
+
+    private static string GetCronExpression1(GameSchedules value, bool start = true)
     {
         /*
             Cron-выражение состоит из 6 или 7 полей:

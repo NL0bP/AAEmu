@@ -123,7 +123,7 @@ public class NpcSpawner : Spawner<Npc>
     /// <summary>
     /// Determines whether the NPCs can be despawned based on schedule and current presence.
     /// </summary>
-    private bool CanDespawnNpcs()
+    public bool CanDespawnNpcs()
     {
         if (!IsDespawningScheduleEnabled(SpawnerId))
         {
@@ -146,7 +146,7 @@ public class NpcSpawner : Spawner<Npc>
             DoDespawns(npcs);
     }
 
-    private void DespawnNpcsNow()
+    public void DespawnNpcsNow()
     {
         if (IsDespawnScheduled)
         {
@@ -265,8 +265,6 @@ public class NpcSpawner : Spawner<Npc>
     /// <returns>The selected SpawnerId, or null if no suitable spawner is found.</returns>
     private uint? SelectSpawnerId()
     {
-        bool scheduled = false;
-
         // Condition 1: Check for a spawner with a suitable schedule
         // Condition 2: Check for an AutoCreated spawner without a scheduled NPC
         // Condition 3: If there is only one spawner, select it
@@ -297,7 +295,7 @@ public class NpcSpawner : Spawner<Npc>
 
     private bool IsThereSpawningSchedule(int spawnerId)
     {
-        var scheduleStatus = GameScheduleManager.Instance.GetPeriodStatusNpc((int)SpawnerId);
+        var scheduleStatus = GameScheduleManager.Instance.GetPeriodStatusNpc((int)spawnerId);
         switch (scheduleStatus)
         {
             case GameScheduleManager.PeriodStatus.NotFound:
@@ -312,6 +310,37 @@ public class NpcSpawner : Spawner<Npc>
 
             default:
                 Logger.Warn($"[Spawn] Unknown schedule status '{scheduleStatus}' for NPC {spawnerId}.");
+                return false;
+        }
+
+        // Если расписания нет — проверим, задано ли время появления
+        if (HasSpawningTime())
+        {
+            //Logger.Debug($"[Spawn] NPC {npcId} is within spawn time window — spawning enabled.");
+            return true;
+        }
+
+        //Logger.Debug($"[Spawn] NPC {npcId} not in spawn time window.");
+        return false;
+    }
+
+    public bool IsThereSpawningSchedule()
+    {
+        var scheduleStatus = GameScheduleManager.Instance.GetPeriodStatusNpc((int)SpawnerId);
+        switch (scheduleStatus)
+        {
+            case GameScheduleManager.PeriodStatus.NotFound:
+                //Logger.Debug($"[Spawn] No schedule found for NPC {npcId}. Falling back to time window.");
+                break; // Переход к проверке времени
+
+            case GameScheduleManager.PeriodStatus.InProgress:
+            case GameScheduleManager.PeriodStatus.NotStarted:
+            case GameScheduleManager.PeriodStatus.Ended:
+                //Logger.Debug($"[Spawn] Расписание у NPC {npcId} имеется.");
+                return true;
+
+            default:
+                Logger.Warn($"[Spawn] Unknown schedule status '{scheduleStatus}' for NPC {SpawnerId}.");
                 return false;
         }
 
@@ -607,7 +636,7 @@ public class NpcSpawner : Spawner<Npc>
     /// <summary>
     /// Checks if a player is within the spawn radius.
     /// </summary>
-    private bool IsPlayerInSpawnRadius()
+    public bool IsPlayerInSpawnRadius()
     {
         var testRadiusPc = Template.TestRadiusPc == 0 ? Template.TestRadiusNpc : Template.TestRadiusPc;
 
@@ -1181,7 +1210,7 @@ public class NpcSpawner : Spawner<Npc>
                         continue;
                     }
                     DoDespawnNow(npc);
-                    //Logger.Debug($"Despawned NPC {npc.ObjId}.");
+                    Logger.Debug($"Despawned NPC {npc.TemplateId}:{npc.ObjId}.");
                 }
                 catch (Exception ex)
                 {
@@ -1361,7 +1390,7 @@ public class NpcSpawner : Spawner<Npc>
                 return true;
             }
 
-            if (IsNpcInProgress(npc))
+            if (IsNpcInTimeWindow(npc))
             {
                 //Logger.Debug($"[Despawn] NPC {npc.ObjId} is within active schedule — stays.");
                 return true;
@@ -1388,7 +1417,7 @@ public class NpcSpawner : Spawner<Npc>
         return outside;
     }
 
-    private static bool IsNpcInProgress(Npc npc)
+    private static bool IsNpcInTimeWindow(Npc npc)
     {
         var status = GameScheduleManager.Instance.GetPeriodStatusNpc((int)npc.Spawner.Template.Id);
 
@@ -1411,7 +1440,7 @@ public class NpcSpawner : Spawner<Npc>
     /// <summary>
     /// Checks if the current time is between startTime and endTime, including wrapping over midnight.
     /// </summary>
-    private static bool IsTimeBetween(TimeSpan currentTime, TimeSpan startTime, TimeSpan endTime)
+    public static bool IsTimeBetween(TimeSpan currentTime, TimeSpan startTime, TimeSpan endTime)
     {
         if (startTime <= endTime)
         {

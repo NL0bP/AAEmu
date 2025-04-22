@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -51,72 +50,39 @@ public class SpawnManager : Singleton<SpawnManager>
     private uint _nextId = 1u;
     private uint _fakeSpawnerId = 9000001u;
 
-    private int _currentSpawnerIndex = 0; // Индекс текущего спавнера
-    private List<NpcSpawner> _currentSpawners = []; // Список спавнеров для текущего мира
-
     public void Update(TimeSpan delta)
     {
         foreach (var (worldId, worldSpawners) in _npcSpawners)
         {
-            //Logger.Info($"Spawning NPCs for world {worldId}...");
-            InitializeCurrentSpawners(worldId);
+            // Фильтрация спавнеров
+            //Logger.Debug($"Processed in world {worldId} {worldSpawners.Values.Count} spawners...");
+            var activeSpawners = worldSpawners.Values.SelectMany(x => x)
+                .Where(spawner => spawner.Template != null &&
+                                  IsSpawnerActive(spawner) &&
+                                  spawner.IsPlayerInSpawnRadius())
+                .ToList();
 
-            var stopwatch = Stopwatch.StartNew();
-            var c = 0;
-            var startIndex = _currentSpawnerIndex;
-
-            while (_currentSpawnerIndex < _currentSpawners.Count)
+            // Последовательная обработка спавнеров
+            if (worldId == 0)
             {
-                var spawner = _currentSpawners[_currentSpawnerIndex];
-
-                if (spawner.Template == null)
-                    Logger.Warn($"Templates not found for Npc templateId {spawner.SpawnerId}:{spawner.UnitId} in world {worldId}");
-                else
-                    UpdateSpawner(spawner);
-
-                c++;
-                _currentSpawnerIndex++;
-
-                if (stopwatch.Elapsed <= TimeSpan.FromMilliseconds(900))
-                    continue;
-
-                Logger.Debug($"Updated {c}/{_currentSpawners.Count} spawners idx={startIndex}->{_currentSpawnerIndex}. Update loop interrupted due to time limit. Elapsed time: {stopwatch.ElapsedMilliseconds} ms.");
-                break;
+                Logger.Debug($"Processed {activeSpawners.Count} active spawners...");
             }
-
-            ResetSpawnerIndexIfNeeded();
+            foreach (var npcSpawner in activeSpawners)
+            {
+                npcSpawner.Update();
+            }
         }
     }
 
-    private void InitializeCurrentSpawners(byte worldId)
+    private bool IsSpawnerActive(NpcSpawner spawner)
     {
-        if (_currentSpawners.Count == 0)
+        if (spawner.CanDespawnNpcs() || !spawner.IsPlayerInSpawnRadius())
         {
-            _currentSpawners = _npcSpawners[worldId].Values.SelectMany(x => x).ToList();
+            //Logger.Debug($"[SpawnerId={spawner.SpawnerId}, UnitId={spawner.UnitId}] Despawning NPCs...");
+            spawner.DespawnNpcsNow();
         }
-    }
 
-    private static void UpdateSpawner(NpcSpawner spawner)
-    {
-        var innerStopwatch = Stopwatch.StartNew();
-        try
-        {
-            spawner.Update();
-        }
-        finally
-        {
-            innerStopwatch.Stop();
-            //Logger.Debug($"Update for spawner {spawner.SpawnerId}:{spawner.UnitId} took {innerStopwatch.ElapsedMilliseconds} ms.");
-        }
-    }
-
-    private void ResetSpawnerIndexIfNeeded()
-    {
-        if (_currentSpawnerIndex >= _currentSpawners.Count)
-        {
-            _currentSpawnerIndex = 0;
-            _currentSpawners.Clear();
-        }
+        return !spawner.IsThereSpawningSchedule();
     }
 
     /// <summary>
