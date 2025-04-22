@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
-using AAEmu.Game.Models.Game.DoodadObj;
-using AAEmu.Game.Models.Game.DoodadObj.Funcs;
+
 using NLog;
 
 namespace AAEmu.Game.Core.Managers;
@@ -94,8 +93,22 @@ public class TimeManager : Singleton<TimeManager>, IObservable<float>
     private void Push()
     {
         var time = GetTime;
-        foreach (var observer in _observers)
-            observer.OnNext(time);
+        List<IObserver<float>> observersCopy;
+        lock (_observers)
+        {
+            observersCopy = new List<IObserver<float>>(_observers);
+        }
+        foreach (var observer in observersCopy)
+        {
+            try
+            {
+                observer.OnNext(time);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Ошибка при уведомлении наблюдателя.");
+            }
+        }
         OnTimeOfDayChange(time, _lastTime);
         _lastTime = time;
     }
