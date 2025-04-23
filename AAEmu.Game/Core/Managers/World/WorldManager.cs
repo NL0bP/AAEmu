@@ -1075,7 +1075,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     /// Adds or updates a GameObject of its region object list
     /// </summary>
     /// <param name="obj"></param>
-    public void AddVisibleObject0(GameObject obj)
+    public void AddVisibleObject(GameObject obj)
     {
         if (obj == null)
             return;
@@ -1131,7 +1131,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         //Logger.Warn($" objects={_objects.Count}, doodads={_doodads.Count}, npcs={_npcs.Count}, characters={_characters.Count}");
     }
 
-    public void AddVisibleObject(GameObject obj)
+    public void AddVisibleObject0(GameObject obj)
     {
         if (obj == null)
             return;
