@@ -31,7 +31,7 @@ public partial class Npc
     private const float Tolerance = 1f; // порог допуска для корректировки высоты
     private const float FloorThreshold = 5.6f;
 
-    private static readonly ConcurrentDictionary<(uint ZoneId, int GridX, int GridY), CachedHeight> HeightCache = new();
+    private static readonly ConcurrentDictionary<(uint WorldId, uint ZoneId, int GridX, int GridY), CachedHeight> HeightCache = new();
     private static readonly Lazy<Timer> CacheCleanupTimer = new(() => new Timer(CleanupCache, null, TimeSpan.FromMinutes(CacheCleanupIntervalMinutes), TimeSpan.FromMinutes(CacheCleanupIntervalMinutes)));
 
     private sealed class CachedHeight
@@ -62,9 +62,9 @@ public partial class Npc
 
     #region Public API
 
-    internal float GetReferenceHeight(float x, float y)
+    internal float GetReferenceHeight(float x, float y, uint? zoneId = null, uint worldId = 0)
     {
-        var cacheKey = GetCacheKey(x, y);
+        var cacheKey = GetCacheKey(x, y, zoneId, worldId);
         if (TryGetFromCacheMultiple(cacheKey, x, y, out var cachedHeight))
             return cachedHeight;
 
@@ -75,23 +75,24 @@ public partial class Npc
 
     #region Private Implementation
 
-    public static (uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null)
+    public static (uint WorldId, uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null, uint worldId = 0)
     {
         var gridX = (int)Math.Floor(x / CacheGridSize);
         var gridY = (int)Math.Floor(y / CacheGridSize);
-        return (zoneId ?? WorldManager.Instance.GetZoneId(0, x, y), gridX, gridY);
+        return (worldId, zoneId ?? WorldManager.Instance.GetZoneId(worldId, x, y), gridX, gridY);
     }
 
-    private static bool TryGetFromCacheMultiple((uint ZoneId, int GridX, int GridY) centerKey, float x, float y, out float height)
+    private static bool TryGetFromCacheMultiple((uint WorldId, uint ZoneId, int GridX, int GridY) centerKey, float x, float y, out float height)
     {
+        var worldId = centerKey.WorldId;
         var zoneId = centerKey.ZoneId;
         var gridX = centerKey.GridX;
         var gridY = centerKey.GridY;
 
-        var has00 = HeightCache.TryGetValue((zoneId, gridX, gridY), out var cell00);
-        var has10 = HeightCache.TryGetValue((zoneId, gridX + 1, gridY), out var cell10);
-        var has01 = HeightCache.TryGetValue((zoneId, gridX, gridY + 1), out var cell01);
-        var has11 = HeightCache.TryGetValue((zoneId, gridX + 1, gridY + 1), out var cell11);
+        var has00 = HeightCache.TryGetValue((worldId, zoneId, gridX, gridY), out var cell00);
+        var has10 = HeightCache.TryGetValue((worldId, zoneId, gridX + 1, gridY), out var cell10);
+        var has01 = HeightCache.TryGetValue((worldId, zoneId, gridX, gridY + 1), out var cell01);
+        var has11 = HeightCache.TryGetValue((worldId, zoneId, gridX + 1, gridY + 1), out var cell11);
 
         if (!has00 && !has10 && !has01 && !has11)
         {
@@ -137,7 +138,7 @@ public partial class Npc
             .First().Z;
     }
 
-    private float CalculateAndCacheHeight(float x, float y, (uint ZoneId, int GridX, int GridY) cacheKey)
+    private float CalculateAndCacheHeight(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
     {
         var pos = Transform.World.Position;
 
@@ -152,7 +153,7 @@ public partial class Npc
         //}
 
         // 2. Получение высоты из базы данных
-        var heights = GetHeightsFromDatabase(x, y, cacheKey.ZoneId);
+        var heights = GetHeightsFromDatabase(x, y, cacheKey.ZoneId, cacheKey.WorldId);
         if (heights.Item1 != 0/* && Math.Abs(pos.Z - heights.Item1) <= Tolerance*/)
         {
             candidate = AdjustNpcFloor(heights.Item1, heights.Item2, heights.Item3);
@@ -184,16 +185,16 @@ public partial class Npc
         return candidate;
     }
 
-    public static float HeightCacheAddOrUpdate(float height, (uint ZoneId, int GridX, int GridY) cacheKey)
+    public static float HeightCacheAddOrUpdate(float height, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
     {
         var entry = new CachedHeight(height);
         HeightCache.AddOrUpdate(cacheKey, entry, (_, __) => entry);
         return height;
     }
 
-    private static (float avg, float min, float max) GetHeightsFromDatabase(float x, float y, uint zoneId)
+    private (float avg, float min, float max) GetHeightsFromDatabase(float x, float y, uint zoneId, uint worldId = 0)
     {
-        var key = GetCacheKey(x, y, zoneId);
+        var key = GetCacheKey(x, y, zoneId, worldId);
         try
         {
             using var connection = MySQL.CreateConnection();

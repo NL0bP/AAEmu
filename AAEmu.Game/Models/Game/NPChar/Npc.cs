@@ -1220,7 +1220,7 @@ public partial class Npc : Unit
         var targetPosition =  NpcSpawner.AdjustMovePosition(this);
         if (!CanFly)
         {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y);
+            var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y, Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.WorldId);
             if (referenceHeight != 0)
             {
                 targetPosition.Z = referenceHeight;
@@ -1260,7 +1260,7 @@ public partial class Npc : Unit
         var currentPosition = Transform.Local.ClonePosition();
         if (!CanFly)
         {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y);
+            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y, Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.WorldId);
             if (referenceHeight != 0)
             {
                 currentPosition.Z = referenceHeight;
@@ -1304,7 +1304,7 @@ public partial class Npc : Unit
         var currentPosition = Transform.Local.ClonePosition();
         if (!CanFly)
         {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y);
+            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y, Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.WorldId);
             if (referenceHeight != 0)
             {
                 currentPosition.Z = referenceHeight;

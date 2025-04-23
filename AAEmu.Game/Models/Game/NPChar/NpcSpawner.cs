@@ -1096,7 +1096,7 @@ public class NpcSpawner : Spawner<Npc>
                 Interlocked.Exchange(ref _scheduledCount, 0);
                 newScheduledCount = 0;
             }
-            Logger.Info($"Scheduled respawn for NPC {UnitId}:{SpawnerId}:{npc.ObjId} in {RespawnTime} seconds. New scheduled count: {newScheduledCount}.");
+            //Logger.Info($"Scheduled respawn for NPC {UnitId}:{SpawnerId}:{npc.ObjId} in {RespawnTime} seconds. New scheduled count: {newScheduledCount}.");
         }
     }
 
@@ -1727,13 +1727,13 @@ public class NpcSpawner : Spawner<Npc>
     public static Vector3 AdjustSpawnPosition(Npc npc, int maxAttempts = 15)
     {
         var collisionRadius = GetCollisionRadiusForNpc(npc);
-        var rmax = 0f;
-        var rmin = 0f;
-        rmin = npc.Spawner.Template.TestRadiusNpc == 0 ? 3 : npc.Spawner.Template.TestRadiusNpc;
+        //var rmax = 0f;
+        //var rmin = 0f;
+        //rmin = npc.Spawner.Template.TestRadiusNpc == 0 ? 3 : npc.Spawner.Template.TestRadiusNpc;
 
-        rmax = npc.Spawner.Template.TestRadiusPc == 0 ? rmin : npc.Spawner.Template.TestRadiusPc;
+        //rmax = npc.Spawner.Template.TestRadiusPc == 0 ? rmin : npc.Spawner.Template.TestRadiusPc;
 
-        collisionRadius += Rand.Next(rmin, rmax);
+        //collisionRadius += Rand.Next(rmin, rmax);
 
         var originalPos = npc.Transform.CloneAsSpawnPosition();
         var currentPos = originalPos.ToVector3();

@@ -42,7 +42,7 @@ public partial class Character
                 continue;
 
             var npcPos = npc.Transform.World.Position;
-            var cacheKey = Npc.GetCacheKey(pos.X, pos.Y, character.Transform.ZoneId);
+            var cacheKey = Npc.GetCacheKey(pos.X, pos.Y, character.Transform.ZoneId, character.Transform.WorldId);
 
             var candidate = npc.AdjustNpcFloor(pos.Z);
 

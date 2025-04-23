@@ -457,12 +457,12 @@ public class SpawnManager : Singleton<SpawnManager>
                     }
                     else if (obj is Doodad doodad)
                     {
-                        Logger.Trace($"Respawning Doodad {doodad.ObjId}");
+                        //Logger.Trace($"Respawning Doodad {doodad.ObjId}");
                         doodad.Spawner.Respawn(doodad);
                     }
                     else if (obj is Transfer transfer)
                     {
-                        Logger.Trace($"Respawning Transfer {transfer.ObjId}");
+                        //Logger.Trace($"Respawning Transfer {transfer.ObjId}");
                         transfer.Spawner.Respawn(transfer);
                     }
                     else if (obj is Gimmick gimmick)
@@ -477,6 +477,7 @@ public class SpawnManager : Singleton<SpawnManager>
             var deSpawns = GetDespawnsReady();
             if (deSpawns.Count > 0)
             {
+                Logger.Debug($"Despawning {deSpawns.Count}...");
                 foreach (var obj in deSpawns)
                 {
                     if (obj.Despawn >= DateTime.UtcNow)
@@ -513,14 +514,13 @@ public class SpawnManager : Singleton<SpawnManager>
                     }
                     else
                     {
-                        Logger.Trace($"Deleting GameObject {obj.ObjId}");
+                        //Logger.Trace($"Deleting GameObject {obj.ObjId}");
                         obj.Delete();
                     }
 
                     ObjectIdManager.Instance.ReleaseId(obj.ObjId);
                     RemoveDespawn(obj);
                 }
-                Logger.Debug($"Despawning...");
             }
 
             Thread.Sleep(1000);

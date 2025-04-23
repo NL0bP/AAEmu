@@ -397,7 +397,7 @@ public class Simulation : Patrol
 
             if (!npc.CanFly)
             {
-                var referenceHeight = npc.GetReferenceHeight(newX, newY);
+                var referenceHeight = npc.GetReferenceHeight(newX, newY, npc.Transform.ZoneId, npc.Transform.WorldId);
                 if (referenceHeight != 0)
                     newZ = referenceHeight;
             }
