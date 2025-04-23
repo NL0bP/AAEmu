@@ -544,46 +544,82 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
 
     public void LoadHeightmaps()
     {
-        if (AppConfiguration.Instance.HeightMapsEnable) // TODO fastboot if HeightMapsEnable = false!
+        if (!AppConfiguration.Instance.HeightMapsEnable)
+            return;
+
+        Logger.Info("Loading heightmaps...");
+
+        int loadedCount = 0;
+        foreach (var world in _worlds.Values)
         {
-            Logger.Info("Loading heightmaps...");
-
-            var loaded = 0;
-            foreach (var world in _worlds.Values)
+            if (TryLoadHeightMap(world))
             {
-                if (AppConfiguration.Instance.ClientData.PreferClientHeightMap && LoadHeightMapFromClientData(world))
-                    loaded++;
-                else if (LoadHeightMapFromDatFile(world))
-                    loaded++;
-                else if (LoadHeightMapFromClientData(world))
-                    loaded++;
+                loadedCount++;
             }
-
-            Logger.Info($"Loaded {loaded}/{_worlds.Count} heightmaps");
         }
+
+        Logger.Info($"Loaded {loadedCount}/{_worlds.Count} heightmaps");
+    }
+
+    /// <summary>
+    /// Пытается загрузить высотную карту для указанного мира.
+    /// Логика: если предпочтительны клиентские данные – пытаемся загрузить их, иначе – загружаем из .dat-файла.
+    /// В качестве запасного варианта повторно пытаемся загрузить клиентские данные.
+    /// </summary>
+    /// <param name="world">Мир для которого загружаются данные высот.</param>
+    /// <returns>True – если загрузка успешна, иначе false.</returns>
+    private bool TryLoadHeightMap(InstanceWorld world)
+    {
+        // Если предпочтительны клиентские данные и их удалось загрузить – возвращаем успех.
+        if (AppConfiguration.Instance.ClientData.PreferClientHeightMap && LoadHeightMapFromClientData(world))
+        {
+            return true;
+        }
+
+        // Пытаемся загрузить из .dat-файла.
+        if (LoadHeightMapFromDatFile(world))
+        {
+            return true;
+        }
+
+        // Запасной вариант: повторно пытаемся загрузить клиентские данные.
+        return LoadHeightMapFromClientData(world);
     }
 
     public void LoadWaterBodies()
     {
         foreach (var world in _worlds.Values)
         {
-            var loadFromClient = true;
-
-            // Try to load from saved json data
-            var customFile = Path.Combine(FileManager.AppPath, "Data", "Worlds", world.Name, "water_bodies.json");
-            if (File.Exists(customFile))
+            // Если не удалось загрузить кастомные данные, загружаем из данных клиента
+            if (!TryLoadCustomWaterBodies(world))
             {
-                if (WaterBodies.Load(customFile, out var newWater))
-                {
-                    world.Water = newWater;
-                    loadFromClient = false;
-                }
-            }
-
-            // If no custom data could be found or loaded, then load from client's cell data
-            if (loadFromClient)
                 LoadWaterBodiesFromClientData(world);
+            }
         }
+    }
+
+    /// <summary>
+    /// Пытается загрузить данные водных тел из кастомного JSON-файла.
+    /// </summary>
+    /// <param name="world">Мир, для которого загружаются данные.</param>
+    /// <returns>True, если загрузка успешна, иначе false.</returns>
+    private bool TryLoadCustomWaterBodies(InstanceWorld world)
+    {
+        var customFile = Path.Combine(FileManager.AppPath, "Data", "Worlds", world.Name, "water_bodies.json");
+        if (File.Exists(customFile))
+        {
+            if (WaterBodies.Load(customFile, out var newWater))
+            {
+                world.Water = newWater;
+                Logger.Info($"Custom water bodies loaded for {world.Name}");
+                return true;
+            }
+            else
+            {
+                Logger.Warn($"Failed to load custom water bodies for {world.Name} from {customFile}");
+            }
+        }
+        return false;
     }
 
     public InstanceWorld GetWorld(uint worldId)
@@ -641,63 +677,106 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         return region.ZoneKey;
     }
 
+    /// <summary>
+    /// Returns the ground height for given coordinates in the specified zone.
+    /// </summary>
+    /// <param name="zoneId">Zone ID.</param>
+    /// <param name="x">X coordinate.</param>
+    /// <param name="y">Y coordinate.</param>
+    /// <returns>Height value.</returns>
     public float GetHeight(uint zoneId, float x, float y)
     {
-        // try to find Z first in GeoData, and then in HeightMaps, if not found, leave Z as it is
-        var height = 0f;
+        float height = 0f;
         var world = GetWorldByZone(zoneId);
 
-        if (AppConfiguration.Instance.World.GeoDataMode && world.Id > 0)
+        try
         {
-            var position = new WorldSpawnPosition { WorldId = 0, ZoneId = zoneId, X = x, Y = y, Z = 0, Yaw = 0, Pitch = 0, Roll = 0 };
-            height = AiGeoDataManager.Instance.GetHeight(zoneId, position);
+            // Try to get height from GeoData if enabled and world is not main
+            if (AppConfiguration.Instance.World.GeoDataMode && world.Id > 0)
+            {
+                var pos = new WorldSpawnPosition
+                {
+                    WorldId = 0,
+                    ZoneId = zoneId,
+                    X = x,
+                    Y = y,
+                    Z = 0,
+                    Yaw = 0,
+                    Pitch = 0,
+                    Roll = 0
+                };
+                height = AiGeoDataManager.Instance.GetHeight(zoneId, pos);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error getting height from GeoData");
         }
 
-        // check, as there is no geodata for main_world yet
-        if (height == 0)
+        // If height is still zero, try to get it from the heightmap
+        if (height == 0 && AppConfiguration.Instance.HeightMapsEnable)
         {
-            if (AppConfiguration.Instance.HeightMapsEnable)
+            try
             {
-                try
-                {
-                    //var world = GetWorldByZone(zoneId);
-                    height = world?.GetHeight(x, y) ?? 0f;
-                }
-                catch
-                {
-                    height = 0f;
-                }
+                height = world?.GetHeight(x, y) ?? 0f;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error getting height from HeightMaps");
+                height = 0f;
             }
         }
 
         return height;
     }
 
+    /// <summary>
+    /// Asynchronously returns the ground height for given coordinates in the specified zone.
+    /// </summary>
+    /// <param name="zoneId">Zone ID.</param>
+    /// <param name="x">X coordinate.</param>
+    /// <param name="y">Y coordinate.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Height value.</returns>
     public async Task<float> GetHeightAsync(uint zoneId, float x, float y, CancellationToken cancellationToken = default)
     {
-        // try to find Z first in GeoData, and then in HeightMaps, if not found, leave Z as it is
-        var height = 0f;
+        float height = 0f;
         var world = GetWorldByZone(zoneId);
 
         if (AppConfiguration.Instance.World.GeoDataMode && world.Id > 0)
         {
-            var position = new WorldSpawnPosition { WorldId = 0, ZoneId = zoneId, X = x, Y = y, Z = 0, Yaw = 0, Pitch = 0, Roll = 0 };
-            height = await Task.Run(() => AiGeoDataManager.Instance.GetHeight(zoneId, position), cancellationToken);
+            var pos = new WorldSpawnPosition
+            {
+                WorldId = 0,
+                ZoneId = zoneId,
+                X = x,
+                Y = y,
+                Z = 0,
+                Yaw = 0,
+                Pitch = 0,
+                Roll = 0
+            };
+
+            try
+            {
+                height = await Task.Run(() => AiGeoDataManager.Instance.GetHeight(zoneId, pos), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Async error getting height from GeoData");
+            }
         }
 
-        // check, as there is no geodata for main_world yet
-        if (height == 0)
+        if (height == 0 && AppConfiguration.Instance.HeightMapsEnable)
         {
-            if (AppConfiguration.Instance.HeightMapsEnable)
+            try
             {
-                try
-                {
-                    height = await Task.Run(() => world?.GetHeight(x, y) ?? 0f, cancellationToken);
-                }
-                catch
-                {
-                    height = 0f;
-                }
+                height = await Task.Run(() => world?.GetHeight(x, y) ?? 0f, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Async error getting height from HeightMaps");
+                height = 0f;
             }
         }
 
@@ -845,30 +924,30 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     }
 
     /// <summary>
-    /// Returns a player Character object based on the parameters.
-    /// Priority is TargetName > CurrentTarget > character
+    /// Returns the target character if valid; otherwise returns the current target or self.
     /// </summary>
-    /// <param name="character">Source character</param>
-    /// <param name="TargetName">Possible target name</param>
-    /// <param name="FirstNonNameArgument">Returns 1 if TargetName was a valid online character, 0 otherwise</param>
-    /// <returns></returns>
+    /// <param name="character">The source character.</param>
+    /// <param name="TargetName">The target name input.</param>
+    /// <param name="FirstNonNameArgument">
+    /// Returns 1 if TargetName was a valid online character, 0 otherwise.
+    /// </param>
+    /// <returns>The target character.</returns>
     public static Character GetTargetOrSelf(Character character, string TargetName, out int FirstNonNameArgument)
     {
         FirstNonNameArgument = 0;
-        if (string.IsNullOrEmpty(TargetName))
+        if (string.IsNullOrWhiteSpace(TargetName))
         {
             return character.CurrentTarget as Character ?? character;
         }
 
         var player = Instance.GetCharacter(TargetName);
-        if (player is null)
+        if (player == null)
         {
             return character.CurrentTarget as Character ?? character;
         }
 
         FirstNonNameArgument = 1;
         return player;
-
     }
 
     public Character GetCharacterByObjId(uint id)
@@ -994,49 +1073,34 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     }
 
     /// <summary>
-    /// Removes a GameObject from the list of "existing" objects on the server
+    /// Removes a GameObject from all relevant collections by its ID.
     /// </summary>
-    /// <param name="ObjId"></param>
-    /// <returns></returns>
-    public bool RemoveObject(uint ObjId)
+    /// <param name="objId">The ID of the object to remove.</param>
+    /// <returns>True if at least one collection was updated, otherwise false.</returns>
+    public bool RemoveObject(uint objId)
     {
-        if (ObjId == 0)
+        if (objId == 0)
             return false;
 
-        var res = false;
+        bool removed = RemoveFromCollection(_objects, objId, "object");
+        removed |= RemoveFromCollection(_baseUnits, objId, "base unit");
+        removed |= RemoveFromCollection(_units, objId, "unit");
+        removed |= RemoveFromCollection(_npcs, objId, "NPC");
 
-        if (_objects.TryRemove(ObjId, out _))
+        return removed;
+    }
+
+    /// <summary>
+    /// Tries to remove an object from a given collection and logs the removal.
+    /// </summary>
+    private bool RemoveFromCollection<T>(ConcurrentDictionary<uint, T> collection, uint objId, string collectionName)
+    {
+        if (collection.TryRemove(objId, out _))
         {
-            Logger.Debug($"WorldManager: object {ObjId} removed from _objects");
-            res = true;
+            Logger.Debug($"WorldManager: object {objId} removed from {collectionName}");
+            return true;
         }
-
-        if (_baseUnits.TryRemove(ObjId, out _))
-        {
-            Logger.Debug($"WorldManager: object {ObjId} removed from _baseUnits");
-            res = true;
-        }
-
-        if (_units.TryRemove(ObjId, out _))
-        {
-            Logger.Debug($"WorldManager: object {ObjId} removed from _units");
-            res = true;
-        }
-
-        if (_npcs.TryRemove(ObjId, out _))
-        {
-            Logger.Debug($"WorldManager: object {ObjId} removed from _npcs");
-            res = true;
-        }
-
-        //_doodads.TryRemove(ObjId, out _);
-        //_characters.TryRemove(ObjId, out _);
-        //_transfers.TryRemove(ObjId, out _);
-        //_gimmicks.TryRemove(ObjId, out _);
-        //_slaves.TryRemove(ObjId, out _);
-        //_mates.TryRemove(mate.ObjId, out _);
-
-        return res;
+        return false;
     }
 
     /// <summary>
@@ -1071,114 +1135,275 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             _mates.TryRemove(mate.ObjId, out _);
     }
 
+    // --------------------------------------------------------------------
+    // Дополнительные методы для работы с регионами и видимостью объектов
+    // Эти изменения позволяют централизовать общую логику обновления списков соседних регионов,
+    // снизить дублирование кода в таких методах, как SwitchRegion и UpdateObjectRegion,
+    // а также улучшить читаемость и удобство сопровождения класса WorldManager.
+    // --------------------------------------------------------------------
+
     /// <summary>
-    /// Adds or updates a GameObject of its region object list
+    /// 1.	Вынести общую логику обновления видимости между старым и новым регионом в хелпер.
+    /// Например, добавить приватный метод, который вычисляет разницу между соседними областями и обновляет видимость объекта:
     /// </summary>
     /// <param name="obj"></param>
+    /// <param name="oldRegion"></param>
+    /// <param name="newRegion"></param>
+    private void UpdateRegionVisibility(GameObject obj, Region oldRegion, Region newRegion)
+    {
+        // Получаем регионы, из которых надо удалить объект.
+        var regionsToRemove = oldRegion.FindDifferenceBetweenRegions(newRegion) ?? Enumerable.Empty<Region>();
+        // Получаем регионы, в которые надо добавить объект.
+        var regionsToAdd = newRegion.FindDifferenceBetweenRegions(oldRegion) ?? Enumerable.Empty<Region>();
+
+        foreach (var region in regionsToRemove)
+        {
+            region?.RemoveFromCharacters(obj);
+        }
+        foreach (var region in regionsToAdd)
+        {
+            if (obj.IsVisible)
+                region?.AddToCharacters(obj);
+        }
+    }
+
+    /// <summary>
+    /// 2.	Объединить логику добавления объекта в регион и его соседей (вместо отдельного метода AddToRegion):
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="region"></param>
+    private void AddObjectToRegionWithNeighbors(GameObject obj, Region region)
+    {
+        foreach (var neighbor in region.GetNeighbors())
+        {
+            neighbor.AddToCharacters(obj);
+        }
+        region.AddObject(obj);
+        obj.Region = region;
+    }
+
+    /// <summary>
+    /// 3.	Переработать методы, использующие повторяющуюся логику. Например, метод SwitchRegion можно переписать так:
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="oldRegion"></param>
+    /// <param name="newRegion"></param>
+    private void SwitchRegion(GameObject obj, Region oldRegion, Region newRegion)
+    {
+        UpdateRegionVisibility(obj, oldRegion, newRegion);
+        newRegion.AddObject(obj);
+        obj.Region = newRegion;
+        oldRegion.RemoveObject(obj);
+    }
+
+    /// <summary>
+    /// Аналогично, метод UpdateObjectRegion станет:
+    /// </summary>
+    /// <param name="obj"></param>
+    /// <param name="oldRegion"></param>
+    /// <param name="newRegion"></param>
+    private void UpdateObjectRegion(GameObject obj, Region oldRegion, Region newRegion)
+    {
+        UpdateRegionVisibility(obj, oldRegion, newRegion);
+        newRegion.AddObject(obj);
+        obj.Region = newRegion;
+        oldRegion.RemoveObject(obj);
+    }
+
+    /// <summary>
+    /// Рекурсивно обновляет видимость для дочерних объектов.
+    /// </summary>
+    /// <param name="obj">Объект, чьи дочерние объекты необходимо обработать.</param>
+    private void ProcessChildrenVisibility(GameObject obj)
+    {
+        if (obj.Transform?.Children == null)
+            return;
+
+        // Создаём копию списка, чтобы избежать ошибок при итерации
+        foreach (var child in obj.Transform.Children.ToList())
+        {
+            if (child != null)
+            {
+                //UpdateObjectVisibility(child.GameObject);
+                AddVisibleObject(child.GameObject);
+            }
+        }
+    }
+
+    // --------------------------------------------------------------------
+    // Главный метод для работы с регионами и видимостью объектов
+    // --------------------------------------------------------------------
+    /// <summary>
+    /// Обновляет видимость объекта в его регионах, если изменился регион.
+    /// </summary>
+    /// <param name="obj">Объект, для которого необходимо обновить видимость.</param>
+    //public void UpdateObjectVisibility(GameObject obj)
     public void AddVisibleObject(GameObject obj)
     {
         if (obj == null)
             return;
-        var region = GetRegion(obj); // Get region of Object or it's Root object if it has one
-        var currentRegion = obj.Region; // Current Region this object is in
 
-        // If region didn't change, ignore
-        if (region == null || currentRegion != null && currentRegion.Equals(region))
+        var targetRegion = GetRegion(obj); // целевой регион (учитывая корневой объект)
+        var currentRegion = obj.Region;
+
+        // Если регион не изменился, ничего не делаем
+        if (targetRegion == null || (currentRegion != null && currentRegion.Equals(targetRegion)))
             return;
 
-        if (currentRegion == null)
-        {
-            // If no currentRegion, add it (happens on new spawns)
-            foreach (var neighbor in region.GetNeighbors())
-                neighbor.AddToCharacters(obj);
-
-            region.AddObject(obj);
-            obj.Region = region;
-        }
+        if (currentRegion != null)
+            SwitchRegion(obj, currentRegion, targetRegion);
         else
         {
-            // No longer in the same region, update things
-            // Remove visibility from oldNeighbors
-            var diffs = currentRegion.FindDifferenceBetweenRegions(region);
-            if (diffs != null)
-                foreach (var diff in diffs)
-                    diff?.RemoveFromCharacters(obj);
-
-            // Add visibility to newNeighbours
-            diffs = region.FindDifferenceBetweenRegions(currentRegion);
-            if (diffs != null)
-                foreach (var diff in diffs)
-                    if (obj.IsVisible)
-                        diff?.AddToCharacters(obj);
-
-            // Add this obj to the new region
-            region.AddObject(obj);
-            // Update its region
-            obj.Region = region;
-
-            // remove the obj from the old region
-            currentRegion.RemoveObject(obj);
+            //AddToRegion0(obj, targetRegion);
+            AddObjectToRegionWithNeighbors(obj, targetRegion);
         }
 
-        // Also show children
-        if (obj.Transform?.Children?.Count > 0)
-        {
-            var childrenCopy = obj.Transform.Children.ToList();
-            foreach (var child in childrenCopy.Where(child => child != null))
-                AddVisibleObject(child.GameObject);
-        }
-
-        //Logger.Warn($" objects={_objects.Count}, doodads={_doodads.Count}, npcs={_npcs.Count}, characters={_characters.Count}");
+        ProcessChildrenVisibility(obj);
     }
 
+    /// <summary>
+    /// Переключает регион объекта: удаляет из старых областей видимости и добавляет в новые.
+    /// </summary>
+    /// <param name="obj">Объект, чей регион изменился.</param>
+    /// <param name="oldRegion">Старый регион объекта.</param>
+    /// <param name="newRegion">Новый регион объекта.</param>
+    private void SwitchRegion0(GameObject obj, Region oldRegion, Region newRegion)
+    {
+        // Определяем регионы, из которых нужно удалить видимость:
+        var regionsToRemove = oldRegion.FindDifferenceBetweenRegions(newRegion);
+        if (regionsToRemove != null)
+        {
+            foreach (var region in regionsToRemove)
+            {
+                region?.RemoveFromCharacters(obj);
+            }
+        }
+
+        // Определяем регионы, в которые нужно добавить видимость:
+        var regionsToAdd = newRegion.FindDifferenceBetweenRegions(oldRegion);
+        if (regionsToAdd != null)
+        {
+            foreach (var region in regionsToAdd)
+            {
+                if (obj.IsVisible)
+                    region?.AddToCharacters(obj);
+            }
+        }
+
+        newRegion.AddObject(obj);
+        obj.Region = newRegion;
+        oldRegion.RemoveObject(obj);
+    }
+
+    /// <summary>
+    /// Добавляет объект в указанный регион, обновляя список видимости для соседних регионов.
+    /// </summary>
+    /// <param name="obj">Объект для добавления.</param>
+    /// <param name="region">Регион, в который будет добавлен объект.</param>
+    private void AddToRegion0(GameObject obj, Region region)
+    {
+        foreach (var neighbor in region.GetNeighbors())
+        {
+            neighbor.AddToCharacters(obj);
+        }
+        region.AddObject(obj);
+        obj.Region = region;
+    }
+
+    // --------------------------------------------------------------------
+
+    /// <summary>
+    /// Adds or updates a GameObject in its region's object list.
+    /// </summary>
+    /// <param name="obj">The GameObject to add or update.</param>
     public void AddVisibleObject0(GameObject obj)
     {
         if (obj == null)
             return;
 
-        var region = GetRegion(obj);
-        var currentRegion = obj.Region;
+        var newRegion = GetRegion(obj); // Get the region of the object or its root.
+        var currentRegion = obj.Region;  // Current region of the object.
 
-        if (region == null || (currentRegion != null && currentRegion.Equals(region)))
+        // If region didn't change, ignore updating.
+        if (newRegion == null || (currentRegion != null && currentRegion.Equals(newRegion)))
             return;
 
         if (currentRegion == null)
         {
-            foreach (var neighbor in region.GetNeighbors())
-                neighbor.AddToCharacters(obj);
-
-            region.AddObject(obj);
-            obj.Region = region;
+            AddObjectToRegion(obj, newRegion);
         }
         else
         {
-            var diffs = currentRegion.FindDifferenceBetweenRegions(region);
-            if (diffs != null)
-            {
-                foreach (var diff in diffs)
-                    diff?.RemoveFromCharacters(obj);
-
-                foreach (var diff in diffs)
-                    if (obj.IsVisible)
-                        diff?.AddToCharacters(obj);
-            }
-
-            region.AddObject(obj);
-            obj.Region = region;
-            currentRegion.RemoveObject(obj);
+            UpdateObjectRegion(obj, currentRegion, newRegion);
         }
 
-        if (obj.Transform?.Children?.Count > 0)
+        // Update children visibility recursively.
+        AddVisibleChildren(obj);
+    }
+
+    /// <summary>
+    /// Adds the object to the given region and updates its character lists.
+    /// </summary>
+    private void AddObjectToRegion(GameObject obj, Region region)
+    {
+        foreach (var neighbor in region.GetNeighbors())
         {
-            var childrenCopy = obj.Transform.Children.ToList();
-            Parallel.ForEach(childrenCopy, child =>
+            neighbor.AddToCharacters(obj);
+        }
+
+        region.AddObject(obj);
+        obj.Region = region;
+    }
+
+    /// <summary>
+    /// Updates the object's region and its related visibility lists.
+    /// </summary>
+    private void UpdateObjectRegion0(GameObject obj, Region oldRegion, Region newRegion)
+    {
+        // Determine regions that are not included in both neighbors.
+        var removedRegions = oldRegion.FindDifferenceBetweenRegions(newRegion);
+        if (removedRegions != null)
+        {
+            foreach (var region in removedRegions)
             {
-                if (child != null)
-                    AddVisibleObject(child.GameObject);
-            });
+                region?.RemoveFromCharacters(obj);
+            }
+        }
+
+        var addedRegions = newRegion.FindDifferenceBetweenRegions(oldRegion);
+        if (addedRegions != null)
+        {
+            foreach (var region in addedRegions)
+            {
+                if (obj.IsVisible)
+                    region?.AddToCharacters(obj);
+            }
+        }
+
+        newRegion.AddObject(obj);
+        obj.Region = newRegion;
+        oldRegion.RemoveObject(obj);
+    }
+
+    /// <summary>
+    /// Recursively adds visibility for object's children.
+    /// </summary>
+    private void AddVisibleChildren(GameObject obj)
+    {
+        if (obj.Transform?.Children == null)
+            return;
+
+        // Create a copy to avoid modification issues during iteration.
+        var copy = obj.Transform.Children.ToList();
+        foreach (var child in copy)
+        {
+            if (child != null)
+            {
+                AddVisibleObject(child.GameObject);
+            }
         }
     }
- 
+
     /// <summary>
     /// Removes a GameObject from its region object list
     /// </summary>
@@ -1638,45 +1863,59 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         return true;
     }
 
+    /// <summary>
+    /// Creates a new instance of a world based on an original world template.
+    /// </summary>
+    /// <param name="originalWorld">The original world to clone.</param>
+    /// <returns>The new world instance.</returns>
     public InstanceWorld CreateWorld(InstanceWorld originalWorld)
     {
         if (originalWorld == null)
             return null;
 
-        // Apply Data to world
-        var newInstance = new InstanceWorld();
-        newInstance.Id = WorldIdManager.Instance.GetNextId();
-        newInstance.TemplateId = originalWorld.TemplateId;
-        newInstance.Name = originalWorld.Name;
-        newInstance.CellX = originalWorld.CellX;
-        newInstance.CellY = originalWorld.CellY;
-        newInstance.OceanLevel = originalWorld.OceanLevel;
-        newInstance.MaxHeight = originalWorld.MaxHeight;
-        newInstance.HeightMaxCoefficient = originalWorld.HeightMaxCoefficient;
-        newInstance.SpawnPosition = originalWorld.SpawnPosition.Clone();
-        newInstance.SpawnPosition.WorldId = newInstance.Id;
-        newInstance.ZoneKeys = originalWorld.ZoneKeys;
-        newInstance.HeightMaps = originalWorld.HeightMaps; // TODO слишком долго копирует, клиент дисконнектит .CloneJson();
-        newInstance.XmlWorldZones = originalWorld.XmlWorldZones; // TODO копирование зацикливается
-        newInstance.Physics = originalWorld.Physics;  // TODO копирование зацикливается .CloneJson();
-        newInstance.Physics.SimulationWorld.Id = newInstance.Id;
-        newInstance.Water = originalWorld.Water; // TODO .CloneJson();
-        var dx = originalWorld.CellX * SECTORS_PER_CELL;
-        var dy = originalWorld.CellY * SECTORS_PER_CELL;
-        newInstance.Regions = new Region[dx, dy];
-        for (var y = 0; y < dy; y++)
+        // Copy basic properties
+        var newInstance = new InstanceWorld
         {
-            for (var x = 0; x < dx; x++)
+            Id = WorldIdManager.Instance.GetNextId(),
+            TemplateId = originalWorld.TemplateId,
+            Name = originalWorld.Name,
+            CellX = originalWorld.CellX,
+            CellY = originalWorld.CellY,
+            OceanLevel = originalWorld.OceanLevel,
+            MaxHeight = originalWorld.MaxHeight,
+            HeightMaxCoefficient = originalWorld.HeightMaxCoefficient,
+            SpawnPosition = originalWorld.SpawnPosition.Clone(),
+            ZoneKeys = originalWorld.ZoneKeys,
+            // TODO: Consider performing deep copies if necessary
+            HeightMaps = originalWorld.HeightMaps,
+            XmlWorldZones = originalWorld.XmlWorldZones,
+            Physics = originalWorld.Physics,
+            Water = originalWorld.Water
+        };
+
+        newInstance.SpawnPosition.WorldId = newInstance.Id;
+
+        int dx = originalWorld.CellX * SECTORS_PER_CELL;
+        int dy = originalWorld.CellY * SECTORS_PER_CELL;
+        newInstance.Regions = new Region[dx, dy];
+
+        // Initialize regions
+        for (int y = 0; y < dy; y++)
+        {
+            for (int x = 0; x < dx; x++)
             {
-                newInstance.Regions[x, y] = new Region(newInstance.Id, x, y, originalWorld.ZoneKeys[0]);
+                newInstance.Regions[x, y] = new Region(newInstance.Id, x, y, originalWorld.ZoneKeys.First());
             }
         }
 
-        newInstance.Physics.SimulationWorld.Regions = newInstance.Regions;
-        //SpawnManager.Instance.CloneNpcEventSpawners((byte)originalWorld.TemplateId, (byte)newInstance.Id);
+        // Update physics simulation world if physics exists
+        if (newInstance.Physics != null)
+        {
+            newInstance.Physics.SimulationWorld.Id = newInstance.Id;
+            newInstance.Physics.SimulationWorld.Regions = newInstance.Regions;
+        }
 
         _worlds.Add(newInstance.Id, newInstance);
-
         return newInstance;
     }
 
