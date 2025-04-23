@@ -208,17 +208,17 @@ public class NpcSpawner : Spawner<Npc>
             return false;
         }
 
-        if (!Template.ActivationState)
-        {
-            //Logger.Debug($"[Spawn SpawnerId={SpawnerId}, UnitId={UnitId}] Template activation state is false.");
-            return false;
-        }
+        //if (!Template.ActivationState)
+        //{
+        //    //Logger.Debug($"[Spawn SpawnerId={SpawnerId}, UnitId={UnitId}] Template activation state is false.");
+        //    return false;
+        //}
 
-        if (!IsPlayerInSpawnRadius())
-        {
-            //Logger.Debug($"[Spawn SpawnerId={SpawnerId}, UnitId={UnitId}] No players in spawn radius.");
-            return false;
-        }
+        //if (!IsPlayerInSpawnRadius())
+        //{
+        //    //Logger.Debug($"[Spawn SpawnerId={SpawnerId}, UnitId={UnitId}] No players in spawn radius.");
+        //    return false;
+        //}
 
         if (!IsOptimalSpawner())
         {
@@ -245,10 +245,10 @@ public class NpcSpawner : Spawner<Npc>
     /// <summary>
     /// Returns true if this is the optimal spawner
     /// </summary>
-    private bool IsOptimalSpawner()
+    public bool IsOptimalSpawner()
     {
         var optimalId = SelectSpawnerId();
-        var result = optimalId != 0 && SpawnerId == optimalId;
+        var result = SpawnerId == optimalId;
         if (!result)
         {
             //Logger.Debug($"[Spawn SpawnerId={SpawnerId}] Not optimal (best is {optimalId})");
@@ -265,12 +265,14 @@ public class NpcSpawner : Spawner<Npc>
     /// <returns>The selected SpawnerId, or null if no suitable spawner is found.</returns>
     private uint? SelectSpawnerId()
     {
-        // Condition 1: Check for a spawner with a suitable schedule
-        // Condition 2: Check for an AutoCreated spawner without a scheduled NPC
         // Condition 3: If there is only one spawner, select it
-        if (IsThereSpawningSchedule((int)SpawnerId))
+        // Condition 2: Check for an AutoCreated spawner without a scheduled NPC
+        // Condition 1: Check for a spawner with a suitable schedule
+
+        // Condition 3: If there is only one spawner, select it
+        if (NpcSpawnerIds.Count == 1)
         {
-            //Logger.Info($"Selected SpawnerId={spawnerId} based on schedule.");
+            //Logger.Info($"Selected the only available SpawnerId={SpawnerId}.");
             return SpawnerId;
         }
 
@@ -280,48 +282,15 @@ public class NpcSpawner : Spawner<Npc>
             //Logger.Info($"Selected AutoCreated SpawnerId={spawnerId} without a scheduled NPC.");
             return SpawnerId;
         }
-        //}
 
-        // Condition 3: If there is only one spawner, select it
-        if (NpcSpawnerIds.Count == 1)
+        if (IsThereSpawningSchedule())
         {
-            //Logger.Info($"Selected the only available SpawnerId={NpcSpawnerIds[0]}.");
-            return NpcSpawnerIds[0];
+            //Logger.Info($"Selected SpawnerId={spawnerId} based on schedule.");
+            return SpawnerId;
         }
 
         //Logger.Warn("No suitable SpawnerId found for this NPC.");
         return null;
-    }
-
-    private bool IsThereSpawningSchedule(int spawnerId)
-    {
-        var scheduleStatus = GameScheduleManager.Instance.GetPeriodStatusNpc((int)spawnerId);
-        switch (scheduleStatus)
-        {
-            case GameScheduleManager.PeriodStatus.NotFound:
-                //Logger.Debug($"[Spawn] No schedule found for NPC {npcId}. Falling back to time window.");
-                break; // Переход к проверке времени
-
-            case GameScheduleManager.PeriodStatus.InProgress:
-            case GameScheduleManager.PeriodStatus.NotStarted:
-            case GameScheduleManager.PeriodStatus.Ended:
-                //Logger.Debug($"[Spawn] Расписание у NPC {npcId} имеется.");
-                return true;
-
-            default:
-                Logger.Warn($"[Spawn] Unknown schedule status '{scheduleStatus}' for NPC {spawnerId}.");
-                return false;
-        }
-
-        // Если расписания нет — проверим, задано ли время появления
-        if (HasSpawningTime())
-        {
-            //Logger.Debug($"[Spawn] NPC {npcId} is within spawn time window — spawning enabled.");
-            return true;
-        }
-
-        //Logger.Debug($"[Spawn] NPC {npcId} not in spawn time window.");
-        return false;
     }
 
     public bool IsThereSpawningSchedule()
@@ -363,7 +332,7 @@ public class NpcSpawner : Spawner<Npc>
             return true;
         }
 
-        //Logger.Debug($"[TimeCheck] NPC {SpawnerId} has no time window defined.");
+        //Logger.Debug($"[TimeCheck] NPC {Template.Id} has no time window defined.");
         return false;
     }
 
@@ -377,13 +346,13 @@ public class NpcSpawner : Spawner<Npc>
             //Logger.Debug($"[Spawn SpawnerId={SpawnerId}] No NpcSpawnerIds defined.");
             return true;
         }
-        if (NpcSpawnerIds == null || NpcSpawnerIds.Count == 1)
-        {
-            //Logger.Debug($"[Spawn SpawnerId={SpawnerId}] Имеется только один спавнер.");
-            return false;
-        }
+        //if (NpcSpawnerIds == null || NpcSpawnerIds.Count == 1)
+        //{
+        //    //Logger.Debug($"[Spawn SpawnerId={SpawnerId}] Имеется только один спавнер.");
+        //    return false;
+        //}
 
-        var result = false;
+        var result = false; // Default to false
         foreach (var spawnerId in NpcSpawnerIds)
         {
             if (spawnerId == 0)
@@ -1298,7 +1267,7 @@ public class NpcSpawner : Spawner<Npc>
             return;
         }
 
-        Logger.Info($"Mobs were spawned from SpawnerId={UnitId}:{SpawnerId} in the amount of {spawnedNpcs.Count}");
+        //Logger.Info($"Mobs were spawned from SpawnerId={UnitId}:{SpawnerId} in the amount of {spawnedNpcs.Count}");
     }
 
     /// <summary>

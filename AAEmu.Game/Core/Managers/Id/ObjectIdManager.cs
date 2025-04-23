@@ -16,8 +16,8 @@ public class ObjectIdManager : IdManager
     {
     }
 
-    public override void ReleaseId(uint usedObjId)
-    {
-        return;
-    }
+    //public override void ReleaseId(uint usedObjId)
+    //{
+    //    return;
+    //}
 }

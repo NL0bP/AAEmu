@@ -58,8 +58,9 @@ public class SpawnManager : Singleton<SpawnManager>
             //Logger.Debug($"Processed in world {worldId} {worldSpawners.Values.Count} spawners...");
             var activeSpawners = worldSpawners.Values.SelectMany(x => x)
                 .Where(spawner => spawner.Template != null &&
-                                  IsSpawnerActive(spawner) &&
-                                  spawner.IsPlayerInSpawnRadius())
+                                  IsSpawnerActive(spawner)
+                                  //&& spawner.IsPlayerInSpawnRadius()
+                                  )
                 .ToList();
 
             // Последовательная обработка спавнеров
@@ -76,13 +77,16 @@ public class SpawnManager : Singleton<SpawnManager>
 
     private bool IsSpawnerActive(NpcSpawner spawner)
     {
-        if (spawner.CanDespawnNpcs() || !spawner.IsPlayerInSpawnRadius())
+        if (spawner.IsPlayerInSpawnRadius())
         {
-            //Logger.Debug($"[SpawnerId={spawner.SpawnerId}, UnitId={spawner.UnitId}] Despawning NPCs...");
-            spawner.DespawnNpcsNow();
+            return true;
         }
 
-        return !spawner.IsThereSpawningSchedule();
+        //Logger.Debug($"[SpawnerId={spawner.SpawnerId}, UnitId={spawner.UnitId}] Despawning NPCs...");
+        //spawner.DespawnNpcsNow();
+
+        //return spawner.IsThereSpawningSchedule();
+        return false;
     }
 
     /// <summary>
