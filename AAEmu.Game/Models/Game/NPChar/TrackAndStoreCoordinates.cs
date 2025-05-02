@@ -23,17 +23,25 @@ public partial class Npc
 {
     #region Height Caching System
 
-    private const float CacheGridSize = 4f;
+    private const float CacheGridSize = 1f;
     private const int CacheCleanupIntervalMinutes = 1;
     private const int CacheEntryLifetimeMinutes = 5;
     private const float NearbyCharactersSearchRadius = 4f;
     private const float NearbyNpcSearchRadius = 15f;
-    private const float Tolerance = 1f; // порог допуска для корректировки высоты
+    private const float Tolerance = 0.5f; // порог допуска для корректировки высоты
     private const float FloorThreshold = 5.6f;
 
     private static readonly ConcurrentDictionary<(uint WorldId, uint ZoneId, int GridX, int GridY), CachedHeight> HeightCache = new();
     private static readonly Lazy<Timer> CacheCleanupTimer = new(() => new Timer(CleanupCache, null, TimeSpan.FromMinutes(CacheCleanupIntervalMinutes), TimeSpan.FromMinutes(CacheCleanupIntervalMinutes)));
-
+    
+    // Кэш для AdjustNpcFloor
+    private static readonly ConcurrentDictionary<float, float> _adjustedFloorCache = new();
+    // Кэш для высот. Ключ: (ZoneId, Округленный X, Округленный Y)
+    private static readonly ConcurrentDictionary<(uint, int, int), CachedHeight> _heightCache = new();
+    // Точность округления координат 1000 (3 знака = 0.001) - миллиметры
+    // Точность округления координат 100 (2 знака = 0.01) - сантиметры
+    // Точность округления координат 10 (1 знак = 0.1) - дециметры
+    private const int COORDINATE_PRECISION = 10;
     private sealed class CachedHeight
     {
         public float Height { get; }
@@ -71,11 +79,60 @@ public partial class Npc
         return CalculateAndCacheHeight(x, y, cacheKey);
     }
 
+    public float GetReferenceHeight(uint zoneId, float x, float y, float z, float tolerance)
+    {
+        return GetCachedHeight(zoneId, x, y, z, Tolerance);
+    }
+
     #endregion
 
     #region Private Implementation
 
-    public static (uint WorldId, uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null, uint worldId = 0)
+    private float GetCachedHeight(uint zoneId, float x, float y, float z, float tolerance)
+    {
+        // Нормализация координат
+        var roundedX = (int)Math.Round(x * COORDINATE_PRECISION);
+        var roundedY = (int)Math.Round(y * COORDINATE_PRECISION);
+        var key = (zoneId, roundedX, roundedY);
+
+        // Получение или вычисление высоты с использованием CachedHeight
+        var cached = _heightCache.GetOrAdd(key, k =>
+        {
+            float height = WorldManager.Instance.GetHeight(zoneId, x, y);
+            return new CachedHeight(height);
+        });
+
+        // Для примера можно залогировать время кэширования
+        Logger.Debug("Retrieved height {0} from cache at {1}", cached.Height, cached.LastAccessTime.ToString("o"));
+
+        var candidate = cached.Height;
+        if (candidate != 0 && Math.Abs(z - candidate) <= tolerance)
+        {
+            return AdjustNpcFloorWithCache(candidate);
+        }
+
+        return candidate; // или другое значение по умолчанию
+    }
+
+    private float AdjustNpcFloorWithCache(float height)
+    {
+        return _adjustedFloorCache.GetOrAdd(height, h => AdjustNpcFloor(h));
+    }
+
+    // Очистка кэша для зоны
+    private static void ClearCacheForZone(int zoneId)
+    {
+        var keysToRemove = _heightCache.Keys
+            .Where(k => k.Item1 == zoneId)
+            .ToList();
+
+        foreach (var key in keysToRemove)
+        {
+            _heightCache.TryRemove(key, out _);
+        }
+    }
+
+    internal static (uint WorldId, uint ZoneId, int GridX, int GridY) GetCacheKey(float x, float y, uint? zoneId = null, uint worldId = 0)
     {
         var gridX = (int)Math.Floor(x / CacheGridSize);
         var gridY = (int)Math.Floor(y / CacheGridSize);
@@ -153,13 +210,13 @@ public partial class Npc
         //}
 
         // 2. Получение высоты из базы данных
-        var heights = GetHeightsFromDatabase(x, y, cacheKey.ZoneId, cacheKey.WorldId);
-        if (heights.Item1 != 0/* && Math.Abs(pos.Z - heights.Item1) <= Tolerance*/)
-        {
-            candidate = AdjustNpcFloor(heights.Item1, heights.Item2, heights.Item3);
-            HeightCacheAddOrUpdate(candidate, cacheKey);
-            return candidate;
-        }
+        //var heights = GetHeightsFromDatabase(x, y, cacheKey.ZoneId, cacheKey.WorldId);
+        //if (heights.Item1 != 0/* && Math.Abs(pos.Z - heights.Item1) <= Tolerance*/)
+        //{
+        //    candidate = AdjustNpcFloor(heights.Item1, heights.Item2, heights.Item3);
+        //    HeightCacheAddOrUpdate(candidate, cacheKey);
+        //    return candidate;
+        //}
 
         // 3. Получение высоты из WorldManager
         candidate = WorldManager.Instance.GetHeight(cacheKey.ZoneId, x, y);
@@ -173,14 +230,15 @@ public partial class Npc
         return Spawner.Position.Z;
     }
 
-    public float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
+    internal float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
     {
         var actualMinZ = minZ ?? Math.Min(Spawner.Position.Z, candidate);
         var actualMaxZ = maxZ ?? Math.Max(Spawner.Position.Z, candidate);
 
         if (actualMaxZ - actualMinZ >= FloorThreshold)
         {
-            return Building.GetFloorHeight(actualMinZ, actualMaxZ, Spawner.Position.Z);
+            return candidate;
+            //return Building.GetFloorHeight(actualMinZ, actualMaxZ, Spawner.Position.Z);
         }
         return candidate;
     }
@@ -341,7 +399,7 @@ public partial class Npc
         }
     }
 
-    private static void CleanupCache(object state)
+    private static void CleanupCache0(object state)
     {
         var cutoff = DateTime.UtcNow - TimeSpan.FromMinutes(CacheEntryLifetimeMinutes);
         foreach (var key in HeightCache.Keys)
@@ -349,6 +407,18 @@ public partial class Npc
             if (HeightCache.TryGetValue(key, out var entry) && entry.LastAccessTime < cutoff)
             {
                 HeightCache.TryRemove(key, out _);
+                Logger.Debug("Removed stale cache entry at {0}", key);
+            }
+        }
+    }
+    private static void CleanupCache(object state)
+    {
+        var cutoff = DateTime.UtcNow - TimeSpan.FromMinutes(CacheEntryLifetimeMinutes);
+        foreach (var key in _heightCache.Keys)
+        {
+            if (_heightCache.TryGetValue(key, out var entry) && entry.LastAccessTime < cutoff)
+            {
+                _heightCache.TryRemove(key, out _);
                 Logger.Debug("Removed stale cache entry at {0}", key);
             }
         }

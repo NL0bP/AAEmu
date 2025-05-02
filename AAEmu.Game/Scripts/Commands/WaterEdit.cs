@@ -8,11 +8,9 @@ using System.Globalization;
 using System.IO;
 using System.Numerics;
 using AAEmu.Commons.IO;
-using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Teleport;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.StaticValues;
@@ -22,13 +20,13 @@ namespace AAEmu.Game.Scripts.Commands;
 
 public class WaterEdit : ICommand
 {
-    public string[] CommandNames { get; set; } = new[] { "wateredit", "water_edit", "wedit" };
+    public string[] CommandNames { get; set; } = ["wateredit", "water_edit", "wedit"];
 
     public static WaterBodyArea SelectedWater { get; set; }
     public static World SelectedWorld { get; set; }
     public static int NextPoint { get; set; }
-    public List<(WaterBodyArea, float)> NearbyList = new();
-    public List<BaseUnit> Markers = new();
+    public List<(WaterBodyArea, float)> NearbyList = [];
+    public List<BaseUnit> Markers = [];
 
     public void OnLoad()
     {
@@ -104,7 +102,7 @@ public class WaterEdit : ICommand
             centerDoodad.Transform.Local.SetPosition(SelectedWater.GetCenter(true));
             centerDoodad.Show();
             Markers.Add(centerDoodad);
-            // character.SendDebugMessage("--" + centerDoodad.Transform.ToFullString());
+            // character.SendMessage("--" + centerDoodad.Transform.ToFullString());
 
             for (var p = 0; p < SelectedWater.Points.Count - 1; p++)
             {
@@ -125,11 +123,11 @@ public class WaterEdit : ICommand
                 surfaceUnit.Transform.Local.SetHeight(point.Z + SelectedWater.Height);
                 if (p != 0)
                 {
-                    surfaceUnit.Name = "#" + p;
+                    surfaceUnit.Name = "#" + p.ToString();
                 }
                 else
                 {
-                    surfaceUnit.Name = "#" + p + " <-> #" + (SelectedWater.Points.Count - 1);
+                    surfaceUnit.Name = "#" + p.ToString() + " <-> #" + (SelectedWater.Points.Count - 1).ToString();
                 }
 
                 surfaceUnit.Faction = FactionManager.Instance.GetFaction(FactionsEnum.Friendly);
@@ -159,26 +157,39 @@ public class WaterEdit : ICommand
         if (args.Length <= 0)
         {
             CommandManager.SendNormalText(this, messageOutput, $"Currently selected:");
-            CommandManager.SendNormalText(this, messageOutput, $"|cFFFFFFFF{SelectedWater?.Name ?? "<no area>"}|r in |cFFFFFFFF{SelectedWorld?.Name ?? "<no world>"}|r with height {SelectedWater?.Height ?? 0f}");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"|cFFFFFFFF{SelectedWater?.Name ?? "<no area>"}|r in |cFFFFFFFF{SelectedWorld?.Name ?? "<no world>"}|r with height {SelectedWater?.Height ?? 0f}");
             CommandManager.SendNormalText(this, messageOutput, $"Available commands:");
-            CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00list|r: lists all water bodies in the current world");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"|cFF00FF00list|r: lists all water bodies in the current world");
             CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00nearby|r: lists all nearby water bodies");
             CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00select <name||id>|r: select a water body");
-            CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00next|r: select the next water body in the world list");
-            CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00createwater <name>|r: creates a new cube of water at your location using name");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"|cFF00FF00next|r: select the next water body in the world list");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"|cFF00FF00createwater <name>|r: creates a new cube of water at your location using name");
             CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00save|r: saves water_bodies.json to disk");
-            CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00load|r: load data from water_bodies.json on disk");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"|cFF00FF00load|r: load data from water_bodies.json on disk");
             if (SelectedWater != null)
             {
                 CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00clear|r: unselect everything");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00goto|r: teleports to selected water body");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00setheight <value>|r: set a new height for selected water body");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00setbottom <value>|r: set a new Z position for all points in selected water body");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00listpoints|r: Shows world position of all points in the selected water body");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00movepoint <index>|r: changes the point at index's X and Y position of your current location");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00insertpoint <index>|r: inserts a new point before index using X and Y position of your current location");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00removepoint <index>|r: removes the point at index");
-                CommandManager.SendNormalText(this, messageOutput, $"|cFF00FF00removewater <count>|r: entirely removes a body of water, must provide the current amount of points in the body");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00goto|r: teleports to selected water body");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00setheight <value>|r: set a new height for selected water body");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00setbottom <value>|r: set a new Z position for all points in selected water body");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00listpoints|r: Shows world position of all points in the selected water body");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00movepoint <index>|r: changes the point at index's X and Y position of your current location");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00insertpoint <index>|r: inserts a new point before index using X and Y position of your current location");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00removepoint <index>|r: removes the point at index");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFF00FF00removewater <count>|r: entirely removes a body of water, must provide the current amount of points in the body");
             }
 
             return;
@@ -193,10 +204,12 @@ public class WaterEdit : ICommand
         var subCommand = args[0].ToLower();
         if (subCommand is "list" or "l")
         {
-            CommandManager.SendNormalText(this, messageOutput, $"World {world.Name} has {world.Water.Areas.Count} water bodies defined:");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"World {world.Name} has {world.Water.Areas.Count} water bodies defined:");
             foreach (var area in world.Water.Areas)
             {
-                CommandManager.SendNormalText(this, messageOutput, $"|cFFFFFFFF{area.Name}|r ({area.Id}) => {area.Points.Count} points");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFFFFFFFF{area.Name}|r ({area.Id}) => {area.Points.Count} points");
             }
         }
         else if (subCommand == "nearby")
@@ -213,7 +226,8 @@ public class WaterEdit : ICommand
                 }
 
                 c++;
-                CommandManager.SendNormalText(this, messageOutput, $"|cFFFFFFFF{area.Name}|r ({area.Id}) - {distance:F1}m");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"|cFFFFFFFF{area.Name}|r ({area.Id}) - {distance:F1}m");
             }
 
             if (c <= 0)
@@ -237,7 +251,7 @@ public class WaterEdit : ICommand
             {
                 foreach (var area in world.Water.Areas)
                 {
-                    if (area.Name.ToLower() == selectName || area.Id.ToString() == selectName)
+                    if (area.Name.Equals(selectName, StringComparison.CurrentCultureIgnoreCase) || area.Id.ToString() == selectName)
                     {
                         SelectedWater = area;
                         NextPoint = 0;
@@ -253,7 +267,7 @@ public class WaterEdit : ICommand
                 {
                     foreach (var area in world.Water.Areas)
                     {
-                        if (area.Name.ToLower().Contains(selectName))
+                        if (area.Name.Contains(selectName, StringComparison.CurrentCultureIgnoreCase))
                         {
                             SelectedWater = area;
                             NextPoint = 0;
@@ -265,7 +279,8 @@ public class WaterEdit : ICommand
 
             if (SelectedWater != null)
             {
-                CommandManager.SendNormalText(this, messageOutput, $"Selected |cFFFFFFFF{SelectedWater.Name}|r ({SelectedWater.Id}), height: |cFF00FF00{SelectedWater.Height}|r");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"Selected |cFFFFFFFF{SelectedWater.Name}|r ({SelectedWater.Id}), height: |cFF00FF00{SelectedWater.Height}|r");
             }
             else
             {
@@ -296,7 +311,8 @@ public class WaterEdit : ICommand
 
             SelectedWater.Height = newHeight;
             ShowSelectedArea(character);
-            CommandManager.SendNormalText(this, messageOutput, $"Height for |cFFFFFFFF{SelectedWater.Name}|r set to |cFF00FF00{newHeight}!|r");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"Height for |cFFFFFFFF{SelectedWater.Name}|r set to |cFF00FF00{newHeight}!|r");
         }
         else if (subCommand is "setbottom" or "setb")
         {
@@ -324,7 +340,8 @@ public class WaterEdit : ICommand
             }
 
             ShowSelectedArea(character);
-            CommandManager.SendNormalText(this, messageOutput, $"Z position for all points in |cFFFFFFFF{SelectedWater.Name}|r have been set to |cFF00FF00{newBottom}!|r");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"Z position for all points in |cFFFFFFFF{SelectedWater.Name}|r have been set to |cFF00FF00{newBottom}!|r");
         }
         else if (subCommand is "listpoints" or "listp")
         {
@@ -352,13 +369,13 @@ public class WaterEdit : ICommand
             var pos = SelectedWater.GetCenter(true);
             character.ForceDismount();
             character.DisabledSetPosition = true;
-            character.SendPacket(new SCTeleportUnitPacket(TeleportReason.Portal, ErrorMessageType.NoErrorMessage, pos.X + 1f, pos.Y + 1f, pos.Z + 3f, 0));
+            character.SendPacket(new SCTeleportUnitPacket(0, 0, pos.X + 1f, pos.Y + 1f, pos.Z + 3f, 0));
         }
         else if (subCommand is "clear" or "c")
         {
             if (SelectedWater == null)
             {
-                character.SendDebugMessage($"[WaterEdit] You had nothing selected.");
+                character.SendMessage($"[WaterEdit] You had nothing selected.");
             }
 
             SelectedWater = null;
@@ -386,7 +403,8 @@ public class WaterEdit : ICommand
 
             if (SelectedWater != null)
             {
-                CommandManager.SendNormalText(this, messageOutput, $"Selected |cFFFFFFFF{SelectedWater.Name}|r ({SelectedWater.Id}), height: |cFF00FF00{SelectedWater.Height}|r");
+                CommandManager.SendNormalText(this, messageOutput,
+                    $"Selected |cFFFFFFFF{SelectedWater.Name}|r ({SelectedWater.Id}), height: |cFF00FF00{SelectedWater.Height}|r");
             }
             else
             {
@@ -415,7 +433,8 @@ public class WaterEdit : ICommand
 
             if (pointIndex >= SelectedWater.Points.Count - 1 || pointIndex < 0)
             {
-                CommandManager.SendErrorText(this, messageOutput, $"{pointIndex} is not a valid point index (0~{SelectedWater.Points.Count - 2})!");
+                CommandManager.SendErrorText(this, messageOutput,
+                    $"{pointIndex} is not a valid point index (0~{SelectedWater.Points.Count - 2})!");
                 return;
             }
 
@@ -433,7 +452,8 @@ public class WaterEdit : ICommand
             NextPoint = pointIndex + 1;
 
             ShowSelectedArea(character);
-            CommandManager.SendNormalText(this, messageOutput, $"|cFFFFFFFF{SelectedWater.Name} #{pointIndex}|r moved to set to |cFF00FF00{newPos}|r");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"|cFFFFFFFF{SelectedWater.Name} #{pointIndex}|r moved to set to |cFF00FF00{newPos}|r");
         }
         else if (subCommand is "insertpoint" or "ip")
         {
@@ -457,7 +477,8 @@ public class WaterEdit : ICommand
 
             if (pointIndex > SelectedWater.Points.Count - 1 || pointIndex < 0)
             {
-                CommandManager.SendErrorText(this, messageOutput, $"{pointIndex} is not a valid point index (0~{SelectedWater.Points.Count - 1})!");
+                CommandManager.SendErrorText(this, messageOutput,
+                    $"{pointIndex} is not a valid point index (0~{SelectedWater.Points.Count - 1})!");
                 return;
             }
 
@@ -473,7 +494,8 @@ public class WaterEdit : ICommand
             }
 
             ShowSelectedArea(character);
-            CommandManager.SendNormalText(this, messageOutput, $"Added new point before |cFFFFFFFF#{pointIndex}|r at |cFF00FF00{newPos}|r");
+            CommandManager.SendNormalText(this, messageOutput,
+                $"Added new point before |cFFFFFFFF#{pointIndex}|r at |cFF00FF00{newPos}|r");
         }
         else if (subCommand is "removepoint" or "rp")
         {
@@ -503,7 +525,8 @@ public class WaterEdit : ICommand
 
             if (pointIndex >= SelectedWater.Points.Count - 1 || pointIndex <= 0)
             {
-                CommandManager.SendErrorText(this, messageOutput, $"{pointIndex} is not a valid point index (1~{SelectedWater.Points.Count - 2})!");
+                CommandManager.SendErrorText(this, messageOutput,
+                    $"{pointIndex} is not a valid point index (1~{SelectedWater.Points.Count - 2})!");
                 return;
             }
 
@@ -559,8 +582,8 @@ public class WaterEdit : ICommand
             }
 
             var newName = args[1];
-            var newBody = new WaterBodyArea(newName);
-            newBody.Id = (uint)Rand.Next(8000000, 9000000);
+            var newBody = new WaterBodyArea(newName, WaterBodyAreaType.Polygon);
+            newBody.Id = (uint)Random.Shared.Next(8000000, 9000000);
             var centerPos = character.Transform.World.Position with { Z = character.Transform.World.Position.Z - 5f };
             newBody.Points.Add(new Vector3(centerPos.X - 15f, centerPos.Y - 15f, centerPos.Z));
             newBody.Points.Add(new Vector3(centerPos.X - 15f, centerPos.Y + 15f, centerPos.Z));

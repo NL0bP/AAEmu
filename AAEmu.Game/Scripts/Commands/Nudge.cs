@@ -10,7 +10,7 @@ namespace AAEmu.Game.Scripts.Commands;
 
 public class Nudge : ICommand
 {
-    public string[] CommandNames { get; set; } = new[] { "nudge" };
+    public string[] CommandNames { get; set; } = ["nudge"];
 
     public void OnLoad()
     {
@@ -32,8 +32,8 @@ public class Nudge : ICommand
 
     public void Execute(Character character, string[] args, IMessageOutput messageOutput)
     {
-        var dist = 5f;
-        if (args.Length > 1 && !float.TryParse(args[0], out dist))
+        var distance = 5f;
+        if (args.Length > 1 && !float.TryParse(args[0], out distance))
         {
             CommandManager.SendErrorText(this, messageOutput, $"Distance parse error");
             return;
@@ -41,9 +41,11 @@ public class Nudge : ICommand
 
         character.DisabledSetPosition = true;
         // CommandManager.SendNormalText(this, messageOutput,$"from {character.Transform}");
-        character.Transform.Local.AddDistanceToFront(dist, false);
+        character.Transform.Local.AddDistanceToFront(distance, false);
         character.Transform.FinalizeTransform();
         // CommandManager.SendNormalText(this, messageOutput,$"to {character.Transform}");
-        character.SendPacket(new SCTeleportUnitPacket(TeleportReason.Gm, 0, character.Transform.World.Position.X, character.Transform.World.Position.Y, character.Transform.World.Position.Z, character.Transform.World.Rotation.Z.DegToRad()));
+        character.SendPacket(new SCTeleportUnitPacket(TeleportReason.Gm, 0, character.Transform.World.Position.X,
+            character.Transform.World.Position.Y, character.Transform.World.Position.Z,
+            character.Transform.World.Rotation.Z.DegToRad()));
     }
 }

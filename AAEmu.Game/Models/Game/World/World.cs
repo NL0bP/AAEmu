@@ -19,7 +19,7 @@ public class World
     public virtual string Name { get; set; }
     public float MaxHeight { get; set; }
     public virtual double HeightMaxCoefficient { get; set; }
-    public float OceanLevel { get; set; }
+    public float OceanLevel { get; set; } = 100f;
     public int CellX { get; set; }
     public int CellY { get; set; }
     public uint TemplateId { get; set; } // worldId
@@ -46,10 +46,14 @@ public class World
         Logger.Info($"World {Id} removed");
     }
 
-    public virtual bool IsWater(Vector3 point)
+    public bool IsWater(Vector3 position) => IsWater(position, out _);
+
+    public bool IsWater(Vector3 point, out Vector3 flowDirection)
     {
         if (Water != null)
-            return Water.IsWater(point);
+            return Water.IsWater(point, out flowDirection);
+
+        flowDirection = Vector3.Zero;
 
         if (point.Z <= OceanLevel)
             return true;

@@ -656,7 +656,7 @@ public class SlaveManager : Singleton<SlaveManager>
                     return null;
                 }
 
-                var worldWaterLevel = world.Water.GetWaterSurface(spawnPos.World.Position);
+                var worldWaterLevel = world.Water.GetWaterSurface(spawnPos.World.Position, out _);
                 spawnPos.Local.SetHeight(worldWaterLevel);
 
                 // temporary grab ship information so that we can use it to find a suitable spot in front to summon it
@@ -673,7 +673,7 @@ public class SlaveManager : Singleton<SlaveManager>
                     var floorHeight = WorldManager.Instance.GetHeight(depthCheckPos);
                     if (floorHeight > 0f)
                     {
-                        var surfaceHeight = world.Water.GetWaterSurface(depthCheckPos.World.Position);
+                        var surfaceHeight = world.Water.GetWaterSurface(depthCheckPos.World.Position, out _);
                         var delta = surfaceHeight - floorHeight;
                         if (delta > minDepth)
                         {
@@ -729,7 +729,12 @@ public class SlaveManager : Singleton<SlaveManager>
         // Create the Slave (packet)
         #region spawn_base_slave
         owner?.BroadcastPacket(new SCSlaveCreatedPacket(owner.ObjId, tlId, objId, item?.Id ?? 0ul, owner.Name), true);
-        var summonedSlave = new Slave();
+        var summonedSlave = new Slave
+        {
+            SummoningItem = item,
+            SpawnTime = DateTime.UtcNow,
+            OwnerType = owner != null ? BaseUnitType.Character : BaseUnitType.Invalid
+        };
         summonedSlave.TlId = tlId;
         summonedSlave.ObjId = objId;
         summonedSlave.TemplateId = slaveTemplate.Id;
@@ -744,10 +749,7 @@ public class SlaveManager : Singleton<SlaveManager>
         summonedSlave.Faction = owner?.Faction ?? FactionManager.Instance.GetFaction(slaveTemplate.FactionId);
         summonedSlave.Id = dbId;
         summonedSlave.Summoner = owner;
-        summonedSlave.SummoningItem = item;
-        summonedSlave.SpawnTime = DateTime.UtcNow;
         summonedSlave.Spawner = useSpawner;
-        summonedSlave.OwnerType = owner != null ? BaseUnitType.Character : BaseUnitType.Invalid;
         summonedSlave.OwnerId = owner?.Id ?? 0;
         summonedSlave.IsLoadedPlayerSlave = isLoadedPlayerSlave;
 
@@ -923,6 +925,7 @@ public class SlaveManager : Singleton<SlaveManager>
             SpawnSlaveSlaves(owner, slaveBinding, summonedSlave);
         }
 
+        // If it's a boat, add it to boat physics
         if (summonedSlave.Template.IsABoat())
         {
             var world = WorldManager.Instance.GetWorld(owner.Transform.WorldId);
@@ -1479,7 +1482,14 @@ public class SlaveManager : Singleton<SlaveManager>
         var childSlaveTemplate = GetSlaveTemplate(childSlaveTemplateId > 0 ? childSlaveTemplateId : slaveBinding.SlaveId);
         var childTlId = (ushort)TlIdManager.Instance.GetNextId();
         var childObjId = ObjectIdManager.Instance.GetNextId();
-        var childSlave = new Slave();
+        var childSlave = new Slave
+        {
+            SpawnTime = DateTime.UtcNow,
+            AttachPointId = (sbyte)slaveBinding.AttachPointId,
+            OwnerObjId = summonedSlave.ObjId,
+            OwnerType = BaseUnitType.Slave
+        };
+
         childSlave.TlId = childTlId;
         childSlave.ObjId = childObjId;
         childSlave.ParentObj = summonedSlave;
@@ -1494,10 +1504,6 @@ public class SlaveManager : Singleton<SlaveManager>
         childSlave.Faction = summonedSlave.Faction;
         childSlave.Id = childDbId;
         childSlave.Summoner = summonedSlave.Summoner;
-        childSlave.SpawnTime = DateTime.UtcNow;
-        childSlave.AttachPointId = (sbyte)slaveBinding.AttachPointId;
-        childSlave.OwnerObjId = summonedSlave.ObjId;
-        childSlave.OwnerType = BaseUnitType.Slave;
         childSlave.OwnerId = summonedSlave.Id;
 
         ApplySlaveBonuses(childSlave);
