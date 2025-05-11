@@ -31,7 +31,7 @@ namespace AAEmu.Game.Core.Managers.World
         /// <summary>
         /// Target ticks per second the physics try to emulate
         /// </summary>
-        private float TargetPhysicsTps { get; set; } = 25f;
+        private float TargetPhysicsTps { get; set; } = 100f;
         internal Thread _thread;
         private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
 

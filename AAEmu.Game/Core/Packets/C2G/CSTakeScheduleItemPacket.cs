@@ -33,7 +33,6 @@ public class CSTakeScheduleItemPacket : GamePacket
             var giveMax = scheduleItem.GiveMax;
 
             item.Cumulated = 0;
-            item.Gave++;
 
             if (item.Gave == giveMax)
             {
@@ -47,6 +46,8 @@ public class CSTakeScheduleItemPacket : GamePacket
 
             // Update Account Divine Clock time
             AccountManager.Instance.UpdateDivineClock(character.AccountId, item.ScheduleItemId, item.Cumulated, item.Gave);
+
+            item.Gave++;
         }
 
         #endregion
