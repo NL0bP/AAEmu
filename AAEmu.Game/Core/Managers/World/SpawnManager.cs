@@ -57,10 +57,7 @@ public class SpawnManager : Singleton<SpawnManager>
             // Фильтрация спавнеров
             //Logger.Debug($"Processed in world {worldId} {worldSpawners.Values.Count} spawners...");
             var activeSpawners = worldSpawners.Values.SelectMany(x => x)
-                .Where(spawner => spawner.Template != null &&
-                                  IsSpawnerActive(spawner)
-                                  //&& spawner.IsPlayerInSpawnRadius()
-                                  )
+                .Where(spawner => spawner.Template != null && IsSpawnerActive(spawner))
                 .ToList();
 
             // Последовательная обработка спавнеров
@@ -363,27 +360,27 @@ public class SpawnManager : Singleton<SpawnManager>
     internal void SpawnAllNpcs(byte worldId)
     {
         Logger.Info($"Spawning {_npcSpawners[worldId].Count} NPC spawners in world {worldId}");
-        var count = 0;
-        foreach (var spawners in _npcSpawners[worldId].Values)
-        {
-            foreach (var spawner in spawners)
-            {
-                if (spawner.Template == null)
-                {
-                    Logger.Warn($"Templates not found for Npc templateId {spawner.UnitId} in world {worldId}");
-                }
-                else
-                {
-                    spawner.Update();
-                    count++;
-                    if (count % 5000 == 0)
-                    {
-                        Logger.Debug($"{count} NPC spawners spawned in world {worldId}");
-                    }
-                }
-            }
-        }
-        Logger.Info($"{count} NPC spawners spawned in world {worldId}");
+        //var count = 0;
+        //foreach (var spawners in _npcSpawners[worldId].Values)
+        //{
+        //    foreach (var spawner in spawners)
+        //    {
+        //        if (spawner.Template == null)
+        //        {
+        //            Logger.Warn($"Templates not found for Npc templateId {spawner.UnitId} in world {worldId}");
+        //        }
+        //        else
+        //        {
+        //            spawner.Update();
+        //            count++;
+        //            if (count % 5000 == 0)
+        //            {
+        //                Logger.Debug($"{count} NPC spawners spawned in world {worldId}");
+        //            }
+        //        }
+        //    }
+        //}
+        //Logger.Info($"{count} NPC spawners spawned in world {worldId}");
 
         if (worldId == 0)
         {
