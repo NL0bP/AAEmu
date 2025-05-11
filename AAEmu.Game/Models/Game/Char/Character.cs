@@ -159,7 +159,7 @@ public partial class Character : Unit, ICharacter
     public CharacterFriends Friends { get; set; }
     public CharacterBlocked Blocked { get; set; }
     public CharacterMates Mates { get; set; }
-    public CharacterAttendances Attendances { get; set; }
+    public CharacterAttendance Attendances { get; set; }
 
     public byte ExpandedExpert { get; set; }
     public CharacterActability Actability { get; set; }
@@ -2347,7 +2347,7 @@ public partial class Character : Unit, ICharacter
             Quests.CheckDailyResetAtLogin();
             Mates = new CharacterMates(this);
             Mates.Load(connection);
-            Attendances = new CharacterAttendances(this);
+            Attendances = new CharacterAttendance(this);
             Attendances.Load(connection);
             Stats.Load(connection);
             LoadActionSlots(connection);

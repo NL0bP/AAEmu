@@ -100,13 +100,13 @@ public class AttendanceGameData : Singleton<AttendanceGameData>, IGameDataLoader
         var itemId = 0u;
         var countItem = 0;
 
-        foreach (KeyValuePair<int, Dictionary<int, List<AccountAttendanceReward>>> ary in _rewards)
+        foreach (var ary in _rewards)
         {
             if (ary.Key == year)
-                foreach (KeyValuePair<int, List<AccountAttendanceReward>> ar in ary.Value)
+                foreach (var ar in ary.Value)
                 {
                     if (ar.Key == month)
-                        foreach (AccountAttendanceReward reward in ar.Value)
+                        foreach (var reward in ar.Value)
                         {
                             if (reward.DayCount >= dayCount && reward.AdditionalReward)
                             {

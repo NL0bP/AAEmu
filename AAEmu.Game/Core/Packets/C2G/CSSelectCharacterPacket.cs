@@ -60,7 +60,7 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
             // начинаем слать пакеты
 
             // TODO подобрать правильное место для пакета
-            if (Connection.ActiveChar.Attendances.Attendances?.Count == 0)
+            if (Connection.ActiveChar.Attendances.Records?.Count == 0)
             {
                 Connection.ActiveChar.Attendances.SendEmptyAttendances();
             }

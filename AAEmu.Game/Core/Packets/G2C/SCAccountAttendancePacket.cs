@@ -8,9 +8,9 @@ namespace AAEmu.Game.Core.Packets.G2C;
 
 public class SCAccountAttendancePacket : GamePacket
 {
-    private readonly List<Attendances> _attendances;
+    private readonly List<AttendanceRecord> _attendances;
 
-    public SCAccountAttendancePacket(List<Attendances> attendances) : base(SCOffsets.SCAccountAttendancePacket, 5)
+    public SCAccountAttendancePacket(List<AttendanceRecord> attendances) : base(SCOffsets.SCAccountAttendancePacket, 5)
     {
         _attendances = attendances;
     }

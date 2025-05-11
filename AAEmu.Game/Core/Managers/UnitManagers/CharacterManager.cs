@@ -580,7 +580,7 @@ public class CharacterManager : Singleton<CharacterManager>
         character.Mails = new CharacterMails(character);
         character.Portals = new CharacterPortals(character);
         character.Friends = new CharacterFriends(character);
-        character.Attendances = new CharacterAttendances(character);
+        character.Attendances = new CharacterAttendance(character);
 
         character.Hp = character.MaxHp;
         character.Mp = character.MaxMp;

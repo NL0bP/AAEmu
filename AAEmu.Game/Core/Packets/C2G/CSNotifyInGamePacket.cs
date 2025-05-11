@@ -47,7 +47,7 @@ public class CSNotifyInGamePacket : GamePacket
         //Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.AbilitySetFreeActivationCount));
         Connection.ActiveChar.SendPacket(new SCCurServerTimePacket(DateTime.UtcNow));
 
-        if (Connection.ActiveChar.Attendances.Attendances?.Count == 0)
+        if (Connection.ActiveChar.Attendances.Records?.Count == 0)
         {
             Connection.ActiveChar.Attendances.SendEmptyAttendances();
         }
