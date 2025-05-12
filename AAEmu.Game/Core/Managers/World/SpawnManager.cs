@@ -1217,7 +1217,6 @@ public class SpawnManager : Singleton<SpawnManager>
                 foreach (var spawner in spawners)
                 {
                     spawner.Position.WorldId = worldId;
-                    spawner.ClearSpawnCount();
                     npcList.Add(spawner.Spawn(0));
                     spawner.Position.WorldId = worldTemplateId;
                 }

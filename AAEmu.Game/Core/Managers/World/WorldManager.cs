@@ -75,7 +75,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     Was originally set to 1, recommended 3 and max 5
     anything higher is overkill as you can't target it anymore in the client at that distance
     */
-    public const sbyte REGION_NEIGHBORHOOD_SIZE = 2;
+    public const sbyte REGION_NEIGHBORHOOD_SIZE = 3;
     // ReSharper enable InconsistentNaming
 
     public const float DefaultCombatTimeout = 15f;
@@ -1028,12 +1028,21 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     /// <param name="region"></param>
     private void AddObjectToRegionWithNeighbors(GameObject obj, Region region)
     {
+        // Добавляем объект в текущий регион
+        region.AddObject(obj);
+        obj.Region = region;
+
+        // Добавляем в соседние регионы согласно размеру окрестности
         foreach (var neighbor in region.GetNeighbors())
         {
             neighbor.AddToCharacters(obj);
         }
-        region.AddObject(obj);
-        obj.Region = region;
+
+        // Если нужно добавить в сам регион (например, для персонажа)
+        if (obj is Character)
+        {
+            region.AddToCharacters(obj);
+        }
     }
 
     /// <summary>
@@ -1297,10 +1306,10 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         return world.GetRegion(sx, sy);
     }
 
-    private static Region GetRegion(InstanceWorld world, float x, float y)
+    public static Region GetRegion(InstanceWorld world, float x, float y)
     {
-        var sx = (int)(x / REGION_SIZE);
-        var sy = (int)(y / REGION_SIZE);
+        var sx = (int)Math.Floor(x / REGION_SIZE); // Используем Floor для корректного определения региона
+        var sy = (int)Math.Floor(y / REGION_SIZE);
         return world.GetRegion(sx, sy);
     }
 
