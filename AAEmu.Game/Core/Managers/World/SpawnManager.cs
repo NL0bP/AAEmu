@@ -50,7 +50,7 @@ public class SpawnManager : Singleton<SpawnManager>
     private uint _nextId = 1u;
     private uint _fakeSpawnerId = 9000001u;
 
-    public void Update(TimeSpan delta)
+    public void Update()
     {
         foreach (var (worldId, worldSpawners) in _npcSpawners)
         {
@@ -360,32 +360,32 @@ public class SpawnManager : Singleton<SpawnManager>
     internal void SpawnAllNpcs(byte worldId)
     {
         Logger.Info($"Spawning {_npcSpawners[worldId].Count} NPC spawners in world {worldId}");
-        //var count = 0;
-        //foreach (var spawners in _npcSpawners[worldId].Values)
-        //{
-        //    foreach (var spawner in spawners)
-        //    {
-        //        if (spawner.Template == null)
-        //        {
-        //            Logger.Warn($"Templates not found for Npc templateId {spawner.UnitId} in world {worldId}");
-        //        }
-        //        else
-        //        {
-        //            spawner.Update();
-        //            count++;
-        //            if (count % 5000 == 0)
-        //            {
-        //                Logger.Debug($"{count} NPC spawners spawned in world {worldId}");
-        //            }
-        //        }
-        //    }
-        //}
-        //Logger.Info($"{count} NPC spawners spawned in world {worldId}");
-
-        if (worldId == 0)
+        var count = 0;
+        foreach (var spawners in _npcSpawners[worldId].Values)
         {
-            TickManager.Instance.OnTick.Subscribe(Update, TimeSpan.FromSeconds(1));
+            foreach (var spawner in spawners)
+            {
+                if (spawner.Template == null)
+                {
+                    Logger.Warn($"Templates not found for Npc templateId {spawner.UnitId} in world {worldId}");
+                }
+                else
+                {
+                    spawner.Update();
+                    count++;
+                    if (count % 5000 == 0)
+                    {
+                        Logger.Debug($"{count} NPC spawners spawned in world {worldId}");
+                    }
+                }
+            }
         }
+        Logger.Info($"{count} NPC spawners spawned in world {worldId}");
+
+        //if (worldId == 0)
+        //{
+        //    TickManager.Instance.OnTick.Subscribe(Update, TimeSpan.FromSeconds(1));
+        //}
     }
 
     /// <summary>
@@ -1091,14 +1091,14 @@ public class SpawnManager : Singleton<SpawnManager>
     /// </summary>
     public void SpawnAll()
     {
-        Logger.Info("Spawning NPCs...");
-        foreach (var (worldId, worldSpawners) in _npcSpawners)
-        {
-            Task.Run(() =>
-            {
-                SpawnAllNpcs(worldId);
-            });
-        }
+        //Logger.Info("Spawning NPCs...");
+        //foreach (var (worldId, worldSpawners) in _npcSpawners)
+        //{
+        //    Task.Run(() =>
+        //    {
+        //        SpawnAllNpcs(worldId);
+        //    });
+        //}
 
         Logger.Info("Spawning Doodads...");
         foreach (var (worldId, worldSpawners) in _doodadSpawners)

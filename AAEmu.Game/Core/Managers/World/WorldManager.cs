@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -81,6 +82,9 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
 
     private void ActiveRegionTick(TimeSpan delta)
     {
+        var sw = new Stopwatch();
+        sw.Start();
+
         // Players
         foreach (var character in GetAllCharacters())
         {
@@ -103,37 +107,10 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             RegenTick(slave);
         }
 
-        /*
-        //var sw = new Stopwatch();
-        //sw.Start();
-        var activeRegions = new HashSet<Region>();
-        foreach (var world in _worlds.Values)
-        {
-            foreach (var region in world.Regions)
-            {
-                if (region == null)
-                    continue;
-                if (activeRegions.Contains(region))
-                    continue;
-                if (region.IsEmpty())
-                    continue;
-                foreach (var activeRegion in region.GetNeighbors())
-                {
-                    activeRegions.Add(activeRegion);
-                    var units = activeRegion.GetList<Unit>(new(), 0);
-                    foreach (var unit in units)
-                    {
-                        if (unit is not Character character) { continue; }
-                        CombatTick(character);
-                        RegenTick(character);
-                        BreathTick(character);
-                    }
-                }
-            }
-        }
-        //sw.Stop();
-        //Logger.Warn("ActiveRegionTick took {0}ms", sw.ElapsedMilliseconds);
-        */
+        SpawnManager.Instance.Update();
+
+        sw.Stop();
+        Logger.Warn("ActiveRegionTick took {0}ms", sw.ElapsedMilliseconds);
     }
 
     /// <summary>
