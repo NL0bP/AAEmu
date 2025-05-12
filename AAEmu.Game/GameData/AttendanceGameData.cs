@@ -100,7 +100,7 @@ public class AttendanceGameData : Singleton<AttendanceGameData>, IGameDataLoader
         var itemId = 0u;
         var countItem = 0;
 
-        foreach (var ary in _rewards)
+        foreach (var ary in _additionalRewards)
         {
             if (ary.Key == year)
                 foreach (var ar in ary.Value)
@@ -108,7 +108,7 @@ public class AttendanceGameData : Singleton<AttendanceGameData>, IGameDataLoader
                     if (ar.Key == month)
                         foreach (var reward in ar.Value)
                         {
-                            if (reward.DayCount >= dayCount && reward.AdditionalReward)
+                            if (reward.DayCount == dayCount && reward.AdditionalReward)
                             {
                                 itemId = reward.ItemId;
                                 countItem = reward.ItemCount;
