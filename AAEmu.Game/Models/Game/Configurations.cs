@@ -68,6 +68,11 @@ public class WorldConfig
     /// Enables save_geodate mode
     /// </summary>
     public bool SaveGeoDataMode { get; set; }
+
+    /// <summary>
+    /// Enables First Journey
+    /// </summary>
+    public bool FirstJourneyEnable { get; set; }
 }
 
 public class AccountDeleteDelayTiming

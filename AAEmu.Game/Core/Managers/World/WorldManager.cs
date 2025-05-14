@@ -1329,8 +1329,11 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         {
             FamilyManager.Instance.OnCharacterLogin(character);
         }
-        
-        //StartingFirstJourney(character);
+
+        if (AppConfiguration.Instance.World.FirstJourneyEnable)
+        {
+            StartingFirstJourney(character);
+        }
     }
 
     private void StartingFirstJourney(Character character)
