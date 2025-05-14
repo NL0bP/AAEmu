@@ -102,8 +102,9 @@ public class CharacterOnlineTrackingTask : Task
             character.ScheduleItems[index].Updated = DateTime.UtcNow;
 
             // Update Account Divine Clock time
-            AccountManager.Instance.UpdateDivineClock(character.AccountId, character.ScheduleItems[index].ScheduleItemId, character.ScheduleItems[index].Cumulated, character.ScheduleItems[index].Gave);
+            AccountManager.Instance.UpdateDivineClock(character.AccountId, character.ScheduleItems[index].ScheduleItemId, character.ScheduleItems[index].Cumulated, (sbyte)character.ScheduleItems[index].Gave);
             character.SendPacket(new SCScheduleItemUpdatePacket(character.ScheduleItems));
+            break; // отправляет сразу инфу об всех предметах
         }
     }
 

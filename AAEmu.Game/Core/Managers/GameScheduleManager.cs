@@ -946,6 +946,25 @@ public class GameScheduleManager : Singleton<GameScheduleManager>
         return matchingPeriods;
     }
 
+    private DateTime? CreateDate(uint year, uint month, uint day, uint hour, uint minute, DateTime fallback)
+    {
+        try
+        {
+            return new DateTime(
+                year == 0 ? fallback.Year : (int)year,
+                month == 0 ? fallback.Month : (int)month,
+                day == 0 ? fallback.Day : (int)day,
+                (int)hour,
+                (int)minute,
+                0
+            );
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public List<uint> GetMatchingPeriods()
     {
         var matchingPeriods = new List<uint>();
@@ -953,27 +972,27 @@ public class GameScheduleManager : Singleton<GameScheduleManager>
 
         foreach (var period in _scheduleItems.Values)
         {
-            var startDate = new DateTime(
-                period.StYear == 0 ? now.Year : (int)period.StYear,
-                period.StMonth == 0 ? now.Month : (int)period.StMonth,
-                period.StDay == 0 ? now.Day : (int)period.StDay,
-                (int)period.StHour,
-                (int)period.StMin,
-                0
-            );
+            var startDate = CreateDate(period.StYear, period.StMonth, period.StDay, period.StHour, period.StMin, now);
+            var endDate = CreateDate(period.EdYear, period.EdMonth, period.EdDay, period.EdHour, period.EdMin, now)?.AddMinutes(1).AddSeconds(-1);
 
-            var endDate = new DateTime(
-                period.EdYear == 0 ? now.Year : (int)period.EdYear,
-                period.EdMonth == 0 ? now.Month : (int)period.EdMonth,
-                period.EdDay == 0 ? now.Day : (int)period.EdDay,
-                (int)period.EdHour,
-                (int)period.EdMin,
-                59
-            );
+            if (startDate == null || endDate == null)
+                continue;
 
-            if (now >= startDate && now <= endDate && period.ActiveTake)
+            // Normal case: same day or range
+            if (startDate <= endDate)
             {
-                matchingPeriods.Add(period.Id);
+                if (now >= startDate && now <= endDate && period.ActiveTake)
+                {
+                    matchingPeriods.Add(period.Id);
+                }
+            }
+            // Overlapping period: crosses midnight/year/etc.
+            else
+            {
+                if ((now >= startDate || now <= endDate) && period.ActiveTake)
+                {
+                    matchingPeriods.Add(period.Id);
+                }
             }
         }
 

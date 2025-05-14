@@ -44,10 +44,10 @@ public class CSTakeScheduleItemPacket : GamePacket
                 Logger.Warn($"TakeScheduleItem: {character.Name}:{character.Id} received a gift");
             }
 
-            // Update Account Divine Clock time
-            AccountManager.Instance.UpdateDivineClock(character.AccountId, item.ScheduleItemId, item.Cumulated, item.Gave);
-
             item.Gave++;
+
+            // Update Account Divine Clock time
+            AccountManager.Instance.UpdateDivineClock(character.AccountId, item.ScheduleItemId, item.Cumulated, (sbyte)item.Gave);
         }
 
         #endregion

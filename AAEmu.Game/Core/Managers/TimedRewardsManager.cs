@@ -121,7 +121,7 @@ public class TimedRewardsManager : Singleton<TimedRewardsManager>
                 Updated = DateTime.UtcNow
             };
             // Update Account Divine Clock time
-            AccountManager.Instance.UpdateDivineClock(accountId, si.ScheduleItemId, si.Cumulated, si.Gave);
+            AccountManager.Instance.UpdateDivineClock(accountId, si.ScheduleItemId, si.Cumulated, (sbyte)si.Gave);
         }
     }
 

@@ -383,7 +383,7 @@ public class AccountManager : Singleton<AccountManager>
         }
     }
 
-    public void UpdateDivineClock(ulong accountId, uint scheduleItemId, uint timeElapsed, uint timesTaken)
+    public void UpdateDivineClock(ulong accountId, uint scheduleItemId, uint timeElapsed, sbyte timesTaken)
     {
         object accLock;
         lock (_locks)
