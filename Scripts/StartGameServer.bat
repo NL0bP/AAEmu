@@ -1,5 +1,6 @@
 @echo off
 cd ..
 pushd AAEmu.Game
-    start /I dotnet build AAEmu.Game.csproj
+    dotnet build -f net9.0 AAEmu.Game.csproj
+	pause
 popd
