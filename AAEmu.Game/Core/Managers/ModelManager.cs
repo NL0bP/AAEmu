@@ -131,36 +131,69 @@ namespace AAEmu.Game.Core.Managers
                         {
                             while (reader.Read())
                             {
-                                var model = new ShipModel()
-                                {
-                                    Id = reader.GetUInt32("id"),
-                                    Velocity = reader.GetFloat("velocity"),
-                                    Mass = reader.GetFloat("mass"),
-                                    MassCenterX = reader.GetFloat("mass_center_x"),
-                                    MassCenterY = reader.GetFloat("mass_center_y"),
-                                    MassCenterZ = reader.GetFloat("mass_center_z"),
-                                    MassBoxSizeX = reader.GetFloat("mass_box_size_x"),
-                                    MassBoxSizeY = reader.GetFloat("mass_box_size_y"),
-                                    MassBoxSizeZ = reader.GetFloat("mass_box_size_z"),
-                                    WaterDensity = reader.GetFloat("water_density", 1f),
-                                    WaterResistance = reader.GetFloat("water_resistance", 1f),
-                                    SteerVel = reader.GetFloat("steer_vel"),
-                                    Accel = reader.GetFloat("accel"),
-                                    ReverseAccel = reader.GetFloat("reverse_accel"),
-                                    ReverseVelocity = reader.GetFloat("reverse_velocity"),
-                                    TurnAccel = reader.GetFloat("turn_accel"),
-                                    TubeLength = reader.GetFloat("tube_length"),
-                                    TubeRadius = reader.GetFloat("tube_radius"),
-                                    TubeOffsetZ = reader.GetFloat("tube_offset_z"),
-                                    KeelLength = reader.GetFloat("keel_length"),
-                                    KeelHeight = reader.GetFloat("keel_height"),
-                                    KeelOffsetZ = reader.GetFloat("keel_offset_z")
-                                };
+                                var model = new ShipModel();
+                                model.Id = reader.GetUInt32("id");
+                                model.Accel = reader.GetFloat("accel");
+                                model.AccelExponent = reader.GetFloat("accel_exponent");
+                                model.CharAnimSteerBackwardId = reader.GetInt32("char_anim_steer_backward_id");
+                                model.CharAnimSteerForwardId = reader.GetInt32("char_anim_steer_forward_id");
+                                model.CollisionBoxCenterX = reader.GetFloat("collision_box_center_x");
+                                model.CollisionBoxCenterY = reader.GetFloat("collision_box_center_y");
+                                model.CollisionBoxCenterZ = reader.GetFloat("collision_box_center_z");
+                                model.CollisionBoxOffsetX = reader.GetFloat("collision_box_offset_x");
+                                model.CollisionBoxOffsetY = reader.GetFloat("collision_box_offset_y");
+                                model.CollisionBoxOffsetZ = reader.GetFloat("collision_box_offset_z");
+                                model.CollisionBoxScaleX = reader.GetFloat("collision_box_scale_x");
+                                model.CollisionBoxScaleY = reader.GetFloat("collision_box_scale_y");
+                                model.CollisionBoxScaleZ = reader.GetFloat("collision_box_scale_z");
+                                model.CollisionBoxSizeX = reader.GetFloat("collision_box_size_x");
+                                model.CollisionBoxSizeY = reader.GetFloat("collision_box_size_y");
+                                model.CollisionBoxSizeZ = reader.GetFloat("collision_box_size_z");
+                                model.CollisionSphereRadius = reader.GetFloat("collision_sphere_radius");
+                                model.Damaged25 = reader.GetString("damaged25");
+                                model.Damaged50 = reader.GetString("damaged50");
+                                model.Damaged75 = reader.GetString("damaged75");
+                                model.Dead = reader.GetString("dead");
+                                model.HaltRate = reader.GetFloat("halt_rate");
+                                model.ImpactMass = reader.GetFloat("impact_mass");
+                                model.KeelHeight = reader.GetFloat("keel_height");
+                                model.KeelLength = reader.GetFloat("keel_length");
+                                model.KeelOffsetZ = reader.GetFloat("keel_offset_z");
+                                model.Mass = reader.GetFloat("mass");
+                                model.MassBoxSizeX = reader.GetFloat("mass_box_size_x");
+                                model.MassBoxSizeY = reader.GetFloat("mass_box_size_y");
+                                model.MassBoxSizeZ = reader.GetFloat("mass_box_size_z");
+                                model.MassCenterX = reader.GetFloat("mass_center_x");
+                                model.MassCenterY = reader.GetFloat("mass_center_y");
+                                model.MassCenterZ = reader.GetFloat("mass_center_z");
+                                model.MaxRpmSec = reader.GetFloat("max_rpm_sec");
+                                model.MinRpmSec = reader.GetFloat("min_rpm_sec");
+                                model.Normal = reader.GetString("normal");
+                                model.PassengerBoxOffsetX = reader.GetFloat("passenger_box_offset_x");
+                                model.PassengerBoxOffsetY = reader.GetFloat("passenger_box_offset_y");
+                                model.PassengerBoxOffsetZ = reader.GetFloat("passenger_box_offset_z");
+                                model.PassengerBoxScaleX = reader.GetFloat("passenger_box_scale_x");
+                                model.PassengerBoxScaleY = reader.GetFloat("passenger_box_scale_y");
+                                model.PassengerBoxScaleZ = reader.GetFloat("passenger_box_scale_z");
+                                model.ReverseAccel = reader.GetFloat("reverse_accel");
+                                model.ReverseVelocity = reader.GetFloat("reverse_velocity");
+                                model.SteerVel = reader.GetFloat("steer_vel");
+                                model.SubmergeAscendSpeed = reader.GetFloat("submerge_ascend_speed");
+                                model.SubmergeDescendSpeed = reader.GetFloat("submerge_descend_speed");
+                                model.TubeLength = reader.GetFloat("tube_length");
+                                model.TubeOffsetZ = reader.GetFloat("tube_offset_z");
+                                model.TubeRadius = reader.GetFloat("tube_radius");
+                                model.TurnAccel = reader.GetFloat("turn_accel");
+                                model.Velocity = reader.GetFloat("velocity");
+                                model.WaterDamping = reader.GetFloat("water_damping");
+                                model.WaterDensity = reader.GetFloat("water_density");
+                                model.WaterResistance = reader.GetFloat("water_resistance");
 
                                 _models["ShipModel"].TryAdd(model.Id, model);
                             }
                         }
                     }
+
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = "SELECT * FROM vehicle_models";

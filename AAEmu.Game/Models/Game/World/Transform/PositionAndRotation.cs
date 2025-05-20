@@ -4,7 +4,7 @@ using System.Numerics;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Utils;
 
-using Jitter.LinearMath;
+using Jitter2.LinearMath;
 
 namespace AAEmu.Game.Models.Game.World.Transform;
 

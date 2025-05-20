@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using Jitter;
-using Jitter.Collision;
-using Jitter.Collision.Shapes;
-using Jitter.Dynamics;
-using Jitter.LinearMath;
+
+using Jitter2;
+using Jitter2.Collision;
+using Jitter2.Collision.Shapes;
+using Jitter2.Dynamics;
+using Jitter2.LinearMath;
 
 namespace AAEmu.Game.Physics.Forces;
 
@@ -23,8 +24,8 @@ public class Buoyancy : ForceGenerator
     /// <returns>True if the given point is within the area.</returns>
     public delegate bool DefineFluidArea(ref JVector point);
 
-    private Dictionary<Shape, JVector[]> samples = new();
-    private List<RigidBody> bodies = new();
+    private readonly Dictionary<Shape, JVector[]> _samples = [];
+    private readonly List<RigidBody> _bodies = [];
 
     /// <summary>
     /// The axis aligned bounding box representing the fluid.
@@ -47,14 +48,13 @@ public class Buoyancy : ForceGenerator
     /// </summary>
     public JVector Flow { get; set; }
 
-    private DefineFluidArea fluidArea = null;
+    private DefineFluidArea _fluidArea;
 
     /// <summary>
     /// Creates a new instance of the FluidVolume class.
     /// </summary>
     /// <param name="world">The world.</param>
-    public Buoyancy(World world)
-        : base(world)
+    public Buoyancy(World world) : base(world)
     {
         Density = 2.0f;
         Damping = 0.1f;
@@ -67,16 +67,19 @@ public class Buoyancy : ForceGenerator
     /// <param name="body"></param>
     public void Remove(RigidBody body)
     {
-        bool flag = false;
+        var flag = false;
 
-        foreach (RigidBody b in bodies)
+        foreach (var b in _bodies)
         {
-            if (body.Shape == b.Shape)
-            { flag = true; break; }
+            if (body.Shapes[0] == b.Shapes[0])
+            {
+                flag = true;
+                break;
+            }
         }
 
-        bodies.Remove(body);
-        if (!flag) samples.Remove(body.Shape);
+        _bodies.Remove(body);
+        if (!flag) _samples.Remove(body.Shapes[0]);
     }
 
     /// <summary>
@@ -84,8 +87,8 @@ public class Buoyancy : ForceGenerator
     /// </summary>
     public void Clear()
     {
-        bodies.Clear();
-        samples.Clear();
+        _bodies.Clear();
+        _samples.Clear();
     }
 
     /// <summary>
@@ -96,7 +99,7 @@ public class Buoyancy : ForceGenerator
     /// want to use the default box.</param>
     public void UseOwnFluidArea(DefineFluidArea fluidArea)
     {
-        this.fluidArea = fluidArea;
+        _fluidArea = fluidArea;
     }
 
     /// <summary>
@@ -109,65 +112,34 @@ public class Buoyancy : ForceGenerator
     /// the results. Note that the total number of subdivisions is subdivisions³.</param>
     public void Add(RigidBody body, int subdivisions)
     {
-        List<JVector> massPoints = new List<JVector>();
-        JVector testVector;
+        List<JVector> massPoints = [];
 
-        JVector diff = body.Shape.BoundingBox.Max - body.Shape.BoundingBox.Min;
+        var diff = body.Shapes[0].WorldBoundingBox.Max - body.Shapes[0].WorldBoundingBox.Min;
 
-        if (diff.IsNearlyZero())
+        if (MathHelper.CloseToZero(diff))
             throw new InvalidOperationException("BoundingBox volume of the shape is zero.");
 
-        Multishape ms = body.Shape as Multishape;
-        int values = 0;
-
-        if (ms != null)
+        for (var i = 0; i < subdivisions; i++)
         {
-            JBBox largeBox = JBBox.LargeBox;
-            values = ms.Prepare(ref largeBox);
-        }
-
-        for (int i = 0; i < subdivisions; i++)
-        {
-            for (int e = 0; e < subdivisions; e++)
+            for (var e = 0; e < subdivisions; e++)
             {
-                for (int k = 0; k < subdivisions; k++)
+                for (var k = 0; k < subdivisions; k++)
                 {
-                    testVector.X = body.Shape.BoundingBox.Min.X + (diff.X / (subdivisions - 1)) * i;
-                    testVector.Y = body.Shape.BoundingBox.Min.Y + (diff.Y / (subdivisions - 1)) * e;
-                    testVector.Z = body.Shape.BoundingBox.Min.Z + (diff.Z / (subdivisions - 1)) * k;
+                    JVector testVector;
+                    testVector.X = body.Shapes[0].WorldBoundingBox.Min.X + (diff.X / (subdivisions - 1)) * i;
+                    testVector.Y = body.Shapes[0].WorldBoundingBox.Min.Y + (diff.Y / (subdivisions - 1)) * e;
+                    testVector.Z = body.Shapes[0].WorldBoundingBox.Min.Z + (diff.Z / (subdivisions - 1)) * k;
 
-                    JMatrix ident = JMatrix.Identity;
-                    JVector zero = JVector.Zero;
-
-                    if (ms != null)
+                    if (NarrowPhase.PointTest(body.Shapes[0], in testVector))
                     {
-
-                        for (int j = 0; j < values; j++)
-                        {
-                            ms.SetCurrentShape(j);
-
-
-                            if (GJKCollide.Pointcast(body.Shape, ref ident,
-                                ref zero, ref testVector))
-                            {
-                                massPoints.Add(testVector);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (GJKCollide.Pointcast(body.Shape, ref ident,
-                            ref zero, ref testVector))
-                        {
-                            massPoints.Add(testVector);
-                        }
+                        massPoints.Add(testVector);
                     }
                 }
             }
         }
 
-        samples.Add(body.Shape, massPoints.ToArray());
-        bodies.Add(body);
+        _samples.Add(body.Shapes[0], massPoints.ToArray());
+        _bodies.Add(body);
     }
 
     /// <summary>
@@ -176,38 +148,37 @@ public class Buoyancy : ForceGenerator
     /// <param name="timeStep"></param>
     public override void PreStep(float timeStep)
     {
-        float damping = (float)Math.Pow(Damping, timeStep);
+        var damping = (float)Math.Pow(Damping, timeStep);
 
-        foreach (RigidBody body in bodies)
+        foreach (var body in _bodies)
         {
-
-            if ((FluidBox.Contains(body.BoundingBox) != JBBox.ContainmentType.Disjoint) || (fluidArea != null))
+            if ((FluidBox.Contains(body.Shapes[0].WorldBoundingBox) != JBBox.ContainmentType.Disjoint) || (_fluidArea != null))
             {
-                JVector[] positions = samples[body.Shape];
+                var positions = _samples[body.Shapes[0]];
 
-                float frac = 0.0f;
+                var frac = 0.0f;
 
-                JVector currentCoord = JVector.Zero;
-                for (int i = 0; i < positions.Length; i++)
+                for (var i = 0; i < positions.Length; i++)
                 {
-                    currentCoord = JVector.Transform(positions[i], body.Orientation);
+                    var currentCoord = JVector.Transform(positions[i], body.Orientation);
                     currentCoord = JVector.Add(currentCoord, body.Position);
 
-                    bool containsCoord = false;
+                    bool containsCoord;
 
-                    if (fluidArea == null) containsCoord = FluidBox.Contains(ref currentCoord) != JBBox.ContainmentType.Disjoint;
-                    else containsCoord = fluidArea(ref currentCoord);
+                    if (_fluidArea == null) containsCoord = FluidBox.Contains(in currentCoord) != JBBox.ContainmentType.Disjoint;
+                    else containsCoord = _fluidArea(ref currentCoord);
 
                     if (containsCoord)
                     {
                         body.AddForce((1.0f / positions.Length) * body.Mass * Flow);
-                        body.AddForce(-(1.0f / positions.Length) * body.Shape.Mass * Density * world.Gravity, currentCoord);
+                        body.Shapes[0].CalculateMassInertia(out _, out _, out var shapeMass);
+                        body.AddForce(-(1.0f / positions.Length) * shapeMass * Density * world.Gravity, currentCoord);
                         frac += 1.0f / positions.Length;
                     }
                 }
 
                 body.AngularVelocity *= damping;
-                body.LinearVelocity *= damping;
+                body.Velocity *= damping;
             }
         }
     }

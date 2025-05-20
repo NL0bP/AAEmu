@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Numerics;
 
-using Jitter.LinearMath;
+using Jitter2.LinearMath;
 
 namespace AAEmu.Game.Utils;
 
@@ -27,13 +27,27 @@ public static class NumericExtensions
         return val / MathF.PI * 180f;
     }
 
-    public static Vector3 JVectorToVector(this JVector val)
+    /// <summary>
+    /// Converts JVector to System.Numerics.Vector3 (XZY → XYZ)
+    /// </summary>
+    public static Vector3 ToVector(this JVector val)
     {
         return new Vector3(val.X, val.Z, val.Y);
     }
 
-    public static JVector VectorToJVector(this Vector3 val)
+    /// <summary>
+    /// Converts Vector3 to JVector (XYZ → XZY)
+    /// </summary>
+    public static JVector ToJVector(this Vector3 val)
     {
         return new JVector(val.X, val.Z, val.Y);
+    }
+    public static JVector ToJVectorFix(this JVector val)
+    {
+        return new JVector(val.X, 0f, val.Z);
+    }
+    public static JVector ToVectorFix(this Vector3 val)
+    {
+        return new JVector(val.X, 0f, val.Z);
     }
 }

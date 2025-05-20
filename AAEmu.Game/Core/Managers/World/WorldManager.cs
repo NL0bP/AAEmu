@@ -1462,7 +1462,19 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             foreach (var world in _worlds)
             {
                 world.Value?.Physics?.Stop();
+                world.Value?.Physics?.Dispose();
             }
+        }
+    }
+
+    public void InitializePhysics()
+    {
+        foreach (var (_, world) in _worlds)
+        {
+            world.Physics = new PhysicsManager();
+            //world.Physics.TestAcceleration();
+            world.Physics.SimulationWorld = world;
+            world.Physics.Initialize();
         }
     }
 
@@ -1470,9 +1482,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     {
         foreach (var (_, world) in _worlds)
         {
-            world.Physics = new BoatPhysicsManager();
-            world.Physics.SimulationWorld = world;
-            world.Physics.Initialize();
+            world.Physics.InitializeTerrain();
             world.Physics.StartPhysics();
         }
     }

@@ -65,6 +65,7 @@ public sealed class GameService : IHostedService, IDisposable
         WorldManager.Instance.Load();
         WorldIdManager.Instance.Initialize();
         FeaturesManager.Initialize();
+        WorldManager.Instance.InitializePhysics();
 
         LocalizationManager.Instance.Load();
         ObjectIdManager.Instance.Initialize();

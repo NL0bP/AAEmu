@@ -28,7 +28,7 @@ public class World
     public virtual ushort[,] HeightMaps { get; set; }
     public List<uint> ZoneKeys { get; set; } = new();
     public ConcurrentDictionary<uint, XmlWorldZone> XmlWorldZones;
-    public BoatPhysicsManager Physics { get; set; }
+    public PhysicsManager Physics { get; set; }
     public WaterBodies Water { get; set; }
     public WorldEvents Events { get; set; } = new();
     public Dictionary<uint, List<Area>> SubZones { get; set; } // uint is zoneid 

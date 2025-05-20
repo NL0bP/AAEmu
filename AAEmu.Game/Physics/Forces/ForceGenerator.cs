@@ -1,4 +1,4 @@
-using Jitter;
+﻿using Jitter2;
 
 namespace AAEmu.Game.Physics.Forces;
 
@@ -13,7 +13,8 @@ public class ForceGenerator
     /// </summary>
     protected World world;
 
-    private World.WorldStep preStep, postStep;
+    private readonly World.WorldStep _preStep;
+    private readonly World.WorldStep _postStep;
 
     /// <summary>
     /// 
@@ -23,11 +24,11 @@ public class ForceGenerator
     {
         this.world = world;
 
-        preStep = new World.WorldStep(PreStep);
-        postStep = new World.WorldStep(PostStep);
+        _preStep = PreStep;
+        _postStep = PostStep;
 
-        world.Events.PostStep += postStep;
-        world.Events.PreStep += preStep;
+        world.PostStep += _postStep;
+        world.PreStep += _preStep;
     }
 
     /// <summary>
@@ -51,7 +52,7 @@ public class ForceGenerator
     /// </summary>
     public void RemoveEffect()
     {
-        world.Events.PostStep -= postStep;
-        world.Events.PreStep -= preStep;
+        world.PostStep -= _postStep;
+        world.PreStep -= _preStep;
     }
 }

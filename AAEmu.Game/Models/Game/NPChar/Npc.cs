@@ -1314,9 +1314,9 @@ public partial class Npc : Unit
         Transform.Local.SetPosition(currentPosition);
 
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
-        moveType.X = Transform.Local.Position.X;
-        moveType.Y = Transform.Local.Position.Y;
-        moveType.Z = Transform.Local.Position.Z;
+        moveType.X = currentPosition.X;
+        moveType.Y = currentPosition.Y;
+        moveType.Z = currentPosition.Z;
         moveType.VelX = 0;
         moveType.VelY = 0;
         moveType.VelZ = 0;

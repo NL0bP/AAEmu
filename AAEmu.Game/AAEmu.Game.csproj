@@ -68,7 +68,7 @@
 
   <ItemGroup>
     <PackageReference Include="Jace" Version="1.0.0" />
-    <PackageReference Include="Jitter.Core" Version="0.2.0" />
+    <PackageReference Include="Jitter2" Version="2.6.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.14.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
