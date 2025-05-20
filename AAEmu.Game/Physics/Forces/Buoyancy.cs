@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
+using AAEmu.Game.Models.Game.Units;
+
 using Jitter2;
 using Jitter2.Collision;
 using Jitter2.Collision.Shapes;
@@ -33,7 +36,7 @@ public class Buoyancy : ForceGenerator
     public JBBox FluidBox { get; set; }
 
     /// <summary>
-    /// Densitity of the fluid. Default is 2.0.
+    /// Density of the fluid. Default is 2.0.
     /// </summary>
     public float Density { get; set; }
 
@@ -49,6 +52,7 @@ public class Buoyancy : ForceGenerator
     public JVector Flow { get; set; }
 
     private DefineFluidArea _fluidArea;
+    private float WaterSurfaceLevel => FluidBox.Max.Y;
 
     /// <summary>
     /// Creates a new instance of the FluidVolume class.
@@ -56,7 +60,7 @@ public class Buoyancy : ForceGenerator
     /// <param name="world">The world.</param>
     public Buoyancy(World world) : base(world)
     {
-        Density = 2.0f;
+        Density = 1.025f; // 1025 кг/м³ (seawater density)
         Damping = 0.1f;
         Flow = JVector.Zero;
     }
@@ -142,44 +146,98 @@ public class Buoyancy : ForceGenerator
         _bodies.Add(body);
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="timeStep"></param>
-    public override void PreStep(float timeStep)
+    public void AddForRectangularParallelepiped(RigidBody body, int subdivisions)
     {
-        var damping = (float)Math.Pow(Damping, timeStep);
+        if (body.Shapes.Count == 0)
+            throw new ArgumentException("body has no shapes.");
 
-        foreach (var body in _bodies)
+        var shape = body.Shapes[0];
+        var bbox = shape.WorldBoundingBox;
+        var min = bbox.Min;
+        var max = bbox.Max;
+
+        // Размеры параллелепипеда
+        var size = max - min;
+
+        if (MathHelper.CloseToZero(size))
+            throw new InvalidOperationException("BoundingBox volume is zero.");
+
+        var massPoints = new List<JVector>();
+
+        // Шаг между точками по каждой оси
+        var stepX = size.X / subdivisions;
+        var stepY = size.Y / subdivisions;
+        var stepZ = size.Z / subdivisions;
+
+        // Генерация точек внутри параллелепипеда
+        for (var i = 0; i < subdivisions; i++)
         {
-            if ((FluidBox.Contains(body.Shapes[0].WorldBoundingBox) != JBBox.ContainmentType.Disjoint) || (_fluidArea != null))
+            for (var j = 0; j < subdivisions; j++)
             {
-                var positions = _samples[body.Shapes[0]];
-
-                var frac = 0.0f;
-
-                for (var i = 0; i < positions.Length; i++)
+                for (var k = 0; k < subdivisions; k++)
                 {
-                    var currentCoord = JVector.Transform(positions[i], body.Orientation);
-                    currentCoord = JVector.Add(currentCoord, body.Position);
+                    // Координаты текущей точки
+                    var x = min.X + (i + 0.5f) * stepX;
+                    var y = min.Y + (j + 0.5f) * stepY;
+                    var z = min.Z + (k + 0.5f) * stepZ;
 
-                    bool containsCoord;
+                    var point = new JVector(x, y, z);
 
-                    if (_fluidArea == null) containsCoord = FluidBox.Contains(in currentCoord) != JBBox.ContainmentType.Disjoint;
-                    else containsCoord = _fluidArea(ref currentCoord);
-
-                    if (containsCoord)
-                    {
-                        body.AddForce((1.0f / positions.Length) * body.Mass * Flow);
-                        body.Shapes[0].CalculateMassInertia(out _, out _, out var shapeMass);
-                        body.AddForce(-(1.0f / positions.Length) * shapeMass * Density * world.Gravity, currentCoord);
-                        frac += 1.0f / positions.Length;
-                    }
+                    // Для параллелепипеда все точки внутри BoundingBox считаются принадлежащими телу
+                    massPoints.Add(point);
                 }
-
-                body.AngularVelocity *= damping;
-                body.Velocity *= damping;
             }
         }
+
+        // Сохраняем точки
+        _samples.Add(shape, massPoints.ToArray());
+        _bodies.Add(body);
+    }
+
+    public override void PreStep(float timeStep)
+    {
+        foreach (var body in _bodies.ToArray())
+        {
+            if (body.IsStatic || !body.IsActive) continue;
+
+            var slave = (Slave)body.Tag;
+            if (slave == null) continue;
+
+            var shipModel = ModelManager.Instance.GetShipModel(slave.ModelId);
+            if (shipModel == null || shipModel.Mass <= 0) continue;
+
+            var depth = WaterSurfaceLevel - body.Position.Y;
+            if (depth <= 0) continue;
+
+            ApplyDrag(body, shipModel.MassBoxSizeX, shipModel.MassBoxSizeY, shipModel.MassBoxSizeZ);
+            // Calculate submerged depth and buoyancy force
+            var submergedDepth = Math.Max(0, WaterSurfaceLevel - body.Position.Y);
+            var isOnWater = submergedDepth > 0;
+
+            if (isOnWater)
+            {
+                // Apply buoyancy and drag forces
+                var buoyancyForce = new JVector(0, submergedDepth * body.Mass * Density * 9.81f, 0);
+                body.AddForce(buoyancyForce);
+
+                var dragForce = new JVector(-body.Velocity.X * Density, -body.Velocity.Y * Density, -body.Velocity.Z * Density);
+                body.AddForce(dragForce);
+            }
+        }
+    }
+
+    private void ApplyDrag(RigidBody body, float _hullWidth, float _hullLength, float _hullHeight)
+    {
+        var velocity = body.Velocity;
+        var speed = velocity.Length();
+        if (speed < 0.1f) return;
+
+        const float DragCoefficient = 0.8f;
+        var area = _hullWidth * _hullHeight;
+        var drag = 0.5f * Density * DragCoefficient * area * speed * speed;
+        velocity.Normalize();
+        velocity.Negate();
+        velocity *= drag;
+        body.AddForce(velocity);
     }
 }

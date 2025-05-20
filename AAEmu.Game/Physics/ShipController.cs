@@ -61,8 +61,6 @@ public class ShipController : IDisposable
         if (slave is null)
             throw new ArgumentNullException(nameof(slave));
 
-        //ApplyBuoyancy();
-        //ApplyDrag();
         ApplyForceAndTorque(slave);
     }
 
@@ -137,32 +135,6 @@ public class ShipController : IDisposable
         rigidBody.AngularVelocity = new JVector(0, steer, 0);
 
         //Logger.Debug($"Slave: {slave.Name}, Throttle: {throttleFloatVal:F1} ({slave.ThrottleRequest}), Steering {steeringFloatVal:F1} ({slave.SteeringRequest}), speed: {slave.Speed}, rotSpeed: {slave.RotSpeed}");
-    }
-
-    private void ApplyBuoyancy()
-    {
-        var depth = _waterLevel - Hull.Position.Y;
-        if (depth <= 0) return;
-
-        var sub = MathF.Min(depth / _hullHeight, 1f);
-        var volume = sub * (_hullWidth * _hullHeight * _hullLength);
-        var force = new JVector(0, FluidDensity * volume * 9.81f, 0);
-        Hull.AddForce(force);
-    }
-
-    private void ApplyDrag()
-    {
-        var velocity = Hull.Velocity;
-        var speed = velocity.Length();
-        if (speed < 0.1f) return;
-
-        const float DragCoefficient = 0.8f;
-        var area = _hullWidth * _hullHeight;
-        var drag = 0.5f * FluidDensity * DragCoefficient * area * speed * speed;
-        velocity.Normalize();
-        velocity.Negate();
-        velocity *= drag;
-        Hull.AddForce(velocity);
     }
 
     public void Dispose()

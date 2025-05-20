@@ -7,11 +7,11 @@ using System.Threading;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
-using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Physics;
+using AAEmu.Game.Physics.Forces;
 using AAEmu.Game.Physics.Util;
 using AAEmu.Game.Utils;
 
@@ -37,7 +37,7 @@ namespace AAEmu.Game.Core.Managers.World
         internal Thread _thread;
 
         internal Jitter2.World _physWorld;
-        //internal Buoyancy _buoyancy;
+        internal Buoyancy _buoyancy;
         public bool ThreadRunning { get; set; }
 
         private readonly Dictionary<uint, ShipController> _shipControllers = new();
@@ -51,8 +51,12 @@ namespace AAEmu.Game.Core.Managers.World
             _physWorld = new Jitter2.World();
             _physWorld.Gravity = new JVector(0, -9.81f, 0);
 
-            //_buoyancy = new Buoyancy(_physWorld);
-            //_buoyancy.UseOwnFluidArea(CustomWater);
+            _buoyancy = new Buoyancy(_physWorld);
+            _buoyancy.FluidBox = new JBBox(
+                new JVector(0, 0, 0), // Дно
+                new JVector(32000, SimulationWorld.OceanLevel, 32000) // Поверхность
+            );
+            _buoyancy.UseOwnFluidArea(CustomWater);
 
             Logger.Info($"PhysicsManager {SimulationWorld.Name} initialized.");
         }
@@ -181,10 +185,10 @@ namespace AAEmu.Game.Core.Managers.World
 
                                 if (_shipControllers.TryGetValue(slave.Id, out var boat))
                                 {
-                                    BoatPhysicsTick(slave, slave.RigidBody);
-                                    boat.UpdateControls(slave);
                                     SyncTransformWithRigidBody(slave);
+                                    BoatPhysicsTick(slave, slave.RigidBody);
                                     ApplyCollisions(slave, slave.RigidBody);
+                                    boat.UpdateControls(slave);
                                     SendUpdatedMovementData(slave, slave.RigidBody);
                                 }
                             }
@@ -213,12 +217,12 @@ namespace AAEmu.Game.Core.Managers.World
             var xDelta = slaveRigidBody.Position.X - slave.Transform.World.Position.X;
             var yDelta = slaveRigidBody.Position.Z - slave.Transform.World.Position.Y;
             var zDelta = slaveRigidBody.Position.Y - slave.Transform.World.Position.Z;
-            if (zDelta < -7)
-            {
-                slaveRigidBody.Position = slaveRigidBody.Position with { Y = slave.Transform.World.Position.Z };
-                zDelta = 0;
-                Logger.Info($"SyncTransformWithRigidBody {slave.Name} -> {SimulationWorld.Name}, _waterLevel={DefaultWaterLevel}, OceanLevel={SimulationWorld.OceanLevel}, slave.Position.Z={slave.Transform.World.Position.Z}");
-            }
+            //if (zDelta < -3)
+            //{
+            //    slaveRigidBody.Position = slaveRigidBody.Position with { Y = slave.Transform.World.Position.Z };
+            //    zDelta = 0;
+            //    Logger.Info($"SyncTransformWithRigidBody {slave.Name} -> {SimulationWorld.Name}, _waterLevel={DefaultWaterLevel}, OceanLevel={SimulationWorld.OceanLevel}, slave.Position.Z={slave.Transform.World.Position.Z}");
+            //}
 
             slave.Transform.Local.Translate(xDelta, yDelta, zDelta);
             var rotation = slaveRigidBody.Orientation;
@@ -251,7 +255,7 @@ namespace AAEmu.Game.Core.Managers.World
             slave.RigidBody.Tag = slave;
 
             EnqueueAddBody(slave.RigidBody);
-            //_buoyancy.Add(slave.RigidBody, 3);
+            _buoyancy.AddForRectangularParallelepiped(slave.RigidBody, 3);
 
             Logger.Debug($"AddShip {slave.Name} -> {SimulationWorld.Name}");
         }
@@ -264,7 +268,7 @@ namespace AAEmu.Game.Core.Managers.World
             rigidBody.SetActivationState(false);
             EnqueueRemoveBody(rigidBody);
             _physWorld.Remove(rigidBody);
-            //_buoyancy.Remove(rigidBody);
+            _buoyancy.Remove(rigidBody);
             slave.RigidBody = null;
 
             Logger.Debug($"RemoveShip {slave.Name} <- {SimulationWorld.Name}");
@@ -280,16 +284,7 @@ namespace AAEmu.Game.Core.Managers.World
             var isOnWater = submergedDepth > 0;
             var isOnLand = !isOnWater && submergedDepth <= 0;
 
-            if (isOnWater)
-            {
-                // Apply buoyancy and drag forces
-                var buoyancyForce = new JVector(0, submergedDepth * shipModel.Mass * shipModel.WaterDensity * 9.81f, 0);
-                rigidBody.AddForce(buoyancyForce);
-
-                var dragForce = new JVector(-rigidBody.Velocity.X * shipModel.WaterResistance, -rigidBody.Velocity.Y * shipModel.WaterResistance, -rigidBody.Velocity.Z * shipModel.WaterResistance);
-                rigidBody.AddForce(dragForce);
-            }
-            else if (isOnLand)
+            if (isOnLand)
             {
                 // Apply ground friction and stop the ship
                 const float GroundFriction = 0.4f; // Sand: around 0.4

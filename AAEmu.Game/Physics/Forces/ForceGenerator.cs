@@ -24,8 +24,9 @@ public class ForceGenerator
     {
         this.world = world;
 
-        _preStep = PreStep;
-        _postStep = PostStep;
+
+        _preStep = new World.WorldStep(PreStep);
+        _postStep = new World.WorldStep(PostStep);
 
         world.PostStep += _postStep;
         world.PreStep += _preStep;
