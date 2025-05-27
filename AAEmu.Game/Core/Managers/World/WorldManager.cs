@@ -110,7 +110,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         SpawnManager.Instance.Update();
 
         sw.Stop();
-        Logger.Warn("ActiveRegionTick took {0}ms", sw.ElapsedMilliseconds);
+        //Logger.Warn("ActiveRegionTick took {0}ms", sw.ElapsedMilliseconds);
     }
 
     /// <summary>

@@ -4,12 +4,16 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Threading;
 
+using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
+using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
+using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Physics;
 using AAEmu.Game.Physics.Forces;
 using AAEmu.Game.Physics.Util;
@@ -64,27 +68,27 @@ namespace AAEmu.Game.Core.Managers.World
         public void InitializeTerrain()
         {
             // Add terrain shape based on height map
-            if (SimulationWorld.Name != "main_world") { return; }
-            try
-            {
-                var hmap = WorldManager.Instance.GetWorld(0).HeightMaps;
-                var heightMaxCoefficient = WorldManager.Instance.GetWorld(0).HeightMaxCoefficient;
-                var dx = hmap.GetLength(0);
-                var dz = hmap.GetLength(1);
-                var hmapTerrain = new float[dx, dz];
-                for (var x = 0; x < dx; x++)
-                    for (var y = 0; y < dz; y++)
-                        hmapTerrain[x, y] = (float)(hmap[x, y] / heightMaxCoefficient);
+            //if (SimulationWorld.Name != "main_world") { return; }
+            //try
+            //{
+            //    var hmap = WorldManager.Instance.GetWorld(0).HeightMaps;
+            //    var heightMaxCoefficient = WorldManager.Instance.GetWorld(0).HeightMaxCoefficient;
+            //    var dx = hmap.GetLength(0);
+            //    var dz = hmap.GetLength(1);
+            //    var hmapTerrain = new float[dx, dz];
+            //    for (var x = 0; x < dx; x++)
+            //        for (var y = 0; y < dz; y++)
+            //            hmapTerrain[x, y] = (float)(hmap[x, y] / heightMaxCoefficient);
 
-                var heightmap = new Heightmap(hmapTerrain);
-                var tester = new HeightmapTester(heightmap);
-                _physWorld.BroadPhaseFilter = new HeightmapDetection(_physWorld, tester);
-                _physWorld.DynamicTree.AddProxy(tester, false);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-            }
+            //    var heightmap = new Heightmap(hmapTerrain);
+            //    var tester = new HeightmapTester(heightmap);
+            //    _physWorld.BroadPhaseFilter = new HeightmapDetection(_physWorld, tester);
+            //    _physWorld.DynamicTree.AddProxy(tester, false);
+            //}
+            //catch (Exception e)
+            //{
+            //    Logger.Error(e);
+            //}
 
             Logger.Info($"PhysicsManager {SimulationWorld.Name} initialized Terrain.");
         }
@@ -167,6 +171,12 @@ namespace AAEmu.Game.Core.Managers.World
                                 if (slave.SpawnTime.AddSeconds(slave.Template.PortalTime) > DateTime.UtcNow)
                                     continue;
 
+                                if (slave.Hp <= 0)
+                                {
+                                    body.SetActivationState(false);
+                                    continue;
+                                }
+
                                 // Skip simulation if no rigidbody applied to slave
                                 if (!body.IsActive)
                                     continue;
@@ -183,14 +193,12 @@ namespace AAEmu.Game.Core.Managers.World
                                     }
                                 }
 
-                                if (_shipControllers.TryGetValue(slave.Id, out var boat))
-                                {
-                                    SyncTransformWithRigidBody(slave);
-                                    BoatPhysicsTick(slave, slave.RigidBody);
-                                    ApplyCollisions(slave, slave.RigidBody);
-                                    boat.UpdateControls(slave);
-                                    SendUpdatedMovementData(slave, slave.RigidBody);
-                                }
+                                var shipModel = ModelManager.Instance.GetShipModel(slave.Template.ModelId);
+                                if (shipModel == null) return;
+                                SyncTransformWithRigidBody(slave);
+                                BoatPhysicsTick(slave, body, shipModel);
+                                if (this.CheckInterval(150))
+                                    SendUpdatedMovementData(slave, body);
                             }
                             catch (Exception slaveException)
                             {
@@ -274,10 +282,10 @@ namespace AAEmu.Game.Core.Managers.World
             Logger.Debug($"RemoveShip {slave.Name} <- {SimulationWorld.Name}");
         }
 
-        public void BoatPhysicsTick(Slave slave, RigidBody rigidBody)
+        private void BoatPhysicsTick(Slave slave, RigidBody rigidBody, ShipModel shipModel)
         {
-            var shipModel = ModelManager.Instance.GetShipModel(slave.Template.ModelId);
-            if (shipModel == null) return;
+            if (!_shipControllers.TryGetValue(slave.Id, out var boat))
+                return;
 
             // Calculate submerged depth and buoyancy force
             var submergedDepth = Math.Max(0, DefaultWaterLevel - rigidBody.Position.Y);
@@ -335,7 +343,13 @@ namespace AAEmu.Game.Core.Managers.World
                 slave.SteeringRequest = 0;
                 slave.Throttle = 0;
                 slave.Steering = 0;
+
+                return;
             }
+            
+            if (!ApplyCollisions(slave, rigidBody, shipModel))
+                boat.UpdateControls(slave, rigidBody, shipModel);
+
         }
 
         private void SendUpdatedMovementData(Slave slave, RigidBody rigidBody)
@@ -363,27 +377,24 @@ namespace AAEmu.Game.Core.Managers.World
             moveType.VelZ = (short)(rigidBody.Velocity.Y * 1024);
 
             // Do not allow the body to flip
-            //slave.RigidBody.Orientation = JMatrix.CreateFromYawPitchRoll(rpy.Item1, 0, 0); // TODO: Fix me with proper physics
+            //slave.RigidBody.Orientation = Quaternion.CreateFromYawPitchRoll(rpy.Item1, 0, rpy.Item3); // TODO: Fix me with proper physics
 
             // Apply new Location/Rotation to GameObject
             slave.Transform.Local.SetPosition(rigidBody.Position.X, rigidBody.Position.Z, rigidBody.Position.Y);
             slave.Transform.Local.ApplyFromQuaternion(rigidBody.Orientation);
 
             // Send the packet
-            slave.BroadcastPacket(new SCOneUnitMovementPacket(slave.ObjId, moveType), false);
+            //slave.BroadcastPacket(new SCOneUnitMovementPacket(slave.ObjId, moveType), false);
+            var movements = new (uint, MoveType)[] { (slave.ObjId, moveType) };
+            slave.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
 
             // Update all to main Slave and it's children
             slave.Transform.FinalizeTransform();
         }
 
-        private void ApplyCollisions(Slave slave, RigidBody rigidBody)
+        private bool ApplyCollisions(Slave slave, RigidBody rigidBody, ShipModel shipModel)
         {
-            var shipModel = ModelManager.Instance.GetShipModel(slave.Template.ModelId);
-            if (shipModel is null)
-                return;
-
             var floor = WorldManager.Instance.GetHeight(slave.Transform);
-            //var boxSize = rigidBody.Shape.BoundingBox.Max - rigidBody.Shape.BoundingBox.Min;
             var boatBottom = rigidBody.Position.Y;
             //Logger.Debug($"Slave: {slave.Name}, floor: {floor:F1}, boatBottom: {boatBottom:F1}, boxSize: {boxSize}");
 
@@ -399,11 +410,27 @@ namespace AAEmu.Game.Core.Managers.World
                 rigidBody.Velocity *= collisionDamping;
                 rigidBody.AngularVelocity *= collisionDamping;
 
-                //rigidBody.Velocity = JVector.Zero;
-                //rigidBody.AngularVelocity = JVector.Zero;
+                //if (this.CheckInterval(1500))
+                //    Logger.Debug($"Collision detected. Boat adjusted position: {rigidBody.Position}");
 
-                Logger.Debug($"Collision detected. Boat adjusted position: {rigidBody.Position}");
+                var damageAmount = penetration;
+                if (damageAmount < 10f)
+                    damageAmount = 10f;
+
+                if (damageAmount > 0)
+                {
+                    slave.DoFloorCollisionDamage((int)damageAmount, false, KillReason.Collide);
+                    if (this.CheckInterval(1500))
+                    {
+                        slave.Summoner.BroadcastPacket(new SCEnvDamagePacket(EnvSource.Collision, slave.ObjId, (uint)(damageAmount * 0.1f), 0, rigidBody.Position.ToVector(), damageAmount * 0.01f), true);
+                        //Logger.Debug($"Slave: {slave.ObjId}, speed: {slave.Speed}, rotSpeed: {slave.RotSpeed}, floor: {floor}, Z: {slave.Transform.World.Position.Z}, damage: {damageAmount}");
+                    }
+                }
+
+                return true; // Collision detected and handled
             }
+
+            return false; // No collision detected
         }
 
         public void Stop()

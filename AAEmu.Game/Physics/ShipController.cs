@@ -2,7 +2,8 @@
 
 using System;
 
-using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
+using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Physics.Util;
 using AAEmu.Game.Utils;
@@ -56,24 +57,29 @@ public class ShipController : IDisposable
     /// <summary>
     /// Обновляет управление кораблем. Вызывать перед каждым шагом физики.
     /// </summary>
-    public void UpdateControls(Slave slave)
-    {
-        if (slave is null)
-            throw new ArgumentNullException(nameof(slave));
-
-        ApplyForceAndTorque(slave);
-    }
-
-    private void ApplyForceAndTorque(Slave slave)
+    public void UpdateControls(Slave slave, RigidBody rigidBody, ShipModel shipModel)
     {
         if (slave?.RigidBody is null)
             return;
 
-        var rigidBody = slave.RigidBody;
-
-        var shipModel = ModelManager.Instance.GetShipModel(slave.Template.ModelId);
-        if (shipModel is null)
-            return;
+        // Check if the ship has a driver
+        var hasDriver = slave.AttachedCharacters.ContainsKey(AttachPointKind.Driver);
+        if (hasDriver)
+        {
+            // If there is a driver, we update the control
+            // Smooth throttle and steering inputs
+            const float SmoothingFactor = 0.1f;
+            slave.Throttle = (sbyte)(slave.Throttle + (slave.ThrottleRequest - slave.Throttle) * SmoothingFactor);
+            slave.Steering = (sbyte)(slave.Steering + (slave.SteeringRequest - slave.Steering) * SmoothingFactor);
+        }
+        else
+        {
+            // If there is no driver, we reset the control
+            slave.ThrottleRequest = 0;
+            slave.SteeringRequest = 0;
+            slave.Throttle = 0;
+            slave.Steering = 0;
+        }
 
         // Provide minimum speed of 1 when Throttle is used
         if (slave is { Throttle: > 0, Speed: < 1f })

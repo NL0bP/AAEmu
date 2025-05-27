@@ -60,11 +60,11 @@ public class SpawnManager : Singleton<SpawnManager>
                 .Where(spawner => spawner.Template != null && IsSpawnerActive(spawner))
                 .ToList();
 
-            // Последовательная обработка спавнеров
-            if (worldId == 0)
-            {
-                Logger.Debug($"Processed {activeSpawners.Count} active spawners...");
-            }
+            //// Последовательная обработка спавнеров
+            //if (worldId == 0)
+            //{
+            //    Logger.Debug($"Processed {activeSpawners.Count} active spawners...");
+            //}
             foreach (var npcSpawner in activeSpawners)
             {
                 npcSpawner.Update();
