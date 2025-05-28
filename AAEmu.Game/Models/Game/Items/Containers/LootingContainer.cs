@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
@@ -203,29 +202,40 @@ public class LootingContainer(IBaseUnit owner)
                 if (lootPack == null)
                     continue;
 
-                lootPackResults.AddRange(lootPack.GeneratePackNewV2(lootDropRate, lootGoldRate, killer as Character, ActabilityType.None));
+                lootPackResults.AddRange(lootPack.GeneratePackNew(lootDropRate, lootGoldRate, killer as Character, ActabilityType.None, true));
                 // var items = lootPack.GenerateNpcPackItems(ref baseId, killer, lootDropRate, lootGoldRate);
                 // RegisterItems(items);
             }
 
-            // New Loot, i guess both loops can be optimized....
+            // Make Group list to enumerate with
             var groups = lootPackResults.GroupBy(x => x.lootGroupOrigin).Select(x => x.Key).ToList();
 
+            // Pick results by groups total of all packs
             foreach (var group in groups)
             {
                 var selectByGroup = lootPackResults.Where(x => x.lootGroupOrigin == group).ToList();
-                if (selectByGroup.Count > 0)
+                if (selectByGroup.Count <= 0)
+                    continue;
+
+                var resultsToAdd = new List<Item>();
+
+                // If it's group is larger than 1, pick one at random
+                if (group > 1)
                 {
-                    var resultsToAdd = new List<Item>();
+                    var rngPos = Rand.Next(selectByGroup.Count);
+                    var item = ItemManager.Instance.Create(selectByGroup[rngPos].itemId, selectByGroup[rngPos].count, selectByGroup[rngPos].grade, false);
+                    resultsToAdd.Add(item);
+                }
+                else
+                {
                     foreach (var singleItemInGroup in selectByGroup)
                     {
-                        var item = ItemManager.Instance.Create(singleItemInGroup.itemId, singleItemInGroup.count,
-                            singleItemInGroup.grade, false);
+                        var item = ItemManager.Instance.Create(singleItemInGroup.itemId, singleItemInGroup.count, singleItemInGroup.grade, false);
                         resultsToAdd.Add(item);
                     }
-
-                    RegisterItems(resultsToAdd);
                 }
+
+                RegisterItems(resultsToAdd);
             }
 
             if (Items.Count <= 0)

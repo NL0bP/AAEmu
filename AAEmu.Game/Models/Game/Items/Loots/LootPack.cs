@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -19,14 +18,13 @@ namespace AAEmu.Game.Models.Game.Items.Loots;
 public class LootPack
 {
     private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
+
     public uint Id { get; init; }
     public uint GroupCount { get; set; }
     public List<Loot> Loots { get; init; }
     public Dictionary<uint, LootGroups> Groups { get; init; }
     public Dictionary<uint, LootActabilityGroups> ActabilityGroups { get; init; }
     public Dictionary<uint, List<Loot>> LootsByGroupNo { get; init; }
-
-    // unused private List<(uint itemId, int count, byte grade)> _generatedPack;
 
     /// <summary>
     /// Generates the contents of a LootPack, in the form of a list of tuples. This list is stored internally
@@ -38,7 +36,7 @@ public class LootPack
     {
         var lootDropRate = (100f + player.DropRateMul) / 100f;
         var lootGoldRate = (100f + player.LootGoldMul) / 100f;
-        return GeneratePackNewV2(lootDropRate, lootGoldRate, player, actabilityType);
+        return GeneratePackNew(lootDropRate, lootGoldRate, player, actabilityType, false);
     }
 
     /// <summary>
@@ -54,7 +52,7 @@ public class LootPack
 
         var items = new List<(uint itemId, int count, byte grade)>();
 
-        // Logger.Info($"Rolling loot pack {Id} containing max group Id: {GroupCount}");
+        Logger.Info($"Rolling loot pack {Id} containing max group Id: {GroupCount}");
 
         // For every group
         for (uint gIdx = 0; gIdx <= GroupCount; gIdx++)
@@ -66,7 +64,7 @@ public class LootPack
             if (!LootsByGroupNo.ContainsKey(gIdx))
                 continue;
 
-            // Logger.Debug($"Rolling loot with pack {Id}, Group {gIdx}/{GroupCount}, checking Groups conditions");
+            Logger.Debug($"Rolling loot with pack {Id}, Group {gIdx}/{GroupCount}, checking Groups conditions");
 
             // If that group has a LootGroup, roll the dice
             if (Groups.TryGetValue(gIdx, out var lootGroup))
@@ -78,13 +76,13 @@ public class LootPack
                 // Use generic loot multiplier for the groups ?
                 dice = (long)Math.Floor(dice / (lootDropRate * AppConfiguration.Instance.World.LootRate));
 
-                // Logger.Debug($"Rolling loot with pack {Id}, GroupNo {gIdx} rolled {dice}/{lootGroup.DropRate}");
+                Logger.Debug($"Rolling loot with pack {Id}, GroupNo {gIdx} rolled {dice}/{lootGroup.DropRate}");
 
                 if (lootGroup.DropRate > 0 && dice > lootGroup.DropRate)
                     continue;
             }
 
-            // Logger.Debug($"Rolling loot with pack {Id}, Group {gIdx}/{GroupCount}, checking ActAbilityGroups conditions");
+            Logger.Debug($"Rolling loot with pack {Id}, Group {gIdx}/{GroupCount}, checking ActAbilityGroups conditions");
 
             // If that group has a LootActGroup, roll the dice
             if (ActabilityGroups.TryGetValue(gIdx, out var actabilityGroup))
@@ -94,7 +92,7 @@ public class LootPack
                 // Use generic loot multiplier for the ActGroups ?
                 dice = (long)Math.Floor(dice / (lootDropRate * AppConfiguration.Instance.World.LootRate));
 
-                // Logger.Debug($"Rolling loot with pack {Id}, ActAbilityGroupNo {gIdx} rolled {dice}/{actabilityGroup.MinDice}~{actabilityGroup.MaxDice}");
+                Logger.Debug($"Rolling loot with pack {Id}, ActAbilityGroupNo {gIdx} rolled {dice}/{actabilityGroup.MinDice}~{actabilityGroup.MaxDice}");
 
                 // TODO: Use MinDice for something as well?
                 if (dice > actabilityGroup.MaxDice)
@@ -173,161 +171,6 @@ public class LootPack
 
     /// <summary>
     /// Generates the contents of a LootPack, in the form of a list of tuples. This list is stored internally
-    /// New experimental version V2
-    /// </summary>
-    /// <param name="lootDropRate">1.0f = 100%</param>
-    /// <param name="lootGoldRate">1.0f = 100% applies to coins item only</param>
-    /// <param name="player">The player the loot is generated for, currently only used to handle exclusions</param>
-    /// <param name="actabilityType">AbilityType used to initiate the loot generation (used to calculate bonus)</param>
-    /// <returns></returns>
-    public List<(uint itemId, int count, byte grade, uint lootGroupOrigin)> GeneratePackNewV2(float lootDropRate, float lootGoldRate, Character player, ActabilityType actabilityType)
-    {
-        var items = new List<(uint itemId, int count, byte grade, uint lootGroupOrigin)>();
-
-        foreach (var (groupNo, groupLootList) in LootsByGroupNo)
-        {
-            var group = Groups.Values.FirstOrDefault(g => g.GroupNo == groupNo);
-            // If group is defined, use it's DropRate for group rolls
-            var groupRate = group is { DropRate: > 0 } ? group.DropRate / 10_000_000f : 1f;
-
-            var selectedItemsByGroup = new Dictionary<uint, List<Loot>>();
-            // Filter items
-            if (groupNo <= 0)
-            {
-                foreach (var loot in groupLootList)
-                {
-                    // Check for Quest loot drops
-                    var itemTemplate = ItemManager.Instance.GetTemplate(loot.ItemId);
-                    if (itemTemplate?.LootQuestId > 0)
-                    {
-                        // Skip item if player does not have quest
-                        if (!player.Quests.HasQuest(itemTemplate.LootQuestId))
-                            continue;
-                    }
-
-                    // Roll each item
-                    var requiresDice = (long)Math.Floor(loot.DropRate * lootDropRate * AppConfiguration.Instance.World.LootRate);
-                    var dice = (long)Rand.Next(0, 10_000_000);
-                    if (dice < requiresDice || loot.AlwaysDrop)
-                    {
-                        if (!selectedItemsByGroup.ContainsKey(loot.Group))
-                            selectedItemsByGroup.Add(loot.Group, []);
-                        selectedItemsByGroup[loot.Group].Add(loot);
-                    }
-                }
-            }
-            else
-            {
-                // Roll group
-                var requiresDice = (long)Math.Floor(10_000_000f * groupRate * lootDropRate * AppConfiguration.Instance.World.LootRate);
-                var dice = (long)Rand.Next(0, 10_000_000);
-                if (dice < requiresDice)
-                {
-                    var tmpSelectedItemsByGroup = new Dictionary<uint, List<Loot>>();
-                    var tmpSelectedQuestItemsByGroup = new Dictionary<uint, List<Loot>>();
-                    var normalizedRate = 0u;
-                    // Sort mixed quest / non-quest items
-                    foreach (var loot in groupLootList)
-                    {
-                        var itemTemplate = ItemManager.Instance.GetTemplate(loot.ItemId);
-                        // Check for questS itemS in group
-                        if (itemTemplate?.LootQuestId > 0)
-                        {
-                            // Add item if player has quest
-                            if (player.Quests.HasQuest(itemTemplate.LootQuestId))
-                            {
-                                // TODO Add Loot rate for quest items ???
-                                if (!tmpSelectedQuestItemsByGroup.ContainsKey(groupNo))
-                                    tmpSelectedQuestItemsByGroup.Add(groupNo, []);
-                                tmpSelectedQuestItemsByGroup[groupNo].Add(loot);
-                            }
-                        }
-                        // Non quest items
-                        else
-                        {
-                            // Check if this loot uses ActAbilityGroup dice
-                            var actGroup = ActabilityGroups.Values.FirstOrDefault(g => g.GroupId == loot.Group);
-                            if (actGroup != null)
-                            {
-                                var actDice = (long)Rand.Next(0, 10_000);
-                                // Use generic loot multiplier for the ActGroups ?
-                                actDice = (long)Math.Floor(actDice / (lootDropRate * AppConfiguration.Instance.World.LootRate));
-
-                                var actLevelMultiplier = 1f;
-                                if (player != null && player.Actability.Actabilities.TryGetValue((byte)actabilityType, out var actAbility))
-                                {
-                                    actLevelMultiplier *= actAbility.GetLootMultiplier();
-                                }
-
-                                // TODO: Use MinDice for something as well?
-                                // TODO: Make ActAbility skill level of the player matter
-                                if (actDice * actLevelMultiplier > actGroup.MaxDice)
-                                {
-                                    continue;
-                                }
-                            }
-                            normalizedRate += loot.AlwaysDrop ? loot.DropRate : 10_000_000;
-                            if (!tmpSelectedItemsByGroup.ContainsKey(groupNo))
-                                tmpSelectedItemsByGroup.Add(groupNo, []);
-                            tmpSelectedItemsByGroup[groupNo].Add(loot);
-                        }
-                    }
-                    // Roll item (from best chance item to lower chance item) with cumulative rate
-                    if (tmpSelectedItemsByGroup.Count > 0)
-                    {
-                        var cumulativeRate = 0f;
-                        var roll = (long)Rand.Next(0, normalizedRate);
-                        foreach (var loot in tmpSelectedItemsByGroup[groupNo])
-                        {
-                            var itemRate = loot.DropRate > 1 ? loot.DropRate / (float)normalizedRate : 1f;
-                            cumulativeRate += (long)Math.Floor((float)normalizedRate * itemRate * lootDropRate * AppConfiguration.Instance.World.LootRate);
-                            if (roll < cumulativeRate)
-                            {
-                                if (!selectedItemsByGroup.ContainsKey(loot.Group))
-                                    selectedItemsByGroup.Add(loot.Group, []);
-                                selectedItemsByGroup[loot.Group].Add(loot);
-                                break;
-                            }
-                        }
-                    }
-                    // Merge quests items in selected items
-                    if (tmpSelectedQuestItemsByGroup.Count > 0)
-                        foreach (var loot in tmpSelectedQuestItemsByGroup[groupNo])
-                        {
-                            // Skip quest item if it was randomly selected
-                            if (selectedItemsByGroup[groupNo].Contains(loot))
-                                continue;
-                            selectedItemsByGroup[groupNo].Add(loot);
-                        }
-                }
-            }
-            // No matches found
-            if (selectedItemsByGroup.Count <= 0)
-                continue;
-            // Finalize items loot list
-            foreach (var (groupId, loots) in selectedItemsByGroup)
-            {
-                foreach (var loot in loots)
-                {
-                    // Roll amount
-                    var countToAddNow = Rand.Next(loot.MinAmount, loot.MaxAmount + 1);
-                    // Item Coin
-                    if (loot.ItemId == (uint)ItemConstants.Coins)
-                        countToAddNow = (int)Math.Round(countToAddNow * lootGoldRate * AppConfiguration.Instance.World.GoldLootMultiplier);
-                    // Choose grade
-                    var generatedGrade = loot.GradeId;
-                    if (group?.ItemGradeDistributionId > 0)
-                        generatedGrade = GetGradeFromDistribution(group.ItemGradeDistributionId);
-                    // Add selected item to final item
-                    items.Add((loot.ItemId, countToAddNow, generatedGrade, loot.Group));
-                }
-            }
-        }
-        return items;
-    }
-
-    /// <summary>
-    /// Generates the contents of a LootPack, in the form of a list of tuples. This list is stored internally
     /// New experimental version
     /// </summary>
     /// <param name="lootDropRate">1.0f = 100%</param>
@@ -383,10 +226,9 @@ public class LootPack
                 // Group 0 items will always need to be included
                 if (loot.Group <= 0 || loot.AlwaysDrop || loot.DropRate == 10000000)
                 {
-                    ref var lootList = ref CollectionsMarshal.GetValueRefOrAddDefault(selectedItemsByGroup, 0u, out var exists); // replaced loot.Group==0 with 0 to make it easier to see.
-                    if (!exists)
-                        lootList = [];
-                    lootList.Add(loot);
+                    if (!selectedItemsByGroup.ContainsKey(0)) // заменил loot.Group==0 на 0, чтобы было лучше видно
+                        selectedItemsByGroup.Add(0, []);
+                    selectedItemsByGroup[0].Add(loot);
                     continue;
                 }
 
@@ -473,13 +315,147 @@ public class LootPack
     }
 
     /// <summary>
+    /// Generates the contents of a LootPack, in the form of a list of tuples. This list is stored internally
+    /// </summary>
+    /// <param name="lootDropRate">1.0f = 100%</param>
+    /// <param name="lootGoldRate">1.0f = 100% applies to coins item only</param>
+    /// <returns></returns>
+    public List<(uint itemId, int count, byte grade)> GeneratePack(float lootDropRate, float lootGoldRate)
+    {
+        // Use 8000022 as an example
+
+        var items = new List<(uint itemId, int count, byte grade)>();
+
+        Logger.Info($"Rolling loot pack {Id} containing max group Id: {GroupCount}");
+
+        // For every group
+        for (uint gIdx = 0; gIdx <= GroupCount; gIdx++)
+        {
+            var hasLootGroup = false;
+            var lootGradeDistribId = 0u;
+            var alwaysDropGroup = gIdx == 0;
+
+            if (!LootsByGroupNo.ContainsKey(gIdx))
+                continue;
+
+            Logger.Debug($"Rolling loot with pack {Id}, Group {gIdx}/{GroupCount}, checking Groups conditions");
+
+            // If that group has a LootGroup, roll the dice
+            if (Groups.TryGetValue(gIdx, out var lootGroup))
+            {
+                hasLootGroup = true;
+                lootGradeDistribId = lootGroup.ItemGradeDistributionId;
+                var dice = (long)Rand.Next(0, 10000000);
+
+                // Use generic loot multiplier for the groups ?
+                dice = (long)Math.Floor(dice / (lootDropRate * AppConfiguration.Instance.World.LootRate));
+
+                Logger.Debug($"Rolling loot with pack {Id}, GroupNo {gIdx} rolled {dice}/{lootGroup.DropRate}");
+
+                if (lootGroup.DropRate > 0 && dice > lootGroup.DropRate)
+                    continue;
+            }
+
+            Logger.Debug($"Rolling loot with pack {Id}, Group {gIdx}/{GroupCount}, checking ActAbilityGroups conditions");
+
+            // If that group has a LootActGroup, roll the dice
+            if (ActabilityGroups.TryGetValue(gIdx, out var actabilityGroup))
+            {
+                var dice = (long)Rand.Next(0, 10000);
+
+                // Use generic loot multiplier for the ActGroups ?
+                dice = (long)Math.Floor(dice / (lootDropRate * AppConfiguration.Instance.World.LootRate));
+
+                Logger.Debug($"Rolling loot with pack {Id}, ActAbilityGroupNo {gIdx} rolled {dice}/{actabilityGroup.MinDice}~{actabilityGroup.MaxDice}");
+
+                // TODO: Use MinDice for something as well?
+                if (dice > actabilityGroup.MaxDice)
+                    continue;
+            }
+
+            var loots = LootsByGroupNo[gIdx];
+            if (loots == null || loots.Count == 0)
+                continue;
+
+            var uniqueItemDrop = loots[0].DropRate == 1;
+            var itemRoll = Rand.Next(0, 10000000);
+
+            // Apply multiplier for loot drop rate
+            itemRoll = (int)Math.Round(itemRoll / lootDropRate);
+
+            var itemStackingRoll = 0u;
+
+            var selected = new List<Loot>();
+
+
+            if (alwaysDropGroup == false && (uniqueItemDrop || hasLootGroup || GroupCount <= 1))
+            {
+                selected.Add(loots.RandomElementByWeight(l => l.DropRate));
+            }
+            else
+            {
+
+                selected.AddRange(loots.Where(loot => loot.AlwaysDrop || loot.DropRate == 10000000 || alwaysDropGroup).ToList());
+
+                foreach (var loot in loots.Where(loot => !(loot.AlwaysDrop || loot.DropRate == 10000000 || alwaysDropGroup)))
+                {
+                    if (alwaysDropGroup)
+                    {
+                        selected.Add(loot);
+                        continue;
+                    }
+                    if (loot.DropRate + itemStackingRoll < itemRoll)
+                    {
+                        itemStackingRoll += loot.DropRate;
+                        continue;
+                    }
+
+                    itemStackingRoll += loot.DropRate;
+
+                    selected.Add(loot);
+                    break;
+                }
+            }
+
+            foreach (var selectedPack in selected)
+            {
+                var lootCount = Rand.Next(selectedPack.MinAmount, selectedPack.MaxAmount + 1);
+
+                var grade = selectedPack.GradeId;
+                if (lootGradeDistribId > 0)
+                    grade = GetGradeFromDistribution(lootGradeDistribId);
+
+                // Multiply gold as needed
+                if (selectedPack.ItemId == (uint)ItemConstants.Coins)
+                    lootCount = (int)Math.Round(lootCount * (lootGoldRate * AppConfiguration.Instance.World.GoldLootMultiplier));
+
+                items.Add((selectedPack.ItemId, lootCount, grade));
+            }
+        }
+
+        // unused _generatedPack = items;
+        return items;
+    }
+
+    public List<Item> GenerateNpcPackItems(ref ulong baseId, float lootDropRate = 1.0f, float lootGoldRate = 1.0f)
+    {
+        var packList = GeneratePack(lootDropRate, lootGoldRate);
+        var itemList = packList
+            .Select(tuple => ItemManager.Instance.Create(tuple.itemId, tuple.count, tuple.grade, false)).ToList();
+        foreach (var item in itemList)
+        {
+            item.Id = ++baseId;
+        }
+
+        return itemList;
+    }
+
+    /// <summary>
     /// Helper function to help find the owning player of a killing unit, either the player itself or the owners of the unit
     /// </summary>
     /// <param name="killer">Unit doing the killing blow</param>
     /// <returns></returns>
-#pragma warning disable CA1859
     private ICharacter GetPlayerUsingKiller(IBaseUnit killer)
-#pragma warning restore CA1859
     {
         if (killer is Character character)
             return character;
@@ -538,6 +514,7 @@ public class LootPack
         // Not enough room to give the items, give none
         if (!canAdd)
             return false;
+
         var coinCount = 0;
         // Distribute the items (and coins)
         foreach (var (itemTemplateId, count, grade, _) in generatedList)
