@@ -24,13 +24,13 @@ namespace AAEmu.Commons.Cryptography
         private Dictionary<ulong, ConnectionKeychain> ConnectionKeys { get; set; } //Dictionary of valid keys bound to account Id and connection Id
         public static bool needNewkey2;
         public static bool needNewkey1;
+        public static bool AdjustCryptConstantEnable;
         private static string XorKeyValueFilePath;
-        private static Random rnd = new();
-
 
         public void Load()
         {
             ConnectionKeys = new Dictionary<ulong, ConnectionKeychain>();
+            LoadCryptConfig();
             Logger.Info("Loaded Encryption Manager.");
         }
 
@@ -82,7 +82,8 @@ namespace AAEmu.Commons.Cryptography
             Logger.Warn("AES: {0} XOR: {1}", Helpers.ByteArrayToString(keys.AesKey), keys.XorKey);
 
             // для автоматического подбора констант
-            LoadXorKeyConstant(keys);
+            if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
+                LoadXorKeyConstant(keys);
         }
 
         private static void LoadXorKeyConstant(ConnectionKeychain keys)
@@ -106,6 +107,25 @@ namespace AAEmu.Commons.Cryptography
                     // сохраняем пакеты в список пакетов
                     keys.XorKeyConstant2 = Convert.ToUInt32(xorKeyValue2, 16);
                 }
+            }
+        }
+
+        private static void LoadCryptConfig()
+        {
+            var worldPath = Path.Combine(FileManager.AppPath, "Configurations");
+            XorKeyValueFilePath = Path.Combine(worldPath, "xorKeyValue.txt");
+            using var reader = new StreamReader(XorKeyValueFilePath);
+            while (!reader.EndOfStream)
+            {
+                _ = reader.ReadLine();
+                _ = reader.ReadLine();
+                _ = reader.ReadLine();
+                _ = reader.ReadLine();
+                // даже если этого значения нет в файле, установите переменную AdjustCryptConstantEnable
+                // even if this value is not in the file, set the variable AdjustCryptConstantEnable
+                _ = reader.ReadLine();
+                var xorKeyValue3 = reader.ReadLine();
+                AdjustCryptConstantEnable = xorKeyValue3 == "true";
             }
         }
 
@@ -258,61 +278,70 @@ namespace AAEmu.Commons.Cryptography
 
         public static byte[] DecodeXor(byte[] bodyPacket, uint xorKey, ConnectionKeychain keys)
         {
-            /*
-             * логика подбора такая:
-             * сначала подбираем первую константу для имеющейся второй
-             * если первая 0xFF, то меняем вторую на новую и начинаем подбор первой константы с 0x00
-             */
-            var dirty = false;
-            //// подбираем константы шифрации
-            //if (keys.XorKeyConstant1 > 0x75A024FF)
-            //{
-            //    keys.XorKeyConstant1 = 0x75A02400;
-            //    dirty = true;
-            //    needNewkey2 = true;
-            //}
-            if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
+            if (AdjustCryptConstantEnable)
             {
-                LoadXorKeyConstant(keys);
+                /*
+                 * логика подбора такая:
+                 * сначала подбираем первую константу для имеющейся второй
+                 * если первая 0xFF, то меняем вторую на новую и начинаем подбор первой константы с 0x00
+                 */
+                var dirty = false;
+                // подбираем константы шифрации
+                if (keys.XorKeyConstant1 > 0x75A024FF)
+                {
+                    keys.XorKeyConstant1 = 0x75A02400;
+                    dirty = true;
+                    needNewkey2 = true;
+                }
 
-                //keys.XorKeyConstant2 = 0x00a3af00;
-                //dirty = true;
-                //needNewkey2 = true;
+                if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
+                {
+                    LoadXorKeyConstant(keys);
+
+                    //keys.XorKeyConstant2 = 0x00a3af00;
+                    //dirty = true;
+                    //needNewkey2 = true;
+                }
+
+                if (needNewkey1)
+                {
+                    needNewkey1 = false;
+                    // заменим первую константу
+                    keys.XorKeyConstant1++;
+                    if (keys.XorKeyConstant1 > 0x75A024FF)
+                    {
+                        keys.XorKeyConstant1 = 0x75A02400;
+                        needNewkey2 = true;
+                    }
+
+                    dirty = true;
+                }
+
+                if (needNewkey2)
+                {
+                    needNewkey2 = false;
+                    // заменим вторую константу
+                    var tuneL = (byte)Rand.Next(0x01, 0xFF);
+                    var tuneR = (byte)Rand.Next(0x01, 0xFF);
+                    // Исходное uint число с заполнителями NN
+                    var result = keys.XorKeyConstant2 & 0x00FFFF00;
+                    result |= (uint)tuneL << 24; // Вставляем tuneL в старший байт
+                    result |= tuneR; // Вставляем tuneR в младший байт
+                    keys.XorKeyConstant2 = result; // Заменяем байты на указанные значения
+                    dirty = true;
+                }
+
+                if (dirty)
+                {
+                    using var writer = new StreamWriter(XorKeyValueFilePath, false);
+                    writer.WriteLine("XorKeyConstant1:");
+                    writer.WriteLine(keys.XorKeyConstant1.ToString("X8"));
+                    writer.WriteLine("XorKeyConstant2:");
+                    writer.WriteLine(keys.XorKeyConstant2.ToString("X8"));
+                    writer.WriteLine("AdjustCryptConstantEnable:");
+                    writer.WriteLine(AdjustCryptConstantEnable.ToString());
+                }
             }
-
-            //if (needNewkey1)
-            //{
-            //    needNewkey1 = false;
-            //    // заменим первую константу
-            //    keys.XorKeyConstant1++;
-            //    if (keys.XorKeyConstant1 > 0x75A024FF)
-            //    {
-            //        keys.XorKeyConstant1 = 0x75A02400;
-            //        needNewkey2 = true;
-            //    }
-            //    dirty = true;
-            //}
-            //if (needNewkey2)
-            //{
-            //    needNewkey2 = false;
-            //    // заменим вторую константу
-            //    var tuneL = (byte)rnd.Next(0x01, 0xFF);
-            //    var tuneR = (byte)rnd.Next(0x01, 0xFF);
-            //    // Исходное uint число с заполнителями NN
-            //    var result = keys.XorKeyConstant2 & 0x00FFFF00;
-            //    result |= (uint)tuneL << 24; // Вставляем tuneL в старший байт
-            //    result |= tuneR;      // Вставляем tuneR в младший байт
-            //    keys.XorKeyConstant2 = result; // Заменяем байты на указанные значения
-            //    dirty = true;
-            //}
-            //if (dirty)
-            //{
-            //    using var writer = new StreamWriter(XorKeyValueFilePath, false);
-            //    writer.WriteLine("XorKeyConstant1:");
-            //    writer.WriteLine(keys.XorKeyConstant1.ToString("X8"));
-            //    writer.WriteLine("XorKeyConstant2:");
-            //    writer.WriteLine(keys.XorKeyConstant2.ToString("X8"));
-            //}
 
             //          +-Hash начало блока для DecodeXOR, где второе число, в данном случае F(16 байт)-реальная длина данных в пакете, к примеру A(10 байт)-реальная длина данных в пакете
             //          |  +-начало блока для DecodeAES
