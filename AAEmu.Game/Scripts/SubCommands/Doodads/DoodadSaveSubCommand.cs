@@ -95,7 +95,7 @@ public class DoodadSaveSubCommand : SubCommandBase
                     doodadSpawnersToFile[i].Scale = 1f;
             }
 
-            var addDoodads = doodadsInWorld.Where(n => n.Spawner?.Id == 0).ToList();
+            var addDoodads = doodadsInWorld.Where(n => n.Spawner?.Id == 0 && n.AttachPoint == 0).ToList();
             var removeDoodads = doodadsInWorld.Where(n => n.Spawner?.Id == 0xffffffff).ToList();
 
             // Получаем все doodads и последний идентификатор объекта
