@@ -7,7 +7,6 @@ using System.Threading;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Static;
@@ -57,8 +56,8 @@ namespace AAEmu.Game.Core.Managers.World
 
             _buoyancy = new Buoyancy(_physWorld);
             _buoyancy.FluidBox = new JBBox(
-                new JVector(0, 0, 0), // Дно
-                new JVector(32000, SimulationWorld.OceanLevel, 32000) // Поверхность
+                new JVector(0, 0, 0), // Bottom
+                new JVector(SimulationWorld.CellX * WorldManager.CELL_SIZE, SimulationWorld.OceanLevel, SimulationWorld.CellY * WorldManager.CELL_SIZE) // Surface
             );
             _buoyancy.UseOwnFluidArea(CustomWater);
 
@@ -181,7 +180,7 @@ namespace AAEmu.Game.Core.Managers.World
                                 if (!body.IsActive)
                                     continue;
 
-                                var underPos = slave.Transform.World.Position + (Vector3.UnitZ * -2f);
+                                var underPos = slave.Transform.World.Position + Vector3.UnitZ * -2f;
                                 if (SimulationWorld.Water.IsWater(underPos, out var flowDirection))
                                 {
                                     if (flowDirection.Length() > 0f)
@@ -193,10 +192,8 @@ namespace AAEmu.Game.Core.Managers.World
                                     }
                                 }
 
-                                var shipModel = ModelManager.Instance.GetShipModel(slave.Template.ModelId);
-                                if (shipModel == null) return;
                                 SyncTransformWithRigidBody(slave);
-                                BoatPhysicsTick(slave, body, shipModel);
+                                BoatPhysicsTick(slave, body, slave.ShipController.ShipModel);
                                 if (this.CheckInterval(150))
                                     SendUpdatedMovementData(slave, body);
                             }
@@ -248,19 +245,16 @@ namespace AAEmu.Game.Core.Managers.World
 
             var pos = new JVector(slave.Transform.World.Position.X, slave.Transform.World.Position.Z, slave.Transform.World.Position.Y);
             var rot = JQuaternion.CreateRotationY(slave.Transform.World.Rotation.Z);
-            //                                     Width                   Length                  Height
-            var dimensions = new JVector(shipModel.MassBoxSizeX, shipModel.MassBoxSizeY, shipModel.MassBoxSizeZ);
-            var ctrl = new ShipController(_physWorld, waterLevel: DefaultWaterLevel);
+            //                                       Width                   Length                  Height
+            //var dimensions = new JVector(shipModel.MassBoxSizeX, shipModel.MassBoxSizeY, shipModel.MassBoxSizeZ);
+            var ctrl = new ShipController(world: _physWorld, shipModel: shipModel, waterLevel: DefaultWaterLevel);
 
-            ctrl.Build(
-                initialPosition: pos,
-                initialOrientation: rot,
-                initialDimension: dimensions,
-                hullMass: shipModel.Mass);
+            ctrl.Build(initialPosition: pos, initialOrientation: rot);
 
             _shipControllers[slave.Id] = ctrl;
             slave.RigidBody = ctrl.Hull;
             slave.RigidBody.Tag = slave;
+            slave.ShipController = ctrl;
 
             EnqueueAddBody(slave.RigidBody);
             _buoyancy.AddForRectangularParallelepiped(slave.RigidBody, 3);
@@ -277,6 +271,8 @@ namespace AAEmu.Game.Core.Managers.World
             EnqueueRemoveBody(rigidBody);
             _physWorld.Remove(rigidBody);
             _buoyancy.Remove(rigidBody);
+            _shipControllers.Remove(slave.Id);
+            slave.ShipController = null;
             slave.RigidBody = null;
 
             Logger.Debug($"RemoveShip {slave.Name} <- {SimulationWorld.Name}");
@@ -284,72 +280,8 @@ namespace AAEmu.Game.Core.Managers.World
 
         private void BoatPhysicsTick(Slave slave, RigidBody rigidBody, ShipModel shipModel)
         {
-            if (!_shipControllers.TryGetValue(slave.Id, out var boat))
-                return;
-
-            // Calculate submerged depth and buoyancy force
-            var submergedDepth = Math.Max(0, DefaultWaterLevel - rigidBody.Position.Y);
-            var isOnWater = submergedDepth > 0;
-            var isOnLand = !isOnWater && submergedDepth <= 0;
-
-            if (isOnLand)
-            {
-                // Apply ground friction and stop the ship
-                const float GroundFriction = 0.4f; // Sand: around 0.4
-                var frictionForce = new JVector(-rigidBody.Velocity.X * GroundFriction, 0, -rigidBody.Velocity.Z * GroundFriction);
-                rigidBody.AddForce(frictionForce);
-
-                // Gradually reduce speed
-                const float CollisionDamping = 0.5f;
-                rigidBody.Velocity *= CollisionDamping;
-                rigidBody.AngularVelocity *= CollisionDamping;
-
-                // Stop the ship and apply roll
-                if (rigidBody.Velocity.Length() < 0.01f)
-                {
-                    rigidBody.Velocity = JVector.Zero;
-                    rigidBody.AngularVelocity = JVector.Zero;
-
-                    // Apply roll to the ship
-                    var rollAngle = GetRollAngle(JMatrix.CreateFromQuaternion(rigidBody.Orientation));
-                    if (Math.Abs(rollAngle) < 0.1f)
-                    {
-                        var correctionTorque = new JVector(0, 0, -rollAngle * rigidBody.Mass * 0.1f);
-                        rigidBody.AddForce(correctionTorque);
-                    }
-
-                    // Disable control
-                    slave.ThrottleRequest = 0;
-                    slave.SteeringRequest = 0;
-                    slave.Throttle = 0;
-                    slave.Steering = 0;
-                }
-            }
-
-            // Check if the ship has a driver
-            var hasDriver = slave.AttachedCharacters.ContainsKey(AttachPointKind.Driver);
-            if (hasDriver)
-            {
-                // If there is a driver, we update the control
-                // Smooth throttle and steering inputs
-                const float SmoothingFactor = 0.1f;
-                slave.Throttle = (sbyte)(slave.Throttle + (slave.ThrottleRequest - slave.Throttle) * SmoothingFactor);
-                slave.Steering = (sbyte)(slave.Steering + (slave.SteeringRequest - slave.Steering) * SmoothingFactor);
-            }
-            else
-            {
-                // If there is no driver, we reset the control
-                slave.ThrottleRequest = 0;
-                slave.SteeringRequest = 0;
-                slave.Throttle = 0;
-                slave.Steering = 0;
-
-                return;
-            }
-            
-            if (!ApplyCollisions(slave, rigidBody, shipModel))
-                boat.UpdateControls(slave, rigidBody, shipModel);
-
+            slave.ShipController.UpdateControls(slave, rigidBody, shipModel);
+            ApplyCollisions(slave, rigidBody, shipModel);
         }
 
         private void SendUpdatedMovementData(Slave slave, RigidBody rigidBody)
@@ -413,17 +345,17 @@ namespace AAEmu.Game.Core.Managers.World
                 //if (this.CheckInterval(1500))
                 //    Logger.Debug($"Collision detected. Boat adjusted position: {rigidBody.Position}");
 
-                var damageAmount = penetration;
-                if (damageAmount < 10f)
-                    damageAmount = 10f;
+                var damageAmount = (floor - SimulationWorld.OceanLevel) * 100f;
+                if (damageAmount < 1f)
+                    damageAmount = 1f;
 
                 if (damageAmount > 0)
                 {
                     slave.DoFloorCollisionDamage((int)damageAmount, false, KillReason.Collide);
                     if (this.CheckInterval(1500))
                     {
-                        slave.Summoner.BroadcastPacket(new SCEnvDamagePacket(EnvSource.Collision, slave.ObjId, (uint)(damageAmount * 0.1f), 0, rigidBody.Position.ToVector(), damageAmount * 0.01f), true);
-                        //Logger.Debug($"Slave: {slave.ObjId}, speed: {slave.Speed}, rotSpeed: {slave.RotSpeed}, floor: {floor}, Z: {slave.Transform.World.Position.Z}, damage: {damageAmount}");
+                        slave.Summoner.BroadcastPacket(new SCEnvDamagePacket(EnvSource.Collision, slave.ObjId, (uint)damageAmount, 0, rigidBody.Position.ToVector(), damageAmount * 0.1f), true);
+                        Logger.Debug($"Slave: {slave.ObjId}, speed: {slave.Speed}, rotSpeed: {slave.RotSpeed}, floor: {floor}, Z: {slave.Transform.World.Position.Z}, damage: {damageAmount}");
                     }
                 }
 

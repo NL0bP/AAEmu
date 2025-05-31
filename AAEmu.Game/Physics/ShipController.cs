@@ -15,40 +15,53 @@ using Jitter2.LinearMath;
 
 namespace AAEmu.Game.Physics;
 
-public class ShipController : IDisposable
+public class ShipController
 {
     private readonly World _world;
 
     public RigidBody Hull { get; private set; } = null!;
 
-    private float _hullWidth, _hullHeight, _hullLength, _hullMass;
+    internal ShipModel ShipModel { get; init; }
 
     private readonly float _waterLevel;
-    private const float FluidDensity = 1025f; // kg/m³
-
-    public ShipController(
-        World world,
-        float waterLevel = 100f)
+    
+    public ShipController(World world, ShipModel shipModel, float waterLevel = 100f)
     {
         _world = world ?? throw new ArgumentNullException(nameof(world));
         _waterLevel = waterLevel;
+        ShipModel = shipModel ?? throw new ArgumentNullException(nameof(shipModel));
+    }
+
+    ~ShipController()
+    {
+        try
+        {
+            Hull?.World.Remove(Hull);
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Failed to remove hull RigidBody from Physics world: {e}");
+        }
     }
 
     /// <summary>
     /// Создает корпус корабля.
     /// </summary>
-    public void Build(JVector initialPosition, JQuaternion initialOrientation, JVector initialDimension, float hullMass)
+    public void Build(JVector initialPosition, JQuaternion initialOrientation)
     {
-        _hullWidth = initialDimension.X;
-        _hullLength = initialDimension.Y;
-        _hullHeight = initialDimension.Z;
-        _hullMass = hullMass;
-
+        // New object
         Hull = _world.CreateRigidBody();
-        Hull.AddShape(new BoxShape(_hullLength, _hullHeight, _hullWidth));
+        // Set starting position and rotation
         Hull.Position = initialPosition;
         Hull.Orientation = initialOrientation;
-        Hull.SetMassInertia(hullMass);
+        // Ship shape
+        var shipBoxShape = new BoxShape(ShipModel.MassBoxSizeY, ShipModel.MassBoxSizeZ, ShipModel.MassBoxSizeX);
+        // Center offset
+        var shipCenterPoint = new TransformedShape(shipBoxShape, new JVector(ShipModel.MassCenterX, ShipModel.MassCenterZ, ShipModel.MassCenterY));
+        // Add shape
+        Hull.AddShape(shipCenterPoint);
+        // Set Mass
+        Hull.SetMassInertia(ShipModel.Mass);
         Hull.DeactivationTime = TimeSpan.MaxValue;
         Hull.IsStatic = false;
         Hull.SetActivationState(true);
@@ -141,10 +154,5 @@ public class ShipController : IDisposable
         rigidBody.AngularVelocity = new JVector(0, steer, 0);
 
         //Logger.Debug($"Slave: {slave.Name}, Throttle: {throttleFloatVal:F1} ({slave.ThrottleRequest}), Steering {steeringFloatVal:F1} ({slave.SteeringRequest}), speed: {slave.Speed}, rotSpeed: {slave.RotSpeed}");
-    }
-
-    public void Dispose()
-    {
-        Hull?.World.Remove(Hull);
     }
 }

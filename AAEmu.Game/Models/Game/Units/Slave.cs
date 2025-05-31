@@ -21,7 +21,7 @@ using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.StaticValues;
-
+using AAEmu.Game.Physics;
 using Jitter2.Dynamics;
 
 using MySql.Data.MySqlClient;
@@ -66,7 +66,8 @@ public class Slave : Unit
     public List<uint> Tags { get; set; }
     public List<uint> Charges { get; set; }
     public bool IsLoadedPlayerSlave { get; set; }
-    
+    public ShipController ShipController { get; set; }
+
     public Slave()
     {
         AttachedDoodads = [];

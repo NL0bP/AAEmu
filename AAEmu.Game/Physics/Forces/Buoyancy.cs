@@ -99,7 +99,7 @@ public class Buoyancy : ForceGenerator
     /// If you don't want to use the default axis aligned bounding box as
     /// fluid area representation you can define your own area using the FluidAreaDelegate.
     /// </summary>
-    /// <param name="fluidArea">A delegate specifing the fluid area. Set to null if you
+    /// <param name="fluidArea">A delegate specifying the fluid area. Set to null if you
     /// want to use the default box.</param>
     public void UseOwnFluidArea(DefineFluidArea fluidArea)
     {
@@ -108,11 +108,11 @@ public class Buoyancy : ForceGenerator
 
     /// <summary>
     /// Adds a body to the fluid. Only bodies which where added
-    /// to the fluidvolume gets affected by buoyancy forces.
+    /// to the fluid volume gets affected by buoyancy forces.
     /// </summary>
     /// <param name="body">The body which should be added.</param>
     /// <param name="subdivisions">The object is subdivided in smaller objects
-    /// for which buoyancy force is calculated. The more subdivisons the better
+    /// for which buoyancy force is calculated. The more subdivisions the better
     /// the results. Note that the total number of subdivisions is subdivisions³.</param>
     public void Add(RigidBody body, int subdivisions)
     {
@@ -156,7 +156,7 @@ public class Buoyancy : ForceGenerator
         var min = bbox.Min;
         var max = bbox.Max;
 
-        // Размеры параллелепипеда
+        // Dimensions of the parallelepiped
         var size = max - min;
 
         if (MathHelper.CloseToZero(size))
@@ -164,32 +164,32 @@ public class Buoyancy : ForceGenerator
 
         var massPoints = new List<JVector>();
 
-        // Шаг между точками по каждой оси
+        // Step between points on each axis
         var stepX = size.X / subdivisions;
         var stepY = size.Y / subdivisions;
         var stepZ = size.Z / subdivisions;
 
-        // Генерация точек внутри параллелепипеда
+        // Generating points inside a parallelepiped
         for (var i = 0; i < subdivisions; i++)
         {
             for (var j = 0; j < subdivisions; j++)
             {
                 for (var k = 0; k < subdivisions; k++)
                 {
-                    // Координаты текущей точки
+                    // Current point coordinates
                     var x = min.X + (i + 0.5f) * stepX;
                     var y = min.Y + (j + 0.5f) * stepY;
                     var z = min.Z + (k + 0.5f) * stepZ;
 
                     var point = new JVector(x, y, z);
 
-                    // Для параллелепипеда все точки внутри BoundingBox считаются принадлежащими телу
+                    // For a parallelepiped, all points inside the BoundingBox are considered to belong to the body
                     massPoints.Add(point);
                 }
             }
         }
 
-        // Сохраняем точки
+        // Save points
         _samples.Add(shape, massPoints.ToArray());
         _bodies.Add(body);
     }
@@ -201,15 +201,16 @@ public class Buoyancy : ForceGenerator
             if (body.IsStatic || !body.IsActive) continue;
 
             var slave = (Slave)body.Tag;
-            if (slave == null) continue;
-
-            var shipModel = ModelManager.Instance.GetShipModel(slave.ModelId);
-            if (shipModel == null || shipModel.Mass <= 0) continue;
+            if (slave is not { Hp: > 0 }) continue;
+            
+            // Skip if no controller or mass
+            if (slave.ShipController == null || slave.ShipController.ShipModel.Mass <= 0) continue;
 
             var depth = WaterSurfaceLevel - body.Position.Y;
             if (depth <= 0) continue;
 
-            ApplyDrag(body, shipModel.MassBoxSizeX, shipModel.MassBoxSizeY, shipModel.MassBoxSizeZ);
+            ApplyDrag(body, slave.ShipController.ShipModel.MassBoxSizeX, slave.ShipController.ShipModel.MassBoxSizeZ);
+
             // Calculate submerged depth and buoyancy force
             var submergedDepth = Math.Max(0, WaterSurfaceLevel - body.Position.Y);
             var isOnWater = submergedDepth > 0;
@@ -226,7 +227,7 @@ public class Buoyancy : ForceGenerator
         }
     }
 
-    private void ApplyDrag(RigidBody body, float _hullWidth, float _hullLength, float _hullHeight)
+    private void ApplyDrag(RigidBody body, float _hullWidth, float _hullHeight)
     {
         var velocity = body.Velocity;
         var speed = velocity.Length();
