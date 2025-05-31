@@ -20,7 +20,7 @@ using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.StaticValues;
-
+using AAEmu.Game.Physics;
 using Jitter2.Dynamics;
 
 using MySql.Data.MySqlClient;
@@ -60,6 +60,10 @@ public class Slave : Unit
     public SlaveSpawner Spawner { get; set; }
     public Task LeaveTask { get; set; }
     public CancellationTokenSource CancelTokenSource { get; set; }
+    public ShipController ShipController { get; set; }
+    public Vector3 CachedWaterFlow { get; set; }
+    public float CachedWaterSurface { get; set; }
+    public float CachedFloorLevel { get; set; }
 
     public Slave()
     {
@@ -940,5 +944,18 @@ public class Slave : Unit
         {
             passenger.Value?.OnZoneChange(lastZoneKey, newZoneKey);
         }
+    }
+
+    /// <summary>
+    /// Creates temporary cache of this Slave's current positional info of the floor and water surface heights.
+    /// This is to reduce the calls to GetWaterSurface which is rather CPU intensive
+    /// </summary>
+    // TODO: Add support for custom terrain nodes and static level models
+    public void CreateWaterAndLandSurfaceCache()
+    {
+        // Get Floor and WaterSurface at given location
+        CachedFloorLevel = ParentWorld.GetHeight(Transform.World.Position.X, Transform.World.Position.Y);
+        CachedWaterSurface = ParentWorld.Water.GetWaterSurface(Transform.World.Position, out var cachedWaterFlow);
+        CachedWaterFlow = cachedWaterFlow;
     }
 }
