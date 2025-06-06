@@ -712,7 +712,7 @@ public class SlaveManager : Singleton<SlaveManager>
             slaveSummonItem.SlaveDbId = dbId;
             if (slaveSummonItem.IsDestroyed > 0 || slaveSummonItem.RepairStartTime > DateTime.MinValue)
             {
-                var secondsLeft = (slaveSummonItem.RepairStartTime.AddMinutes(10) - DateTime.UtcNow).TotalSeconds;
+                var secondsLeft = (slaveSummonItem.RepairStartTime.AddMinutes(5) - DateTime.UtcNow).TotalSeconds;
                 if (secondsLeft > 0.0)
                 {
                     // Slave was destroyed and is on cooldown
@@ -792,7 +792,6 @@ public class SlaveManager : Singleton<SlaveManager>
                     newItem.Detail = byteArray;
                     newItem.DetailType = ItemDetailType.SlaveEquipment;
                     newItem.DetailBytesLength = 12;
-
                     owner.SendPacket(new SCUpdateSlaveSourceItemPacket(summonedSlave.ObjId, newItem.Id, summonedSlave.Hp, initialItem.EquipSlotId)); // Уровень HP для предмета где брать?
                     var slaveBinding = new SlaveBindings
                     {
@@ -866,7 +865,7 @@ public class SlaveManager : Singleton<SlaveManager>
                         OwnerId = summonedSlave.TemplateId,
                         OwnerType = "Slave",
                         DoodadId = doodadId,
-                        Persist =  true, //GetDoodadPersistentByOwnerId(summonedSlave.TemplateId, doodadId), // будем ли сохранять в базе
+                        Persist = true, //GetDoodadPersistentByOwnerId(summonedSlave.TemplateId, doodadId), // будем ли сохранять в базе
                         Scale = 1f,
                         AttachPointId = attachPoint2
                     };
@@ -2337,6 +2336,18 @@ public class SlaveManager : Singleton<SlaveManager>
         return true;
     }
 
+    public bool RemoveSlaveFromDb(Slave slave, uint slaveId)
+    {
+        // Remove the slave from DB
+        var slaveToDelete = slave.GetSlaveByItemTemplateId(slaveId);
+
+        using var connection = MySQL.CreateConnection();
+        if (!DeleteSlaveById(connection, null, slaveToDelete.Id))
+            return false;
+
+        return true;
+    }
+
     /// <summary>
     /// Deletes a Vehicle from the DB (entry only) 
     /// </summary>
@@ -2423,5 +2434,79 @@ public class SlaveManager : Singleton<SlaveManager>
         owner.BroadcastPacket(new SCUnitNameChangedPacket(mySlave.ObjId, newName), true);
 
         return mySlave;
+    }
+
+    public void DespawnDoodad(Slave slave, uint doodadId)
+    {
+        var doodad = slave.GetDoodadByItemTemplateId(doodadId);
+        //doodad?.DoDespawn(doodad);
+        if (doodad is null)
+        {
+            return;
+        }
+
+        doodad.IsPersistent = false;
+        doodad.Despawn = DateTime.UtcNow;
+        SpawnManager.Instance.AddDespawn(doodad);
+        slave.AttachedDoodads.Remove(doodad);
+    }
+
+    public void DespawnSlave(Slave slave, uint slaveId)
+    {
+        var attachedSlave = slave.GetSlaveByItemTemplateId(slaveId);
+        if (attachedSlave is null)
+        {
+            return;
+        }
+
+        WorldManager.Instance.RemoveObject(attachedSlave);
+        attachedSlave.Despawn = DateTime.UtcNow;
+        SpawnManager.Instance.AddDespawn(attachedSlave);
+        slave.AttachedSlaves.Remove(attachedSlave);
+    }
+
+    public void SpawnSlave(Character character, Slave slave, ItemAndLocation playerItem, uint slaveId)
+    {
+        var attachPoint = SlaveManager.Instance.GetAttachPointBySlotId(slave.TemplateId, (uint)playerItem.Item.Slot);
+        var byteArray = new byte[12];
+        Buffer.BlockCopy(BitConverter.GetBytes(slave.Hp), 0, byteArray, 0, 4);
+        Buffer.BlockCopy(BitConverter.GetBytes(0ul), 0, byteArray, 4, 8);
+        playerItem.Item.Detail = byteArray;
+        playerItem.Item.DetailType = ItemDetailType.SlaveEquipment;
+        playerItem.Item.DetailBytesLength = 12;
+        playerItem.Item.ItemFlags = ItemFlag.SoulBound; // связанный
+        playerItem.Item.ChargeUseSkillTime = DateTime.UtcNow;
+
+        character.SendPacket(new SCUpdateSlaveSourceItemPacket(slave.ObjId, playerItem.Item.Id, slave.Hp, (byte)playerItem.Item.Slot));
+        var slaveBinding = new SlaveBindings
+        {
+            Id = 0,
+            OwnerId = slave.TemplateId,
+            OwnerType = "Slave",
+            SlaveId = slaveId,
+            AttachPointId = attachPoint
+        };
+        SpawnSlaveSlaves(character, slaveBinding, slave);
+    }
+
+    public void SpawnDoodad(Character character, Slave slave, ItemAndLocation playerItem, uint doodadId)
+    {
+        // Send Item manipulation packet 
+        character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.DoodadCreate, [], [], 20));
+
+        var attachPoint2 = SlaveManager.Instance.GetAttachPointBySlotId(slave.TemplateId, (uint)playerItem.Item.Slot);
+        var doodadBinding = new SlaveDoodadBindings
+        {
+            Id = 0,
+            OwnerId = slave.TemplateId,
+            OwnerType = "Slave",
+            DoodadId = doodadId,
+            Persist = true, // будем ли сохранять в базе
+            Scale = 1f,
+            AttachPointId = attachPoint2
+        };
+
+        // Create all the trinkets that have been downloaded from inventory.
+        CreateSlaveDoodads(character, playerItem.Item, slave, doodadBinding);
     }
 }

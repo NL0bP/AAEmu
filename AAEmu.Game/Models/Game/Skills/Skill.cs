@@ -438,6 +438,14 @@ public class Skill
                 }
             case SkillTargetType.Item:
                 // TODO ...
+                if (targetCaster.Type is SkillCastTargetType.Item)
+                {
+                    target = targetCaster.ObjId > 0 ? WorldManager.Instance.GetBaseUnit(targetCaster.ObjId) : caster;
+                    if (target != null)
+                    {
+                        targetCaster.ObjId = target.ObjId;
+                    }
+                }
                 break;
             case SkillTargetType.Others:
                 {

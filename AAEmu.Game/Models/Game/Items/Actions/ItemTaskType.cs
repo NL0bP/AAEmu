@@ -85,7 +85,7 @@ public enum ItemTaskType : byte
     ExpeditionCreation,             // expedition-creation
     DeclareExpeditionWar,           // declare-expedition-war
     RecruitmentDecMoney,            // recruitment-dec-money
-    RepairSlaves,                   // repair-slaves
+    RepairSlaves = 80,              // repair-slaves
     ExpandBag,                      // expand-bag
     ExpandBank,                     // expand-bank
     // RenewEquipment = 77
