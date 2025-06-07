@@ -45,7 +45,8 @@ public class AIManager : Singleton<AIManager>
             {
                 try
                 {
-                    npcai.Tick(delta);
+                    if (npcai.Owner != null)
+                        npcai.Tick(delta);
                 }
                 catch (Exception e)
                 {
@@ -53,5 +54,11 @@ public class AIManager : Singleton<AIManager>
                 }
             }
         }
+    }
+
+    public void Stop()
+    {
+        Logger.Debug($"Stopping AIManager");
+        TickManager.Instance.OnTick.UnSubscribe(Tick);
     }
 }
