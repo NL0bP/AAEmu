@@ -26,6 +26,7 @@ using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.World.Transform;
@@ -37,6 +38,8 @@ using AAEmu.Game.Utils.DB;
 using MySql.Data.MySqlClient;
 
 using NLog;
+
+using static AAEmu.Game.Models.Game.Units.slaves.ShipComponentParser;
 
 namespace AAEmu.Game.Core.Managers;
 
@@ -54,6 +57,8 @@ public class SlaveManager : Singleton<SlaveManager>
     //public Dictionary<uint, SlaveMountSkills> _slaveMountSkills;
     public Dictionary<uint, List<uint>> _slaveMountSkills;
     public Dictionary<uint, uint> _repairableSlaves; // SlaveId, RepairEffectId
+    private Dictionary<int, SlaveEquipmentGradeSpawn> _slaveEquipmentGradeSpawns = new();
+    private Dictionary<int, ShipComponentData> _shipComponentsData = new();
 
     // Дополнительные данные
     public List<SlaveBindings> _slaveBindings;
@@ -1733,6 +1738,7 @@ public class SlaveManager : Singleton<SlaveManager>
         _slaveMountSkills = new Dictionary<uint, List<uint>>();
         _repairableSlaves = new Dictionary<uint, uint>();
         _slaveEquipSlots = new Dictionary<uint, List<SlaveEquipSlots>>();
+        //_slaveEquipmentGradeSpawns = new Dictionary<int, SlaveEquipmentGradeSpawn>();
 
         #region SQLLite
 
@@ -2058,6 +2064,41 @@ public class SlaveManager : Singleton<SlaveManager>
                 }
             }
 
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM item_slave_equipment_grade_spawns";
+                command.Prepare();
+
+                using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                {
+                    while (reader.Read())
+                    {
+                        var template = new SlaveEquipmentGradeSpawn
+                        {
+                            Id = reader.GetInt32("id"),
+                            Description = reader.GetString("desc"),
+                            DoodadId = reader.GetInt32("doodad_id"),
+                            ItemGradeId = reader.GetInt32("item_grade_id"),
+                            ItemId = reader.GetInt32("item_id"),
+                            SlaveId = reader.GetInt32("slave_id")
+                        };
+
+                        _slaveEquipmentGradeSpawns.TryAdd(template.Id, template);
+                        if (template.DoodadId != 0)
+                        {
+                            LoadComponent(template.DoodadId, template.Description);
+                        }
+                        else if (template.SlaveId != 0)
+                        {
+                            LoadComponent(template.SlaveId, template.Description);
+                        }
+                        else
+                        {
+                            Logger.Warn($"SlaveEquipmentGradeSpawn {template.Id} has no Doodad or Slave Id defined.");
+                        }
+                    }
+                }
+            }
         }
         #endregion
 
@@ -2467,7 +2508,7 @@ public class SlaveManager : Singleton<SlaveManager>
 
     public void SpawnSlave(Character character, Slave slave, ItemAndLocation playerItem, uint slaveId)
     {
-        var attachPoint = SlaveManager.Instance.GetAttachPointBySlotId(slave.TemplateId, (uint)playerItem.Item.Slot);
+        var attachPoint = Instance.GetAttachPointBySlotId(slave.TemplateId, (uint)playerItem.Item.Slot);
         var byteArray = new byte[12];
         Buffer.BlockCopy(BitConverter.GetBytes(slave.Hp), 0, byteArray, 0, 4);
         Buffer.BlockCopy(BitConverter.GetBytes(0ul), 0, byteArray, 4, 8);
@@ -2494,7 +2535,7 @@ public class SlaveManager : Singleton<SlaveManager>
         // Send Item manipulation packet 
         character.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.DoodadCreate, [], [], 20));
 
-        var attachPoint2 = SlaveManager.Instance.GetAttachPointBySlotId(slave.TemplateId, (uint)playerItem.Item.Slot);
+        var attachPoint2 = Instance.GetAttachPointBySlotId(slave.TemplateId, (uint)playerItem.Item.Slot);
         var doodadBinding = new SlaveDoodadBindings
         {
             Id = 0,
@@ -2508,5 +2549,24 @@ public class SlaveManager : Singleton<SlaveManager>
 
         // Create all the trinkets that have been downloaded from inventory.
         CreateSlaveDoodads(character, playerItem.Item, slave, doodadBinding);
+    }
+
+    public void LoadComponent(int templateId, string data)
+    {
+        var component = ParseComponentData(templateId, data);
+        _shipComponentsData.Add(component.GetHashCode(), component);
+
+        //LogComponentData(component);
+    }
+
+    public ShipComponentData GetComponent(uint id)
+    {
+        if (id > 0)
+        {
+            return _shipComponentsData.Values.FirstOrDefault(component => component.Id == id);
+        }
+
+        Logger.Error($"Invalid component ID: {id}");
+        return null;
     }
 }

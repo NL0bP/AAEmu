@@ -10,6 +10,7 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Core.Managers;

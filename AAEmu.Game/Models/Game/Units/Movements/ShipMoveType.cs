@@ -1,6 +1,7 @@
 ﻿using System;
 
 using AAEmu.Commons.Network;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 namespace AAEmu.Game.Models.Game.Units.Movements;
 

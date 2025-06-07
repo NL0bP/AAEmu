@@ -15,6 +15,7 @@ using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Utils;

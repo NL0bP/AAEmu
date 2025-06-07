@@ -9,9 +9,10 @@ using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Static;
-using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Physics;
 using AAEmu.Game.Physics.Forces;
@@ -351,6 +352,9 @@ namespace AAEmu.Game.Core.Managers.World
 
                 if (damageAmount > 0)
                 {
+                    if (slave.Summoner.Buffs.CheckBuff((uint)BuffConstants.PeaceZone))
+                        damageAmount = 1;
+
                     slave.DoFloorCollisionDamage((int)damageAmount, false, KillReason.Collide);
                     if (this.CheckInterval(1500))
                     {

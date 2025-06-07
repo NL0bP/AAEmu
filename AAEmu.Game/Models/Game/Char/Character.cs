@@ -30,6 +30,7 @@ using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Team;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.StaticValues;

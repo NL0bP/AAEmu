@@ -4,6 +4,7 @@ using System.Drawing;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.Scripts;
 using AAEmu.Game.Utils.Scripts.SubCommands;
@@ -30,10 +31,10 @@ public class SlavePositionSubCommand : SubCommandBase
     public override void Execute(ICharacter character, string triggerArgument,
         IDictionary<string, ParameterValue> parameters, IMessageOutput messageOutput)
     {
-        Models.Game.Units.Slave slave;
+        Slave slave;
         if (parameters.TryGetValue("ObjId", out var objId))
         {
-            slave = (Models.Game.Units.Slave)WorldManager.Instance.GetGameObject(objId);
+            slave = (Slave)WorldManager.Instance.GetGameObject(objId);
             if (slave is null)
             {
                 SendColorMessage(messageOutput, Color.Red, $"Slave with objId {objId} does not exist");
@@ -43,13 +44,13 @@ public class SlavePositionSubCommand : SubCommandBase
         else
         {
             var currentTarget = ((Character)character).CurrentTarget;
-            if (currentTarget is null || !(currentTarget is Models.Game.Units.Slave))
+            if (currentTarget is null || !(currentTarget is Slave))
             {
                 SendColorMessage(messageOutput, Color.Red, "You need to target a Slave first");
                 return;
             }
 
-            slave = (Models.Game.Units.Slave)currentTarget;
+            slave = (Slave)currentTarget;
         }
 
         var x = GetOptionalParameterValue(parameters, "x", slave.Transform.Local.Position.X);

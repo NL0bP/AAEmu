@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Units;
 
@@ -18,7 +19,7 @@ namespace AAEmu.Game.Models.Game.Items.Containers
             base.OnEnterContainer(item, lastContainer, previousSlot); // base EquipmentContainer
 
             // Extra pockets for slaves
-            if (ParentUnit is not Units.Slave slave)
+            if (ParentUnit is not Units.slaves.Slave slave)
             {
                 return;
             }
@@ -44,7 +45,7 @@ namespace AAEmu.Game.Models.Game.Items.Containers
             base.OnLeaveContainer(item, newContainer, previousSlot); // base EquipmentContainer
 
             // Extra pockets for slaves
-            if (ParentUnit is not Units.Slave slave)
+            if (ParentUnit is not Units.slaves.Slave slave)
             {
                 return;
             }

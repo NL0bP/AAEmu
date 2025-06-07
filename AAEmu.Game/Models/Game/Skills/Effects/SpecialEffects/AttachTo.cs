@@ -4,6 +4,7 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects;
 

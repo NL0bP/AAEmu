@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
-using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 using Jitter2;
 using Jitter2.Collision;

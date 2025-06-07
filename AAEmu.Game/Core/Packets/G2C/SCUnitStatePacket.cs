@@ -15,6 +15,7 @@ using AAEmu.Game.Models.Game.Shipyard;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 namespace AAEmu.Game.Core.Packets.G2C;
 

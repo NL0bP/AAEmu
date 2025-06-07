@@ -22,11 +22,12 @@ using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Physics;
+
 using Jitter2.Dynamics;
 
 using MySql.Data.MySqlClient;
 
-namespace AAEmu.Game.Models.Game.Units;
+namespace AAEmu.Game.Models.Game.Units.slaves;
 
 public class Slave : Unit
 {
@@ -421,7 +422,7 @@ public class Slave : Unit
             foreach (var bonus in GetBonuses(UnitAttribute.MeleeDpsInc))
             {
                 if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                    res += (res * bonus.Value / 100f);
+                    res += res * bonus.Value / 100f;
                 else
                     res += bonus.Value;
             }
@@ -489,7 +490,7 @@ public class Slave : Unit
             foreach (var bonus in GetBonuses(UnitAttribute.RangedDpsInc))
             {
                 if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                    res += (res * bonus.Value / 100f);
+                    res += res * bonus.Value / 100f;
                 else
                     res += bonus.Value;
             }
@@ -537,7 +538,7 @@ public class Slave : Unit
             foreach (var bonus in GetBonuses(UnitAttribute.SpellDpsInc))
             {
                 if (bonus.Template.ModifierType == UnitModifierType.Percent)
-                    res += (res * bonus.Value / 100f);
+                    res += res * bonus.Value / 100f;
                 else
                     res += bonus.Value;
             }
@@ -635,7 +636,7 @@ public class Slave : Unit
     /// <param name="damage"></param>
     /// <param name="isPercent"></param>
     /// <param name="killReason"></param>
-    public void DoFloorCollisionDamage(int damage, bool isPercent = true, KillReason killReason = KillReason.Damage)
+    public void DoFloorCollisionDamage(int damage, bool isPercent = true, KillReason killReason = KillReason.SlaveEquipmentRandomDestroy)
     {
         // If % based, calculate its damage
         if (isPercent)
@@ -663,7 +664,6 @@ public class Slave : Unit
         Events.OnDeath(this, new OnDeathArgs { Killer = (Unit)killer, Victim = this });
         Buffs.RemoveEffectsOnDeath();
         killer.BroadcastPacket(new SCUnitDeathPacket(ObjId, killReason, (Unit)killer), true);
-
         DestroyAttachedItems();
         DistributeSlaveDropDoodads();
         MarkSummoningItemAsDestroyed();
@@ -706,8 +706,7 @@ public class Slave : Unit
                         newDoodad.IsPersistent = true;
                         newDoodad.Transform = doodad.Transform.CloneDetached();
                         // Add a bit of randomness to the dropped doodad
-                        newDoodad.Transform.Local.Translate((Rand.NextSingle() * 2f) - 1f,
-                            (Rand.NextSingle() * 2f) - 1f, 0);
+                        newDoodad.Transform.Local.Translate(Rand.NextSingle() * 2f - 1f, Rand.NextSingle() * 2f - 1f, 0);
                         newDoodad.AttachPoint = AttachPointKind.None;
                         newDoodad.ItemId = droppedItem.Id;
                         newDoodad.ItemTemplateId = droppedItem.TemplateId;
@@ -757,6 +756,12 @@ public class Slave : Unit
         // Destroy Slaves
         foreach (var slave in AttachedSlaves)
         {
+            slave.Hp = 0; // Set HP to 0 to trigger death
+            //var byteArray = new byte[12];
+            //Buffer.BlockCopy(BitConverter.GetBytes(slave.Hp), 0, byteArray, 0, 4);
+            //Buffer.BlockCopy(BitConverter.GetBytes(0ul), 0, byteArray, 4, 8);
+            //slave.SummoningItem.Detail = byteArray;
+
             ObjectIdManager.Instance.ReleaseId(slave.ObjId);
             // slave.IsPersistent = false;
             slave.Delete();
@@ -799,7 +804,7 @@ public class Slave : Unit
             {
                 var doodad = DoodadManager.Instance.Create(0, dropDoodad.DoodadId, null, true);
                 var pos = Transform.World.Position;
-                var rng = new Vector3((Rand.NextSingle() * 2f) - 1f, (Rand.NextSingle() * 2f) - 1f, 0);
+                var rng = new Vector3(Rand.NextSingle() * 2f - 1f, Rand.NextSingle() * 2f - 1f, 0);
                 rng = Vector3.Normalize(rng);
                 rng *= Rand.NextSingle() * dropDoodad.Radius;
                 pos += rng;

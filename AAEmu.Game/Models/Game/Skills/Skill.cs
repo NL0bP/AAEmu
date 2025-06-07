@@ -28,6 +28,7 @@ using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Skills.Utils;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Tasks.Skills;
 using AAEmu.Game.Utils;

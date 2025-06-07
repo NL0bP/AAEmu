@@ -21,6 +21,7 @@ using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.Game.World.Xml;

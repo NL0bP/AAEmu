@@ -26,6 +26,8 @@ public class SummonSlave : Item
             _repairStartTime = value;
             if (value > DateTime.MinValue)
                 IsDestroyed = 0;
+            else
+                IsDestroyed = 1;
         }
     }
 
@@ -60,7 +62,8 @@ public class SummonSlave : Item
         }
         catch
         {
-            RepairStartTime = DateTime.MinValue;
+            // hackfix
+            RepairStartTime = IsDestroyed == 0 ? DateTime.UtcNow - TimeSpan.FromMinutes(5) : DateTime.MinValue;
         }
     }
 
@@ -87,6 +90,20 @@ public class SummonSlave : Item
         stream.Write(0); // 4 25
         stream.Write(0); // 4 29
         stream.Write(0); // 4 33
+    }
+
+    public override void WriteAdditionalDetails(PacketStream stream)
+    {
+        stream.Write(SlaveDbId); // 4 4
+        stream.Write(IsDestroyed); // 1 5
+
+        if (RepairStartTime == DateTime.MinValue)
+        {
+            stream.Write(0);       // 4 9
+            stream.Write(0);       // 4 13
+        }
+        else
+            stream.Write(RepairStartTime); // 8 13
     }
 
     public override void OnManuallyDestroyingItem()

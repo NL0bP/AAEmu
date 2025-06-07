@@ -15,6 +15,7 @@ public enum BuffConstants : uint
     DualwieldProficiency = 831,
     FallStun = 1391, // From fall damage
     Bloodlust = 1482, // Ctrl+F
+    PeaceZone = 2149,
     Retribution = 2167,
     RemovalDebuff = 2250, // for houses
     LoggedOn = 2423, // player is logging in

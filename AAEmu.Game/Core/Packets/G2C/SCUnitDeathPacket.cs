@@ -24,24 +24,38 @@ public class SCUnitDeathPacket : GamePacket
     {
         stream.WriteBc(_objId);          // uid
         stream.Write((byte)_killReason); // killReason
+        if (_killReason == KillReason.Collide)
+        {
+            stream.Write(0u); // resurrectionWaitingTime
+            stream.Write(300000u); // autoResurrectionWaitingTime
+        }
+        else
+        {
+            stream.Write(15000u);  // resurrectionWaitingTime
+            stream.Write(75000u);  // autoResurrectionWaitingTime
+        }
         // ---------------
-        stream.Write(15000u);  // resurrectionWaitingTime
-        stream.Write(75000u);  // autoResurrectionWaitingTime
         stream.Write(0);       // lostExp
         stream.Write((byte)0); // deathDurabilityLossRatio
         // ---------------
-        stream.WriteBc(_killer?.ObjId ?? 0); // killer
-        if (_killer != null)
+        if (_killReason == KillReason.Collide)
         {
-            // ---------------
-            stream.Write((byte)0);      // GameType
-            // ---------------
-            stream.Write((ushort)0);    // killStreak
-            stream.Write((byte)0);      // param1
-            stream.Write((byte)0);      // param2
-            stream.Write((byte)0);      // param3
-            stream.Write(_killer.Name); // killerName
-
+            stream.WriteBc(0); // killer
+        }
+        else
+        {
+            stream.WriteBc(_killer?.ObjId ?? 0); // killer
+            if (_killer != null)
+            {
+                // ---------------
+                stream.Write((byte)0);      // GameType
+                // ---------------
+                stream.Write((ushort)0);    // killStreak
+                stream.Write((byte)0);      // param1
+                stream.Write((byte)0);      // param2
+                stream.Write((byte)0);      // param3
+                stream.Write(_killer.Name); // killerName
+            }
         }
 
         return stream;

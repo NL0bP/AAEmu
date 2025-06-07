@@ -4,7 +4,7 @@ using System;
 
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Models;
-using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Physics.Util;
 using AAEmu.Game.Utils;
 

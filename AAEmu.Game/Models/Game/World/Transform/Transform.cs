@@ -7,6 +7,7 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 // INFO
 // https://www.versluis.com/2020/09/what-is-yaw-pitch-and-roll-in-3d-axis-values/

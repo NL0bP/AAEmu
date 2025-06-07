@@ -6,6 +6,7 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 namespace AAEmu.Game.Core.Packets.C2G;
 
 public class CSChangeTargetPacket : GamePacket

@@ -13,6 +13,7 @@ using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 

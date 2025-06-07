@@ -467,7 +467,7 @@ public class LootPack
                 return mateOwnerCharacter;
         }
         else
-        if (killer is Units.Slave { OwnerType: BaseUnitType.Character } slave)
+        if (killer is Units.slaves.Slave { OwnerType: BaseUnitType.Character } slave)
         {
             var slaveOwner = WorldManager.Instance.GetBaseUnit(slave.OwnerObjId);
             if (slaveOwner is Character slaveOwnerCharacter)

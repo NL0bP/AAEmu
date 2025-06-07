@@ -9,6 +9,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Json;
 using AAEmu.Game.Utils;
@@ -117,7 +118,7 @@ public class SlaveSaveSubCommand : SubCommandBase
     private void SaveById(ICharacter character, uint objId, IMessageOutput messageOutput)
     {
         var spawners = new List<JsonSlaveSpawns>();
-        var slave = (Models.Game.Units.Slave)WorldManager.Instance.GetGameObject(objId);
+        var slave = (Slave)WorldManager.Instance.GetGameObject(objId);
         if (slave is null)
         {
             SendColorMessage(messageOutput, Color.Red, $"Slave with objId {objId} Does not exist");

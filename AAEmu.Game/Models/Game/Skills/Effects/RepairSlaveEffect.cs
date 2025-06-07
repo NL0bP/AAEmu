@@ -10,6 +10,7 @@ using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects;
 
@@ -38,21 +39,25 @@ public class RepairSlaveEffect : EffectTemplate
                 }
 
                 var slave = SlaveManager.Instance.GetSlaveByOwnerObjId(player.ObjId);
-                //if (item is not SummonSlave slaveItem)
-                //{
-                //    Logger.Warn($"RepairSlaveEffect target item {scit.Id} is not a salve summon item");
-                //    return;
-                //}
+                if (item is not SummonSlave slaveItem)
+                {
+                    Logger.Warn($"RepairSlaveEffect target item {scit.Id} is not a salve summon item");
+                    return;
+                }
 
-                //if (slaveItem.Template is not SummonSlaveTemplate summonTemplate)
-                //    return;
+                if (slaveItem.Template is not SummonSlaveTemplate summonTemplate)
+                {
+                    Logger.Warn($"RepairSlaveEffect target item {scit.Id} is not a salve summon item");
+                    return;
+                }
 
-                //slaveItem.IsDestroyed = 0;
-                //slaveItem.RepairStartTime = DateTime.UtcNow;
-                //slaveItem.IsDirty = true;
+                slaveItem.IsDestroyed = 0;
+                slaveItem.RepairStartTime = DateTime.UtcNow;
+                slaveItem.IsDirty = true;
 
                 player.SendPacket(new SCUpdateSlaveSourceItemPacket(slave.ObjId, item.Id, 1000000, EquipSlot: 255));
-                player.Inventory.Bag.ConsumeItem(ItemTaskType.RepairSlaves, skillCasterItem.ItemTemplateId, 1, null);
+                var repairCost = SlaveManager.Instance.GetComponent(summonTemplate.SlaveId)?.RepairCost ?? 1;
+                player.Inventory.Bag.ConsumeItem(ItemTaskType.RepairSlaves, skillCasterItem.ItemTemplateId, repairCost, null);
                 childSlave.Spawn();
 
                 Logger.Debug($"{player.Name} repaired slave on item {item.Id}");
@@ -92,12 +97,23 @@ public class RepairSlaveEffect : EffectTemplate
                 slaveItem.IsDestroyed = 0;
                 slaveItem.RepairStartTime = DateTime.UtcNow;
                 slaveItem.IsDirty = true;
+                
+                if (casterObj is not SkillItem skillCasterItem)
+                    return;
 
-                targetPlayer.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.RepairSlaves, new ItemUpdate(item), []));
-                //targetPlayer.SendPacket(new SCUpdateSlaveSourceItemPacket(scit.ObjId, item.TemplateId, 1000000, EquipSlot: 255));
-                //targetPlayer.Inventory.Bag.ConsumeItem(ItemTaskType.RepairSlaves, skillCasterItem.ItemTemplateId, 5, null);
+                // Despawn the slave if it's currently active
+                var slave = SlaveManager.Instance.GetSlaveByOwnerObjId(targetPlayer.ObjId);
+                if (slave != null)
+                {
+                    slave.Hp = slave.MaxHp;
+                    slave.Mp = slave.MaxMp;
+                    SlaveManager.Instance.RemoveActiveSlave(slave.Summoner, slave.TlId, true);
+                }
 
-                Logger.Debug($"{targetPlayer.Name} repaired slave on item {item.Id}");
+                var repairCost = SlaveManager.Instance.GetSlaveTemplate(summonTemplate.SlaveId).Cost;
+                targetPlayer.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.RepairSlaves, new ItemUpdate(slaveItem), []));
+                targetPlayer.Inventory.Bag.ConsumeItem(ItemTaskType.RepairSlaves, skillCasterItem.ItemTemplateId, repairCost, null);
+                Logger.Debug($"{targetPlayer.Name} repaired slave on item {item.Id}, repairCost={repairCost}");
             }
             else
             {

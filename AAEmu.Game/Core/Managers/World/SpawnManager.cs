@@ -22,6 +22,7 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Utils;
