@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -150,6 +150,7 @@ public class SpawnManager(WorldInstance parentWorld)
     /// </summary>
     private void SpawnAllNpcs()
     {
+        var spawnStartTime = DateTime.UtcNow;
         Logger.Info($"Spawning {_npcSpawners.Count} NPC spawners in world {World}");
         var count = 0;
         foreach (var spawners in _npcSpawners.Values)
@@ -171,7 +172,10 @@ public class SpawnManager(WorldInstance parentWorld)
                 }
             }
         }
-        Logger.Info($"{count} NPC spawners spawned in world {World}");
+        Logger.Info($"{count} NPC spawners spawned in world {World} in {DateTime.UtcNow.Subtract(spawnStartTime)} ({GameService.TimeSinceStart} since server start)");
+
+        // Controls all spawners in the instance, updating their state and invoking spavin methods.
+        TickManager.Instance.OnTick.Subscribe(Update, TimeSpan.FromSeconds(1));
     }
 
     /// <summary>
@@ -837,6 +841,7 @@ public class SpawnManager(WorldInstance parentWorld)
         Logger.Info("Spawning Doodads...");
         Task.Run(() =>
         {
+            var spawnStartTime = DateTime.UtcNow;
             Logger.Info($"Spawning {_doodadSpawners.Count} Doodads in world {World}");
             var count = 0;
             foreach (var spawner in _doodadSpawners.Values)
@@ -849,7 +854,7 @@ public class SpawnManager(WorldInstance parentWorld)
                 }
             }
 
-            Logger.Info($"In world {World} Doodads spawned: {count}");
+            Logger.Info($"In world {World} Doodads spawned: {count} in {DateTime.UtcNow.Subtract(spawnStartTime)} ({GameService.TimeSinceStart} since server start)");
 
             // you have to wait for all the doodads to spawn before trying to initialize the fish schools
             FishSchoolManager.Instance.Load(World);
@@ -858,6 +863,7 @@ public class SpawnManager(WorldInstance parentWorld)
         Logger.Info("Spawning Transfers...");
         Task.Run(() =>
         {
+            var spawnStartTime = DateTime.UtcNow;
             Logger.Info($"Spawning {_transferSpawners.Count} Transfers in world {World}");
             var count = 0;
             foreach (var spawner in _transferSpawners.Values)
@@ -870,12 +876,13 @@ public class SpawnManager(WorldInstance parentWorld)
                 }
             }
 
-            Logger.Info($"In world {World} Transfers spawned: {count}");
+            Logger.Info($"In world {World} Transfers spawned: {count} in {DateTime.UtcNow.Subtract(spawnStartTime)} ({GameService.TimeSinceStart} since server start)");
         });
 
         Logger.Info("Spawning Gimmicks...");
         Task.Run(() =>
         {
+            var spawnStartTime = DateTime.UtcNow;
             Logger.Info($"Spawning {_gimmickSpawners.Count} Gimmicks in world {World}");
             var count = 0;
             foreach (var spawner in _gimmickSpawners.Values)
@@ -888,12 +895,13 @@ public class SpawnManager(WorldInstance parentWorld)
                 }
             }
 
-            Logger.Info($"In world {World} Gimmicks spawned: {count}");
+            Logger.Info($"In world {World} Gimmicks spawned: {count} in {DateTime.UtcNow.Subtract(spawnStartTime)} ({GameService.TimeSinceStart} since server start)");
         });
 
         Logger.Info("Spawning Slaves...");
         Task.Run(() =>
         {
+            var spawnStartTime = DateTime.UtcNow;
             Logger.Info($"Spawning {_slaveSpawners.Count} Slaves in world {World}");
             var count = 0;
             foreach (var spawner in _slaveSpawners.Values)
@@ -907,12 +915,13 @@ public class SpawnManager(WorldInstance parentWorld)
                 }
             }
 
-            Logger.Info($"In world {World} slaves spawned: {count}");
+            Logger.Info($"In world {World} slaves spawned: {count} in {DateTime.UtcNow.Subtract(spawnStartTime)} ({GameService.TimeSinceStart} since server start)");
         });
 
         Logger.Info("Spawning Player Doodads asynchronously...");
         Task.Run(() =>
         {
+            var spawnStartTime = DateTime.UtcNow;
             if (_playerDoodads.Count > 0)
                 Logger.Info($"Spawning {_playerDoodads.Count} Player Doodads");
             var count = 0;
@@ -933,7 +942,7 @@ public class SpawnManager(WorldInstance parentWorld)
                         Logger.Error($"Failed to spawn player doodad DbId:{doodad.DbId}, TemplateId: {doodad.TemplateId}");
                 }
             }
-            Logger.Info($"In world {World} player doodads spawned: {count}");
+            Logger.Info($"In world {World} player doodads spawned: {count} in {DateTime.UtcNow.Subtract(spawnStartTime)} ({GameService.TimeSinceStart} since server start)");
         });
     }
 
