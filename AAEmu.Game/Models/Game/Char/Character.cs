@@ -1413,6 +1413,7 @@ public partial class Character : Unit, ICharacter
             actabilityChange = Math.Abs(change);
             actabilityStep = Actability.Actabilities[(uint)actabilityId].Step;
             actabilityChange = Actability.AddPoint((uint)actabilityId, actabilityChange);
+            change = 0;
         }
         else
         {
