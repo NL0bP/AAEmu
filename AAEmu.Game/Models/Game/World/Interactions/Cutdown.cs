@@ -15,7 +15,7 @@ public class Cutdown : IWorldInteraction
         if (target is Doodad doodad)
         {
             doodad.Use(caster, skillId);
-            if (doodad.TemplateId is not (7420 or 8312)) // ID=7420 Cornucopia Tree, ID=8312 Majestic Tree
+            if (doodad.TemplateId is not (7420 or 8312 or 8046 or 8047 or 8048 or 8049 or 8050 or 8273 or 8274 or 8275)) // ID=7420 Cornucopia Tree, ID=8312 Majestic Tree, ID=8046..8050, 8273..8275 Woodlots
             {
                 caster.BroadcastPacket(new SCVegetationCutdowningPacket(caster.ObjId, doodad.ObjId), true);
             }
