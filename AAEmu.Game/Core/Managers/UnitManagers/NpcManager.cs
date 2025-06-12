@@ -89,7 +89,7 @@ public class NpcManager : Singleton<NpcManager>
 
         var npc = new Npc();
         npc.ObjId = objectId > 0 ? objectId : ObjectIdManager.Instance.GetNextId();
-        
+
         //Logger.Info($"Used ObjId={npc.ObjId}");
 
         npc.TemplateId = id; // duplicate Id
@@ -131,7 +131,7 @@ public class NpcManager : Singleton<NpcManager>
 
         for (var i = 0; i < 7; i++)
         {
-            EquipmentItemSlot slot = (EquipmentItemSlot)(i + 19);
+            var slot = (EquipmentItemSlot)(i + 19);
             if ((slot == EquipmentItemSlot.Hair) && (template.ModelParams != null))
                 SetEquipItemTemplate(npc, template.HairId, EquipmentItemSlot.Hair);
             else
@@ -183,6 +183,20 @@ public class NpcManager : Singleton<NpcManager>
         }
 
         return npc;
+    }
+
+    /// <summary>
+    /// Возвращает случайный элемент из списка.
+    /// </summary>
+    /// <param name="list">Список элементов.</param>
+    /// <returns>Случайный элемент или default(uint), если список пуст.</returns>
+    public static uint GetRandomElement(List<uint> list)
+    {
+        if (list == null || list.Count == 0)
+            return default(uint);
+
+        var randomIndex = Rand.Next(list.Count);
+        return list[randomIndex];
     }
 
     private NpcTemplate LoadCustom(NpcTemplate template)
@@ -240,9 +254,19 @@ public class NpcManager : Singleton<NpcManager>
             if (hairsForThisModel.Count > 0)
             {
                 // TODO: Slow, but I don't know of a better way to do this atm
-                var possibleTotalCustoms = (from tc in _totalCharacterCustoms
-                                            where (tc.Value.ModelId == modelParamsId) && (hairsForThisModel.Contains(tc.Value.HairId))
+                var possibleTotalCustoms = new List<uint>();
+                if ((Race)template.CharRaceId == Race.None)
+                {
+                    possibleTotalCustoms = (from tc in _totalCharacterCustoms
+                                            where hairsForThisModel.Contains(tc.Value.HairId)
                                             select tc.Value.Id).ToList();
+                }
+                else
+                {
+                    possibleTotalCustoms = (from tc in _totalCharacterCustoms
+                        where (tc.Value.ModelId == modelParamsId) && (hairsForThisModel.Contains(tc.Value.HairId))
+                        select tc.Value.Id).ToList();
+                }
 
                 // If anything in result, pick something random from it
                 if (possibleTotalCustoms.Count > 0)
