@@ -758,7 +758,7 @@ public class Doodad : BaseUnit
     public void PerformPhaseChange(BaseUnit obj)
     {
         // Создаем таймер
-        var timer = new System.Timers.Timer(1000); // 1000 мс = 1 сек
+        var timer = new System.Timers.Timer(5); // 1000 мс = 1 сек
         timer.AutoReset = false; // Только одно срабатывание
         timer.Elapsed += (sender, e) =>
         {
