@@ -162,6 +162,11 @@ public class Region
                 objectAsCharacter.SendPacket(new SCDoodadsCreatedPacket(temp));
             }
 
+            foreach (var doodad in doodads)
+            {
+                doodad.PerformPhaseChange(objectAsCharacter);
+            }
+
             // Handle Gimmicks separately with sets of SCGimmicksCreatedPacket
             var gimmicks = GetList(new List<Gimmick>(), obj.ObjId).ToArray();
             for (var i = 0; i < gimmicks.Length; i += SCGimmicksCreatedPacket.MaxCountPerPacket)

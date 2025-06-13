@@ -23,14 +23,14 @@ public class SCDoodadPhaseChangedPacket : GamePacket
         stream.Write(-1); // puzzleGroup
         stream.Write(_doodad.ItemTemplateId); // type(id) for backpack e.g. Id=27606 Sturgeon Pack
 
-        var isGoods = false;
-
+        var usedItemId = Doodad.GetItemTemplateIdByDoodadTemplateId(_doodad.TemplateId);
+        var isGoods = usedItemId != 0;
         stream.Write(isGoods); // isGoods
         if (isGoods)
         {
-            stream.Write(0L); // freshnessTime
-            stream.Write(0u); // type crafter?
-            stream.Write((short)0); // type
+            stream.Write(_doodad.FreshnessTime); // freshnessTime
+            stream.Write(_doodad.OwnerId);       // type crafter?
+            stream.Write((short)14);             // type
         }
         return stream;
     }

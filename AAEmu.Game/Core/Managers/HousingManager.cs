@@ -2421,6 +2421,7 @@ public class HousingManager : Singleton<HousingManager>
         }
 
         doodad.OwnerId = player.Id;
+        doodad.OwnerObjId = player.ObjId;
         doodad.ParentObjId = house.ObjId;
         doodad.ParentObj = house;
         doodad.AttachPoint = AttachPointKind.None;

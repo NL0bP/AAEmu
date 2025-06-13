@@ -750,8 +750,23 @@ public class Doodad : BaseUnit
     /// </summary>
     private void PerformPhaseChange()
     {
-        var unit = WorldManager.Instance.GetUnit(OwnerObjId);
-        DoChangePhase(unit, (int)FuncGroupId);
+        var obj = WorldManager.Instance.GetUnit(OwnerObjId);
+        FuncGroupId = GetFuncGroupId();
+        PerformPhaseChange(obj);
+    }
+
+    public void PerformPhaseChange(BaseUnit obj)
+    {
+        // Создаем таймер
+        var timer = new System.Timers.Timer(1000); // 1000 мс = 1 сек
+        timer.AutoReset = false; // Только одно срабатывание
+        timer.Elapsed += (sender, e) =>
+        {
+            // Этот код выполнится через 1 секунду в другом потоке
+            DoChangePhase(obj, (int)FuncGroupId);
+            timer.Dispose();
+        };
+        timer.Start();
     }
 
     public override void BroadcastPacket(GamePacket packet, bool self)
