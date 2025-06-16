@@ -164,8 +164,11 @@ public class Region
 
             foreach (var doodad in doodads)
             {
-                //doodad.PerformPhaseChange(objectAsCharacter);
-                objectAsCharacter.BroadcastPacket(new SCDoodadPhaseChangedPacket(doodad), true);
+                if (doodad.OwnerType == DoodadOwnerType.Housing)
+                {
+                    //doodad.PerformPhaseChange(objectAsCharacter);
+                    objectAsCharacter.BroadcastPacket(new SCDoodadPhaseChangedPacket(doodad), true);
+                }
             }
 
             // Handle Gimmicks separately with sets of SCGimmicksCreatedPacket
