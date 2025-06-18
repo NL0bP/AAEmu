@@ -93,10 +93,10 @@ namespace AAEmu.Game.Models.Game.Attendance
 
         public void Send()
         {
-            var daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
+            //var daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
             var recordsToSend = new List<AttendanceRecord>();
 
-            for (var i = 0; i < daysInMonth; i++)
+            for (var i = 0; i < MaxDaysInMonth; i++)
             {
                 if (i < Records.Count)
                     recordsToSend.Add(Records[i]);
@@ -109,9 +109,9 @@ namespace AAEmu.Game.Models.Game.Attendance
 
         public void SendEmptyAttendances()
         {
-            var daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
+            //var daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
             var emptyRecords = new List<AttendanceRecord>();
-            for (var i = 0; i < daysInMonth; i++)
+            for (var i = 0; i < MaxDaysInMonth; i++)
             {
                 emptyRecords.Add(new AttendanceRecord());
             }
@@ -136,16 +136,65 @@ namespace AAEmu.Game.Models.Game.Attendance
 
         public void ResetIfNewMonth()
         {
-            if (Records == null || Records.Count == 0)
-                return;
-
-            var lastAttendance = Records.Where(x => x.Accept).MaxBy(x => x.AccountAttendance);
-            var now = DateTime.UtcNow;
-
-            if (lastAttendance == null || lastAttendance.AccountAttendance.Month != now.Month || lastAttendance.AccountAttendance.Year != now.Year)
+            try
             {
-                InitializeEmptyRecords();
-                Logger.Info($"Attendance reset for account {AccountId} (new month).");
+                if (Records == null)
+                {
+                    InitializeEmptyRecords();
+                    Logger.Info($"Attendance records initialized for account {AccountId} (records was null).");
+                    return;
+                }
+
+                // Проверяем, есть ли вообще НЕпустые записи (с датой > 0001-01-01)
+                var hasAnyNonEmptyRecords = Records.Any(x => x.AccountAttendance > DateTime.MinValue);
+
+                // Если все записи "пустые" (0001-01-01), то инициализировать не нужно
+                if (!hasAnyNonEmptyRecords)
+                {
+                    Logger.Info($"No reset needed for account {AccountId} (all records are empty).");
+                    return;
+                }
+
+                // Получаем последнюю подтвержденную запись (с Accept = true) с датой > MinValue
+                var lastValidAttendance = Records
+                    .Where(x => x.Accept && x.AccountAttendance > DateTime.MinValue)
+                    .OrderByDescending(x => x.AccountAttendance)
+                    .FirstOrDefault();
+
+                var now = DateTime.UtcNow;
+
+                // Если нет ни одной валидной записи или последняя запись не в текущем месяце/году
+                if (lastValidAttendance == null ||
+                    lastValidAttendance.AccountAttendance.Month != now.Month ||
+                    lastValidAttendance.AccountAttendance.Year != now.Year)
+                {
+                    // Проверяем, есть ли сегодняшняя запись
+                    var hasTodayRecord = Records.Any(x =>
+                        x.AccountAttendance.Date == now.Date &&
+                        x.Accept);
+
+                    if (!hasTodayRecord)
+                    {
+                        InitializeEmptyRecords();
+                        Logger.Info($"Attendance reset for account {AccountId} (new month/year detected). " +
+                                 $"Last valid record: {lastValidAttendance?.AccountAttendance.ToString("yyyy-MM-dd") ?? "none"}, " +
+                                 $"Current time: {now:yyyy-MM-dd}");
+                    }
+                    else
+                    {
+                        Logger.Info($"Attendance not reset for account {AccountId} (today's record exists).");
+                    }
+                }
+                else
+                {
+                    Logger.Debug($"No need to reset attendance for account {AccountId} " +
+                               $"(last record is from current month: {lastValidAttendance.AccountAttendance:yyyy-MM-dd})");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error resetting attendance for account {AccountId}: {ex.Message}", ex);
+                throw;
             }
         }
 
@@ -176,9 +225,9 @@ namespace AAEmu.Game.Models.Game.Attendance
 
         public void Save(MySqlConnection connection, MySqlTransaction transaction)
         {
-            var daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
+            //var daysInMonth = DateTime.DaysInMonth(DateTime.UtcNow.Year, DateTime.UtcNow.Month);
 
-            for (var i = 0; i < daysInMonth; i++)
+            for (var i = 0; i < MaxDaysInMonth; i++)
             {
                 var record = Records[i];
 

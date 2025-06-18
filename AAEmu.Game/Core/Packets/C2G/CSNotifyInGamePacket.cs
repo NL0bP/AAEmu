@@ -47,14 +47,17 @@ public class CSNotifyInGamePacket : GamePacket
         //Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.AbilitySetFreeActivationCount));
         Connection.ActiveChar.SendPacket(new SCCurServerTimePacket(DateTime.UtcNow));
 
-        if (Connection.ActiveChar.Attendances.Records?.Count == 0)
-        {
-            Connection.ActiveChar.Attendances.SendEmptyAttendances();
-        }
-        else
-        {
-            Connection.ActiveChar.Attendances.Send();
-        }
+        
+        //Connection.ActiveChar.Attendances.ResetIfNewMonth();
+
+        //if (Connection.ActiveChar.Attendances.Records?.Count == 0)
+        //{
+        //    Connection.ActiveChar.Attendances.SendEmptyAttendances();
+        //}
+        //else
+        //{
+        //    Connection.ActiveChar.Attendances.Send();
+        //}
 
         Connection.ActiveChar.UpdateGearBonuses(null, null);
 

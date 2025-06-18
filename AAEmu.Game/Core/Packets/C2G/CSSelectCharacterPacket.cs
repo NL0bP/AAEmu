@@ -33,87 +33,90 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
             Connection.ActiveChar = character;
             if (Character.UsedCharacterObjIds.TryGetValue(character.Id, out var oldObjId))
             {
-                Connection.ActiveChar.ObjId = oldObjId;
+                character.ObjId = oldObjId;
             }
             else
             {
-                Connection.ActiveChar.ObjId = ObjectIdManager.Instance.GetNextId();
+                character.ObjId = ObjectIdManager.Instance.GetNextId();
                 Character.UsedCharacterObjIds.TryAdd(character.Id, character.ObjId);
             }
 
-            var mySlave = SlaveManager.Instance.GetSlaveByOwnerObjId(Connection.ActiveChar.ObjId);
+            var mySlave = SlaveManager.Instance.GetSlaveByOwnerObjId(character.ObjId);
             if (mySlave != null)
             {
-                Logger.Warn($"{Connection.ActiveChar.Name}: Interrupting the transport shutdown task");
+                Logger.Warn($"{character.Name}: Interrupting the transport shutdown task");
                 mySlave.CancelTokenSource.Cancel();
                 // TODO найти, как восстанавливать контроль
-                Unit.DespawSlave(Connection.ActiveChar); // despawn because we lost control over them
+                Unit.DespawSlave(character); // despawn because we lost control over them
             }
-            var myMates = MateManager.Instance.GetActiveMates(Connection.ActiveChar.ObjId);
+            var myMates = MateManager.Instance.GetActiveMates(character.ObjId);
             if (myMates != null)
             {
-                Unit.DespawnMate(Connection.ActiveChar); // despawn because we lost control over them
+                Unit.DespawnMate(character); // despawn because we lost control over them
             }
 
-            Connection.ActiveChar.Simulation = new Simulation(character);
+            character.Simulation = new Simulation(character);
 
             // начинаем слать пакеты
 
             // TODO подобрать правильное место для пакета
-            if (Connection.ActiveChar.Attendances.Records?.Count == 0)
+
+            character.Attendances.ResetIfNewMonth();
+
+            if (character.Attendances.Records?.Count == 0)
             {
-                Connection.ActiveChar.Attendances.SendEmptyAttendances();
+                character.Attendances.SendEmptyAttendances();
             }
             else
             {
-                Connection.ActiveChar.Attendances.Send();
+                character.Attendances.Send();
             }
 
-            Connection.SendPacket(new SCResidentInfoListPacket(ResidentManager.Instance.GetInfo()));
-            Connection.SendPacket(new SCCharacterStatePacket(character));
-            Connection.ActiveChar.Inventory.Send();
-            Connection.SendPacket(new SCCharacterGamePointsPacket(character));
+            character.SendPacket(new SCResidentInfoListPacket(ResidentManager.Instance.GetInfo()));
+            character.SendPacket(new SCCharacterStatePacket(character));
+            character.Inventory.Send();
+            character.SendPacket(new SCCharacterGamePointsPacket(character));
             // move to CSSpawnCharacter
-            //Connection.SendPacket(new SCActionSlotsPacket(Connection.ActiveChar.Slots));
+            //Connection.SendPacket(new SCActionSlotsPacket(character.Slots));
             // added in 5.0.7.0
-            Connection.SendPacket(new SCIncreasedFavoritePortalLimitPacket(0));
-            //Connection.ActiveChar.Portals.SendIndunZone();
-            Connection.SendPacket(new SCNpcFriendshipListPacket());
+            character.SendPacket(new SCIncreasedFavoritePortalLimitPacket(0));
+            //character.Portals.SendIndunZone();
+            character.SendPacket(new SCNpcFriendshipListPacket());
 
-            Connection.ActiveChar.Quests.Send();
-            Connection.ActiveChar.Quests.SendCompleted();
+            character.Quests.Send();
+            character.Quests.SendCompleted();
 
-            Connection.ActiveChar.Actability.Send();
-            Connection.ActiveChar.Mails.SendUnreadMailCount();
+            character.Actability.Send();
+            character.Mails.SendUnreadMailCount();
             // removed in 5.0.7.0
-            Connection.ActiveChar.Appellations.Send();
-            Connection.ActiveChar.Portals.Send();
+            character.Appellations.Send();
+            character.Portals.Send();
 
-            Connection.ActiveChar.Friends.Send();
-            Connection.ActiveChar.Blocked.Send();
+            character.Friends.Send();
+            character.Blocked.Send();
             // added in 5.0.7.0
-            Connection.SendPacket(new SCWorldRestrictOwnerChangePacket(false));
+            character.SendPacket(new SCWorldRestrictOwnerChangePacket(false));
 
             foreach (var house in houses)
             {
-                Connection.SendPacket(new SCHouseStatePacket(house));
+                character.SendPacket(new SCHouseStatePacket(house));
             }
 
             foreach (var conflict in ZoneManager.Instance.GetConflicts())
             {
-                Connection.SendPacket(new SCConflictZoneStatePacket(conflict.ZoneGroupId, conflict.CurrentZoneState, conflict.NextStateTime));
+                character.SendPacket(new SCConflictZoneStatePacket(conflict.ZoneGroupId, conflict.CurrentZoneState, conflict.NextStateTime));
             }
 
-            FactionManager.Instance.SendFactions(Connection.ActiveChar);
-            ExpeditionManager.Instance.SendExpeditions(Connection.ActiveChar);
-            ExpeditionManager.SendMyExpeditionInfo(Connection.ActiveChar);
-            FactionManager.Instance.SendRelations(Connection.ActiveChar);
+            FactionManager.Instance.SendFactions(character);
+            ExpeditionManager.Instance.SendExpeditions(character);
+            ExpeditionManager.SendMyExpeditionInfo(character);
+            FactionManager.Instance.SendRelations(character);
 
-            Connection.ActiveChar.SendOption(4);
-            Connection.ActiveChar.SendOption(5);
-            Connection.ActiveChar.SendOption(6);
+            character.SendOption(4);
+            character.SendOption(5);
+            character.SendOption(6);
 
-            //Connection.ActiveChar.Buffs.AddBuff((uint)BuffConstants.LoggedOn, Connection.ActiveChar);
+            //character.Buffs.AddBuff((uint)BuffConstants.LoggedOn, character);
             //var template = CharacterManager.Instance.GetTemplate(character.Race, character.Gender);
             //foreach (var buff in template.Buffs)
             //{
@@ -123,13 +126,13 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
             //}
             //character.Breath = character.LungCapacity;
             //// TODO: Fix the patron and auction house license buff issue
-            //Connection.ActiveChar.Buffs.AddBuff((uint)SkillConstants.Patron, Connection.ActiveChar);
-            //Connection.ActiveChar.Buffs.AddBuff((uint)SkillConstants.AuctionLicense, Connection.ActiveChar);
+            //character.Buffs.AddBuff((uint)SkillConstants.Patron, character);
+            //character.Buffs.AddBuff((uint)SkillConstants.AuctionLicense, character);
 
             character.UpdateGearBonuses(null, null);
             character.RestoreSavedHpMp();
 
-            Connection.ActiveChar.OnZoneChange(0, Connection.ActiveChar.Transform.ZoneId);
+            character.OnZoneChange(0, character.Transform.ZoneId);
 
             var scheduleItems = AccountManager.Instance.GetDivineClock(character.AccountId);
             if (scheduleItems is not null)
