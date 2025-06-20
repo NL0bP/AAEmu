@@ -224,6 +224,8 @@ public sealed class GameService : IHostedService, IDisposable
         WorldManager.Instance.StartPhysics();
         FishSchoolManager.Instance.Initialize();
 
+        WorldManager.Instance.Initialize();
+
         CharacterManager.CheckForDeletedCharacters();
         CharacterManager.Instance.StartOnlineTracking();
 

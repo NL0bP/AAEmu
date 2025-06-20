@@ -451,7 +451,8 @@ public class SpawnManager : Singleton<SpawnManager>
                     if (obj is Npc npc)
                     {
                         //Logger.Debug($"Respawning NPC {npc.ObjId}");
-                        npc.Spawner.Respawn(npc);
+                        //npc.Spawner.Respawn(npc);
+                        npc.Spawner.SetSpawnScheduled(false); // in the Update() method, enable spawn
                     }
                     else if (obj is Doodad doodad)
                     {

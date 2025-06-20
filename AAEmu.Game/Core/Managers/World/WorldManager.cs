@@ -347,9 +347,12 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         }
         #endregion
 
-        TickManager.Instance.OnTick.Subscribe(ActiveRegionTick, TimeSpan.FromSeconds(1));
-
         _loaded = true;
+    }
+
+    public void Initialize()
+    {
+        TickManager.Instance.OnTick.Subscribe(ActiveRegionTick, TimeSpan.FromSeconds(1));
     }
 
     public static bool LoadHeightMapFromDatFile(InstanceWorld world)

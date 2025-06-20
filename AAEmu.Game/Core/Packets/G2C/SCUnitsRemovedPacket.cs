@@ -6,7 +6,7 @@ namespace AAEmu.Game.Core.Packets.G2C;
 
 public class SCUnitsRemovedPacket : GamePacket
 {
-    public override PacketLogLevel LogLevel => PacketLogLevel.Off;
+    //public override PacketLogLevel LogLevel => PacketLogLevel.Off;
 
     private readonly uint[] _ids;
     public const int MaxCountPerPacket = 500; // Suggested Maximum Size (originally 300)
@@ -28,7 +28,7 @@ public class SCUnitsRemovedPacket : GamePacket
     public override string Verbose()
     {
         if (_ids?.Length > 1)
-            return " - Removed " + _ids.Length.ToString() + " objects";
+            return $" - Removed {_ids.Length} objects";
         if (_ids?.Length == 1)
             return " - " + WorldManager.Instance.GetGameObject(_ids[0])?.DebugName();
         return base.Verbose();

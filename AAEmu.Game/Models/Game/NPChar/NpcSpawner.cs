@@ -131,8 +131,8 @@ public class NpcSpawner : Spawner<Npc>
     {
         if (IsDespawnScheduled)
         {
-            Logger.Debug($"[Despawn] группа уже в стадии удаления for SpawnerId={SpawnerId}.");
-            return; // группа уже в стадии удаления
+            Logger.Debug($"[Despawn] is already at the stage of removal for SpawnerId={SpawnerId}.");
+            return; // Group is already at the stage of removal
         }
 
         if (SpawnedNpcs.TryGetValue(SpawnerId, out var npcs))
@@ -143,8 +143,8 @@ public class NpcSpawner : Spawner<Npc>
     {
         if (IsDespawnScheduled)
         {
-            Logger.Debug($"[Despawn] группа уже в стадии удаления for SpawnerId={SpawnerId}.");
-            return; // группа уже в стадии удаления
+            Logger.Debug($"[Despawn] is already at the stage of removal for SpawnerId={SpawnerId}.");
+            return; // Group is already at the stage of removal
         }
 
         if (SpawnedNpcs.TryGetValue(SpawnerId, out var npcs))
@@ -198,6 +198,12 @@ public class NpcSpawner : Spawner<Npc>
         if (IsDespawnScheduled)
         {
             //Logger.Debug($"[Spawn SpawnerId={SpawnerId}, UnitId={UnitId}] Despawn is scheduled. Spawning is blocked.");
+            return false;
+        }
+
+        if (IsSpawnScheduled)
+        {
+            //Logger.Debug($"[Spawn SpawnerId={SpawnerId}, UnitId={UnitId}] Spawn is scheduled. Spawning is blocked.");
             return false;
         }
 
@@ -972,33 +978,34 @@ public class NpcSpawner : Spawner<Npc>
             lock (_spawnLock)
             {
                 // Если условия позволяют, планируем респаун
-                if (!RespawnDenied && RespawnTime > 0 && AreOtherNpcsInSpawnZone().Item2 + _scheduledCount < Template.MaxPopulation)
+                if (RespawnTime > 0 && AreOtherNpcsInSpawnZone().Item2 + _scheduledCount < Template.MaxPopulation)
                 {
                     // Планируем респаун и обновляем _scheduledCount
-                    DecrementCount(true);
+                    IncrementCount(true);
                     Logger.Info($"Scheduled respawn for NPC {UnitId}:{SpawnerId}:{npc.ObjId} in {RespawnTime} seconds.");
                     npc.Respawn = DateTime.UtcNow.AddSeconds(RespawnTime);
                     SpawnManager.Instance.AddRespawn(npc);
                 }
                 else
                 {
-                    DecrementCount(false);
+                    IncrementCount(false);
                     Logger.Info($"Despawning NPC {UnitId}:{SpawnerId}:{npc.ObjId} without scheduling respawn.");
                 }
 
                 // Sets the despawn time
                 npc.Despawn = DateTime.UtcNow.AddSeconds(DespawnTime);
+                Logger.Info($"Scheduled despawn for NPC {UnitId}:{SpawnerId}:{npc.ObjId} in {DespawnTime} seconds.");
 
                 // Extends the despawn time if there are items in the container
                 if (npc.LootingContainer != null && npc.LootingContainer.Items.Count > 0)
                 {
                     npc.Despawn += TimeSpan.FromSeconds(LootingContainer.LootDespawnExtensionTime);
-                    //Logger.Info($"Extended despawn time in {LootingContainer.LootDespawnExtensionTime} seconds for NPC {UnitId}:{SpawnerId}:{npc.ObjId} due to items in looting container.");
+                    Logger.Info($"Extended despawn time in {LootingContainer.LootDespawnExtensionTime} seconds for NPC {UnitId}:{SpawnerId}:{npc.ObjId} due to items in looting container.");
                 }
 
                 // Adds the NPC to the despawn list
                 SpawnManager.Instance.AddDespawn(npc);
-                //Logger.Info($"Added NPC {UnitId}:{SpawnerId}:{npc.ObjId} to despawn list. spawnCount={_spawnCount}, scheduledCount={_scheduledCount}");
+                //Logger.Info($"Added NPC {UnitId}:{SpawnerId}:{npc.ObjId} to despawn list, scheduledCount={_scheduledCount}");
             }
         }
         catch (Exception ex)
@@ -1016,7 +1023,7 @@ public class NpcSpawner : Spawner<Npc>
                 // Если планируется немедленный деспаун
                 if (AreOtherNpcsInSpawnZone().Item2 + _scheduledCount < Template.MaxPopulation)
                 {
-                    DecrementCount(true);
+                    IncrementCount(true);
                     Logger.Info($"Immediate despawn scheduled for NPC {UnitId}:{SpawnerId}:{npc.ObjId}.");
                 }
                 SpawnManager.Instance.AddDespawn(npc);
@@ -1144,17 +1151,45 @@ public class NpcSpawner : Spawner<Npc>
         }
     }
 
+    public void SetSpawnScheduled(bool value)
+    {
+        IsSpawnScheduled = value;
+    }
+
     /// <summary>
     /// Spawns NPCs.
     /// </summary>
     public void DoSpawn()
     {
+        // Check if template exists
+        if (Template == null)
+        {
+            Logger.Error($"[Spawn] Can't spawn npc {UnitId} from spawnerId {Id} - Template is null");
+            return;
+        }
+        Logger.Debug($"[Spawn] Starting spawn process for SpawnerId={SpawnerId}, UnitId={UnitId}, Template={Template.Id}");
+
+        // Check population limits
+        if (CurrentSpawnCount >= Template.MaxPopulation)
+        {
+            //Logger.Debug($"[Spawn] SpawnerId={SpawnerId} reached max population ({CurrentSpawnCount}/{Template.MaxPopulation})");
+            return;
+        }
+
+        if (Template.SuspendSpawnCount > 0 && CurrentSpawnCount > Template.SuspendSpawnCount)
+        {
+            //Logger.Debug($"[Spawn] SpawnerId={SpawnerId} reached suspend limit ({CurrentSpawnCount}/{Template.SuspendSpawnCount})");
+            return;
+        }
+
         // Checks if there are NPCs to spawn
         if (SpawnableNpcs == null || SpawnableNpcs.Count == 0)
         {
-            Logger.Warn("No spawnable NPCs available.");
+            Logger.Warn($"[Spawn] No spawnable NPCs available for SpawnerId={SpawnerId}");
             return;
         }
+
+        //Logger.Debug($"[Spawn] Found {SpawnableNpcs.Count} spawnable NPCs for SpawnerId={SpawnerId}");
 
         // List to store spawned NPCs
         var spawnedNpcs = new List<Npc>();
@@ -1166,9 +1201,11 @@ public class NpcSpawner : Spawner<Npc>
             {
                 if (npcTemplate == null)
                 {
-                    Logger.Warn("NPC template is null.");
+                    Logger.Warn($"[Spawn] NPC template is null in SpawnerId={SpawnerId}");
                     continue;
                 }
+
+                //Logger.Debug($"[Spawn] Attempting to spawn NPC template {npcTemplate.SpawnerId}:{npcTemplate.MemberId} for SpawnerId={SpawnerId}");
 
                 lock (_spawnLock)
                 {
@@ -1176,9 +1213,11 @@ public class NpcSpawner : Spawner<Npc>
                     var spawned = npcTemplate.Spawn(this);
                     if (spawned == null || spawned.Count == 0)
                     {
-                        Logger.Warn($"No NPCs spawned from template {npcTemplate.SpawnerId}:{npcTemplate.MemberId}");
+                        Logger.Warn($"[Spawn] Failed to spawn NPC from template {npcTemplate.SpawnerId}:{npcTemplate.MemberId} for SpawnerId={SpawnerId}");
                         continue;
                     }
+
+                    //Logger.Debug($"[Spawn] Successfully spawned {spawned.Count} NPCs from template {npcTemplate.SpawnerId}:{npcTemplate.MemberId}");
 
                     // Adds the spawned NPCs to the list
                     spawnedNpcs.AddRange(spawned);
@@ -1189,22 +1228,28 @@ public class NpcSpawner : Spawner<Npc>
                         npc.Transform.Local.Position = newPos;
 
                         AddNpcToSpawned(npc.Spawner.SpawnerId, npc);
+                        //Logger.Debug($"[Spawn] Added NPC {npc.ObjId} to SpawnedNpcs for SpawnerId={npc.Spawner.SpawnerId}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, $"Failed to spawn NPC from template {npcTemplate?.SpawnerId}:{npcTemplate?.MemberId}");
+                Logger.Error(ex, $"[Spawn] Failed to spawn NPC from template {npcTemplate?.SpawnerId}:{npcTemplate?.MemberId} for SpawnerId={SpawnerId}");
             }
         }
 
         // Checks if any NPCs were spawned
         if (spawnedNpcs.Count == 0)
         {
-            Logger.Error($"Can't spawn NPC {UnitId}:{SpawnerId}");
+            Logger.Error($"[Spawn] Failed to spawn any NPCs for {UnitId}:{SpawnerId}");
             return;
         }
-        //Logger.Info($"Mobs were spawned from SpawnerId={UnitId}:{SpawnerId} in the amount of {spawnedNpcs.Count}");
+
+        //Logger.Info($"[Spawn] Successfully spawned {spawnedNpcs.Count} NPCs from SpawnerId={UnitId}:{SpawnerId}");
+
+        // Update spawn count
+        DecrementCount(spawnedNpcs);
+        //Logger.Debug($"[Spawn] Updated spawn count for SpawnerId={SpawnerId}, Current count={CurrentSpawnCount}");
     }
 
     /// <summary>
@@ -1402,10 +1447,10 @@ public class NpcSpawner : Spawner<Npc>
             return;
         }
 
-        IncrementCount(n);
+        DecrementCount(n);
     }
 
-    private void IncrementCount(List<Npc> n)
+    private void DecrementCount(List<Npc> n)
     {
         lock (_spawnLock)
         {
@@ -1414,7 +1459,7 @@ public class NpcSpawner : Spawner<Npc>
         }
     }
 
-    private void DecrementCount(bool respawn = false)
+    private void IncrementCount(bool respawn = false)
     {
         lock (_spawnLock)
         {
