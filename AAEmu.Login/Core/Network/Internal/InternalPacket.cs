@@ -3,8 +3,12 @@ using AAEmu.Login.Core.Network.Connections;
 
 namespace AAEmu.Login.Core.Network.Internal;
 
-public abstract class InternalPacket(ushort typeId) : PacketBase<InternalConnection>(typeId)
+public abstract class InternalPacket : PacketBase<InternalConnection>
 {
+    protected InternalPacket(ushort typeId) : base(typeId)
+    {
+    }
+
     public override PacketStream Encode()
     {
         var ps = new PacketStream();

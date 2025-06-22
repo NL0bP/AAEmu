@@ -5,13 +5,25 @@ namespace AAEmu.Login.Core.Network.Connections;
 
 public class InternalConnectionTable : Singleton<InternalConnectionTable>
 {
-    private readonly ConcurrentDictionary<uint, InternalConnection> _connections = [];
+    private ConcurrentDictionary<uint, InternalConnection> _connections;
 
-    public void AddConnection(InternalConnection con) => _connections.TryAdd(con.Id, con);
+    private InternalConnectionTable()
+    {
+        _connections = new ConcurrentDictionary<uint, InternalConnection>();
+    }
 
-    public InternalConnection? GetConnection(uint id) => _connections.GetValueOrDefault(id);
+    public void AddConnection(InternalConnection con)
+    {
+        _connections.TryAdd(con.Id, con);
+    }
 
-    public InternalConnection? RemoveConnection(uint id)
+    public InternalConnection GetConnection(uint id)
+    {
+        _connections.TryGetValue(id, out var con);
+        return con;
+    }
+
+    public InternalConnection RemoveConnection(uint id)
     {
         _connections.TryRemove(id, out var con);
         return con;

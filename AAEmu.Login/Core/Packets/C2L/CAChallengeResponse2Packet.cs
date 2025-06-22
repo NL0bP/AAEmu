@@ -4,8 +4,12 @@ using AAEmu.Login.Core.Packets.L2C;
 
 namespace AAEmu.Login.Core.Packets.C2L;
 
-public class CAChallengeResponse2Packet() : LoginPacket(CLOffsets.CAChallengeResponse2Packet)
+public class CAChallengeResponse2Packet : LoginPacket
 {
+    public CAChallengeResponse2Packet() : base(CLOffsets.CAChallengeResponse2Packet)
+    {
+    }
+
     public override void Read(PacketStream stream)
     {
         for (var i = 0; i < 8; i++)

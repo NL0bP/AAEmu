@@ -6,13 +6,20 @@ using AAEmu.Login.Models;
 
 namespace AAEmu.Login.Core.Network.Connections;
 
-public class InternalConnection(ISession session)
+public class InternalConnection
 {
-    public uint Id => session.SessionId;
-    public IPAddress Ip => session.Ip;
-    public GameServer? GameServer { get; set; }
+    private ISession _session;
+
+    public uint Id => _session.SessionId;
+    public IPAddress Ip => _session.Ip;
+    public GameServer GameServer { get; set; }
     public bool Block { get; set; }
-    public PacketStream? LastPacket { get; set; }
+    public PacketStream LastPacket { get; set; }
+
+    public InternalConnection(ISession session)
+    {
+        _session = session;
+    }
 
     public static void OnConnect()
     {
@@ -24,11 +31,11 @@ public class InternalConnection(ISession session)
             return;
         packet.Connection = this;
         byte[] buf = packet.Encode();
-        session.SendPacket(buf);
+        _session.SendPacket(buf);
     }
 
     public void AddAttribute(string name, object value)
     {
-        session.AddAttribute(name, value);
+        _session.AddAttribute(name, value);
     }
 }

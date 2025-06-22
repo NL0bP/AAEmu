@@ -3,8 +3,12 @@ using AAEmu.Login.Core.Network.Login;
 
 namespace AAEmu.Login.Core.Packets.L2C;
 
-public class ACEnterOtpPacket() : LoginPacket(LCOffsets.ACEnterOtpPacket)
+public class ACEnterOtpPacket : LoginPacket
 {
+    public ACEnterOtpPacket() : base(LCOffsets.ACEnterOtpPacket)
+    {
+    }
+
     public override PacketStream Write(PacketStream stream)
     {
         stream.Write(0); // mt

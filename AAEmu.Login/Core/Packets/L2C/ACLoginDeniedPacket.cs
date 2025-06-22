@@ -3,11 +3,18 @@ using AAEmu.Login.Core.Network.Login;
 
 namespace AAEmu.Login.Core.Packets.L2C;
 
-public class ACLoginDeniedPacket(byte reason) : LoginPacket(LCOffsets.ACLoginDeniedPacket)
+public class ACLoginDeniedPacket : LoginPacket
 {
+    private byte _reason;
+
+    public ACLoginDeniedPacket(byte reason) : base(LCOffsets.ACLoginDeniedPacket)
+    {
+        _reason = reason;
+    }
+
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write(reason);
+        stream.Write(_reason);
         stream.Write(""); // vp
         stream.Write(""); // msg
 

@@ -5,7 +5,7 @@ using AAEmu.Commons.Exceptions;
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Login.Core.Network.Connections;
-using AAEmu.Login.Models;
+
 using NLog;
 
 namespace AAEmu.Login.Core.Network.Login;
@@ -14,7 +14,12 @@ public class LoginProtocolHandler : BaseProtocolHandler
 {
     private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
 
-    private readonly ConcurrentDictionary<uint, Type> _packets = [];
+    private ConcurrentDictionary<uint, Type> _packets;
+
+    public LoginProtocolHandler()
+    {
+        _packets = new ConcurrentDictionary<uint, Type>();
+    }
 
     public override void OnConnect(ISession session)
     {
@@ -41,9 +46,9 @@ public class LoginProtocolHandler : BaseProtocolHandler
         }
         try
         {
-            var con = LoginConnectionTable.Instance.GetConnection(new ConnectionId(session.SessionId));
+            var con = LoginConnectionTable.Instance.GetConnection(session.SessionId);
             if (con != null)
-                LoginConnectionTable.Instance.RemoveConnection(new ConnectionId(session.SessionId));
+                LoginConnectionTable.Instance.RemoveConnection(session.SessionId);
         }
         catch (Exception e)
         {
@@ -58,7 +63,7 @@ public class LoginProtocolHandler : BaseProtocolHandler
     {
         try
         {
-            var connection = LoginConnectionTable.Instance.GetConnection(new ConnectionId(session.SessionId));
+            var connection = LoginConnectionTable.Instance.GetConnection(session.SessionId);
             if (connection == null)
                 return;
             OnReceive(connection, buf, offset, bytes);
@@ -82,7 +87,7 @@ public class LoginProtocolHandler : BaseProtocolHandler
             }
 
             stream.Insert(stream.Count, buf, 0, bytes);
-            while (stream is { Count: > 0 })
+            while (stream != null && stream.Count > 0)
             {
                 ushort len;
                 try
@@ -122,7 +127,7 @@ public class LoginProtocolHandler : BaseProtocolHandler
                     }
                     else
                     {
-                        var packet = (LoginPacket)Activator.CreateInstance(classType)!;
+                        var packet = (LoginPacket)Activator.CreateInstance(classType);
                         packet.Connection = connection;
                         packet.Decode(stream2);
                     }
@@ -154,7 +159,7 @@ public class LoginProtocolHandler : BaseProtocolHandler
     {
         var dump = new StringBuilder();
         for (var i = stream.Pos; i < stream.Count; i++)
-            dump.Append($"{stream.Buffer[i]:x2} ");
+            dump.AppendFormat("{0:x2} ", stream.Buffer[i]);
         Logger.Error("Unknown packet 0x{0:x2} from {1}:\n{2}", (object)type, (object)connection.Ip, (object)dump);
     }
 }

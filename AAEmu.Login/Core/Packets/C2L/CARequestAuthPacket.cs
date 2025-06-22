@@ -4,8 +4,12 @@ using AAEmu.Login.Core.Network.Login;
 
 namespace AAEmu.Login.Core.Packets.C2L;
 
-public class CARequestAuthPacket() : LoginPacket(CLOffsets.CARequestAuthPacket)
+public class CARequestAuthPacket : LoginPacket
 {
+    public CARequestAuthPacket() : base(CLOffsets.CARequestAuthPacket)
+    {
+    }
+
     public override void Read(PacketStream stream)
     {
         var pFrom = stream.ReadUInt32();

@@ -1,15 +1,23 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Login.Core.Network.Internal;
-using AAEmu.Login.Models;
 
 namespace AAEmu.Login.Core.Packets.L2G;
 
-public class LGPlayerEnterPacket(AccountId accountId, ConnectionId connectionId) : InternalPacket(LGOffsets.LGPlayerEnterPacket)
+public class LGPlayerEnterPacket : InternalPacket
 {
+    private readonly uint _accountId;
+    private readonly uint _connectionId;
+
+    public LGPlayerEnterPacket(uint accountId, uint connectionId) : base(LGOffsets.LGPlayerEnterPacket)
+    {
+        _accountId = accountId;
+        _connectionId = connectionId;
+    }
+
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write(accountId.Value);
-        stream.Write(connectionId.Value);
+        stream.Write(_accountId);
+        stream.Write(_connectionId);
         return stream;
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using AAEmu.Commons.Utils;
+﻿using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Login.Core.Network.Connections;
 using AAEmu.Login.Core.Packets.L2C;
@@ -12,9 +11,14 @@ namespace AAEmu.Login.Core.Controllers;
 
 public class LoginController : Singleton<LoginController>
 {
+    private Dictionary<byte, Dictionary<uint, uint>> _tokens; // gsId, [token, accountId]
     private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
-    private static readonly bool _autoAccount = AppConfiguration.Instance.AutoAccount;
-    private readonly ConcurrentDictionary<GameServerId, ConcurrentDictionary<uint, AccountId>> _tokens = []; // gsId, [token, accountId]
+    private static bool _autoAccount = AppConfiguration.Instance.AutoAccount;
+
+    protected LoginController()
+    {
+        _tokens = [];
+    }
 
     /// <summary>
     /// Kr Method Auth
@@ -23,42 +27,50 @@ public class LoginController : Singleton<LoginController>
     /// <param name="username"></param>
     public static void Login(LoginConnection connection, string username)
     {
-        using var connect = MySQL.CreateConnection();
-        using var command = connect.CreateCommand();
-        command.CommandText = "SELECT * FROM users where username=@username";
-        command.Parameters.AddWithValue("@username", username);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
+        using (var connect = MySQL.CreateConnection())
         {
-            connection.SendPacket(new ACLoginDeniedPacket(2));
-            return;
+            using (var command = connect.CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM users where username=@username";
+                command.Parameters.AddWithValue("@username", username);
+                command.Prepare();
+                using (var reader = command.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        connection.SendPacket(new ACLoginDeniedPacket(2));
+                        return;
+                    }
+
+                    // TODO ... validation password
+
+                    connection.AccountId = reader.GetUInt32("id");
+                    connection.AccountName = username;
+                    connection.LastLogin = DateTime.UtcNow;
+                    connection.LastIp = connection.Ip;
+
+                    connection.SendPacket(new ACJoinResponsePacket(0, 6));
+                    connection.SendPacket(new ACAuthResponsePacket(connection.AccountId, 6));
+
+                    reader.Close();
+
+                    #region update account
+                    command.Parameters.Clear();
+                    command.CommandText = "UPDATE `users` SET last_ip = @last_ip, last_login = @last_login, updated_at = @updated_at WHERE id = @id";
+                    command.Parameters.AddWithValue("@id", connection.AccountId);
+                    command.Parameters.AddWithValue("@last_ip", connection.LastIp.ToString());
+                    command.Parameters.AddWithValue("@last_login", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
+                    command.Parameters.AddWithValue("@updated_at", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
+                    command.Prepare();
+
+                    if (command.ExecuteNonQuery() != 1)
+                    {
+                        Logger.Warn("Database update failed, error occurred while updating account login IP and time");
+                    }
+                    # endregion
+                }
+            }
         }
-
-        // TODO ... validation password
-
-        connection.AccountId = new AccountId(reader.GetUInt32("id"));
-        connection.AccountName = username;
-        connection.LastLogin = DateTime.UtcNow;
-        connection.LastIp = connection.Ip;
-
-        connection.SendPacket(new ACJoinResponsePacket(0, 6));
-        connection.SendPacket(new ACAuthResponsePacket(connection.AccountId, 6));
-
-        reader.Close();
-
-        #region update account
-        command.Parameters.Clear();
-        command.CommandText = "UPDATE `users` SET last_ip = @last_ip, last_login = @last_login, updated_at = @updated_at WHERE id = @id";
-        command.Parameters.AddWithValue("@id", connection.AccountId);
-        command.Parameters.AddWithValue("@last_ip", connection.LastIp.ToString());
-        command.Parameters.AddWithValue("@last_login", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
-        command.Parameters.AddWithValue("@updated_at", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
-
-        if (command.ExecuteNonQuery() != 1)
-        {
-            Logger.Warn("Database update failed, error occurred while updating account login IP and time");
-        }
-        # endregion
     }
 
     /// <summary>
@@ -67,107 +79,121 @@ public class LoginController : Singleton<LoginController>
     /// <param name="connection"></param>
     /// <param name="username"></param>
     /// <param name="password"></param>
-    public static void Login(LoginConnection connection, string username, ReadOnlySpan<byte> password)
+    public static void Login(LoginConnection connection, string username, IEnumerable<byte> password)
     {
-        using var connect = MySQL.CreateConnection();
-        using var command = connect.CreateCommand();
-        command.CommandText = "SELECT * FROM users where username=@username";
-        command.Parameters.AddWithValue("@username", username);
-        using var reader = command.ExecuteReader();
-        if (!reader.Read())
+        using (var connect = MySQL.CreateConnection())
         {
-            if (_autoAccount)
+            using (var command = connect.CreateCommand())
             {
-                reader.Close();
-                CreateAndLoginInvalid(connection, username, password, connect);
+                command.CommandText = "SELECT * FROM users where username=@username";
+                command.Parameters.AddWithValue("@username", username);
+                command.Prepare();
+                using (var reader = command.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        if (_autoAccount)
+                        {
+                            reader.Close();
+                            CreateAndLoginInvalid(connection, username, password, connect);
+                        }
+                        else
+                        {
+                            connection.SendPacket(new ACLoginDeniedPacket(2));
+                        }
+
+                        return;
+                    }
+
+                    var pass = Convert.FromBase64String(reader.GetString("password"));
+                    if (!pass.SequenceEqual(password))
+                    {
+                        connection.SendPacket(new ACLoginDeniedPacket(2));
+                        return;
+                    }
+
+                    var banned = reader.GetBoolean("banned");
+                    if (banned)
+                    {
+                        var banReason = (byte)reader.GetUInt32("ban_reason");
+                        connection.SendPacket(new ACLoginDeniedPacket(banReason));
+                        return;
+                    }
+
+                    connection.AccountId = reader.GetUInt32("id");
+                    connection.AccountName = username;
+                    connection.LastLogin = DateTime.UtcNow;
+                    connection.LastIp = connection.Ip;
+
+                    Logger.Info("{0} connected.", connection.AccountName);
+                    connection.SendPacket(new ACJoinResponsePacket(0, 6));
+                    connection.SendPacket(new ACAuthResponsePacket(connection.AccountId, 6));
+
+                    reader.Close();
+
+                    #region update account
+                    command.Parameters.Clear();
+                    command.CommandText = "UPDATE `users` SET last_ip = @last_ip, last_login = @last_login, updated_at = @updated_at WHERE id = @id";
+                    command.Parameters.AddWithValue("@id", connection.AccountId);
+                    command.Parameters.AddWithValue("@last_ip", connection.LastIp.ToString());
+                    command.Parameters.AddWithValue("@last_login", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
+                    command.Parameters.AddWithValue("@updated_at", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
+                    command.Prepare();
+
+                    if (command.ExecuteNonQuery() != 1)
+                    {
+                        Logger.Warn("Database update failed, error occurred while updating account login IP and time");
+                    }
+                    # endregion
+                }
             }
-            else
+        }
+    }
+
+    public static void CreateAndLoginInvalid(LoginConnection connection, string username, IEnumerable<byte> password, MySqlConnection connect)
+    {
+        var pass = Convert.ToBase64String(password.ToArray());
+
+        using (var command = connect.CreateCommand())
+        {
+            command.CommandText =
+                "INSERT into users (username, password, email, last_ip, last_login, created_at, updated_at) VALUES (@username, @password, @email, @last_ip, @last_login, @created_at, @updated_at)";
+            command.Parameters.AddWithValue("@username", username);
+            command.Parameters.AddWithValue("@password", pass);
+            command.Parameters.AddWithValue("@email", "");
+            command.Parameters.AddWithValue("@last_ip", connection.Ip.ToString());
+            command.Parameters.AddWithValue("@last_login", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
+            command.Parameters.AddWithValue("@created_at", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
+            command.Parameters.AddWithValue("@updated_at", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
+            command.Prepare();
+
+            if (command.ExecuteNonQuery() != 1)
             {
                 connection.SendPacket(new ACLoginDeniedPacket(2));
+                return;
             }
 
-            return;
+            Logger.Debug("Created account from invalid username login with value:" + username);
+            Login(connection, username, password);
         }
-
-        var expectedPassword = Convert.FromBase64String(reader.GetString("password"));
-        if (!password.SequenceEqual(expectedPassword))
-        {
-            connection.SendPacket(new ACLoginDeniedPacket(2));
-            return;
-        }
-
-        var banned = reader.GetBoolean("banned");
-        if (banned)
-        {
-            var banReason = (byte)reader.GetUInt32("ban_reason");
-            connection.SendPacket(new ACLoginDeniedPacket(banReason));
-            return;
-        }
-
-        connection.AccountId = new AccountId(reader.GetUInt32("id"));
-        connection.AccountName = username;
-        connection.LastLogin = DateTime.UtcNow;
-        connection.LastIp = connection.Ip;
-
-        Logger.Info("{0} connected.", connection.AccountName);
-        connection.SendPacket(new ACJoinResponsePacket(0, 6));
-        connection.SendPacket(new ACAuthResponsePacket(connection.AccountId, 6));
-
-        reader.Close();
-
-        #region update account
-        command.Parameters.Clear();
-        command.CommandText = "UPDATE `users` SET last_ip = @last_ip, last_login = @last_login, updated_at = @updated_at WHERE id = @id";
-        command.Parameters.AddWithValue("@id", connection.AccountId);
-        command.Parameters.AddWithValue("@last_ip", connection.LastIp.ToString());
-        command.Parameters.AddWithValue("@last_login", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
-        command.Parameters.AddWithValue("@updated_at", ((DateTimeOffset)connection.LastLogin).ToUnixTimeSeconds());
-
-        if (command.ExecuteNonQuery() != 1)
-        {
-            Logger.Warn("Database update failed, error occurred while updating account login IP and time");
-        }
-        # endregion
     }
 
-    public static void CreateAndLoginInvalid(LoginConnection connection, string username, ReadOnlySpan<byte> password, MySqlConnection connect)
+    public void AddReconnectionToken(InternalConnection connection, byte gsId, uint accountId, uint token)
     {
-        var pass = Convert.ToBase64String(password);
+        if (!_tokens.ContainsKey(gsId))
+            _tokens.Add(gsId, []);
 
-        using var command = connect.CreateCommand();
-        command.CommandText =
-            "INSERT into users (username, password, email, last_ip, last_login, created_at, updated_at) VALUES (@username, @password, @email, @last_ip, @last_login, @created_at, @updated_at)";
-        command.Parameters.AddWithValue("@username", username);
-        command.Parameters.AddWithValue("@password", pass);
-        command.Parameters.AddWithValue("@email", "");
-        command.Parameters.AddWithValue("@last_ip", connection.Ip.ToString());
-        command.Parameters.AddWithValue("@last_login", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
-        command.Parameters.AddWithValue("@created_at", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
-        command.Parameters.AddWithValue("@updated_at", ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds());
-
-        if (command.ExecuteNonQuery() != 1)
-        {
-            connection.SendPacket(new ACLoginDeniedPacket(2));
-            return;
-        }
-
-        Logger.Debug("Created account from invalid username login with value:" + username);
-        Login(connection, username, password);
-    }
-
-    public void AddReconnectionToken(InternalConnection connection, GameServerId gsId, AccountId accountId, uint token)
-    {
-        var tokensForGameServer = _tokens.GetOrAdd(gsId, static _ => []);
-        tokensForGameServer.TryAdd(token, accountId);
+        _tokens[gsId].Add(token, accountId);
         connection.SendPacket(new LGPlayerReconnectPacket(token));
     }
 
-    public void Reconnect(LoginConnection connection, GameServerId gsId, AccountId accountId, uint token)
+    public void Reconnect(LoginConnection connection, byte gsId, uint accountId, uint token)
     {
         if (!_tokens.ContainsKey(gsId))
         {
-            if (GameController.Instance.TryGetParentId(gsId, out var parentId))
-                gsId = parentId;
+            var parentId = GameController.Instance.GetParentId(gsId);
+            if (parentId != null)
+                gsId = (byte)parentId;
             else
             {
                 // TODO ...

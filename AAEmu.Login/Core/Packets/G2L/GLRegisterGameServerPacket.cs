@@ -6,8 +6,12 @@ using AAEmu.Login.Models;
 
 namespace AAEmu.Login.Core.Packets.G2L;
 
-public class GLRegisterGameServerPacket() : InternalPacket(GLOffsets.GLRegisterGameServerPacket)
+public class GLRegisterGameServerPacket : InternalPacket
 {
+    public GLRegisterGameServerPacket() : base(GLOffsets.GLRegisterGameServerPacket)
+    {
+    }
+
     private async Task SendPacketWithDelay(int delay, InternalPacket message)
     {
         await Task.Delay(delay);
@@ -19,11 +23,11 @@ public class GLRegisterGameServerPacket() : InternalPacket(GLOffsets.GLRegisterG
         var secretKey = stream.ReadString();
         if (secretKey == AppConfiguration.Instance.SecretKey)
         {
-            var gsId = new GameServerId(stream.ReadByte());
+            var gsId = stream.ReadByte();
             var additionalesCount = stream.ReadInt32();
-            var mirrors = new List<GameServerId>();
+            var mirrors = new List<byte>();
             for (var i = 0; i < additionalesCount; i++)
-                mirrors.Add(new GameServerId(stream.ReadByte()));
+                mirrors.Add(stream.ReadByte());
 
             GameController.Instance.Add(gsId, mirrors, Connection);
         }

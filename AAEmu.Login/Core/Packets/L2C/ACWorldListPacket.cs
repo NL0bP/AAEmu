@@ -5,20 +5,28 @@ using AAEmu.Login.Models;
 
 namespace AAEmu.Login.Core.Packets.L2C;
 
-public class ACWorldListPacket(List<GameServer> gameServers, List<LoginCharacterInfo> characters)
-    : LoginPacket(LCOffsets.ACWorldListPacket)
+public class ACWorldListPacket : LoginPacket
 {
+    private readonly List<GameServer> _gs;
+    private readonly List<LoginCharacterInfo> _characters;
+
+    public ACWorldListPacket(List<GameServer> gs, List<LoginCharacterInfo> characters) : base(LCOffsets.ACWorldListPacket)
+    {
+        _gs = gs;
+        _characters = characters;
+    }
+
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write((byte)gameServers.Count);
-        foreach (var gs1 in gameServers)
+        stream.Write((byte)_gs.Count);
+        foreach (var gs in _gs)
         {
-            stream.Write(gs1.Id.Value);
-            stream.Write(gs1.Name);
-            stream.Write(gs1.Active);
-            if (gs1.Active)
+            stream.Write(gs.Id);
+            stream.Write(gs.Name);
+            stream.Write(gs.Active);
+            if (gs.Active)
             {
-                stream.Write((byte)gs1.Load); // con
+                stream.Write((byte)gs.Load); // con
                 for (var i = 0; i < 9; i++) // race
                     stream.Write((byte)0); // rcon
                 /*
@@ -45,10 +53,10 @@ public class ACWorldListPacket(List<GameServer> gameServers, List<LoginCharacter
             }
         }
 
-        stream.Write((byte)characters.Count);
-        if (characters.Count > 0)
+        stream.Write((byte)_characters.Count);
+        if (_characters.Count > 0)
         {
-            foreach (var character in characters)
+            foreach (var character in _characters)
             {
                 stream.Write(character.AccountId);
                 stream.Write(character.GsId);

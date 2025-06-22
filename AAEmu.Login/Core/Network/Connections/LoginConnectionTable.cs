@@ -1,25 +1,29 @@
 ﻿using System.Collections.Concurrent;
 using AAEmu.Commons.Utils;
-using AAEmu.Login.Models;
 
 namespace AAEmu.Login.Core.Network.Connections;
 
 public class LoginConnectionTable : Singleton<LoginConnectionTable>
 {
-    private readonly ConcurrentDictionary<ConnectionId, LoginConnection> _connections = [];
+    private ConcurrentDictionary<uint, LoginConnection> _connections;
+
+    private LoginConnectionTable()
+    {
+        _connections = new ConcurrentDictionary<uint, LoginConnection>();
+    }
 
     public void AddConnection(LoginConnection con)
     {
         _connections.TryAdd(con.Id, con);
     }
 
-    public LoginConnection? GetConnection(ConnectionId id)
+    public LoginConnection GetConnection(uint id)
     {
         _connections.TryGetValue(id, out var con);
         return con;
     }
 
-    public LoginConnection? RemoveConnection(ConnectionId id)
+    public LoginConnection RemoveConnection(uint id)
     {
         _connections.TryRemove(id, out var con);
         return con;
