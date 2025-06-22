@@ -6,6 +6,7 @@ using AAEmu.Commons.Network;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Login.Core.Controllers;
 using AAEmu.Login.Core.Network.Connections;
+using AAEmu.Login.Models;
 using NLog;
 
 namespace AAEmu.Login.Core.Network.Internal;
@@ -14,12 +15,7 @@ public class InternalProtocolHandler : BaseProtocolHandler
 {
     private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
 
-    private ConcurrentDictionary<uint, Type> _packets;
-
-    public InternalProtocolHandler()
-    {
-        _packets = new ConcurrentDictionary<uint, Type>();
-    }
+    private readonly ConcurrentDictionary<uint, Type> _packets = [];
 
     public override void OnConnect(ISession session)
     {
@@ -35,13 +31,19 @@ public class InternalProtocolHandler : BaseProtocolHandler
         Logger.Info("GameServer from {0} disconnected", session.Ip.ToString());
         var gsId = session.GetAttribute("gsId");
         if (gsId != null)
-            GameController.Instance.Remove((byte)gsId);
+            GameController.Instance.Remove((GameServerId)gsId);
         InternalConnectionTable.Instance.RemoveConnection(session.SessionId);
     }
 
     public override void OnReceive(ISession session, byte[] buf, int offset, int bytes)
     {
         var connection = InternalConnectionTable.Instance.GetConnection(session.SessionId);
+        if (connection == null)
+        {
+            Logger.Error("Connection not found for session {0}", session.SessionId);
+            return;
+        }
+        
         var stream = new PacketStream();
         if (connection.LastPacket != null)
         {
@@ -50,7 +52,7 @@ public class InternalProtocolHandler : BaseProtocolHandler
         }
 
         stream.Insert(stream.Count, buf, offset, bytes);
-        while (stream != null && stream.Count > 0)
+        while (stream is { Count: > 0 })
         {
             ushort len;
             try
@@ -92,7 +94,7 @@ public class InternalProtocolHandler : BaseProtocolHandler
                 {
                     try
                     {
-                        var packet = (InternalPacket)Activator.CreateInstance(classType);
+                        var packet = (InternalPacket)Activator.CreateInstance(classType)!;
                         packet.Connection = connection;
                         packet.Decode(stream2);
                     }
