@@ -34,13 +34,14 @@ public class Gimmick : Unit
     /// <summary>
     /// MoveZ
     /// </summary>
-    public bool moveDown { get; set; } = false;
+    public bool MoveDown { get; set; } = false;
+    public bool IsMoving { get; set; }
     public DateTime WaitTime { get; set; }
     public uint TimeLeft => WaitTime > DateTime.UtcNow ? (uint)(WaitTime - DateTime.UtcNow).TotalMilliseconds : 0;
     public TimeSpan TotalLifeTime { get; set; } = TimeSpan.Zero;
     private TimeSpan LastLifeTime { get; set; } = TimeSpan.Zero;
-    private Vector3 LastPos { get; set; } = Vector3.Zero;
-    private Vector3 LastRot { get; set; } = Vector3.Zero;
+    internal Vector3 LastPos { get; set; } = Vector3.Zero;
+    internal Vector3 LastRot { get; set; } = Vector3.Zero;
     private bool SkillStarted { get; set; } = false;
     private readonly object _skillStartedLock = new();
     public GimmickMovementHandler MovementHandler { get; set; }
@@ -103,7 +104,7 @@ public class Gimmick : Unit
         Transform.Local.SetPosition(newX, newY, newZ);
         Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
-        var q = RotateBarrel(Pitch, Yaw, Roll);
+        var q = RotateBarrel(_pitch, _yaw, _roll);
         Transform.Local.ApplyFromQuaternion(q);
         Vel = new Vector3(0, 0, -distanceZ);
         AngVel = new Vector3(0f, 0f, 0f);
@@ -112,14 +113,14 @@ public class Gimmick : Unit
             BroadcastPacket(new SCGimmickMovementPacket(this), false);
     }
 
-    private float Pitch;
-    private float Yaw;
-    private float Roll;
+    private float _pitch;
+    private float _yaw;
+    private float _roll;
     private Quaternion RotateBarrel(float xRotation, float yRotation, float zRotation)
     {
-        Pitch = (Pitch + Spawner.VelocityX) % 360;
-        Yaw = (Yaw + Spawner.VelocityY) % 360;
-        Roll = (Roll + Spawner.VelocityZ) % 360;
+        _pitch = (_pitch + Spawner.VelocityX) % 360;
+        _yaw = (_yaw + Spawner.VelocityY) % 360;
+        _roll = (_roll + Spawner.VelocityZ) % 360;
 
         // Создаем новый Quaternion с заданными значениями вращения
         return Quaternion.CreateFromYawPitchRoll(xRotation.DegToRad(), yRotation.DegToRad(), zRotation.DegToRad());
@@ -232,24 +233,25 @@ public class Gimmick : Unit
     /// <param name="target"></param>
     /// <param name="maxVelocity"></param>
     /// <param name="deltaTime"></param>
-    /// <param name="movingDistance"></param>
     /// <param name="velocityZ"></param>
     /// <param name="isMovingDown"></param>
-    public void MoveAlongZAxis(Gimmick gimmick, ref Vector3 position, Vector3 target, float maxVelocity, float deltaTime, float movingDistance, ref float velocityZ, ref bool isMovingDown)
+    public void MoveAlongZAxis(Gimmick gimmick, ref Vector3 position, Vector3 target, float maxVelocity, float deltaTime, ref float velocityZ, ref bool isMovingDown)
     {
         var distance = target - position;
         velocityZ = maxVelocity * Math.Sign(distance.Z);
-        movingDistance = velocityZ * deltaTime;
+        var movingDistance = velocityZ * deltaTime;
 
         if (Math.Abs(distance.Z) >= Math.Abs(movingDistance))
         {
             position.Z += movingDistance;
             gimmick.Vel = gimmick.Vel with { Z = velocityZ };
+            gimmick.IsMoving = true;
         }
         else
         {
             position.Z = target.Z;
             gimmick.Vel = Vector3.Zero;
+            gimmick.IsMoving = false;
         }
     }
 }

@@ -12,8 +12,7 @@ public class GimmickMovementElevator(Gimmick owner) : GimmickMovementHandler(own
         base.Tick(delta);
 
         var deltaTime = (float)delta.TotalSeconds;
-        const float maxVelocity = 4.5f;
-        var movingDistance = deltaTime * 0.5f;
+        const float MaxVelocity = 4.5f;
 
         var position = owner.Transform.World.Position;
         var velocityZ = owner.Vel.Z;
@@ -22,31 +21,26 @@ public class GimmickMovementElevator(Gimmick owner) : GimmickMovementHandler(own
         var topTarget = position with { Z = owner.Spawner.TopZ };
         var bottomTarget = position with { Z = owner.Spawner.BottomZ };
 
-        var isMovingDown = owner.moveDown;
+        var isMovingDown = owner.MoveDown;
         var isInMiddleZ = owner.Spawner.MiddleZ > 0;
 
         if (isInMiddleZ)
         {
             if (position.Z < owner.Spawner.MiddleZ && owner.Vel.Z >= 0 && !isMovingDown)
-                owner.MoveAlongZAxis(owner, ref position, middleTarget, maxVelocity, deltaTime, movingDistance, ref velocityZ, ref isMovingDown);
+                owner.MoveAlongZAxis(owner, ref position, middleTarget, MaxVelocity, deltaTime, ref velocityZ, ref isMovingDown);
             else if (position.Z < owner.Spawner.TopZ && owner.Vel.Z >= 0 && !isMovingDown)
-                owner.MoveAlongZAxis(owner, ref position, topTarget, maxVelocity, deltaTime, movingDistance, ref velocityZ,
-                    ref isMovingDown);
+                owner.MoveAlongZAxis(owner, ref position, topTarget, MaxVelocity, deltaTime, ref velocityZ, ref isMovingDown);
             else if (position.Z > owner.Spawner.MiddleZ && owner.Vel.Z <= 0 && isMovingDown)
-                owner.MoveAlongZAxis(owner, ref position, middleTarget, maxVelocity, deltaTime, movingDistance,
-                    ref velocityZ, ref isMovingDown);
+                owner.MoveAlongZAxis(owner, ref position, middleTarget, MaxVelocity, deltaTime, ref velocityZ, ref isMovingDown);
             else
-                owner.MoveAlongZAxis(owner, ref position, bottomTarget, maxVelocity, deltaTime, movingDistance,
-                    ref velocityZ, ref isMovingDown);
+                owner.MoveAlongZAxis(owner, ref position, bottomTarget, MaxVelocity, deltaTime, ref velocityZ, ref isMovingDown);
         }
         else
         {
             if (position.Z < owner.Spawner.TopZ && owner.Vel.Z >= 0)
-                owner.MoveAlongZAxis(owner, ref position, topTarget, maxVelocity, deltaTime, movingDistance, ref velocityZ,
-                    ref isMovingDown);
+                owner.MoveAlongZAxis(owner, ref position, topTarget, MaxVelocity, deltaTime, ref velocityZ, ref isMovingDown);
             else
-                owner.MoveAlongZAxis(owner, ref position, bottomTarget, maxVelocity, deltaTime, movingDistance,
-                    ref velocityZ, ref isMovingDown);
+                owner.MoveAlongZAxis(owner, ref position, bottomTarget, MaxVelocity, deltaTime, ref velocityZ, ref isMovingDown);
         }
 
         owner.Transform.Local.SetHeight(position.Z);
@@ -55,12 +49,17 @@ public class GimmickMovementElevator(Gimmick owner) : GimmickMovementHandler(own
     public override void AfterMove(TimeSpan delta, Vector3 deltaPosition)
     {
         base.AfterMove(delta, deltaPosition);
-        if (deltaPosition.Length() > 0.01f)
+        if (owner.IsMoving)
         {
             return;
         }
 
         owner.WaitTime = DateTime.UtcNow.AddSeconds(owner.Spawner.WaitTime);
-        owner.moveDown = !owner.moveDown;
+        if (owner.LastPos.Z > owner.Spawner.BottomZ && owner.MoveDown)
+            owner.MoveDown = true;
+        else if (owner.LastPos.Z < owner.Spawner.TopZ && !owner.MoveDown)
+            owner.MoveDown = false;
+        else
+            owner.MoveDown = !owner.MoveDown;
     }
 }
