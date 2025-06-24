@@ -1,39 +1,153 @@
 ﻿using System;
 
-using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units.Movements;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 
+/// <summary>
+/// Represents the behavior of an NPC when holding its position.
+/// Handles skill usage, aggression checks, and following the nearest NPC if needed.
+/// </summary>
 public class HoldPositionBehavior : BaseCombatBehavior
 {
-    private bool _enter;
+    private const float MinimumTickInterval = 0.1f; // 100ms between ticks
+    private const float SkillCheckInterval = 1.0f; // 1 second between skill checks
+
+    private DateTime _lastTick;
+    private DateTime _lastSkillCheck;
+    private bool _isInitialized;
+    private bool _isFollowingNpc;
 
     public override void Enter()
     {
+        if (!ValidateEnterState())
+            return;
+        InitializeHoldPosition();
+        _isInitialized = true;
+        //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered hold position state");
+    }
+
+    private bool ValidateEnterState()
+    {
+        if (Ai?.Owner == null)
+        {
+            Logger.Warn($"HoldPositionBehavior.Enter: Ai or Owner is null");
+            return false;
+        }
+        return true;
+    }
+
+    private void InitializeHoldPosition()
+    {
+        // Stop all current actions
         Ai.Owner.InterruptSkills();
         Ai.Owner.StopMovement();
+        // Set stance and alertness
         Ai.Owner.CurrentGameStance = GameStanceType.Relaxed;
         Ai.Owner.CurrentAlertness = MoveTypeAlertness.Idle;
-        _enter = true;
+        // Initialize timers and state
+        _lastTick = DateTime.UtcNow;
+        _lastSkillCheck = DateTime.UtcNow;
+        _isFollowingNpc = false;
     }
+
     public override void Tick(TimeSpan delta)
     {
-        if (!_enter)
-            return; // not initialized yet Enter()
+        if (!ValidateTickState())
+            return;
+        if (!ThrottleTick())
+            return;
+        ProcessTickActions(delta);
+    }
 
-        var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
-        PickSkillAndUseIt(SkillUseConditionKind.InIdle, Ai.Owner, targetDist);
+    private bool ValidateTickState()
+    {
+        if (!_isInitialized)
+        {
+            Logger.Warn($"HoldPositionBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
+            return false;
+        }
+        if (Ai?.Owner == null)
+        {
+            Logger.Warn($"HoldPositionBehavior.Tick called with null Ai or Owner");
+            return false;
+        }
+        return true;
+    }
 
-        CheckAggression();
-        CheckAlert();
-        Ai.DoFollowDefaultNearestNpc();
+    private bool ThrottleTick()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
+            return false;
+        _lastTick = now;
+        return true;
+    }
+
+    private void ProcessTickActions(TimeSpan delta)
+    {
+        // Handle skill usage if possible
+        ProcessSkillUsage();
+        // Check for aggression or alert state
+        if (CheckCombatStates())
+            return;
+        // If not following an NPC, try to follow the nearest one
+        if (!_isFollowingNpc)
+        {
+            ProcessNpcFollowing();
+        }
+    }
+
+    private void ProcessSkillUsage()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastSkillCheck).TotalSeconds < SkillCheckInterval)
+            return;
+        _lastSkillCheck = now;
+        if (Ai.Owner.CurrentTarget != null)
+        {
+            var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
+            PickSkillAndUseIt(SkillUseConditionKind.InIdle, Ai.Owner, targetDist);
+        }
+    }
+
+    private bool CheckCombatStates()
+    {
+        // Check for aggression
+        if (CheckAggression())
+        {
+            _isFollowingNpc = false;
+            //Logger.Debug($"Unit {Ai.Owner.ObjId} switched to aggression state");
+            return true;
+        }
+        // Check for alert state
+        if (CheckAlert())
+        {
+            _isFollowingNpc = false;
+            //Logger.Debug($"Unit {Ai.Owner.ObjId} switched to alert state");
+            return true;
+        }
+        return false;
+    }
+
+    private void ProcessNpcFollowing()
+    {
+        // Try to follow the nearest NPC if possible
+        if (Ai.DoFollowDefaultNearestNpc())
+        {
+            _isFollowingNpc = true;
+            //Logger.Debug($"Unit {Ai.Owner.ObjId} started following the nearest NPC");
+        }
     }
 
     public override void Exit()
     {
-        _enter = false;
+        if (!_isInitialized)
+            return;
+        //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exited hold position state");
+        _isInitialized = false;
+        _isFollowingNpc = false;
     }
 }

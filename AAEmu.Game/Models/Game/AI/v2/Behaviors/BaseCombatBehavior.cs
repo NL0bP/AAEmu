@@ -10,440 +10,501 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Game.AI.v2.Params;
 using AAEmu.Game.Models.Game.AI.v2.Params.Almighty;
-using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Units;
-using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Utils;
+
 using Point = AAEmu.Game.Models.Game.AI.AStar.Point;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Behaviors;
 
+/// <summary>
+/// Base class for combat-related AI behaviors. Provides common functionality for combat movement,
+/// target selection, and skill usage.
+/// </summary>
 public abstract class BaseCombatBehavior : Behavior
 {
-    protected bool _strafeDuringDelay;
-    protected string _pipeName;
-    protected uint _phaseType;
-    protected DateTime _combatStartTime;
-    protected Queue<AiSkill> _skillQueue;
+    // Distance and range constants
+    private const float DefaultReturnDistance = 50f;
+    private const float DefaultAbsoluteReturnDistance = 200f;
+    private const float DefaultMeleeAttackRangeAdjustment = 1f;
+    private const float DefaultFlyingHeightAdjustment = 15f;
+
+    // Internal state
+    internal bool _strafeDuringDelay;
+    internal DateTime _combatStartTime;
+    internal Queue<AiSkill> _skillQueue;
+    internal string _pipeName;
+
+    private uint _phaseType;
     private bool _startingSkillAlreadyUsed;
 
-    public void MoveInRange(BaseUnit target, TimeSpan delta)
+    protected BaseCombatBehavior()
     {
-        if (Ai?.Owner == null)
+        _skillQueue = new Queue<AiSkill>();
+        _combatStartTime = DateTime.UtcNow;
+        _delayEnd = DateTime.MinValue;
+    }
+
+    /// <summary>
+    /// Moves the AI owner towards the target while respecting combat conditions and range requirements
+    /// </summary>
+    /// <param name="target">The target unit to move towards</param>
+    /// <param name="delta">Time elapsed since last update</param>
+    protected void MoveInRange(BaseUnit target, TimeSpan delta)
+    {
+        if (!ValidateMoveConditions(target))
             return;
 
-        if (Ai.Owner.Buffs.HasEffectsMatchingCondition(e =>
+        var range = CalculateAttackRange();
+        var currentPosition = Ai.Owner.Transform.Local.ClonePosition();
+        var targetPosition = target.Transform.Local.ClonePosition();
+        var (speed, moveFlags) = CalculateMovementParameters(delta);
+        var distanceToTarget = Ai.Owner.GetDistanceTo(target, true);
+
+        // Ensure the distance to the target is not less than 4 units before moving
+        if (distanceToTarget < 1.5f)
+            return;
+
+        HandleMovement(currentPosition, targetPosition, speed, moveFlags, range, distanceToTarget);
+    }
+
+    private bool ValidateMoveConditions(BaseUnit target)
+    {
+        if (Ai?.Owner == null || target == null)
+            return false;
+
+        if (IsUnitImmobilized())
+            return false;
+
+        if (IsUnitCasting())
+            return false;
+
+        return true;
+    }
+
+    private bool IsUnitImmobilized()
+    {
+        return Ai.Owner.Buffs.HasEffectsMatchingCondition(e =>
                 e.Template.Stun
                 || e.Template.Sleep
                 || e.Template.Root
                 || e.Template.Knockdown
                 || e.Template.Fastened)
-            || Ai.Owner.IsDead)
-        {
-            return;
-        }
+            || Ai.Owner.IsDead
+            || Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle))
+            || Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare));
+    }
 
-        if (Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle)) ||
-            Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare)))
-        {
-            return;
-        }
+    private bool IsUnitCasting()
+    {
+        return (Ai.Owner.ActiveSkillController?.State ?? SkillController.SCState.Ended) == SkillController.SCState.Running;
+    }
 
-        if ((Ai.Owner.ActiveSkillController?.State ?? SkillController.SCState.Ended) == SkillController.SCState.Running)
-            return;
-
-        //Ai.Owner.Template.AttackStartRangeScale * 4,
-        //var range = 2f;// Ai.Owner.Template.AttackStartRangeScale * 6;
+    private float CalculateAttackRange()
+    {
         var range = Ai.Owner.Template.AttackStartRangeScale;
-        if (Ai.Owner.Template.UseRangeMod)
+        if (Ai.Owner.Template.UseRangeMod && _maxWeaponRange != 0)
         {
-            if (_maxWeaponRange != 0)
-                range *= _maxWeaponRange;
+            range *= _maxWeaponRange;
         }
 
+        // Special case adjustment for melee attacks
         if (Ai.Owner.Template.BaseSkillId == 2 && Ai.Owner.Template.Skills.Count == 0 && range <= 4)
         {
-            range -= 1f; // Fix that ID=7927, Plateau Earth Elemental can hit with a melee attack
+            range -= DefaultMeleeAttackRangeAdjustment;
         }
 
-        // TODO take the current coordinates
-        var currentPosition = Ai.Owner.Transform.Local.ClonePosition();
-        // TODO to take the point we're moving to
-        var targetPosition = target.Transform.Local.ClonePosition();
+        return range;
+    }
+
+    private (float speed, byte flags) CalculateMovementParameters(TimeSpan delta)
+    {
         var speed = Ai.GetRealMovementSpeed(Ai.Owner.BaseMoveSpeed);
-        var moveFlags = Ai.GetRealMovementFlags(speed);
+        var flags = Ai.GetRealMovementFlags(speed);
         speed *= delta.Milliseconds / 1000.0;
-        var distanceToTarget = Ai.Owner.GetDistanceTo(target, true);
+        return ((float)speed, flags);
+    }
+
+    private void HandleMovement(Vector3 currentPosition, Vector3 targetPosition, float speed, byte moveFlags, float range, float distanceToTarget)
+    {
         if (AppConfiguration.Instance.World.GeoDataMode && Ai.Owner.Transform.WorldId > 0)
         {
-            // TODO найдем путь к abuser, только если координаты цели изменились
-            if (Ai.PathNode?.pos2 != null && Ai.PathNode != null)
-            {
-                if (!Ai.PathNode.pos2.Equals(new Point(target.Transform.World.Position.X, target.Transform.World.Position.Y, target.Transform.World.Position.Z)))
-                {
-                    var stopWatch = new Stopwatch();
-                    stopWatch.Start();
-                    // TODO найдем путь к abuser
-                    Ai.Owner.FindPath((Unit)target);
-                    stopWatch.Stop();
-                    // Toss warning if it took a long time
-                    if (stopWatch.Elapsed.Ticks >= TimeSpan.TicksPerMillisecond)
-                        Logger.Warn($"FindPath took {stopWatch.Elapsed} for Ai.Owner.ObjId:{Ai.Owner.ObjId}, Owner.TemplateId {Ai.Owner.TemplateId}");
-                    // запомним новые координаты цели
-                    Ai.PathNode.pos2 = new Point(target.Transform.World.Position.X, target.Transform.World.Position.Y, target.Transform.World.Position.Z);
-                }
-            }
-            if (Ai.PathNode != null)
-            {
-                if (Ai.PathNode.findPath.Count > 0 && !Ai.PathNode.findPath[0].Equals(Point.Zero))
-                {
-                    // TODO взять точку к которой движемся
-                    targetPosition = new Vector3(Ai.PathNode.Position.X, Ai.PathNode.Position.Y, Ai.PathNode.Position.Z);
-                    distanceToTarget = MathUtil.CalculateDistance(currentPosition, targetPosition, true);
-                    if (distanceToTarget > range)
-                    {
-                        Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
-                    }
-                    else
-                    {
-                        // TODO взять следующую точку к которой движемся
-                        Ai.PathNode.Current++;
-                        if (Ai.PathNode.Current >= Ai.PathNode.findPath.Count)
-                        {
-                            Ai.Owner.StopMovement();
-                            Ai.PathNode.findPath = [];
-                            return;
-                        }
-
-                        Ai.PathNode.Position = Ai.PathNode.findPath[(int)Ai.PathNode.Current];
-                    }
-                }
-                else
-                {
-                    if (distanceToTarget > range)
-                        Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
-                    else
-                        Ai.Owner.StopMovement();
-                }
-            }
-            else
-            {
-                if (distanceToTarget > range)
-                    Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
-                else
-                    Ai.Owner.StopMovement();
-            }
+            HandleGeoDataMovement(currentPosition, targetPosition, speed, moveFlags, range, distanceToTarget);
         }
         else
         {
-            if (distanceToTarget > range)
-                Ai.Owner.MoveTowards(targetPosition, (float)speed, moveFlags);
-            else
-                Ai.Owner.StopMovement();
+            HandleDirectMovement(targetPosition, speed, moveFlags, range, distanceToTarget);
         }
     }
 
-    protected bool CanStrafe
+    private void HandleGeoDataMovement(Vector3 currentPosition, Vector3 targetPosition, float speed, byte moveFlags, float range, float distanceToTarget)
     {
-        get
+        UpdatePathIfNeeded(targetPosition);
+
+        if (Ai.PathNode?.findPath.Count > 0 && !Ai.PathNode.findPath[0].Equals(Point.Zero))
         {
-            return DateTime.UtcNow > _delayEnd || _strafeDuringDelay;
+            HandlePathMovement(currentPosition, speed, moveFlags, range);
+        }
+        else
+        {
+            HandleDirectMovement(targetPosition, speed, moveFlags, range, distanceToTarget);
         }
     }
 
-    protected bool IsUsingSkill
+    private void UpdatePathIfNeeded(Vector3 targetPosition)
     {
-        get
+        if (Ai.PathNode?.pos2 == null || !Ai.PathNode.pos2.Equals(new Point(targetPosition.X, targetPosition.Y, targetPosition.Z)))
         {
-            return Ai.Owner.SkillTask != null || Ai.Owner.ActivePlotState != null;
+            if (Ai.Owner.CurrentTarget is Unit targetUnit)
+            {
+                var sw = Stopwatch.StartNew();
+                Ai.Owner.FindPath(targetUnit);
+                sw.Stop();
+
+                if (sw.Elapsed.Ticks >= TimeSpan.TicksPerMillisecond)
+                {
+                    Logger.Warn($"FindPath took {sw.Elapsed} for Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId}");
+                }
+            }
+
+            if (Ai.PathNode != null)
+            {
+                Ai.PathNode.pos2 = new Point(targetPosition.X, targetPosition.Y, targetPosition.Z);
+            }
         }
     }
 
+    private void HandlePathMovement(Vector3 currentPosition, float speed, byte moveFlags, float range)
+    {
+        var pathPosition = new Vector3(Ai.PathNode.Position.X, Ai.PathNode.Position.Y, Ai.PathNode.Position.Z);
+        var distanceToPathPoint = MathUtil.CalculateDistance(currentPosition, pathPosition, true);
+
+        if (distanceToPathPoint > range)
+        {
+            Ai.Owner.MoveTowards(pathPosition, speed, moveFlags);
+        }
+        else
+        {
+            AdvanceToNextPathPoint();
+        }
+    }
+
+    private void AdvanceToNextPathPoint()
+    {
+        Ai.PathNode.Current++;
+        if (Ai.PathNode.Current >= Ai.PathNode.findPath.Count)
+        {
+            Ai.Owner.StopMovement();
+            Ai.PathNode.findPath = [];
+            return;
+        }
+
+        Ai.PathNode.Position = Ai.PathNode.findPath[(int)Ai.PathNode.Current];
+    }
+
+    private void HandleDirectMovement(Vector3 targetPosition, float speed, byte moveFlags, float range, float distanceToTarget)
+    {
+        if (distanceToTarget > range)
+        {
+            Ai.Owner.MoveTowards(targetPosition, speed, moveFlags);
+        }
+        else
+        {
+            Ai.Owner.StopMovement();
+        }
+    }
+
+    #region State Properties
+
+    /// <summary>
+    /// Gets whether the unit can strafe based on delay and configuration
+    /// </summary>
+    protected bool CanStrafe => DateTime.UtcNow > _delayEnd || _strafeDuringDelay;
+
+    /// <summary>
+    /// Gets whether the unit is currently using a skill
+    /// </summary>
+    protected bool IsUsingSkill => Ai.Owner.SkillTask != null || Ai.Owner.ActivePlotState != null;
+
+    /// <summary>
+    /// Gets whether the unit can use skills based on current state and conditions
+    /// </summary>
     protected bool CanUseSkill
     {
         get
         {
+            if (Ai?.Owner == null)
+                return false;
+
             if (IsUsingSkill)
                 return false;
-            if ((Ai.Owner?.ActiveSkillController?.State ?? SkillController.SCState.Ended) == SkillController.SCState.Running)
+
+            if ((Ai.Owner.ActiveSkillController?.State ?? SkillController.SCState.Ended) == SkillController.SCState.Running)
                 return false;
-            if (Ai.Owner != null && Ai.Owner.Buffs.HasEffectsMatchingCondition(e => e.Template.Stun || e.Template.Sleep || e.Template.Silence))
+
+            if (Ai.Owner.Buffs.HasEffectsMatchingCondition(e => e.Template.Stun || e.Template.Sleep || e.Template.Silence))
                 return false;
-            return Ai.Owner != null && DateTime.UtcNow >= _delayEnd && !Ai.Owner.IsGlobalCooldowned;
-        }
-    }
 
-    // TODO: Absolute return dist
-    protected bool ShouldReturn
-    {
-        get
-        {
-            var returnDistance = 50f;
-            var absoluteReturnDistance = 200f;
-
-            if (Ai.Owner.Template.ReturnDistance > 0)
-            {
-                returnDistance = Ai.Owner.Template.ReturnDistance;
-            }
-            if (Ai.Owner.Template.AbsoluteReturnDistance > 0)
-            {
-                absoluteReturnDistance = Ai.Owner.Template.AbsoluteReturnDistance;
-            }
-
-            if (Ai.Owner.CurrentTarget == null)
-                return true; // нет цели, возвращаемся
-
-            var distanceToTarget = MathUtil.CalculateDistance(Ai.Owner.Transform.World.Position, Ai.Owner.CurrentTarget.Transform.World.Position, true);
-            var distanceToIdlePosition = MathUtil.CalculateDistance(Ai.Owner.Transform.World.Position, Ai.IdlePosition, true);
-
-            var res = distanceToTarget > returnDistance || distanceToIdlePosition > returnDistance;
-            if (res)
-                res = distanceToIdlePosition <= absoluteReturnDistance; // если больше, то нужен телепорт на место спавна
-            return res;
+            return DateTime.UtcNow >= _delayEnd && !Ai.Owner.IsGlobalCooldowned;
         }
     }
 
     /// <summary>
-    /// Updates Aggro target to the one with the most aggro
+    /// Determines if the unit should return to its idle position based on distance conditions
     /// </summary>
-    /// <returns></returns>
+    protected bool ShouldReturn
+    {
+        get
+        {
+            if (Ai?.Owner == null)
+                return true;
+
+            var returnDistance = Ai.Owner.Template.ReturnDistance > 0 ?
+                Ai.Owner.Template.ReturnDistance : DefaultReturnDistance;
+
+            var absoluteReturnDistance = Ai.Owner.Template.AbsoluteReturnDistance > 0 ?
+                Ai.Owner.Template.AbsoluteReturnDistance : DefaultAbsoluteReturnDistance;
+
+            if (Ai.Owner.CurrentTarget == null)
+                return true;
+
+            var distanceToTarget = Vector3.Distance(Ai.Owner.Transform.World.Position, Ai.Owner.CurrentTarget.Transform.World.Position);
+            var distanceToIdlePosition = Vector3.Distance(Ai.Owner.Transform.World.Position, Ai.IdlePosition);
+
+            return (distanceToTarget > returnDistance || distanceToIdlePosition > returnDistance)
+                && distanceToIdlePosition <= absoluteReturnDistance;
+        }
+    }
+
+    #endregion
+
+    #region Target Management
+
+    /// <summary>
+    /// Updates the current target based on aggro table and visibility
+    /// </summary>
+    /// <returns>True if a valid target was found and set, false otherwise</returns>
     public bool UpdateTarget()
     {
-        // We might want to optimize this somehow.
+        if (Ai?.Owner == null)
+            return false;
+
         var aggroList = Ai.Owner.AggroTable.Values;
-        var abusers = aggroList.OrderByDescending(o => o.TotalAggro).Select(o => o.Owner).ToList();
+        var potentialTargets = aggroList
+            .OrderByDescending(o => o.TotalAggro)
+            .Select(o => o.Owner)
+            .OfType<Unit>()
+            .ToList();
 
-        foreach (var abuser in abusers)
+        foreach (var target in potentialTargets)
         {
-            //Ai.Owner.LookTowards(abuser.Transform.World.Position); // Prevents archers from escaping (they spin around all the time)
-
-            if (AppConfiguration.Instance.World.GeoDataMode && Ai.Owner.Transform.WorldId > 0)
-            {
-                // включена геодата и не основной мир
-                // geodata enabled and not the main world
-                if (Ai.Owner.UnitIsVisible(abuser) && !abuser.IsDead)
-                {
-                    if (Ai.Owner.CurrentAggroTarget != abuser && !Ai.AlreadyTargeted)
-                    {
-                        // TODO найдем путь к abuser
-                        Ai.Owner.FindPath(abuser);
-                    }
-                    Ai.Owner.CurrentAggroTarget = abuser;
-                    Ai.Owner.SetTarget(abuser);
-                    UpdateAggroHelp(abuser);
-
-                    return true;
-                }
-            }
-            else
-            {
-                if (Ai.Owner.UnitIsVisible(abuser) && !abuser.IsDead)
-                {
-                    // check that such a Npc is in the database, there are cases that it is in the game, but not in the database
-                    var currentTarget = abuser.ObjId > 0 ? WorldManager.Instance.GetUnit(abuser.ObjId) : null;
-                    if (currentTarget == null)
-                        continue;
-
-                    Ai.Owner.CurrentAggroTarget = abuser;
-                    Ai.Owner.SetTarget(abuser);
-                    UpdateAggroHelp(abuser);
-                    return true;
-                }
-            }
-            Ai.Owner.ClearAggroOfUnit(abuser);
+            if (ProcessTargetSelection(target))
+                return true;
         }
 
-        // Only remove CurrentTarget is either no unit selected, or if target is already dead
-        if (Ai.Owner.CurrentTarget is not Unit currentTargetUnit)
-        {
-            Ai.Owner.CurrentAggroTarget = null;
-            Ai.Owner.SetTarget(null);
-        }
-        else if ((currentTargetUnit.Hp <= 0) || (currentTargetUnit.IsDead))
-        {
-            Ai.Owner.CurrentAggroTarget = null;
-            Ai.Owner.SetTarget(null);
-        }
-
+        ClearInvalidTarget();
         return false;
     }
 
-    protected void CheckPipeName()
+    private bool ProcessTargetSelection(Unit target)
     {
-        if (_pipeName == "phase_dragon_ground" || _phaseType == 1) // "PHASE_DRAGON_GROUND = 1;"
+        if (!IsValidTarget(target))
+            return false;
+
+        UpdateTargetAndAggro(target);
+        return true;
+    }
+
+    private bool IsValidTarget(Unit target)
+    {
+        if (!Ai.Owner.UnitIsVisible(target) || target.Hp <= 0)
+            return false;
+
+        if (AppConfiguration.Instance.World.GeoDataMode && Ai.Owner.Transform.WorldId > 0)
+            return true;
+
+        return WorldManager.Instance.GetUnit(target.ObjId) != null;
+    }
+
+    private void UpdateTargetAndAggro(Unit target)
+    {
+        if (Ai.Owner.CurrentAggroTarget != target && !Ai.AlreadyTargeted)
         {
-            // try to find Z first in GeoData, and then in HeightMaps, if not found, leave Z as it is
-            var updZ = WorldManager.Instance.GetHeight(Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.Local.Position.X, Ai.Owner.Transform.Local.Position.Y);
-            Ai.Owner.Transform.Local.SetHeight(updZ);
+            if (AppConfiguration.Instance.World.GeoDataMode && Ai.Owner.Transform.WorldId > 0)
+            {
+                Ai.Owner.FindPath(target);
+            }
         }
-        else if (_pipeName == "phase_dragon_fly_hovering" || _phaseType == 2) // "PHASE_DRAGON_HOVERING = 2;"
+
+        Ai.Owner.CurrentAggroTarget = target;
+        Ai.Owner.SetTarget(target);
+        UpdateAggroHelp(target);
+    }
+
+    private void ClearInvalidTarget()
+    {
+        if (Ai.Owner.CurrentTarget is not Unit currentTarget)
         {
-            Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Transform.Local.Position.Z + 15f);
-            Ai.Owner.StopMovement();
+            Ai.Owner.CurrentAggroTarget = null;
+            Ai.Owner.SetTarget(null);
+            return;
         }
-        else if (_pipeName == "phase_dragon_fly_path")
+
+        if (currentTarget.Hp <= 0)
         {
-            Ai.GoToFollowPath();
+            Ai.Owner.CurrentAggroTarget = null;
+            Ai.Owner.SetTarget(null);
         }
     }
 
+    #endregion
+
+    #region Combat State Management
+
+    /// <summary>
+    /// Updates phase-specific behavior based on pipe name
+    /// </summary>
+    protected void CheckPipeName()
+    {
+        switch (_pipeName)
+        {
+            case "phase_dragon_ground" when _phaseType == 1:
+                var groundHeight = WorldManager.Instance.GetHeight(Ai.Owner.Transform.ZoneId,
+                    Ai.Owner.Transform.Local.Position.X,
+                    Ai.Owner.Transform.Local.Position.Y);
+                Ai.Owner.Transform.Local.SetHeight(groundHeight);
+                break;
+
+            case "phase_dragon_fly_hovering" when _phaseType == 2:
+                Ai.Owner.Transform.Local.SetHeight(Ai.Owner.Transform.Local.Position.Z + DefaultFlyingHeightAdjustment);
+                Ai.Owner.StopMovement();
+                break;
+
+            case "phase_dragon_fly_path":
+                Ai.GoToFollowPath();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the skill queue based on available skill lists and parameters
+    /// </summary>
     protected bool RefreshSkillQueue(List<AiSkillList> skillLists, AiParams aiParams)
     {
+        if (!ValidateSkillQueueParameters(skillLists, aiParams))
+            return false;
+
         var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
-        var aiSkillLists = RequestAvailableAiSkillList(skillLists);
-        if (aiSkillLists.Count > 0)
+
+        if (skillLists.Count > 0)
         {
-            // select a set of skills by dice
-            var selectedSkillList = aiSkillLists.RandomElementByWeight(s => s.Dice);
-            if (selectedSkillList != null)
-            {
-                _pipeName = selectedSkillList.PipeName;
-                _phaseType = selectedSkillList.PhaseType;
-                aiParams.RestorationOnReturn = selectedSkillList.Restoration;
-                aiParams.GoReturnState = selectedSkillList.GoReturn;
-
-                Logger.Info($"RefreshSkillQueue: Dice Check: Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, healthRange=[{selectedSkillList.HealthRangeMin}.{selectedSkillList.HealthRangeMax}], timeElapsed={(DateTime.UtcNow - _combatStartTime).TotalSeconds}, timeRange=[{selectedSkillList.TimeRangeStart}.{selectedSkillList.TimeRangeEnd}], skills Count={selectedSkillList.SkillLists.Count}, Dice={selectedSkillList.Dice}");
-
-                // add startAiSkill first to the queue if it is available
-                if (selectedSkillList.StartAiSkills.Count > 0 && !_startingSkillAlreadyUsed)
-                {
-                    foreach (var skill in selectedSkillList.StartAiSkills)
-                    {
-                        if (Ai.Owner.Cooldowns.CheckCooldown(skill.SkillId))
-                        {
-                            continue;
-                        }
-                        Logger.Info($"RefreshSkillQueue: Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, StartAiSkill={skill.SkillId}");
-                        _skillQueue.Enqueue(skill);
-                        _startingSkillAlreadyUsed = true;
-                    }
-                }
-
-                var availableSkillList = RequestAvailableSkillList(selectedSkillList.SkillLists);
-
-                // then add from skillLists
-                var skillList = availableSkillList.RandomElementByWeight(s => s.Dice);
-                if (skillList == null)
-                    return _skillQueue.Count > 0;
-                Logger.Info($"RefreshSkillQueue: Dice Check: Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, healthRange=[{skillList.HealthRangeMin}.{skillList.HealthRangeMax}], timeElapsed={(DateTime.UtcNow - _combatStartTime).TotalSeconds}, timeRange=[{skillList.TimeRangeStart}.{skillList.TimeRangeEnd}], skills Count={skillList.Skills.Count}, Dice={skillList.Dice}");
-
-                foreach (var skill in skillList.Skills)
-                {
-                    if (Ai.Owner.Cooldowns.CheckCooldown(skill.SkillId))
-                    {
-                        continue;
-                    }
-                    var template = SkillManager.Instance.GetSkillTemplate(skill.SkillId);
-                    if (template == null) { continue; }
-                    if (targetDist >= template.MinRange && targetDist <= template.MaxRange || template.TargetType == SkillTargetType.Self)
-                    {
-                        Logger.Info($"RefreshSkillQueue: Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, trgDist={targetDist}, rangeDist=[{template.MinRange}.{template.MaxRange}], skill={skill.SkillId}");
-                        _skillQueue.Enqueue(skill);
-                    }
-                    Logger.Info($"RefreshSkillQueue: Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, skill={skill.SkillId}");
-                }
-            }
-
-            return _skillQueue.Count > 0;
+            return ProcessSkillLists(skillLists, aiParams, targetDist);
         }
 
-        if (Ai.Owner.Template.BaseSkillId == 0) { return false; }
+        return TryUseBaseSkill();
+    }
 
-        var item = new AiSkill();
-        item.SkillId = (uint)Ai.Owner.Template.BaseSkillId;
-        item.Strafe = Ai.Owner.Template.BaseSkillStrafe;
-        item.Delay = Ai.Owner.Template.BaseSkillDelay;
-        Logger.Info($"RefreshSkillQueue: Use BaseSkill: Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, skill={item.SkillId}");
-        _skillQueue.Enqueue(item);
+    private bool ValidateSkillQueueParameters(List<AiSkillList> skillLists, AiParams aiParams)
+    {
+        return skillLists != null && aiParams != null && Ai?.Owner?.CurrentTarget != null;
+    }
+
+    private bool ProcessSkillLists(List<AiSkillList> skillLists, AiParams aiParams, float targetDist)
+    {
+        var selectedSkillList = skillLists.RandomElementByWeight(s => s.Dice);
+        if (selectedSkillList == null)
+            return false;
+
+        UpdateAiParameters(selectedSkillList, aiParams);
+        LogSkillListSelection(selectedSkillList);
+
+        if (ProcessStartingSkills(selectedSkillList))
+            return true;
+
+        return ProcessAvailableSkills(selectedSkillList.SkillLists, targetDist);
+    }
+
+    private void UpdateAiParameters(AiSkillList skillList, AiParams aiParams)
+    {
+        _pipeName = skillList.PipeName;
+        _phaseType = skillList.PhaseType;
+        aiParams.RestorationOnReturn = skillList.Restoration;
+        aiParams.GoReturnState = skillList.GoReturn;
+    }
+
+    private void LogSkillListSelection(AiSkillList skillList)
+    {
+        Logger.Debug($"RefreshSkillQueue: Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, " +
+                    $"HP Range=[{skillList.HealthRangeMin}-{skillList.HealthRangeMax}], " +
+                    $"Time Range=[{skillList.TimeRangeStart}-{skillList.TimeRangeEnd}], " +
+                    $"Skills={skillList.SkillLists.Count}, Dice={skillList.Dice}");
+    }
+
+    private bool ProcessStartingSkills(AiSkillList skillList)
+    {
+        if (skillList.StartAiSkills.Count == 0 || _startingSkillAlreadyUsed)
+            return false;
+
+        foreach (var skill in skillList.StartAiSkills)
+        {
+            if (Ai.Owner.Cooldowns.CheckCooldown(skill.SkillId))
+                continue;
+
+            Logger.Debug($"Unit {Ai.Owner.ObjId} using start skill {skill.SkillId}");
+            _skillQueue.Enqueue(skill);
+            _startingSkillAlreadyUsed = true;
+        }
+
+        return _skillQueue.Count > 0;
+    }
+
+    private bool ProcessAvailableSkills(List<SkillList> skillLists, float targetDist)
+    {
+        var skillList = skillLists.RandomElementByWeight(s => s.Dice);
+        if (skillList == null)
+            return false;
+
+        foreach (var skill in skillList.Skills.Where(skill => IsSkillUsable(skill, targetDist)))
+        {
+            _skillQueue.Enqueue(skill);
+            Logger.Debug($"Unit {Ai.Owner.ObjId} adding skill {skill.SkillId} to queue");
+        }
+
+        return _skillQueue.Count > 0;
+    }
+
+    private bool IsSkillUsable(AiSkill skill, float targetDist)
+    {
+        if (Ai.Owner.Cooldowns.CheckCooldown(skill.SkillId))
+            return false;
+
+        var template = SkillManager.Instance.GetSkillTemplate(skill.SkillId);
+        if (template == null)
+            return false;
+
+        return targetDist >= template.MinRange && targetDist <= template.MaxRange ||
+               template.TargetType == SkillTargetType.Self;
+    }
+
+    private bool TryUseBaseSkill()
+    {
+        if (Ai.Owner.Template.BaseSkillId == 0)
+            return false;
+
+        var baseSkill = new AiSkill
+        {
+            SkillId = (uint)Ai.Owner.Template.BaseSkillId,
+            Strafe = Ai.Owner.Template.BaseSkillStrafe,
+            Delay = Ai.Owner.Template.BaseSkillDelay
+        };
+
+        Logger.Debug($"Unit {Ai.Owner.ObjId} using base skill {baseSkill.SkillId}");
+        _skillQueue.Enqueue(baseSkill);
 
         return true;
     }
 
-    private List<AiSkillList> RequestAvailableAiSkillList(List<AiSkillList> aiSkillLists)
-    {
-        var healthRatio = (int)((float)Ai.Owner.Hp / Ai.Owner.MaxHp * 100);
-
-        var baseList = aiSkillLists.AsEnumerable();
-        var timeElapsed = (DateTime.UtcNow - _combatStartTime).TotalSeconds;
-
-        var availableSkillLists = new List<AiSkillList>();
-        foreach (var s in baseList)
-        {
-            // first, let's select the allowed skills based on life value
-            if ((s.HealthRangeMin == 0 && s.HealthRangeMax == 0) || (s.HealthRangeMin < healthRatio && healthRatio <= s.HealthRangeMax))
-            {
-                Logger.Info($"RequestAvailableSkillList: HealthCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice={s.Dice}");
-
-                // then, select the allowed skills by time
-                if ((s.TimeRangeStart >= 0 && s.TimeRangeEnd > 0) || (s.TimeRangeStart > 0 && s.TimeRangeEnd >= 0))
-                {
-                    if (s.TimeRangeStart <= timeElapsed && s.TimeRangeEnd == 0)
-                    {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
-
-                        availableSkillLists.Add(s);
-                    }
-                    else if (s.TimeRangeStart <= timeElapsed && timeElapsed <= s.TimeRangeEnd)
-                    {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
-
-                        availableSkillLists.Add(s);
-                    }
-                }
-                else if (s.TimeRangeStart == 0 && s.TimeRangeEnd == 0)
-                {
-                    Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
-
-                    availableSkillLists.Add(s);
-                }
-            }
-        }
-
-        return availableSkillLists;
-    }
-
-    private List<SkillList> RequestAvailableSkillList(List<SkillList> skillLists)
-    {
-        var healthRatio = (int)((float)Ai.Owner.Hp / Ai.Owner.MaxHp * 100);
-
-        var baseList = skillLists.AsEnumerable();
-        var timeElapsed = (DateTime.UtcNow - _combatStartTime).TotalSeconds;
-
-        var availableSkillLists = new List<SkillList>();
-        foreach (var s in baseList)
-        {
-            // first, let's select the allowed skills based on life value
-            if ((s.HealthRangeMin == 0 && s.HealthRangeMax == 0) || (s.HealthRangeMin < healthRatio && healthRatio <= s.HealthRangeMax))
-            {
-                Logger.Info($"RequestAvailableSkillList: HealthCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice={s.Dice}");
-
-                // then, select the allowed skills by time
-                if ((s.TimeRangeStart >= 0 && s.TimeRangeEnd > 0) || (s.TimeRangeStart > 0 && s.TimeRangeEnd >= 0))
-                {
-                    if (s.TimeRangeStart <= timeElapsed && s.TimeRangeEnd == 0)
-                    {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
-
-                        availableSkillLists.Add(s);
-                    }
-                    else if (s.TimeRangeStart <= timeElapsed && timeElapsed <= s.TimeRangeEnd)
-                    {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
-
-                        availableSkillLists.Add(s);
-                    }
-                }
-                else if (s.TimeRangeStart == 0 && s.TimeRangeEnd == 0)
-                {
-                    Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
-
-                    availableSkillLists.Add(s);
-                }
-            }
-        }
-
-        return availableSkillLists;
-    }
+    #endregion
 }

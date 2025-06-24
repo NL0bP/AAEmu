@@ -19,56 +19,62 @@ using NLog;
 namespace AAEmu.Game.Models.Game.AI.v2.Framework
 {
     /// <summary>
-    /// This is the basics of a unit's AI: The state machine. It also carries data about which unit owns it
+    /// Represents the core AI state machine for an NPC.
+    /// Handles behavior transitions, movement, targeting, and command execution.
     /// </summary>
     public abstract class NpcAi
     {
-        private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+        // Behavior and state management
+        private readonly Dictionary<BehaviorKind, Behavior> _behaviors;
+        private readonly Dictionary<Behavior, List<Transition>> _transitions;
+        private Behavior _currentBehavior;
+        private Behavior _defaultBehavior;
+
+        // Alert state timing
+        internal DateTime _nextAlertCheckTime = DateTime.MinValue;
+        internal DateTime _alertEndTime = DateTime.MinValue;
+
+        // Core properties
         public bool ShouldTick { get; set; }
         public bool AlreadyTargeted { get; set; }
-
         public Npc Owner { get; init; }
         public Vector3 IdlePosition { get; set; }
         public Vector3 HomePosition { get; set; }
         public AiParams Param { get; set; }
         public PathNode PathNode { get; set; }
 
-        private readonly Dictionary<BehaviorKind, Behavior> _behaviors;
-        private readonly Dictionary<Behavior, List<Transition>> _transitions;
-        private Behavior _currentBehavior;
-        private Behavior _defaultBehavior;
-        public DateTime _nextAlertCheckTime = DateTime.MinValue;
-        public DateTime _alertEndTime = DateTime.MinValue;
-
-        #region ai_commands
+        #region AI Commands Management
         /// <summary>
-        /// A list of AiCommands that should take priority over any other behavior
+        /// Queue of AI commands that take priority over normal behaviors
         /// </summary>
         public Queue<AiCommands> AiCommandsQueue { get; set; } = new();
 
         /// <summary>
-        /// Currently executing command
+        /// Currently executing AI command
         /// </summary>
         public AiCommands AiCurrentCommand { get; set; }
 
         /// <summary>
-        /// Time that AiCurrentCommand started
+        /// Timing information for current command execution
         /// </summary>
         public DateTime AiCurrentCommandStartTime { get; set; } = DateTime.MinValue;
         public TimeSpan AiCurrentCommandRunTime { get; set; } = TimeSpan.Zero;
-        #endregion ai_commands
+        #endregion
 
+        #region Movement and Path Management
         public AiPathHandler PathHandler { get; set; }
         public Unit AiFollowUnitObj { get; set; }
 
-        // Persistent arguments for AiCommands queue
+        // Persistent command arguments
         public string AiFileName { get; set; } = string.Empty;
         public string AiFileName2 { get; set; } = string.Empty;
         public uint AiSkillId { get; set; }
         public uint AiTimeOut { get; set; }
+        #endregion
 
-        public NpcAi()
+        protected NpcAi()
         {
             _behaviors = new Dictionary<BehaviorKind, Behavior>();
             _transitions = new Dictionary<Behavior, List<Transition>>();
@@ -76,30 +82,41 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             PathHandler = new AiPathHandler(this);
         }
 
+        /// <summary>
+        /// Initializes the AI state machine and starts its operation
+        /// </summary>
         public void Start()
         {
             Build();
-            CheckValid();
-            // GoToSpawn();
+            ValidateBehaviors();
         }
 
+        /// <summary>
+        /// Builds the state machine structure. Must be implemented by derived classes.
+        /// </summary>
         protected abstract void Build();
 
-        private void CheckValid()
+        /// <summary>
+        /// Validates all behavior transitions to ensure consistency
+        /// </summary>
+        private void ValidateBehaviors()
         {
-            // обход всех переходов без LINQ для минимизации затрат на аллокацию
             foreach (var transitions in _transitions.Values)
             {
                 foreach (var transition in transitions)
                 {
                     if (!_behaviors.ContainsKey(transition.Kind))
                     {
-                        Logger.Error($"Transition is invalid. Type {transition.Kind.GetType().Name} missing, while used in transition on {transition.On}");
+                        Logger.Error($"Invalid transition: Type {transition.Kind} missing, used in transition on {transition.On}");
                     }
                 }
             }
         }
 
+        #region Behavior Management
+        /// <summary>
+        /// Adds a new behavior to the state machine
+        /// </summary>
         protected Behavior AddBehavior(BehaviorKind kind, Behavior behavior)
         {
             behavior.Ai = this;
@@ -107,32 +124,44 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             return behavior;
         }
 
+        /// <summary>
+        /// Gets the currently active behavior
+        /// </summary>
         public Behavior GetCurrentBehavior() => _currentBehavior;
 
+        /// <summary>
+        /// Gets a behavior by its kind
+        /// </summary>
         private Behavior GetBehavior(BehaviorKind kind) => _behaviors.GetValueOrDefault(kind);
 
+        /// <summary>
+        /// Changes the current behavior to a new one
+        /// </summary>
         private void SetCurrentBehavior(Behavior behavior)
         {
-            Logger.Trace(
-                $"Npc {Owner.TemplateId}:{Owner.ObjId} leaving behavior {_currentBehavior?.GetType().Name ?? "none"}, Entering behavior {behavior?.GetType().Name ?? "none"}");
+            Logger.Trace($"NPC {Owner.TemplateId}:{Owner.ObjId} transitioning from {_currentBehavior?.GetType().Name ?? "none"} to {behavior?.GetType().Name ?? "none"}");
             _currentBehavior?.Exit();
             _currentBehavior = behavior;
             _currentBehavior?.Enter();
         }
 
+        /// <summary>
+        /// Changes the current behavior to one specified by kind
+        /// </summary>
         protected void SetCurrentBehavior(BehaviorKind kind)
         {
             if (!_behaviors.ContainsKey(kind))
             {
-                Logger.Trace(
-                    $"Trying to set Npc {Owner.TemplateId}:{Owner.ObjId} current behavior, but it is not valid. Missing behavior: {kind}");
+                Logger.Trace($"Cannot set behavior for NPC {Owner.TemplateId}:{Owner.ObjId}, missing behavior: {kind}");
                 return;
             }
-
-            Logger.Trace($"Set Npc {Owner.TemplateId}:{Owner.ObjId} current behavior: {kind}");
+            Logger.Trace($"Setting NPC {Owner.TemplateId}:{Owner.ObjId} behavior to: {kind}");
             SetCurrentBehavior(_behaviors[kind]);
         }
 
+        /// <summary>
+        /// Adds a transition between behaviors
+        /// </summary>
         public Behavior AddTransition(Behavior source, Transition target)
         {
             if (!_transitions.ContainsKey(source))
@@ -140,84 +169,90 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             _transitions[source].Add(target);
             return source;
         }
+        #endregion
 
-        // Вычисляемое свойство вместо метода, чтобы сделать код более декларативным
+        #region Update and State Management
+        /// <summary>
+        /// Whether the AI has any persistent tasks to execute
+        /// </summary>
         private bool HasPersistentAi => PathHandler.AiPathPoints.Count > 0 ||
-                                          PathHandler.AiPathPointsRemaining.Count > 0 ||
-                                          AiFollowUnitObj != null ||
-                                          AiCommandsQueue.Count > 0;
+                                       PathHandler.AiPathPointsRemaining.Count > 0 ||
+                                       AiFollowUnitObj != null ||
+                                       AiCommandsQueue.Count > 0;
 
+        /// <summary>
+        /// Updates the AI state machine
+        /// </summary>
         public void Tick(TimeSpan delta)
         {
-            var owner = Owner;
-            if (owner == null)
+            if (!ValidateTickState())
                 return;
 
-            var region = owner.Region;
-
-            if (HasPersistentAi || (region?.HasPlayerActivity() ?? false))
+            if (HasPersistentAi || (Owner.Region?.HasPlayerActivity() ?? false))
             {
-                _currentBehavior?.Tick(delta);
-
-                var aggroTable = owner.AggroTable;
-                if (aggroTable != null)
-                {
-                    if (aggroTable.Count <= 0)
-                    {
-                        if (owner.IsDead || GetCurrentBehavior() is DeadBehavior)
-                            return;
-
-                        OnNoAggroTarget();
-                        return;
-                    }
-
-                    List<Unit> toRemove = null;
-                    foreach (var pair in aggroTable)
-                    {
-                        var aggro = pair.Value;
-                        if (aggro.Owner.Buffs.CheckBuffTag((uint)TagsEnum.NoFight) ||
-                            aggro.Owner.Buffs.CheckBuffTag((uint)TagsEnum.Returning) ||
-                            !owner.CanAttack(aggro.Owner))
-                        {
-                            toRemove ??= new List<Unit>(aggroTable.Count / 2);
-                            toRemove.Add(aggro.Owner);
-                        }
-                    }
-
-                    if (toRemove != null)
-                    {
-                        foreach (var unit in toRemove)
-                            owner.ClearAggroOfUnit(unit);
-                    }
-                }
+                ProcessTick(delta);
             }
         }
 
-        public void StopAi()
+        private bool ValidateTickState()
         {
-            if (Owner == null)
-                return;
-            SetCurrentBehavior(BehaviorKind.Idle);
-            PathHandler.AiPathPoints.Clear();
-            PathHandler.AiPathPointsRemaining.Clear();
-            AiFollowUnitObj = null;
-            AiCommandsQueue.Clear();
+            return Owner != null && Owner.Region != null;
         }
 
+        private void ProcessTick(TimeSpan delta)
+        {
+            _currentBehavior?.Tick(delta);
+
+            if (Owner.AggroTable == null)
+                return;
+
+            ProcessAggroTable();
+        }
+
+        private void ProcessAggroTable()
+        {
+            if (Owner.AggroTable.Count <= 0)
+            {
+                if (Owner.IsDead || GetCurrentBehavior() is DeadBehavior)
+                    return;
+
+                OnNoAggroTarget();
+                return;
+            }
+
+            List<Unit> toRemove = null;
+            foreach (var pair in Owner.AggroTable)
+            {
+                var aggro = pair.Value;
+                if (ShouldRemoveAggro(aggro.Owner))
+                {
+                    toRemove ??= new List<Unit>(Owner.AggroTable.Count / 2);
+                    toRemove.Add(aggro.Owner);
+                }
+            }
+
+            if (toRemove != null)
+            {
+                foreach (var unit in toRemove)
+                    Owner.ClearAggroOfUnit(unit);
+            }
+        }
+
+        private bool ShouldRemoveAggro(Unit unit)
+        {
+            return unit.Buffs.CheckBuffTag((uint)TagsEnum.NoFight) ||
+                   unit.Buffs.CheckBuffTag((uint)TagsEnum.Returning) ||
+                   !Owner.CanAttack(unit);
+        }
+        #endregion
+
+        #region State Transitions
         private void Transition(TransitionEvent on)
         {
             if (!_transitions.TryGetValue(_currentBehavior, out var transitionList))
                 return;
 
-            Transition foundTransition = null;
-            foreach (var t in transitionList)
-            {
-                if (t.On == on)
-                {
-                    foundTransition = t;
-                    break;
-                }
-            }
+            var foundTransition = transitionList.Find(t => t.On == on);
             if (foundTransition == null)
                 return;
 
@@ -225,103 +260,80 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             SetCurrentBehavior(newBehavior);
         }
 
-        #region Events
-
-        public void OnNoAggroTarget()
-        {
-            Transition(TransitionEvent.OnNoAggroTarget);
-        }
-
-        public void OnAggroTargetChanged()
-        {
-            Transition(TransitionEvent.OnAggroTargetChanged);
-        }
-
-        #endregion
-
-        #region Go to X
-
-        public virtual void GoToSpawn()
-        {
-            SetCurrentBehavior(BehaviorKind.Spawning);
-        }
-
-        public virtual void GoToIdle()
-        {
-            SetCurrentBehavior(BehaviorKind.Idle);
-        }
-
-        public virtual void GoToRunCommandSet()
-        {
-            SetCurrentBehavior(BehaviorKind.RunCommandSet);
-        }
-
-        public virtual void GoToTalk()
-        {
-            SetCurrentBehavior(BehaviorKind.Talk);
-        }
-
-        public virtual void GoToAlert()
-        {
-            SetCurrentBehavior(BehaviorKind.Alert);
-        }
-
-        public virtual void GoToCombat()
-        {
-            SetCurrentBehavior(BehaviorKind.Attack);
-        }
-
-        public virtual void GoToFollowPath()
-        {
-            SetCurrentBehavior(BehaviorKind.FollowPath);
-        }
-
-        public virtual void GoToFollowUnit()
-        {
-            SetCurrentBehavior(BehaviorKind.FollowUnit);
-        }
-
-        public virtual void GoToReturn()
-        {
-            SetCurrentBehavior(BehaviorKind.ReturnState);
-        }
-
-        public virtual void GoToDead()
-        {
-            SetCurrentBehavior(BehaviorKind.Dead);
-        }
-
-        public virtual void GoToDespawn()
-        {
-            SetCurrentBehavior(BehaviorKind.Despawning);
-        }
-
-        public virtual void GoToDefaultBehavior()
-        {
-            if (_defaultBehavior != null)
-                SetCurrentBehavior(_defaultBehavior);
-        }
+        #region Event Handlers
+        /// <summary>
+        /// Called when NPC loses all aggro targets
+        /// </summary>
+        public void OnNoAggroTarget() => Transition(TransitionEvent.OnNoAggroTarget);
 
         /// <summary>
-        /// Adds a list of AI commands to the execution Queue and goes to the RunCommandSet behavior if there are items in the queue
+        /// Called when NPC's aggro target changes
         /// </summary>
-        /// <param name="aiCommandsList">List of commands</param>
-        /// <param name="addOnly">If true, will not go to the RunCommandSet behavior</param>
+        public void OnAggroTargetChanged() => Transition(TransitionEvent.OnAggroTargetChanged);
+        #endregion
+
+        #region State Transition Methods
+        public virtual void GoToSpawn() => SetCurrentBehavior(BehaviorKind.Spawning);
+        public virtual void GoToIdle() => SetCurrentBehavior(BehaviorKind.Idle);
+        public virtual void GoToRunCommandSet() => SetCurrentBehavior(BehaviorKind.RunCommandSet);
+        public virtual void GoToTalk() => SetCurrentBehavior(BehaviorKind.Talk);
+        public virtual void GoToAlert() => SetCurrentBehavior(BehaviorKind.Alert);
+        public virtual void GoToCombat() => SetCurrentBehavior(BehaviorKind.Attack);
+        public virtual void GoToFollowPath() => SetCurrentBehavior(BehaviorKind.FollowPath);
+        public virtual void GoToFollowUnit() => SetCurrentBehavior(BehaviorKind.FollowUnit);
+        public virtual void GoToReturn() => SetCurrentBehavior(BehaviorKind.ReturnState);
+        public virtual void GoToDead() => SetCurrentBehavior(BehaviorKind.Dead);
+        public virtual void GoToDespawn() => SetCurrentBehavior(BehaviorKind.Despawning);
+        public virtual void GoToDefaultBehavior() => SetCurrentBehavior(_defaultBehavior);
+        public virtual void GoToDummy() => SetCurrentBehavior(BehaviorKind.Dummy);
+        #endregion
+        #endregion
+
+        #region Command and Path Management
+        /// <summary>
+        /// Enqueues AI commands for execution
+        /// </summary>
+        /// <param name="aiCommandsList">Commands to execute</param>
+        /// <param name="addOnly">If true, won't switch to RunCommandSet behavior</param>
         public void EnqueueAiCommands(IEnumerable<AiCommands> aiCommandsList, bool addOnly = false)
         {
             foreach (var aiCommand in aiCommandsList)
                 AiCommandsQueue.Enqueue(aiCommand);
-            if (addOnly)
-                return;
-            if (AiCommandsQueue.Count > 0)
+
+            if (!addOnly && AiCommandsQueue.Count > 0)
                 GoToRunCommandSet();
         }
 
-        #endregion
+        /// <summary>
+        /// Loads AI path points from a file
+        /// </summary>
+        public bool LoadAiPathPoints(string aiPathFileName, bool addToQueueOnly)
+        {
+            var points = AiPathsManager.Instance.LoadAiPathPoints(aiPathFileName);
+            if (points.Count <= 0)
+                return false;
+
+            ProcessLoadedPathPoints(points, addToQueueOnly);
+            return true;
+        }
 
         /// <summary>
-        /// Extracted method for processing loaded path points.
+        /// Asynchronously loads AI path points from a file
         /// </summary>
+        public async Task<bool> LoadAiPathPointsAsync(string aiPathFileName, bool addToQueueOnly, CancellationToken cancellationToken = default)
+        {
+            var points = await Task.Run(() => AiPathsManager.Instance.LoadAiPathPoints(aiPathFileName), cancellationToken)
+                                  .ConfigureAwait(false);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (points.Count <= 0)
+                return false;
+
+            ProcessLoadedPathPoints(points, addToQueueOnly);
+            return true;
+        }
+
         private void ProcessLoadedPathPoints(List<AiPathPoint> points, bool addToQueueOnly)
         {
             if (!addToQueueOnly)
@@ -340,31 +352,12 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
                     remainingQueue.Enqueue(point);
             }
         }
+        #endregion
 
-        public bool LoadAiPathPoints(string aiPathFileName, bool addToQueueOnly)
-        {
-            var points = AiPathsManager.Instance.LoadAiPathPoints(aiPathFileName);
-            if (points.Count <= 0)
-                return false;
-
-            ProcessLoadedPathPoints(points, addToQueueOnly);
-            return true;
-        }
-
-        public async Task<bool> LoadAiPathPointsAsync(string aiPathFileName, bool addToQueueOnly, CancellationToken cancellationToken = default)
-        {
-            var points = await Task.Run(() => AiPathsManager.Instance.LoadAiPathPoints(aiPathFileName), cancellationToken)
-                                  .ConfigureAwait(false);
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (points.Count <= 0)
-                return false;
-
-            ProcessLoadedPathPoints(points, addToQueueOnly);
-            return true;
-        }
-
+        #region Movement and Following
+        /// <summary>
+        /// Attempts to follow the default NPC type specified in the spawner
+        /// </summary>
         public bool DoFollowDefaultNearestNpc()
         {
             if (Owner.Spawner?.FollowNpc > 0)
@@ -374,6 +367,9 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             return false;
         }
 
+        /// <summary>
+        /// Attempts to follow the nearest NPC of a specific type within range
+        /// </summary>
         public bool DoFollowNearestNpc(uint followNpc, float maxRange)
         {
             var maxRangeSquared = maxRange * maxRange;
@@ -385,6 +381,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             {
                 if (npc.TemplateId != followNpc)
                     continue;
+
                 var npcPosition = npc.Transform.World.Position;
                 var distanceSquared = Vector3.DistanceSquared(npcPosition, myPosition);
                 if (distanceSquared < closestDistanceSquared)
@@ -404,33 +401,51 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
             return false;
         }
 
+        /// <summary>
+        /// Calculates real movement speed including bonuses
+        /// </summary>
         public double GetRealMovementSpeed(double baseMoveSpeed)
         {
             var speedMul = (Owner.CalculateWithBonuses(0, UnitAttribute.MoveSpeedMul) / 1000.0) + 1.0;
             if (Math.Abs(speedMul - 1.0) > double.Epsilon)
                 baseMoveSpeed *= speedMul;
-
             return baseMoveSpeed;
         }
 
+        /// <summary>
+        /// Gets movement flags based on speed
+        /// </summary>
         public byte GetRealMovementFlags(double moveSpeed)
         {
             return (byte)(moveSpeed < 0.1 ? 3 : moveSpeed < 2.0 ? 5 : 4);
         }
+        #endregion
 
-        public virtual void GoToDummy()
-        {
-            SetCurrentBehavior(BehaviorKind.Dummy);
-        }
+        #region Behavior Information
+        /// <summary>
+        /// Gets all behaviors registered in the AI
+        /// </summary>
+        public Dictionary<BehaviorKind, Behavior> GetAiBehaviorList() => _behaviors;
 
-        public Dictionary<BehaviorKind, Behavior> GetAiBehaviorList()
-        {
-            return _behaviors;
-        }
+        /// <summary>
+        /// Sets the default behavior to return to
+        /// </summary>
+        public void SetDefaultBehavior(Behavior behavior) => _defaultBehavior = behavior;
 
-        public void SetDefaultBehavior(Behavior behavior)
+        /// <summary>
+        /// Stops all AI activity and returns to idle
+        /// </summary>
+        public void StopAi()
         {
-            _defaultBehavior = behavior;
+            if (Owner == null)
+                return;
+
+            SetCurrentBehavior(BehaviorKind.Idle);
+            PathHandler.AiPathPoints.Clear();
+            PathHandler.AiPathPointsRemaining.Clear();
+            AiFollowUnitObj = null;
+            AiCommandsQueue.Clear();
         }
+        #endregion
     }
 }

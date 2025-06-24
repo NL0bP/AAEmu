@@ -14,191 +14,256 @@ using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Archer;
 
+/// <summary>
+/// Represents the attack behavior for archer-type NPCs.
+/// Handles combat phases, ranged combat positioning, and skill selection.
+/// </summary>
 public class ArcherAttackBehavior : BaseCombatBehavior
 {
-    public string Phase { get; set; }
-    public int MakeAGapCount { get; set; }
-    private bool _enter;
+    private const float MinGapDistance = 1.0f;
+    private const float MinimumTickInterval = 0.1f;
+
+    private enum ArcherPhase
+    {
+        Base,
+        TryingMeleeSkill,
+        UsedMeleeSkill,
+        TryingRangedDefSkill,
+        UsedRangedDefSkill,
+        TryingMakeAGapSkill,
+        NeedMakeAGap
+    }
+
+    private ArcherPhase _currentPhase;
+    private int _makeAGapCount;
+    private bool _isInitialized;
+    private DateTime _lastTick;
 
     public override void Enter()
     {
-        /*
-           -- "entity.AI.phase" list
-           --   base
-           --   tryingMeleeSkill
-           --   usedMeleeSkill
-           --   tryingRangedDefSkill
-           --   usedRangedDefSkill
-           --   tryingMakeAGapSkill
-           --   needMakeAGap
-         */
-        Phase = "base";
-        MakeAGapCount = 0;
+        if (!ValidateEnterState())
+            return;
+
+        InitializeCombatState();
+        _isInitialized = true;
+        Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered archer attack state");
+    }
+
+    private bool ValidateEnterState()
+    {
+        if (Ai?.Owner == null)
+        {
+            Logger.Warn($"ArcherAttackBehavior.Enter: Ai or Owner is null");
+            return false;
+        }
+        return true;
+    }
+
+    private void InitializeCombatState()
+    {
+        // Initialize combat state
+        _currentPhase = ArcherPhase.Base;
+        _makeAGapCount = 0;
+        _lastTick = DateTime.UtcNow;
+
+        // Stop current actions and set combat state
         Ai.Owner.InterruptSkills();
         Ai.Owner.CurrentGameStance = GameStanceType.Combat;
         Ai.Owner.CurrentAlertness = MoveTypeAlertness.Combat;
         Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, false), false);
-        
+
+        // Set battle state and trigger events
         Ai.Owner.IsInBattle = true;
         if (Ai.Owner is { } npc)
         {
             npc.Events.OnCombatStarted(this, new OnCombatStartedArgs { Owner = npc, Target = npc });
         }
         Ai.Param = Ai.Owner.Template.AiParams;
-        _enter = true;
     }
 
     public override void Tick(TimeSpan delta)
     {
-        if (!_enter)
-            return; // not initialized yet Enter()
+        if (!ValidateTickState())
+            return;
+        if (!ThrottleTick())
+            return;
 
+        // Ensure we have archer AI parameters
         Ai.Param ??= new ArcherAiParams("");
-
         if (Ai.Param is not ArcherAiParams aiParams)
             return;
 
+        // Update target and check return conditions
         if (!UpdateTarget() || ShouldReturn)
         {
             Ai.OnNoAggroTarget();
             return;
         }
 
-        if (Phase == "needMakeAGap")
+        // Process behavior based on current phase
+        if (_currentPhase == ArcherPhase.NeedMakeAGap)
         {
-            var idlePosition = Ai.IdlePosition;
-            var npcPosition = Ai.Owner.Transform.World.Position;
-            var abuserPosition = Ai.Owner.CurrentTarget.Transform.World.Position;
-
-            var moveSpeed = Ai.GetRealMovementSpeed(Ai.Owner.BaseMoveSpeed);
-            var moveFlags = Ai.GetRealMovementFlags(moveSpeed);
-            moveSpeed *= (delta.Milliseconds / 1000.0);
-            Ai.Owner.MoveTowards(idlePosition, (float)moveSpeed, moveFlags);
-
-            var dist = MathUtil.CalculateDistance(npcPosition, idlePosition, true);
-            var dist2 = MathUtil.CalculateDistance(npcPosition, abuserPosition, true);
-            if (dist < 1.0f || dist2 > aiParams.PreferedCombatDist)
-            {
-                Ai.Owner.StopMovement();
-                MakeAGapCount++;
-                Phase = "tryingRangedDefSkill";
-            }
-            else
-            {
-                return;
-            }
+            HandleMakeAGapPhase(aiParams, delta);
         }
         else
-        if (CanStrafe && !IsUsingSkill)
-            MoveInRange(Ai.Owner.CurrentTarget, delta);
+        {
+            HandleCombatPhase(aiParams, delta);
+        }
+    }
 
+    private bool ValidateTickState()
+    {
+        if (!_isInitialized)
+        {
+            Logger.Warn($"ArcherAttackBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
+            return false;
+        }
+        if (Ai?.Owner == null)
+        {
+            Logger.Warn($"ArcherAttackBehavior.Tick called with null Ai or Owner");
+            return false;
+        }
+        return true;
+    }
+
+    private bool ThrottleTick()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
+            return false;
+        _lastTick = now;
+        return true;
+    }
+
+    private void HandleMakeAGapPhase(ArcherAiParams aiParams, TimeSpan delta)
+    {
+        var idlePosition = Ai.IdlePosition;
+        var npcPosition = Ai.Owner.Transform.World.Position;
+        var targetPosition = Ai.Owner.CurrentTarget.Transform.World.Position;
+
+        // Calculate movement parameters
+        var moveSpeed = Ai.GetRealMovementSpeed(Ai.Owner.BaseMoveSpeed);
+        var moveFlags = Ai.GetRealMovementFlags(moveSpeed);
+        moveSpeed *= delta.Milliseconds / 1000.0;
+
+        // Move towards idle position
+        Ai.Owner.MoveTowards(idlePosition, (float)moveSpeed, moveFlags);
+
+        // Check if we've created enough gap
+        var distanceToIdle = MathUtil.CalculateDistance(npcPosition, idlePosition, true);
+        var distanceToTarget = MathUtil.CalculateDistance(npcPosition, targetPosition, true);
+
+        if (distanceToIdle < MinGapDistance || distanceToTarget > aiParams.PreferedCombatDist)
+        {
+            CompleteGapCreation();
+        }
+    }
+
+    private void CompleteGapCreation()
+    {
+        Ai.Owner.StopMovement();
+        _makeAGapCount++;
+        _currentPhase = ArcherPhase.TryingRangedDefSkill;
+        Logger.Debug($"Unit {Ai.Owner.ObjId} completed gap creation, attempts: {_makeAGapCount}");
+    }
+
+    private void HandleCombatPhase(ArcherAiParams aiParams, TimeSpan delta)
+    {
+        // Handle movement if possible
+        if (CanStrafe && !IsUsingSkill)
+        {
+            MoveInRange(Ai.Owner.CurrentTarget, delta);
+        }
+
+        // Handle skill usage if possible
         if (!CanUseSkill)
             return;
 
-        #region Pick a skill
-
-        // TODO: Get skill list
         _maxWeaponRange = aiParams.PreferedCombatDist;
         var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
         var selectedSkill = PickSkill(RequestAvailableSkills(aiParams, targetDist));
 
-        var skillTemplate = SkillManager.Instance.GetSkillTemplate(selectedSkill);
+        UseSelectedSkill(selectedSkill);
+    }
+
+    private void UseSelectedSkill(uint skillId)
+    {
+        if (skillId == 0)
+            return;
+
+        var skillTemplate = SkillManager.Instance.GetSkillTemplate(skillId);
         if (skillTemplate == null)
             return;
 
-        UseSkill(new Skill(skillTemplate), Ai.Owner.CurrentTarget, skillTemplate.CastingTime); // TODO выбрать правильный delay
-
-        #endregion
+        UseSkill(new Skill(skillTemplate), Ai.Owner.CurrentTarget, skillTemplate.CastingTime);
+        Logger.Debug($"Unit {Ai.Owner.ObjId} using skill {skillId} in phase {_currentPhase}");
     }
 
-    public override void Exit()
+    private List<uint> RequestAvailableSkills(ArcherAiParams aiParams, float targetDist)
     {
-        _enter = false;
-    }
-
-    private void OnUseSkillDone()
-    {
-        switch (Phase)
-        {
-            case "tryingMeleeSkill":
-                Phase = "usedMeleeSkill";
-                break;
-            case "tryingRangedDefSkill":
-                Phase = "usedRangedDefSkill";
-                break;
-            case "tryingMakeAGapSkill":
-                Phase = "needMakeAGap";
-                break;
-            case "needMakeAGap":
-                Phase = "needMakeAGap";
-                break;
-            default:
-                Phase = "base";
-                break;
-        }
-    }
-
-    // OnRequestSkillInfo
-    private List<uint> RequestAvailableSkills(ArcherAiParams aiParams, float trgDist)
-    {
-        var inMeleeAttackRange = trgDist <= aiParams.MeleeAttackRange;
-
-        var baseList = aiParams.CombatSkills;
+        var inMeleeRange = targetDist <= aiParams.MeleeAttackRange;
         var skillList = new List<uint>();
 
-        if (Phase == "usedMeleeSkill")
+        // Handle different phases
+        if (_currentPhase == ArcherPhase.UsedMeleeSkill)
         {
-            var needMakeAGap = inMeleeAttackRange && MakeAGapCount < aiParams.MaxMakeAGapCount;
+            var needMakeAGap = inMeleeRange && _makeAGapCount < aiParams.MaxMakeAGapCount;
             if (needMakeAGap)
             {
-                // skillList = entity.AI.param.combatSkills.makeAGap;
-                foreach (var acs in baseList)
+                foreach (var skill in aiParams.CombatSkills)
                 {
-                    skillList.AddRange(acs.MakeAGap.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
+                    skillList.AddRange(skill.MakeAGap.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
                 }
-                Phase = "tryingMakeAGapSkill";
+                _currentPhase = ArcherPhase.TryingMakeAGapSkill;
             }
             else
             {
-                Phase = "base";
-                // self:OnRequestSkillInfo(entity);    -- call again with phase change ("base")
-                return RequestAvailableSkills(aiParams, trgDist);
+                _currentPhase = ArcherPhase.Base;
             }
         }
-        else if (Phase == "usedRangedDefSkill")
+        else if (_currentPhase == ArcherPhase.UsedRangedDefSkill)
         {
-            //skillList = entity.AI.param.combatSkills.rangedStrong;
-            foreach (var acs in baseList)
+            foreach (var skill in aiParams.CombatSkills)
             {
-                skillList.AddRange(acs.RangedStrong.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
+                skillList.AddRange(skill.RangedStrong.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
             }
         }
 
+        // If no skills selected, pick based on range
         if (skillList.Count == 0)
         {
-            if (inMeleeAttackRange)
+            if (inMeleeRange)
             {
-                // skillList = entity.AI.param.combatSkills.melee;
-                foreach (var acs in baseList)
+                foreach (var skill in aiParams.CombatSkills)
                 {
-                    skillList.AddRange(acs.Melee.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
+                    skillList.AddRange(skill.Melee.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
                 }
-                Phase = "tryingMeleeSkill";
+                _currentPhase = ArcherPhase.TryingMeleeSkill;
             }
             else
             {
-                // skillList = entity.AI.param.combatSkills.rangedDef;
-                foreach (var acs in baseList)
+                foreach (var skill in aiParams.CombatSkills)
                 {
-                    skillList.AddRange(acs.RangedDef.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
+                    skillList.AddRange(skill.RangedDef.Where(skillId => !Ai.Owner.Cooldowns.CheckCooldown(skillId)));
                 }
-                Phase = "tryingRangedDefSkill";
+                _currentPhase = ArcherPhase.TryingRangedDefSkill;
             }
         }
 
-        OnUseSkillDone();
-
+        UpdatePhaseAfterSkillUse();
         return skillList;
+    }
+
+    private void UpdatePhaseAfterSkillUse()
+    {
+        _currentPhase = _currentPhase switch
+        {
+            ArcherPhase.TryingMeleeSkill => ArcherPhase.UsedMeleeSkill,
+            ArcherPhase.TryingRangedDefSkill => ArcherPhase.UsedRangedDefSkill,
+            ArcherPhase.TryingMakeAGapSkill => ArcherPhase.NeedMakeAGap,
+            ArcherPhase.NeedMakeAGap => ArcherPhase.NeedMakeAGap,
+            _ => ArcherPhase.Base
+        };
     }
 
     private uint PickSkill(List<uint> skills)
@@ -206,9 +271,19 @@ public class ArcherAttackBehavior : BaseCombatBehavior
         if (skills.Count > 0)
             return skills[Rand.Next(0, skills.Count)];
 
+        // Fall back to base skill if available
         if (!Ai.Owner.Cooldowns.CheckCooldown((uint)Ai.Owner.Template.BaseSkillId))
             return (uint)Ai.Owner.Template.BaseSkillId;
 
-        return 0; // no melee Skill
+        return 0;
+    }
+
+    public override void Exit()
+    {
+        if (!_isInitialized)
+            return;
+
+        Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting archer attack state");
+        _isInitialized = false;
     }
 }
