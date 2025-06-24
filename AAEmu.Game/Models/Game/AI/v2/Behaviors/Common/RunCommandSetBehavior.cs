@@ -104,7 +104,7 @@ public class RunCommandSetBehavior : BaseCombatBehavior
         }
 
         // No more commands to execute
-        Logger.Debug($"Unit {Ai.Owner.ObjId} completed command set execution");
+        //Logger.Debug($"Unit {Ai.Owner.ObjId} completed command set execution");
         Ai.GoToIdle();
     }
 
@@ -115,7 +115,7 @@ public class RunCommandSetBehavior : BaseCombatBehavior
         {
             Ai.AiCurrentCommand = Ai.AiCommandsQueue.Dequeue();
             Ai.AiCurrentCommandStartTime = DateTime.UtcNow;
-            Logger.Debug($"Unit {Ai.Owner.ObjId} starting new command: {Ai.AiCurrentCommand.CmdId}");
+            //Logger.Debug($"Unit {Ai.Owner.ObjId} starting new command: {Ai.AiCurrentCommand.CmdId}");
         }
 
         // Process current command
@@ -243,7 +243,7 @@ public class RunCommandSetBehavior : BaseCombatBehavior
         if (!_isInitialized)
             return;
 
-        Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting command set execution state");
+        //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting command set execution state");
         _isInitialized = false;
     }
 }

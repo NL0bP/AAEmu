@@ -1167,7 +1167,7 @@ public class NpcSpawner : Spawner<Npc>
             Logger.Error($"[Spawn] Can't spawn npc {UnitId} from spawnerId {Id} - Template is null");
             return;
         }
-        Logger.Debug($"[Spawn] Starting spawn process for SpawnerId={SpawnerId}, UnitId={UnitId}, Template={Template.Id}");
+        //Logger.Debug($"[Spawn] Starting spawn process for SpawnerId={SpawnerId}, UnitId={UnitId}, Template={Template.Id}");
 
         // Check population limits
         if (CurrentSpawnCount >= Template.MaxPopulation)

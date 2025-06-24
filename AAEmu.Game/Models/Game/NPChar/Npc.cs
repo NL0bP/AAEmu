@@ -934,7 +934,7 @@ public partial class Npc : Unit
 
     private void ClearAllAggroTargetsAndCheckCombatState()
     {
-        List<Character> playerAggroList = new();
+        List<Character> playerAggroList = [];
         // Generate a list of all player that we had aggro on
         foreach (var (objId, aggro) in AggroTable)
         {
@@ -969,7 +969,7 @@ public partial class Npc : Unit
     {
         base.RemoveVisibleObject(character);
 
-        character.SendPacket(new SCUnitsRemovedPacket(new[] { ObjId }));
+        character.SendPacket(new SCUnitsRemovedPacket([ObjId]));
     }
 
     public void AddUnitAggro(AggroKind kind, Unit unit, int amount)
@@ -1078,7 +1078,7 @@ public partial class Npc : Unit
             CheckIfEmptyAggroToReturn(unit);
     }
 
-    //Tagging!
+    // Tagging!
 
     private static void CheckIfEmptyAggroToReturn(IBaseUnit unit)
     {
@@ -1106,7 +1106,7 @@ public partial class Npc : Unit
         {
             if (Ai != null)
             {
-                var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition, Ai.Owner.Transform.World.Position, true);
+                var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition, Transform.World.Position, true);
                 if (distanceToIdle > 4)
                     Ai.GoToReturn();
             }
@@ -1117,7 +1117,7 @@ public partial class Npc : Unit
 
     public void ClearAllAggro()
     {
-        ///Adding for tagging
+        // Adding for tagging
         CharacterTagging.ClearAllTaggers();
 
         foreach (var table in AggroTable)
@@ -1177,7 +1177,7 @@ public partial class Npc : Unit
 
     public void MoveTowards(Vector3 other, float distance, byte actorFlags = 4)
     {
-        distance *= Ai.Owner.MoveSpeedMul; // Apply speed modifier
+        distance *= MoveSpeedMul; // Apply speed modifier
         if (distance < 0.01f)
             return;
 
@@ -1187,14 +1187,14 @@ public partial class Npc : Unit
                 || e.Template.Root
                 || e.Template.Knockdown
                 || e.Template.Fastened)
-            || Ai.Owner.IsDead)
+            || IsDead)
         {
             //Logger.Debug($"{ObjId} @NPC_NAME({TemplateId}); is stuck in place");
             return;
         }
 
-        if (Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle)) ||
-            Ai.Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare)))
+        if (Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle)) ||
+            Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare)))
         {
             return;
         }
@@ -1205,22 +1205,23 @@ public partial class Npc : Unit
         // TODO Take the current coordinates
         var currentPosition = Transform.Local.ClonePosition();
 
-        var targetDist = MathUtil.CalculateDistance(currentPosition, other, true);
-        if (targetDist <= 1f)
+        var distanceToTarget = MathUtil.CalculateDistance(currentPosition, other, true);
+        // Ensure the distance to the target is not less than 4 units before moving
+        if (distanceToTarget <= 0.1f)
             return;
 
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
 
-        var travelDist = Math.Min(targetDist, distance);
+        var travelDist = Math.Min(distanceToTarget, distance);
 
         // TODO: Implement proper use for Transform.World.AddDistanceToFront
-        var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, targetDist, currentPosition, other);
+        var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, distanceToTarget, currentPosition, other);
         Transform.Local.SetPosition(newX, newY, newZ);
         // TODO to take the point we're moving to
         var targetPosition =  NpcSpawner.AdjustMovePosition(this);
         if (!CanFly)
         {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(targetPosition.X, targetPosition.Y, Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.WorldId);
+            var referenceHeight = GetReferenceHeight(targetPosition.X, targetPosition.Y, Transform.ZoneId, Transform.WorldId);
             if (referenceHeight != 0)
             {
                 targetPosition.Z = referenceHeight;
@@ -1243,10 +1244,10 @@ public partial class Npc : Unit
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = actorFlags;     // 5-walk, 4-run, 3-stand still
+        moveType.ActorFlags = actorFlags;    // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // MoveTypeFlags.Stopping;
         moveType.DeltaMovement = [0, 127, 0];
-        moveType.Stance = CurrentGameStance;    // COMBAT = 0x0, IDLE = 0x1
+        moveType.Stance = CurrentGameStance; // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
@@ -1260,7 +1261,7 @@ public partial class Npc : Unit
         var currentPosition = Transform.Local.ClonePosition();
         if (!CanFly)
         {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y, Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.WorldId);
+            var referenceHeight = GetReferenceHeight(currentPosition.X, currentPosition.Y, Transform.ZoneId, Transform.WorldId);
             if (referenceHeight != 0)
             {
                 currentPosition.Z = referenceHeight;
@@ -1286,10 +1287,10 @@ public partial class Npc : Unit
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
-        moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); ; // 4;
+        moveType.ActorFlags = flags; // 5-walk, 4-run, 3-stand still
+        moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // 4;
         moveType.DeltaMovement = [0, 0, 0];
-        moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
+        moveType.Stance = 0; // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
@@ -1304,7 +1305,7 @@ public partial class Npc : Unit
         var currentPosition = Transform.Local.ClonePosition();
         if (!CanFly)
         {
-            var referenceHeight = Ai.Owner.GetReferenceHeight(currentPosition.X, currentPosition.Y, Ai.Owner.Transform.ZoneId, Ai.Owner.Transform.WorldId);
+            var referenceHeight = GetReferenceHeight(currentPosition.X, currentPosition.Y, Transform.ZoneId, Transform.WorldId);
             if (referenceHeight != 0)
             {
                 currentPosition.Z = referenceHeight;
@@ -1325,7 +1326,7 @@ public partial class Npc : Unit
         moveType.RotationZ = Transform.Local.ToRollPitchYawSBytesMovement().Item3;
         moveType.Flags = MoveTypeFlags.Stopping | (IsInBattle ? MoveTypeFlags.InCombat : 0); // 4;
         moveType.DeltaMovement = [0, 0, 0];
-        moveType.Stance = CurrentGameStance;// (sbyte)(CurrentAggroTarget?.ObjId > 0 ? 0 : 1);    // COMBAT = 0x0, IDLE = 0x1
+        moveType.Stance = CurrentGameStance; // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
         BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveType), false);
@@ -1345,10 +1346,10 @@ public partial class Npc : Unit
 
     public void FindPath(Unit abuser)
     {
-        Ai.PathNode.pos1 = new Point(Ai.Owner.Transform.World.Position.X, Ai.Owner.Transform.World.Position.Y, Ai.Owner.Transform.World.Position.Z);
+        Ai.PathNode.pos1 = new Point(Transform.World.Position.X, Transform.World.Position.Y, Transform.World.Position.Z);
         Ai.PathNode.pos2 = new Point(abuser.Transform.World.Position.X, abuser.Transform.World.Position.Y, abuser.Transform.World.Position.Z);
 
-        Ai.PathNode.ZoneKey = Ai.Owner.Transform.ZoneId;
+        Ai.PathNode.ZoneKey = Transform.ZoneId;
         Ai.PathNode.findPath = Ai.PathNode.FindPath(Ai.PathNode.pos1, Ai.PathNode.pos2);
 
         Logger.Trace($"AStar: points found Total: {Ai.PathNode.findPath?.Count ?? 0}");
