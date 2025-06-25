@@ -276,10 +276,10 @@ public partial class Npc
             }
         }
 
-        if (Spawner.Position.Z - finalHeight > Tolerance)
-        {
-            finalHeight = Spawner.Position.Z;
-        }
+        //if (Spawner.Position.Z - finalHeight > Tolerance)
+        //{
+        //    finalHeight = Spawner.Position.Z;
+        //}
 
         return finalHeight;
     }
