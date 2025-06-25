@@ -73,8 +73,8 @@ public partial class Npc
     internal float GetReferenceHeight(float x, float y, uint? zoneId = null, uint worldId = 0)
     {
         var cacheKey = GetCacheKey(x, y, zoneId, worldId);
-        if (TryGetFromCacheMultiple(cacheKey, x, y, out var cachedHeight))
-            return cachedHeight;
+        //if (TryGetFromCacheMultiple(cacheKey, x, y, out var cachedHeight))
+        //    return cachedHeight;
 
         return CalculateAndCacheHeight(x, y, cacheKey);
     }
@@ -98,7 +98,7 @@ public partial class Npc
         // Получение или вычисление высоты с использованием CachedHeight
         var cached = _heightCache.GetOrAdd(key, k =>
         {
-            float height = WorldManager.Instance.GetHeight(zoneId, x, y);
+            var height = WorldManager.Instance.GetHeight(zoneId, x, y);
             return new CachedHeight(height);
         });
 
@@ -195,19 +195,19 @@ public partial class Npc
             .First().Z;
     }
 
-    private float CalculateAndCacheHeight(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
+    private float CalculateAndCacheHeight2(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
     {
         var pos = Transform.World.Position;
 
         // 1. Попытка получить высоту от ближайших персонажей
         float candidate;
-        //candidate = GetHeightFromNearbyCharacters(x, y, cacheKey.ZoneId);
-        //if (candidate != 0f)
-        //{
-        //    candidate = AdjustNpcFloor(candidate);
-        //    HeightCacheAddOrUpdate(candidate, cacheKey);
-        //    return candidate;
-        //}
+        candidate = GetHeightFromNearbyCharacters(x, y, cacheKey.ZoneId);
+        if (candidate != 0f)
+        {
+            candidate = AdjustNpcFloor(candidate);
+            HeightCacheAddOrUpdate(candidate, cacheKey);
+            return candidate;
+        }
 
         // 2. Получение высоты из базы данных
         //var heights = GetHeightsFromDatabase(x, y, cacheKey.ZoneId, cacheKey.WorldId);
@@ -230,6 +230,60 @@ public partial class Npc
         return Spawner.Position.Z;
     }
 
+    // Возвращает высоту и расстояние до ближайшего персонажа
+    private (float height, float distance) GetHeightAndDistanceFromNearbyCharacters(float x, float y, uint zoneId)
+    {
+        var nearbyCharacters = WorldManager.GetAround<Character>(this, NearbyNpcSearchRadius);
+        if (!nearbyCharacters.Any())
+            return (0f, float.MaxValue);
+
+        var minDistance = float.MaxValue;
+        var nearestHeight = 0f;
+        foreach (var character in nearbyCharacters)
+        {
+            var pos = character.Transform.World.Position;
+            var dist = MathUtil.CalculateDistance(pos, new Vector3(x, y, 0));
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                nearestHeight = pos.Z;
+            }
+        }
+        return (nearestHeight, minDistance);
+    }
+
+    private float CalculateAndCacheHeight(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
+    {
+        var pos = Transform.World.Position;
+
+        // Получаем высоту местности
+        var worldHeight = WorldManager.Instance.GetHeight(cacheKey.ZoneId, x, y);
+        // Получаем высоту и расстояние до ближайшего персонажа
+        var (characterHeight, minDistance) = GetHeightAndDistanceFromNearbyCharacters(x, y, cacheKey.ZoneId);
+
+        var finalHeight = worldHeight;
+        // Если есть персонаж и его высота больше высоты местности
+        if (characterHeight > worldHeight)
+        {
+            if (minDistance <= NearbyCharactersSearchRadius)
+            {
+                finalHeight = characterHeight;
+            }
+            else
+            {
+                var t = 1f - Math.Clamp(minDistance / NearbyNpcSearchRadius, 0f, 1f);
+                finalHeight = worldHeight + (characterHeight - worldHeight) * t;
+            }
+        }
+
+        if (Spawner.Position.Z - finalHeight > Tolerance)
+        {
+            finalHeight = Spawner.Position.Z;
+        }
+
+        return finalHeight;
+    }
+    
     internal float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
     {
         var actualMinZ = minZ ?? Math.Min(Spawner.Position.Z, candidate);
@@ -423,68 +477,6 @@ public partial class Npc
             }
         }
     }
-
-    // Add this new method to the Npc class
-    ///// <summary>
-    ///// Loads NPC spawns for a specific world.
-    ///// </summary>
-    //private void LoadNpcSpawns(Models.Game.World.World world, string worldPath)
-    //{
-    //    var npcFiles = SpawnManager.GetSpawnFiles(worldPath, "npc_spawns*.json");
-    //    if (npcFiles == null || npcFiles.Length == 0)
-    //        return;
-
-    //    foreach (var jsonFileName in npcFiles)
-    //    {
-    //        if (!File.Exists(jsonFileName))
-    //        {
-    //            Logger.Info($"World {world.Name} is missing {Path.GetFileName(jsonFileName)}");
-    //            continue;
-    //        }
-
-    //        var contents = FileManager.GetFileContents(jsonFileName);
-    //        if (string.IsNullOrWhiteSpace(contents))
-    //        {
-    //            Logger.Warn($"File {jsonFileName} is empty.");
-    //            continue;
-    //        }
-
-    //        if (JsonHelper.TryDeserializeObject(contents, out List<NpcSpawner> npcSpawnersFromFile, out _))
-    //        {
-    //            ProcessNpcSpawners(world, jsonFileName, npcSpawnersFromFile);
-    //        }
-    //        else
-    //        {
-    //            throw new GameException($"SpawnManager: Parse {jsonFileName} file");
-    //        }
-    //    }
-    //}
-
-    ///// <summary>
-    ///// Processes NPC spawners from a file.
-    ///// </summary>
-    //private void ProcessNpcSpawners(Models.Game.World.World world, string jsonFileName, List<NpcSpawner> npcSpawnersFromFile)
-    //{
-    //    var entry = 0;
-    //    foreach (var npcSpawnerFromFile in npcSpawnersFromFile)
-    //    {
-    //        entry++;
-
-    //        //if (IsDuplicateNpcSpawner(world, npcSpawnerFromFile))
-    //        //    continue;
-
-    //        if (!NpcManager.Instance.Exist(npcSpawnerFromFile.UnitId))
-    //        {
-    //            Logger.Trace($"Npc Template {npcSpawnerFromFile.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
-    //            continue;
-    //        }
-
-    //        SetupNpcSpawnerPosition(world, npcSpawnerFromFile);
-    //        AddNpcSpawner(npcSpawnerFromFile);
-    //    }
-    //}
-
-    // Добавляем в класс Npc
 
     /// <summary>
     /// Загружает данные спавна NPC из файла
