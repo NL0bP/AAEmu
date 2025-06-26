@@ -71,11 +71,14 @@ public class NpcSpawnerNpc : Spawner<Npc>
 
         if (!npc.CanFly)
         {
-            var newZ = WorldManager.Instance.GetHeight(npcSpawner.Position.ZoneId, npcSpawner.Position.X, npcSpawner.Position.Y); // Убираем await
-            if (Math.Abs(npcSpawner.Position.Z - newZ) < 1f)
-            {
+            //var newZ = WorldManager.Instance.GetHeight(npcSpawner.Position.ZoneId, npcSpawner.Position.X, npcSpawner.Position.Y); // Убираем await
+            //if (Math.Abs(npcSpawner.Position.Z - newZ) < 1f)
+            //{
+            //    npcSpawner.Position.Z = newZ;
+            //}
+            var newZ = npc.GetReferenceHeight(npcSpawner.Position.X, npcSpawner.Position.Y, npcSpawner.Position.ZoneId, npcSpawner.Position.WorldId);
+            if (newZ != 0)
                 npcSpawner.Position.Z = newZ;
-            }
         }
 
         npc.Transform.ApplyWorldSpawnPosition(npcSpawner.Position);

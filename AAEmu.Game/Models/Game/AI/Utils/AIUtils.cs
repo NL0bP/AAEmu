@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.AI.Enums;
 using AAEmu.Game.Models.Game.AI.v2.AiCharacters;
 using AAEmu.Game.Models.Game.AI.v2.Framework;
@@ -16,7 +15,7 @@ public static class AIUtils
 {
     // Default roaming settings
     private const float DefaultMaxRoamingDistance = 6.0f;
-    private const float DefaultMaxHeightAdjustment = 0.5f;
+    //private const float DefaultMaxHeightAdjustment = 0.5f;
 
     /// <summary>
     /// Calculates the next roaming position for an NPC within its idle area.
@@ -43,19 +42,27 @@ public static class AIUtils
         );
 
         // Get terrain height at new position
-        var terrainHeight = WorldManager.Instance.GetHeight(ai.Owner.Transform.ZoneId, newPosition.X, newPosition.Y);
+        if (!ai.Owner.CanFly)
+        {
+            var terrainHeight = ai.Owner.GetReferenceHeight(newPosition.X, newPosition.Y, ai.Owner.Transform.ZoneId, ai.Owner.Transform.WorldId);
+            if (terrainHeight != 0)
+            {
+                newPosition.Z = terrainHeight;
+            }
+        }
+        //var terrainHeight = WorldManager.Instance.GetHeight(ai.Owner.Transform.ZoneId, newPosition.X, newPosition.Y);
 
-        // Handle terrain height adjustments
-        if (terrainHeight <= 0.0f || ai.Owner.CanFly)
-        {
-            // For flying units or invalid terrain, use current Z position
-            terrainHeight = newPosition.Z;
-        }
-        else if (newPosition.Z < terrainHeight && terrainHeight - DefaultMaxHeightAdjustment < newPosition.Z)
-        {
-            // Adjust position to terrain height if within reasonable range
-            newPosition.Z = terrainHeight;
-        }
+        //// Handle terrain height adjustments
+        //if (terrainHeight <= 0.0f || ai.Owner.CanFly)
+        //{
+        //    // For flying units or invalid terrain, use current Z position
+        //    terrainHeight = newPosition.Z;
+        //}
+        //else if (newPosition.Z < terrainHeight && terrainHeight - DefaultMaxHeightAdjustment < newPosition.Z)
+        //{
+        //    // Adjust position to terrain height if within reasonable range
+        //    newPosition.Z = terrainHeight;
+        //}
 
         return newPosition;
     }

@@ -33,7 +33,7 @@ public partial class Npc
 
     private static readonly ConcurrentDictionary<(uint WorldId, uint ZoneId, int GridX, int GridY), CachedHeight> HeightCache = new();
     private static readonly Lazy<Timer> CacheCleanupTimer = new(() => new Timer(CleanupCache, null, TimeSpan.FromMinutes(CacheCleanupIntervalMinutes), TimeSpan.FromMinutes(CacheCleanupIntervalMinutes)));
-    
+
     // Кэш для AdjustNpcFloor
     private static readonly ConcurrentDictionary<float, float> _adjustedFloorCache = new();
     // Кэш для высот. Ключ: (ZoneId, Округленный X, Округленный Y)
@@ -293,7 +293,7 @@ public partial class Npc
         if (!float.IsNaN(navMeshHeight))
         {
             finalHeight = navMeshHeight;
-            Logger.Debug($"Получили данные по высоте из NavMesh");
+            //Logger.Debug($"Получили данные по высоте из NavMesh");
             return finalHeight;
         }
 
@@ -302,14 +302,14 @@ public partial class Npc
         if (worldHeight != 0)
         {
             finalHeight = worldHeight;
-            Logger.Debug($"Получили данные по высоте местности");
+            //Logger.Debug($"Получили данные по высоте местности");
             return finalHeight;
         }
 
         // 3. Берем высоту по умолчанию
         return Spawner.Position.Z;
     }
-    
+
     internal float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)
     {
         var actualMinZ = minZ ?? Math.Min(Spawner.Position.Z, candidate);

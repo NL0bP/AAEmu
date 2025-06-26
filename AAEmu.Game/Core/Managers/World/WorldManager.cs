@@ -1593,7 +1593,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         var worldHeight = Instance.GetHeight(zoneId, position.X, position.Y);
         if (Math.Abs(worldHeight - position.Z) <= 0.5f)
         {
-            Logger.Debug($"[ReportClientHeight] Ignoring height {worldHeight} for position height {position.Z}");
+            //Logger.Debug($"[ReportClientHeight] Ignoring height {worldHeight} for position height {position.Z}");
             return;
         }
 

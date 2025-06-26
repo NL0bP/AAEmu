@@ -45,7 +45,7 @@ namespace AAEmu.Game.Models.Game.NavMesh
                 throw new ArgumentException("Zone ID cannot be 0", nameof(zoneId));
             if (a.X < 0f || a.Y < 0f ||b.X < 0f || b.Y < 0f ||c.X < 0f || c.Y < 0f)
             {
-                Logger.Warn($"[NavMesh] Not add raw triangles {zoneId}, {a}, {b}, {c}");
+                //Logger.Warn($"[NavMesh] Not add raw triangles {zoneId}, {a}, {b}, {c}");
                 return;
             }
 
@@ -58,7 +58,7 @@ namespace AAEmu.Game.Models.Game.NavMesh
                 C = c
             };
 
-            Logger.Info($"[NavMesh] Add raw triangles {zoneId}, {a}, {b}, {c}");
+            //Logger.Info($"[NavMesh] Add raw triangles {zoneId}, {a}, {b}, {c}");
 
             _rawCache.TryAdd(key, triangle);
         }
