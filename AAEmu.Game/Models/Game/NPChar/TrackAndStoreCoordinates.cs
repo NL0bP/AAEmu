@@ -70,13 +70,13 @@ public partial class Npc
 
     #region Public API
 
-    internal float GetReferenceHeight(float x, float y, uint? zoneId = null, uint worldId = 0)
+    public float GetReferenceHeight(float x, float y, uint zoneId, uint worldId = 0)
     {
-        var cacheKey = GetCacheKey(x, y, zoneId, worldId);
+        //var cacheKey = GetCacheKey(x, y, zoneId, worldId);
         //if (TryGetFromCacheMultiple(cacheKey, x, y, out var cachedHeight))
         //    return cachedHeight;
 
-        return CalculateAndCacheHeight(x, y, cacheKey);
+        return CalculateAndCacheHeight(zoneId, x, y);
     }
 
     public float GetReferenceHeight(uint zoneId, float x, float y, float z, float tolerance)
@@ -195,7 +195,7 @@ public partial class Npc
             .First().Z;
     }
 
-    private float CalculateAndCacheHeight2(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
+    private float CalculateAndCacheHeight1(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
     {
         var pos = Transform.World.Position;
 
@@ -252,7 +252,7 @@ public partial class Npc
         return (nearestHeight, minDistance);
     }
 
-    private float CalculateAndCacheHeight(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
+    private float CalculateAndCacheHeight2(float x, float y, (uint WorldId, uint ZoneId, int GridX, int GridY) cacheKey)
     {
         var pos = Transform.World.Position;
 
@@ -271,7 +271,7 @@ public partial class Npc
             }
             else
             {
-                var t = 1f - Math.Clamp(minDistance / NearbyNpcSearchRadius, 0f, 1f);
+                var t = 1f - Math.Clamp(minDistance / NearbyCharactersSearchRadius, 0f, 1f);
                 finalHeight = worldHeight + (characterHeight - worldHeight) * t;
             }
         }
@@ -282,6 +282,32 @@ public partial class Npc
         //}
 
         return finalHeight;
+    }
+
+    private float CalculateAndCacheHeight(uint zoneId, float x, float y)
+    {
+        float finalHeight;
+
+        // 1. Получение высоты из базы данных NavMesh
+        var navMeshHeight = WorldManager.Instance.GetCorrectNpcHeight(zoneId, x, y);
+        if (!float.IsNaN(navMeshHeight))
+        {
+            finalHeight = navMeshHeight;
+            Logger.Debug($"Получили данные по высоте из NavMesh");
+            return finalHeight;
+        }
+
+        // 2. Получение высоты местности
+        var worldHeight = WorldManager.Instance.GetHeight(zoneId, x, y);
+        if (worldHeight != 0)
+        {
+            finalHeight = worldHeight;
+            Logger.Debug($"Получили данные по высоте местности");
+            return finalHeight;
+        }
+
+        // 3. Берем высоту по умолчанию
+        return Spawner.Position.Z;
     }
     
     internal float AdjustNpcFloor(float candidate, float? minZ = null, float? maxZ = null)

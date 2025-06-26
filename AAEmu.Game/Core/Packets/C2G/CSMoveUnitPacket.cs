@@ -10,7 +10,6 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Units;
@@ -186,6 +185,8 @@ public class CSMoveUnitPacket : GamePacket
                         try
                         {
                            Character.TrackCharacterCoordinates(character);
+                           // Добавляем высоту в навмеш-карту, если это NPC или другое нужное существо
+                           WorldManager.Instance.ReportClientHeight(character, character.Transform.World.Position.Z);
                         }
                         catch (Exception ex)
                         {

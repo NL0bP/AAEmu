@@ -820,21 +820,6 @@ CREATE TABLE character_stats (
 );
 
 -- --------------------------------------------
--- Table structure for height_maps
--- --------------------------------------------
-CREATE TABLE `height_maps` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `zone_id` int(11) NOT NULL,
-  `x` float NOT NULL,
-  `y` float NOT NULL,
-  `z` float NOT NULL,
-  `timestamp` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `zone_xy` (`zone_id`, `x`, `y`),
-  KEY `timestamp` (`timestamp`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------
 -- Table structure for height_map_cells
 -- --------------------------------------------
 CREATE TABLE `height_map_cells` (
@@ -850,6 +835,46 @@ CREATE TABLE `height_map_cells` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `zone_cell` (`zone_id`,`cell_x`,`cell_y`),
   KEY `zone_coords` (`zone_id`,`cell_x`,`cell_y`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------
+-- Table structure for navigation_mesh_raw
+-- Содержит все исходные (неагрегированные) треугольники от клиентов.
+-- --------------------------------------------
+CREATE TABLE `navigation_mesh_raw` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `zone_id` INT UNSIGNED NOT NULL,
+    `ax` FLOAT NOT NULL,
+    `ay` FLOAT NOT NULL,
+    `az` FLOAT NOT NULL,
+    `bx` FLOAT NOT NULL,
+    `by` FLOAT NOT NULL,
+    `bz` FLOAT NOT NULL,
+    `cx` FLOAT NOT NULL,
+    `cy` FLOAT NOT NULL,
+    `cz` FLOAT NOT NULL,
+    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX (`zone_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------
+-- Table structure for navigation_mesh
+-- Содержит только агрегированные (сжатые) треугольники.
+-- Таблица всегда перезаписывается.
+-- --------------------------------------------
+CREATE TABLE `navigation_mesh` (
+    `zone_id` INT UNSIGNED NOT NULL,
+    `ax` FLOAT NOT NULL,
+    `ay` FLOAT NOT NULL,
+    `az` FLOAT NOT NULL,
+    `bx` FLOAT NOT NULL,
+    `by` FLOAT NOT NULL,
+    `bz` FLOAT NOT NULL,
+    `cx` FLOAT NOT NULL,
+    `cy` FLOAT NOT NULL,
+    `cz` FLOAT NOT NULL,
+    PRIMARY KEY (`zone_id`, `ax`, `ay`, `az`, `bx`, `by`, `bz`, `cx`, `cy`, `cz`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

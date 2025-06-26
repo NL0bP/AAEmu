@@ -1227,6 +1227,13 @@ public partial class Npc : Unit
                 targetPosition.Z = referenceHeight;
                 Transform.Local.SetHeight(referenceHeight);
             }
+
+            //var referenceHeight = WorldManager.Instance.GetCorrectNpcHeight(Transform.ZoneId, Transform.World.Position.X, Transform.World.Position.Y);
+            //if (!float.IsNaN(referenceHeight))
+            //{
+            //    targetPosition.Z = referenceHeight;
+            //    Transform.Local.SetHeight(referenceHeight);
+            //}
         }
         Transform.Local.SetPosition(targetPosition);
 
@@ -1267,6 +1274,13 @@ public partial class Npc : Unit
                 currentPosition.Z = referenceHeight;
                 Transform.Local.SetHeight(referenceHeight);
             }
+
+            //var referenceHeight = WorldManager.Instance.GetCorrectNpcHeight(Transform.ZoneId, currentPosition.X, currentPosition.Y);
+            //if (!float.IsNaN(referenceHeight))
+            //{
+            //    currentPosition.Z = referenceHeight;
+            //    Transform.Local.SetHeight(referenceHeight);
+            //}
         }
         Transform.Local.SetPosition(currentPosition);
 

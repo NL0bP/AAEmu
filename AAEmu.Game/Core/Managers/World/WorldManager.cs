@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Xml;
 
 using AAEmu.Commons.IO;
@@ -18,6 +19,7 @@ using AAEmu.Game.Models.ClientData;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Gimmicks;
+using AAEmu.Game.Models.Game.NavMesh;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
@@ -27,6 +29,7 @@ using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.Game.World.Xml;
 using AAEmu.Game.Models.Game.World.Zones;
 using AAEmu.Game.Models.StaticValues;
+using AAEmu.Game.Scripts.Commands;
 using AAEmu.Game.Utils.DB;
 
 using NLog;
@@ -60,6 +63,9 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     private readonly ConcurrentDictionary<uint, Slave> _slaves = new();
     private readonly ConcurrentDictionary<uint, Mate> _mates = new();
     private readonly ConcurrentDictionary<uint, IndunZone> _indunZones = new();
+
+    // Навмеш-коллектор, должен быть инициализирован один раз
+    private readonly NavigationMeshCollector _navMeshCollector = new();
 
     // ReSharper disable InconsistentNaming
     public const int CELL_SIZE = 1024;
@@ -346,6 +352,8 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             }
         }
         #endregion
+
+        _navMeshCollector.LoadRawFromDatabaseAndCompact();
 
         _loaded = true;
     }
@@ -940,7 +948,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         if (objId == 0)
             return false;
 
-        bool removed = RemoveFromCollection(_objects, objId, "object");
+        var removed = RemoveFromCollection(_objects, objId, "object");
         removed |= RemoveFromCollection(_baseUnits, objId, "base unit");
         removed |= RemoveFromCollection(_units, objId, "unit");
         removed |= RemoveFromCollection(_npcs, objId, "NPC");
@@ -1567,5 +1575,132 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         foreach (var item in temp.Where(item => item.LootingContainer.CanMakePublic()))
             res.Add(item);
         return res;
+    }
+
+    /// <summary>
+    /// Called when a client sends a new Z height to the server. Used to collect navigation mesh triangle samples.
+    /// </summary>
+    /// <param name="unit">The unit reporting height.</param>
+    /// <param name="clientZ">Z height from the client, adjusted by their geodata.</param>
+    public void ReportClientHeight(BaseUnit unit, float clientZ)
+    {
+        if (unit is not { Transform: not null })
+            return;
+
+        var position = unit.Transform.World.Position;
+        var zoneId = unit.Transform.ZoneId;
+
+        var worldHeight = Instance.GetHeight(zoneId, position.X, position.Y);
+        if (Math.Abs(worldHeight - position.Z) <= 0.5f)
+        {
+            Logger.Debug($"[ReportClientHeight] Ignoring height {worldHeight} for position height {position.Z}");
+            return;
+        }
+
+        // Use the position as the center of the triangle
+        var center = position with { Z = clientZ };
+
+        // Create an equilateral triangle around the center
+        const float radius = 0.5f; // Circumcircle radius
+        const float angle = MathF.PI * 2f / 3f; // 120 degrees between vertices
+
+        var p1 = new Vector3(
+            center.X + radius * MathF.Cos(0f),
+            center.Y + radius * MathF.Sin(0f),
+            clientZ
+        );
+        var p2 = new Vector3(
+            center.X + radius * MathF.Cos(angle),
+            center.Y + radius * MathF.Sin(angle),
+            clientZ
+        );
+        var p3 = new Vector3(
+            center.X + radius * MathF.Cos(2f * angle),
+            center.Y + radius * MathF.Sin(2f * angle),
+            clientZ
+        );
+
+        // Check for existing samples nearby to avoid duplicates
+        var nearby = _navMeshCollector.GetRawTrianglesInRadius(zoneId, center, 0.5f);
+        if (nearby.Count == 0)
+        {
+            _navMeshCollector.AddSample(zoneId, p1, p2, p3);
+        }
+    }
+
+    /// <summary>
+    /// Attempts to compute the correct height (Z) for a given position based on navigation mesh triangles.
+    /// </summary>
+    /// <param name="zoneId">Zone ID where the NPC is located.</param>
+    /// <param name="x">X coordinate.</param>
+    /// <param name="y">Y coordinate.</param>
+    /// <returns>Computed Z or float.NaN if not found.</returns>
+    public float GetCorrectNpcHeight(uint zoneId, float x, float y)
+    {
+        // Search for triangles near this point
+        var nearbyTriangles = _navMeshCollector.GetTrianglesInRadius(zoneId, new Vector3(x, y, 0), 2.0f);
+        foreach (var triangle in nearbyTriangles)
+        {
+            if (IsPointInTriangle2D(new Vector2(x, y), triangle))
+            {
+                return InterpolateZFromTriangle(triangle, x, y);
+            }
+        }
+
+        return float.NaN; // Not found
+    }
+
+    /// <summary>
+    /// Checks if a 2D point lies inside the XY projection of the triangle.
+    /// </summary>
+    private static bool IsPointInTriangle2D(Vector2 p, NavMeshTriangle tri)
+    {
+        var a = new Vector2(tri.A.X, tri.A.Y);
+        var b = new Vector2(tri.B.X, tri.B.Y);
+        var c = new Vector2(tri.C.X, tri.C.Y);
+
+        var d1 = Sign(p, a, b);
+        var d2 = Sign(p, b, c);
+        var d3 = Sign(p, c, a);
+
+        var hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+        var hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+        return !(hasNeg && hasPos);
+    }
+
+    private static float Sign(Vector2 p1, Vector2 p2, Vector2 p3)
+    {
+        return (p1.X - p3.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p3.Y);
+    }
+
+    /// <summary>
+    /// Computes interpolated Z from triangle vertices.
+    /// </summary>
+    private static float InterpolateZFromTriangle(NavMeshTriangle tri, float x, float y)
+    {
+        var p1 = tri.A;
+        var p2 = tri.B;
+        var p3 = tri.C;
+
+        var v0 = new Vector2(p2.X - p1.X, p2.Y - p1.Y);
+        var v1 = new Vector2(p3.X - p1.X, p3.Y - p1.Y);
+        var v2 = new Vector2(x - p1.X, y - p1.Y);
+
+        var d00 = Vector2.Dot(v0, v0);
+        var d01 = Vector2.Dot(v0, v1);
+        var d11 = Vector2.Dot(v1, v1);
+        var d20 = Vector2.Dot(v2, v0);
+        var d21 = Vector2.Dot(v2, v1);
+
+        var denom = d00 * d11 - d01 * d01;
+        if (Math.Abs(denom) < 1e-6f)
+            return (p1.Z + p2.Z + p3.Z) / 3f;
+
+        var v = (d11 * d20 - d01 * d21) / denom;
+        var w = (d00 * d21 - d01 * d20) / denom;
+        var u = 1.0f - v - w;
+
+        return u * p1.Z + v * p2.Z + w * p3.Z;
     }
 }
