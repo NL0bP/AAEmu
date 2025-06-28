@@ -2,8 +2,8 @@
 -- Table structure for navigation_mesh_raw
 -- Содержит все исходные (неагрегированные) треугольники от клиентов.
 -- --------------------------------------------
-CREATE TABLE `navigation_mesh_raw` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS `navigation_mesh_raw`;
+CREATE TABLE IF NOT EXISTS `navigation_mesh_raw` (
     `zone_id` INT UNSIGNED NOT NULL,
     `ax` FLOAT NOT NULL,
     `ay` FLOAT NOT NULL,
@@ -14,9 +14,9 @@ CREATE TABLE `navigation_mesh_raw` (
     `cx` FLOAT NOT NULL,
     `cy` FLOAT NOT NULL,
     `cz` FLOAT NOT NULL,
-    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    INDEX (`zone_id`)
+    UNIQUE KEY `uk_nav_mesh_raw` (
+        `zone_id`, `ax`, `ay`, `az`, `bx`, `by`, `bz`, `cx`, `cy`, `cz`
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------
@@ -24,6 +24,7 @@ CREATE TABLE `navigation_mesh_raw` (
 -- Содержит только агрегированные (сжатые) треугольники.
 -- Таблица всегда перезаписывается.
 -- --------------------------------------------
+DROP TABLE IF EXISTS `navigation_mesh`;
 CREATE TABLE `navigation_mesh` (
     `zone_id` INT UNSIGNED NOT NULL,
     `ax` FLOAT NOT NULL,

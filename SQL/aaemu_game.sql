@@ -820,29 +820,11 @@ CREATE TABLE character_stats (
 );
 
 -- --------------------------------------------
--- Table structure for height_map_cells
--- --------------------------------------------
-CREATE TABLE `height_map_cells` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `zone_id` int(11) NOT NULL,
-  `cell_x` int(11) NOT NULL,
-  `cell_y` int(11) NOT NULL,
-  `avg_z` float NOT NULL COMMENT 'Средняя высота в ячейке',
-  `min_z` float NOT NULL COMMENT 'Минимальная высота в ячейке',
-  `max_z` float NOT NULL COMMENT 'Максимальная высота в ячейке',
-  `point_count` int(11) NOT NULL DEFAULT 1 COMMENT 'Количество точек в ячейке',
-  `last_update` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `zone_cell` (`zone_id`,`cell_x`,`cell_y`),
-  KEY `zone_coords` (`zone_id`,`cell_x`,`cell_y`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------
 -- Table structure for navigation_mesh_raw
 -- Содержит все исходные (неагрегированные) треугольники от клиентов.
 -- --------------------------------------------
-CREATE TABLE `navigation_mesh_raw` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS `navigation_mesh_raw`;
+CREATE TABLE IF NOT EXISTS `navigation_mesh_raw` (
     `zone_id` INT UNSIGNED NOT NULL,
     `ax` FLOAT NOT NULL,
     `ay` FLOAT NOT NULL,
@@ -853,9 +835,9 @@ CREATE TABLE `navigation_mesh_raw` (
     `cx` FLOAT NOT NULL,
     `cy` FLOAT NOT NULL,
     `cz` FLOAT NOT NULL,
-    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    INDEX (`zone_id`)
+    UNIQUE KEY `uk_nav_mesh_raw` (
+        `zone_id`, `ax`, `ay`, `az`, `bx`, `by`, `bz`, `cx`, `cy`, `cz`
+    )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------
@@ -863,6 +845,7 @@ CREATE TABLE `navigation_mesh_raw` (
 -- Содержит только агрегированные (сжатые) треугольники.
 -- Таблица всегда перезаписывается.
 -- --------------------------------------------
+DROP TABLE IF EXISTS `navigation_mesh`;
 CREATE TABLE `navigation_mesh` (
     `zone_id` INT UNSIGNED NOT NULL,
     `ax` FLOAT NOT NULL,

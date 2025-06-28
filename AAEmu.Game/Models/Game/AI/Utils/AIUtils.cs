@@ -44,7 +44,7 @@ public static class AIUtils
         // Get terrain height at new position
         if (!ai.Owner.CanFly)
         {
-            var terrainHeight = ai.Owner.GetReferenceHeight(newPosition.X, newPosition.Y, ai.Owner.Transform.ZoneId, ai.Owner.Transform.WorldId);
+            var terrainHeight = ai.Owner.GetReferenceHeight(newPosition.X, newPosition.Y, newPosition.Z, ai.Owner.Transform.ZoneId);
             if (terrainHeight != 0)
             {
                 newPosition.Z = terrainHeight;

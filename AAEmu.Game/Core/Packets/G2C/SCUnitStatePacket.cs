@@ -146,6 +146,16 @@ public class SCUnitStatePacket : GamePacket
         else
             stream.Write("");
 
+        if (npc is not null)
+        {
+            if (!npc.CanFly)
+            {
+                var referenceHeight = npc.GetReferenceHeight(_unit.Transform.Local.Position.X, _unit.Transform.Local.Position.Y, _unit.Transform.Local.Position.Z, _unit.Transform.ZoneId);
+                if (referenceHeight != 0)
+                    _unit.Transform.Local.SetHeight(referenceHeight);
+            }
+        }
+
         stream.WritePosition(_unit.Transform.Local.Position);
         stream.Write(_unit.Scale); // scale
         stream.Write(_unit.Level); // level

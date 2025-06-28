@@ -65,7 +65,7 @@ public class WorldConfig
     /// </summary>
     public bool GeoDataMode { get; set; }
     /// <summary>
-    /// Enables save_geodate mode
+    /// Enables save_geodata mode
     /// </summary>
     public bool SaveGeoDataMode { get; set; }
 

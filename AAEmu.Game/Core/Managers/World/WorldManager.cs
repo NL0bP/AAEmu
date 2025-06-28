@@ -1592,17 +1592,13 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
 
         var worldHeight = Instance.GetHeight(zoneId, position.X, position.Y);
         if (Math.Abs(worldHeight - position.Z) <= 0.5f)
-        {
-            //Logger.Debug($"[ReportClientHeight] Ignoring height {worldHeight} for position height {position.Z}");
             return;
-        }
 
-        // Use the position as the center of the triangle
+        // Создаем равносторонний треугольник вокруг точки
+        const float radius = 0.5f; // Радиус описанной окружности
+        const float angleStep = MathF.PI * 2f / 3f; // 120 градусов между вершинами
+
         var center = position with { Z = clientZ };
-
-        // Create an equilateral triangle around the center
-        const float radius = 0.5f; // Circumcircle radius
-        const float angle = MathF.PI * 2f / 3f; // 120 degrees between vertices
 
         var p1 = new Vector3(
             center.X + radius * MathF.Cos(0f),
@@ -1610,17 +1606,17 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             clientZ
         );
         var p2 = new Vector3(
-            center.X + radius * MathF.Cos(angle),
-            center.Y + radius * MathF.Sin(angle),
+            center.X + radius * MathF.Cos(angleStep),
+            center.Y + radius * MathF.Sin(angleStep),
             clientZ
         );
         var p3 = new Vector3(
-            center.X + radius * MathF.Cos(2f * angle),
-            center.Y + radius * MathF.Sin(2f * angle),
+            center.X + radius * MathF.Cos(2f * angleStep),
+            center.Y + radius * MathF.Sin(2f * angleStep),
             clientZ
         );
 
-        // Check for existing samples nearby to avoid duplicates
+        // Используем исходную позицию как center для проверки дубликатов
         var nearby = _navMeshCollector.GetRawTrianglesInRadius(zoneId, center, 0.5f);
         if (nearby.Count == 0)
         {
@@ -1635,10 +1631,10 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     /// <param name="x">X coordinate.</param>
     /// <param name="y">Y coordinate.</param>
     /// <returns>Computed Z or float.NaN if not found.</returns>
-    public float GetCorrectNpcHeight(uint zoneId, float x, float y)
+    public float GetCorrectNpcHeight(uint zoneId, float x, float y, float z)
     {
         // Search for triangles near this point
-        var nearbyTriangles = _navMeshCollector.GetTrianglesInRadius(zoneId, new Vector3(x, y, 0), 2.0f);
+        var nearbyTriangles = _navMeshCollector.GetTrianglesInRadius(zoneId, new Vector3(x, y, z), 2.0f);
         foreach (var triangle in nearbyTriangles)
         {
             if (IsPointInTriangle2D(new Vector2(x, y), triangle))

@@ -1,86 +1,42 @@
 ﻿using System.Drawing;
-using System.Linq;
+using System.Numerics;
 
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Models.Game.Char;
 
 public partial class Character
 {
 
-    private const float NearbyNpcSearchRadius = 15f;
-    private int Count = 0;
-    private static bool IsChanged = false;
+    private const float NearbyNpcSearchRadius = 4f;
 
     /// <summary>
-    /// Запись высоты персонажа в таблицу высот.
+    /// Запись высоты персонажа как высоту Npc с записью в файл npc_spawn.json
     /// </summary>
     /// <param name="character"></param>
     internal static void TrackCharacterCoordinates(Character character)
     {
-        if (character == null)
-            return;
-        if (AppConfiguration.Instance.World.SaveGeoDataMode == false)
-        {
-            IsChanged = false;
-            return;
-        }
-
-        if (character.CurrentTarget == null || character.CurrentTarget == character || character.CurrentTarget is Character)
+        if (character.CurrentTarget is not Npc npc)
             return;
 
         var pos = character.Transform.World.Position;
-        var npcs = WorldManager.GetAround<Npc>(character, NearbyNpcSearchRadius);
-        if (!npcs.Any())
+        var npcPos = npc.Transform.World.Position;
+
+        // Check if the NPC is within a reasonable distance
+        var distance = MathUtil.CalculateDistance(pos, npcPos);
+        if (distance >= NearbyNpcSearchRadius)
             return;
 
-        foreach (var npc in npcs)
-        {
-            if (character.CurrentTarget is not Npc n || n.ObjId != npc.ObjId)
-                continue;
+        if (Npc.UpdateSpawnFileHeight(npc.TemplateId, npcPos.X, npcPos.Y, pos.Z))
+            character.SendMessage(ChatType.System, $"Height adjusted: npc={npc.TemplateId}:{npc.ObjId}, old={npcPos.Z}, new={pos.Z}!", Color.Aquamarine);
+        else
+            character.SendMessage(ChatType.System, $"Height not adjusted: npc={npc.TemplateId}:{npc.ObjId} not found!", Color.Coral);
 
-            var npcPos = npc.Transform.World.Position;
-            var cacheKey = Npc.GetCacheKey(pos.X, pos.Y, character.Transform.ZoneId, character.Transform.WorldId);
-
-            var candidate = npc.AdjustNpcFloor(pos.Z);
-
-            // Update database and cache
-            Npc.UpdateHeightMapInDatabase(character.Transform.ZoneId, cacheKey.GridX, cacheKey.GridY, candidate);
-            Npc.HeightCacheAddOrUpdate(pos.Z, cacheKey);
-
-            // Update spawn file
-            if (!IsChanged)
-            {
-                character.SendMessage(ChatType.System, "Записываем геоданные! Не забудьте отключить запись!", Color.White);
-                //character.SendMessage(ChatType.System, "Let's record the geo-data! Don't forget to turn it off!", Color.White);
-
-                if (Npc.UpdateSpawnHeight(SpawnFile, npc.TemplateId, npcPos.X, npcPos.Y, candidate))
-                {
-                    IsChanged = true;
-                    character.SendMessage(ChatType.System, $"Высота скорректирована: npc={npc.TemplateId}:{npc.ObjId}, старая={npcPos.Z}, новая={candidate}!", Color.Aquamarine);
-                }
-                else
-                {
-                    character.SendMessage(ChatType.System, $"Высота не скорректирована: npc={npc.TemplateId}:{npc.ObjId} не найден!", Color.Coral);
-                }
-            }
-
-            // Update NPC position
-            npc.Transform.Local.Position = npc.Transform.Local.Position with { Z = candidate };
-            npc.Transform.Local.SetPosition(npc.Transform.Local.Position.X, npc.Transform.Local.Position.Y, candidate);
-        }
-
-        character.Count++;
-        if (character.Count < 30)
-            return;
-
-        character.Count = 0;
-        character.SetSaveGeoDataMode(false); // отключаем запись
-        IsChanged = false;
-        character.SendMessage(ChatType.System, "Запись геоданных прекращена по истечении таймаута!", Color.Aqua);
-        //character.SendMessage(ChatType.System, "The recording of the geodata is stopped after the time out!", Color.Aqua);
+        // Update NPC position
+        npc.Transform.Local.Position = npc.Transform.Local.Position with { Z = pos.Z };
+        npc.Transform.Local.SetPosition(npc.Transform.Local.Position.X, npc.Transform.Local.Position.Y, pos.Z);
     }
 
 }

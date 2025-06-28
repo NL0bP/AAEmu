@@ -13,7 +13,7 @@ public class Fly : ICommand
     public string[] CommandNames { get; set; } = new string[] { "fly" };
     private static List<uint> characterFlyStateCache = new();
 
-    private static bool GetCacheState(uint characterId)
+    public static bool GetCacheState(uint characterId)
     {
         return characterFlyStateCache.Contains(characterId);
     }

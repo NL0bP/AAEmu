@@ -597,43 +597,41 @@ public class Unit : BaseUnit, IUnit
     {
         AppConfiguration.Instance.World.GeoDataMode = value;
     }
+
+    /// <summary>
+    /// Performs recording/reading geodata to the npc_spawn.json file
+    /// </summary>
+    /// <param name="value"></param>
     public void SetSaveGeoDataMode(bool value)
     {
         AppConfiguration.Instance.World.SaveGeoDataMode = value;
-        if (value)
-        {
-            SpawnFile = Npc.LoadSpawnFile();
-            IsDirty = true;
-        }
-        else
-        {
-            if (IsDirty && (SpawnFile != null || SpawnFile?.Count > 0))
-            {
-                Npc.SaveSpawnFile(SpawnFile);
-                IsDirty = false;
-            }
-        }
     }
+
     public void SetGodMode(bool value)
     {
         AppConfiguration.Instance.World.GodMode = value;
     }
+
     public void SetGrowthRate(float value)
     {
         AppConfiguration.Instance.World.GrowthRate = value;
     }
+
     public void SetLootRate(float value)
     {
         AppConfiguration.Instance.World.LootRate = value;
     }
+
     public void SetVocationRate(float value)
     {
         AppConfiguration.Instance.World.VocationRate = value;
     }
+
     public void SetHonorRate(float value)
     {
         AppConfiguration.Instance.World.HonorRate = value;
     }
+
     public void SetExpRate(float value)
     {
         AppConfiguration.Instance.World.ExpRate = value;

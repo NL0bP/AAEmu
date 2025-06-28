@@ -11,8 +11,9 @@
         "GrowthRate": 1.0,
         "DaysForTaxPayment": 7,
         "IgnoreFallDamageAccessLevel": 100,
-        "GodMode": false,
-        "GeoDataMode": false,
-        "FirstJourneyEnable": false
+        "GodMode": false,            // включает режим бога
+        "GeoDataMode": false,        // разрешает геоданные для подземелий
+        "FirstJourneyEnable": false, // включает показ мультфильма при первом входе персонажа
+        "SaveGeoDataMode": false     // разрешает запись геоданных по высоте персонажа
     }
 }

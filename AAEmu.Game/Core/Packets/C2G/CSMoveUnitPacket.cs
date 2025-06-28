@@ -9,6 +9,7 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
@@ -17,6 +18,7 @@ using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.StaticValues;
+using AAEmu.Game.Scripts.Commands;
 using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Core.Packets.C2G;
@@ -184,9 +186,16 @@ public class CSMoveUnitPacket : GamePacket
                         // TODO: запишем в таблицу координаты игрока, чтобы потом их использовать
                         try
                         {
-                           Character.TrackCharacterCoordinates(character);
-                           // Добавляем высоту в навмеш-карту, если это NPC или другое нужное существо
-                           WorldManager.Instance.ReportClientHeight(character, character.Transform.World.Position.Z);
+                            // If we are jumping, we don't want to update the height map
+                            //var isJumping = (_moveType.Flags == MoveTypeFlags.Jumping || dmt.ActorFlags == (ushort)MoveTypeActorFlags.Jumping);
+                            // Flying characters are not tracked by the /fly command
+                            var isFlying = Fly.GetCacheState(character.Id); // We cache the playerId, not the ObjectId
+                            // Add height to navmesh map if geodata recording by character height is enabled
+                            if (!isFlying && AppConfiguration.Instance.World.SaveGeoDataMode && dmt.ActorFlags is (ushort)MoveTypeActorFlags.StandingOnSolid or 5)
+                                WorldManager.Instance.ReportClientHeight(character, character.Transform.World.Position.Z);
+                            //Logger.Debug($"[Jump] MoveFlags: 0x{_moveType.Flags:X}, ActorFlags: 0x{dmt.ActorFlags:X}");
+                            //if (!isFlying && AppConfiguration.Instance.World.SaveGeoDataMode && !Jumping(dmt))
+                            //    WorldManager.Instance.ReportClientHeight(character, character.Transform.World.Position.Z);
                         }
                         catch (Exception ex)
                         {
@@ -216,7 +225,7 @@ public class CSMoveUnitPacket : GamePacket
                         }
                     }
 
-                    var isStandingOnObject = ((MoveTypeFlags)dmt.Flags).HasFlag(MoveTypeFlags.StandingOnObject);
+                    var isStandingOnObject = dmt.Flags.HasFlag(MoveTypeFlags.StandingOnObject);
                     // Don't know why, but we need to Ignore GcId 1, it probably has some special meaning like "current parent"
                     var parentObject = isStandingOnObject && dmt.GcId > 1
                         ? WorldManager.Instance.GetBaseUnit(dmt.GcId)
@@ -318,7 +327,7 @@ public class CSMoveUnitPacket : GamePacket
         if (IsTimeToCheck())
         {
             var characterPosition = character.Transform.World.Position;
-            var isWithinDistance = _targetPositions.Any(targetPosition => 
+            var isWithinDistance = _targetPositions.Any(targetPosition =>
                 (characterPosition - targetPosition).LengthSquared() <= DistanceThreshold);
 
             // Update the cache
@@ -363,5 +372,39 @@ public class CSMoveUnitPacket : GamePacket
     public override string Verbose()
     {
         return " - " + (_moveType?.Type.ToString() ?? "none") + " " + (WorldManager.Instance.GetGameObject(_objId)?.DebugName() ?? "(" + _objId.ToString() + ")");
+    }
+
+    private static int _packetCounter = 0;
+    private static bool _wasJumping = false;
+
+    private bool Jumping(UnitMoveType dmt)
+    {
+        // Если получен флаг прыжка
+        if (_moveType.Flags == MoveTypeFlags.Jumping || dmt.ActorFlags == (ushort)MoveTypeActorFlags.Jumping)
+        {
+            Logger.Debug($"[Jump] Started jumping - MoveFlags: 0x{_moveType.Flags:X}, ActorFlags: 0x{dmt.ActorFlags:X}");
+            _wasJumping = true;
+            _packetCounter = 0;
+            return true;
+        }
+
+        // Если был прыжок, увеличиваем счетчик для последующих пакетов
+        if (_wasJumping)
+        {
+            _packetCounter++;
+            Logger.Debug($"[Jump] Packet after jump #{_packetCounter} - MoveFlags: 0x{_moveType.Flags:X}, ActorFlags: 0x{dmt.ActorFlags:X}");
+
+            // Если получили 7 пакетов после прыжка
+            if (_packetCounter >= 7)
+            {
+                Logger.Debug($"[Jump] Completed jump sequence after {_packetCounter} packets");
+                _wasJumping = false;
+                _packetCounter = 0;
+                return false;
+            }
+        }
+        Logger.Debug($"[Jump] MoveFlags: 0x{_moveType.Flags:X}, ActorFlags: 0x{dmt.ActorFlags:X}");
+
+        return true;
     }
 }

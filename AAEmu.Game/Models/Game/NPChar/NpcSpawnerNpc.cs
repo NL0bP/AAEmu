@@ -6,7 +6,7 @@ using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Units.Route;
 using AAEmu.Game.Models.Game.World;
-
+using AAEmu.Game.Models.Game.World.Transform;
 using NLog;
 
 namespace AAEmu.Game.Models.Game.NPChar;
@@ -69,24 +69,22 @@ public class NpcSpawnerNpc : Spawner<Npc>
 
         Logger.Trace($"Spawn npc templateId {MemberId} objId {npc.ObjId} from spawnerId {NpcSpawnerTemplateId} at Position: {npcSpawner.Position}");
 
-        if (!npc.CanFly)
-        {
-            //var newZ = WorldManager.Instance.GetHeight(npcSpawner.Position.ZoneId, npcSpawner.Position.X, npcSpawner.Position.Y); // Убираем await
-            //if (Math.Abs(npcSpawner.Position.Z - newZ) < 1f)
-            //{
-            //    npcSpawner.Position.Z = newZ;
-            //}
-            var newZ = npc.GetReferenceHeight(npcSpawner.Position.X, npcSpawner.Position.Y, npcSpawner.Position.ZoneId, npcSpawner.Position.WorldId);
-            if (newZ != 0)
-                npcSpawner.Position.Z = newZ;
-        }
+        // TODO Высота при спавне всегда та, что в файле "npc_spawns"
+        //if (!npc.CanFly)
+        //{
+        //    var referenceHeight = npc.GetReferenceHeight(npcSpawner.Position.X, npcSpawner.Position.Y, npcSpawner.Position.Z, npcSpawner.Position.ZoneId);
+        //    if (referenceHeight != 0 && Math.Abs(referenceHeight - npcSpawner.Position.Z) >= 0.5f)
+        //    {
+        //        npcSpawner.Position.Z = referenceHeight;
+        //    }
+        //}
 
-        npc.Transform.ApplyWorldSpawnPosition(npcSpawner.Position);
         if (npc.Transform == null)
         {
             Logger.Error($"Can't spawn npc {MemberId} from spawnerId {NpcSpawnerTemplateId}. Transform is null.");
             return null;
         }
+        npc.Transform.ApplyWorldSpawnPosition(npcSpawner.Position);
 
         npc.Transform.InstanceId = npc.Transform.WorldId;
         npc.InstanceId = npc.Transform.WorldId;

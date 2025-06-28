@@ -102,7 +102,7 @@ public class FollowPathBehavior : BaseCombatBehavior
     {
         if (!_isInitialized)
         {
-            Logger.Warn($"FollowPathBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
+            //Logger.Warn($"FollowPathBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
 
