@@ -40,12 +40,12 @@ public class IdleBehavior : BaseCombatBehavior
     private void InitializeIdleState()
     {
         // Stop all actions and reset state
+        Ai.Owner.CurrentGameStance = GameStanceType.Relaxed;
+        Ai.Owner.CurrentAlertness = MoveTypeAlertness.Idle;
         Ai.Owner.InterruptSkills();
         Ai.Owner.StopMovement();
         Ai.Owner.SetTarget(null);
         Ai.Owner.SendPacketToPlayers([Ai.Owner.CurrentTarget], new SCAggroTargetChangedPacket(Ai.Owner.ObjId, 0));
-        Ai.Owner.CurrentGameStance = GameStanceType.Relaxed;
-        Ai.Owner.CurrentAlertness = MoveTypeAlertness.Idle;
         if (Ai.Owner is { } npc)
         {
             npc.Events.InIdle(this, new InIdleArgs { Owner = npc });

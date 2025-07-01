@@ -42,27 +42,7 @@ public static class AIUtils
         );
 
         // Get terrain height at new position
-        if (!ai.Owner.CanFly)
-        {
-            var terrainHeight = ai.Owner.GetReferenceHeight(newPosition.X, newPosition.Y, newPosition.Z, ai.Owner.Transform.ZoneId);
-            if (terrainHeight != 0)
-            {
-                newPosition.Z = terrainHeight;
-            }
-        }
-        //var terrainHeight = WorldManager.Instance.GetHeight(ai.Owner.Transform.ZoneId, newPosition.X, newPosition.Y);
-
-        //// Handle terrain height adjustments
-        //if (terrainHeight <= 0.0f || ai.Owner.CanFly)
-        //{
-        //    // For flying units or invalid terrain, use current Z position
-        //    terrainHeight = newPosition.Z;
-        //}
-        //else if (newPosition.Z < terrainHeight && terrainHeight - DefaultMaxHeightAdjustment < newPosition.Z)
-        //{
-        //    // Adjust position to terrain height if within reasonable range
-        //    newPosition.Z = terrainHeight;
-        //}
+        newPosition.Z = ai.Owner.GetReferenceHeight(newPosition.X, newPosition.Y, newPosition.Z, ai.Owner.Transform.ZoneId);
 
         return newPosition;
     }

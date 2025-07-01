@@ -5,6 +5,9 @@ using System.Linq;
 
 using AAEmu.Commons.IO;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.AI.v2.AiCharacters;
+using AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
+using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Json;
 
 using Newtonsoft.Json;
@@ -28,7 +31,23 @@ public partial class Npc
     {
         float finalHeight;
 
-        // 1. Получение высоты из базы данных NavMesh
+        // 1. Если NPC может летать, то высота берется из позиции спавнера
+        if (CanFly)
+        {
+            finalHeight = Spawner.Position.Z;
+            return finalHeight;
+        }
+
+        // 2. Для HoldPositionBehavior и IdleBehavior высота берется из спавнера
+        switch (Ai.GetCurrentBehavior())
+        {
+            case HoldPositionBehavior:
+            case IdleBehavior:
+                finalHeight = Spawner.Position.Z;
+                return finalHeight;
+        }
+
+        // 3. Получение высоты из базы данных NavMesh
         var navMeshHeight = WorldManager.Instance.GetCorrectNpcHeight(zoneId, x, y, z);
         if (!float.IsNaN(navMeshHeight))
         {
@@ -37,17 +56,17 @@ public partial class Npc
             return finalHeight;
         }
 
-        // 2. Получение высоты местности
+        // 4. Получение высоты местности
         var worldHeight = WorldManager.Instance.GetHeight(zoneId, x, y);
-        if (worldHeight != 0/* && Math.Abs(worldHeight - z) >= Tolerance*/)
+        if (worldHeight != 0/* && Math.Abs(worldHeight - Spawner.Position.Z) <= 0.1f*/)
         {
             finalHeight = worldHeight;
             //Logger.Debug($"Получили данные по высоте местности");
             return finalHeight;
         }
 
-        // 3. Берем высоту по умолчанию
-        return z;
+        // 5. Берем высоту по умолчанию
+        return Spawner.Position.Z;
     }
 
     #endregion

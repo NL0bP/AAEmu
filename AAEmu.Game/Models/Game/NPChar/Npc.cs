@@ -1218,23 +1218,8 @@ public partial class Npc : Unit
         var (newX, newY, newZ) = World.Transform.PositionAndRotation.AddDistanceToFront(travelDist, distanceToTarget, currentPosition, other);
         Transform.Local.SetPosition(newX, newY, newZ);
         // TODO to take the point we're moving to
-        var targetPosition =  NpcSpawner.AdjustMovePosition(this);
-        if (!CanFly)
-        {
-            var referenceHeight = GetReferenceHeight(targetPosition.X, targetPosition.Y, targetPosition.Z, Transform.ZoneId);
-            if (referenceHeight != 0)
-            {
-                targetPosition.Z = referenceHeight;
-                Transform.Local.SetHeight(referenceHeight);
-            }
-
-            //var referenceHeight = WorldManager.Instance.GetCorrectNpcHeight(Transform.ZoneId, Transform.World.Position.X, Transform.World.Position.Y);
-            //if (!float.IsNaN(referenceHeight))
-            //{
-            //    targetPosition.Z = referenceHeight;
-            //    Transform.Local.SetHeight(referenceHeight);
-            //}
-        }
+        var targetPosition = NpcSpawner.AdjustMovePosition(this);
+        targetPosition.Z = GetReferenceHeight(targetPosition.X, targetPosition.Y, targetPosition.Z, Transform.ZoneId);
         Transform.Local.SetPosition(targetPosition);
 
         var angle = MathUtil.CalculateAngleFrom(targetPosition, other);
@@ -1266,28 +1251,10 @@ public partial class Npc : Unit
     {
         // TODO Take the current coordinates
         var currentPosition = Transform.Local.ClonePosition();
-        if (!CanFly)
-        {
-            var referenceHeight = GetReferenceHeight(currentPosition.X, currentPosition.Y, currentPosition.Z, Transform.ZoneId);
-            if (referenceHeight != 0)
-            {
-                currentPosition.Z = referenceHeight;
-                Transform.Local.SetHeight(referenceHeight);
-            }
-
-            //var referenceHeight = WorldManager.Instance.GetCorrectNpcHeight(Transform.ZoneId, currentPosition.X, currentPosition.Y);
-            //if (!float.IsNaN(referenceHeight))
-            //{
-            //    currentPosition.Z = referenceHeight;
-            //    Transform.Local.SetHeight(referenceHeight);
-            //}
-        }
+        currentPosition.Z = GetReferenceHeight(currentPosition.X, currentPosition.Y, currentPosition.Z, Transform.ZoneId);
         Transform.Local.SetPosition(currentPosition);
-
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);
-
         var angle = MathUtil.CalculateAngleFrom(currentPosition, other);
-
         // TODO: Implement Transform.World to do proper movement
         Transform.Local.SetRotationDegree(0f, 0f, (float)angle - 90);
         var (rx, ry, rz) = Transform.Local.ToRollPitchYawSBytesMovement();
@@ -1317,15 +1284,7 @@ public partial class Npc : Unit
     {
         // TODO Take the current coordinates
         var currentPosition = Transform.Local.ClonePosition();
-        if (!CanFly)
-        {
-            var referenceHeight = GetReferenceHeight(currentPosition.X, currentPosition.Y, currentPosition.Z, Transform.ZoneId);
-            if (referenceHeight != 0)
-            {
-                currentPosition.Z = referenceHeight;
-                Transform.Local.SetHeight(referenceHeight);
-            }
-        }
+        currentPosition.Z = GetReferenceHeight(currentPosition.X, currentPosition.Y, currentPosition.Z, Transform.ZoneId);
         Transform.Local.SetPosition(currentPosition);
 
         var moveType = (UnitMoveType)MoveType.GetType(MoveTypeEnum.Unit);

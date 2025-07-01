@@ -41,12 +41,12 @@ public class HoldPositionBehavior : BaseCombatBehavior
 
     private void InitializeHoldPosition()
     {
-        // Stop all current actions
-        Ai.Owner.InterruptSkills();
-        Ai.Owner.StopMovement();
         // Set stance and alertness
         Ai.Owner.CurrentGameStance = GameStanceType.Relaxed;
         Ai.Owner.CurrentAlertness = MoveTypeAlertness.Idle;
+        // Stop all current actions
+        Ai.Owner.InterruptSkills();
+        Ai.Owner.StopMovement();
         // Initialize timers and state
         _lastTick = DateTime.UtcNow;
         _lastSkillCheck = DateTime.UtcNow;
