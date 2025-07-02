@@ -39,12 +39,15 @@ public partial class Npc
         }
 
         // 2. Для HoldPositionBehavior и IdleBehavior высота берется из спавнера
-        switch (Ai.GetCurrentBehavior())
+        if (Ai != null)
         {
-            case HoldPositionBehavior:
-            case IdleBehavior:
-                finalHeight = Spawner.Position.Z;
-                return finalHeight;
+            switch (Ai.GetCurrentBehavior())
+            {
+                case HoldPositionBehavior:
+                case IdleBehavior:
+                    finalHeight = Spawner.Position.Z;
+                    return finalHeight;
+            }
         }
 
         // 3. Получение высоты из базы данных NavMesh
@@ -66,7 +69,7 @@ public partial class Npc
         }
 
         // 5. Берем высоту по умолчанию
-        return Spawner.Position.Z;
+        return Spawner?.Position.Z ?? Transform.World.Position.Z;
     }
 
     #endregion

@@ -1236,7 +1236,7 @@ public partial class Npc : Unit
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = actorFlags;    // 5-walk, 4-run, 3-stand still
+        moveType.ActorFlags = IsInBattle ? (ushort)4 : (ushort)5; //actorFlags; // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // MoveTypeFlags.Stopping;
         moveType.DeltaMovement = [0, 127, 0];
         moveType.Stance = CurrentGameStance; // COMBAT = 0x0, IDLE = 0x1
@@ -1268,10 +1268,10 @@ public partial class Npc : Unit
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = flags; // 5-walk, 4-run, 3-stand still
+        moveType.ActorFlags = IsInBattle ? (ushort)4 : (ushort)5; //actorFlags; // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // 4;
         moveType.DeltaMovement = [0, 0, 0];
-        moveType.Stance = 0; // COMBAT = 0x0, IDLE = 0x1
+        moveType.Stance = CurrentGameStance; // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
@@ -1297,6 +1297,7 @@ public partial class Npc : Unit
         moveType.RotationX = 0;
         moveType.RotationY = 0;
         moveType.RotationZ = Transform.Local.ToRollPitchYawSBytesMovement().Item3;
+        //moveType.ActorFlags = 3; // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Stopping | (IsInBattle ? MoveTypeFlags.InCombat : 0); // 4;
         moveType.DeltaMovement = [0, 0, 0];
         moveType.Stance = CurrentGameStance; // COMBAT = 0x0, IDLE = 0x1
