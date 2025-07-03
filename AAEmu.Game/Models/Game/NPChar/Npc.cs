@@ -1236,9 +1236,9 @@ public partial class Npc : Unit
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = IsInBattle ? (ushort)4 : (ushort)5; //actorFlags; // 5-walk, 4-run, 3-stand still
+        moveType.ActorFlags = (ushort)(IsInBattle ? 4 : 5); //actorFlags; // 5-walk, 4-run, 3-stand still
         moveType.Flags = MoveTypeFlags.Moving | (IsInBattle ? MoveTypeFlags.InCombat : 0); // MoveTypeFlags.Stopping;
-        moveType.DeltaMovement = [0, 127, 0];
+        moveType.DeltaMovement = [0, (sbyte)(IsInBattle ? 127 : 63), 0]; // 127-run, 63-walk
         moveType.Stance = CurrentGameStance; // COMBAT = 0x0, IDLE = 0x1
         moveType.Alertness = CurrentAlertness;
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
