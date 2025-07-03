@@ -297,7 +297,7 @@
         public const ushort CSRestartMainQuestPacket = 0x109;
         public const ushort CSLearnSkillPacket = 0x0FA;
         public const ushort CSLearnBuffPacket = 0x0CB;
-        public const ushort CSResetSkillsPacket = 0x077;
+        public const ushort CSResetSkillsPacket = 0x0ab;
         public const ushort CSSwapAbilityPacket = 0x172;
         public const ushort CSAskHeirLevelUpPacket = 0x1B6; // off_39EC1724
         public const ushort CSRemoveBuffPacket = 0x0C5;

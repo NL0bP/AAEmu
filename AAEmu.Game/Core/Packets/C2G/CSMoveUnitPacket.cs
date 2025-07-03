@@ -347,14 +347,16 @@ public class CSMoveUnitPacket : GamePacket
 
     private static void ApplyBuff(Character character, bool isWithinDistance)
     {
-        var hasBuff = character.Buffs.CheckBuff((uint)SkillConstants.Moored);
+        var hasBuff = character.Buffs.CheckBuff((uint)SkillConstants.DrydocksAvailable);
         if (isWithinDistance && !hasBuff)
         {
             character.Buffs.AddBuff((uint)SkillConstants.Moored, character);
+            character.Buffs.AddBuff((uint)SkillConstants.DrydocksAvailable, character);
         }
         else if (!isWithinDistance && hasBuff)
         {
             character.Buffs.RemoveBuff((uint)SkillConstants.Moored);
+            character.Buffs.RemoveBuff((uint)SkillConstants.DrydocksAvailable);
         }
     }
 
