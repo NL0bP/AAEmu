@@ -53,11 +53,15 @@ public class SummonSlave : Item
         IsDestroyed = stream.ReadByte();
         try
         {
-            // Read time of something else than 0
-            var timeBytes = stream.ReadBytes(4);
-            RepairStartTime = Convert.ToInt32(timeBytes) != 0 ? Convert.ToDateTime(timeBytes) : DateTime.MinValue;
+            // Читаем Unix timestamp (4 байта)
+            var unixTime = stream.ReadInt32();
+            if (unixTime != 0)
+                RepairStartTime = DateTimeOffset.FromUnixTimeSeconds(unixTime).UtcDateTime;
+            else
+                RepairStartTime = DateTime.MinValue;
 
             // Read remaining bytes
+            stream.ReadInt32();
             _ = stream.ReadBytes((int)DetailBytesLength - 1 - 4 - 4); // Filler, Equipment?
         }
         catch
@@ -75,17 +79,21 @@ public class SummonSlave : Item
 
         if (RepairStartTime == DateTime.MinValue)
         {
-            stream.Write(0);       // 4 9
-            stream.Write(0);       // 4 13
+            stream.Write(0); // 4 9
         }
         else
-            stream.Write(RepairStartTime); // 8 13
+        {
+            // Convert DateTime to Unix timestamp (4 bytes)
+            var unixTime = (int)((RepairStartTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds);
+            stream.Write(unixTime); // 4 9
+        }
 
-        stream.Write(0);           // 4 17 // If this is anything besides 0, it will count as being in recovering (negative at that)
+        stream.Write(0); // 4 13 // If this is anything besides 0, it will count as being in recovering (negative at that)
 
         // The following 16 bytes somehow determine where a Vehicle is allowed to be summoned
         // TODO: Get real live data capture of this value being set
         // TODO: Get this from having a vehicle out when maintenance starts
+        stream.Write(0); // 4 17
         stream.Write(0); // 4 21
         stream.Write(0); // 4 25
         stream.Write(0); // 4 29
@@ -94,16 +102,20 @@ public class SummonSlave : Item
 
     public override void WriteAdditionalDetails(PacketStream stream)
     {
-        stream.Write(SlaveDbId); // 4 4
+        stream.Write(SlaveDbId);   // 4 4
         stream.Write(IsDestroyed); // 1 5
 
         if (RepairStartTime == DateTime.MinValue)
         {
-            stream.Write(0);       // 4 9
-            stream.Write(0);       // 4 13
+            stream.Write(0); // 4 9
         }
         else
-            stream.Write(RepairStartTime); // 8 13
+        {
+            var unixTime = (int)((RepairStartTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds);
+            stream.Write(unixTime); // 4 9
+        }
+
+        stream.Write(0); // 4 13
     }
 
     public override void OnManuallyDestroyingItem()

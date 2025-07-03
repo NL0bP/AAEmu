@@ -726,7 +726,7 @@ public class SlaveManager : Singleton<SlaveManager>
                 }
             }
             slaveSummonItem.SummonLocation = spawnPos.World.Position;
-            slaveSummonItem.RepairStartTime = DateTime.MinValue; // reset timer here
+            slaveSummonItem.RepairStartTime = DateTime.UtcNow.AddMinutes(-10); // reset timer here
             slaveSummonItem.IsDirty = true;
             //owner?.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.UpdateSummonSlaveItem, new ItemUpdate(item), []));
         }
