@@ -411,7 +411,7 @@ public class SpawnManager : Singleton<SpawnManager>
             }
             else
             {
-                npc.Hide();
+                npc.Delete();
             }
             res++;
         }
@@ -425,10 +425,31 @@ public class SpawnManager : Singleton<SpawnManager>
             }
             else
             {
-                doodad.Hide();
+                doodad.Delete();
             }
             res++;
         }
+        foreach (var mate in WorldManager.Instance.GetAllMates().ToList())
+            try
+            {
+                mate.Delete();
+                res++;
+            }
+            catch
+            {
+                //
+            }
+
+        foreach (var slave in WorldManager.Instance.GetAllSlaves().ToList())
+            try
+            {
+                slave.Delete();
+                res++;
+            }
+            catch
+            {
+                //
+            }
 
         Logger.Info($"Despawned {res} objects in world {worldId}.");
         return res;
@@ -486,10 +507,10 @@ public class SpawnManager : Singleton<SpawnManager>
                         //Logger.Debug($"Despawning NPC {npc.ObjId}");
                         npc.Spawner.Despawn(npc);
                     }
-                    else if (obj is Doodad { Spawner: not null } doodad)
+                    else if (obj is Doodad { Spawner: not null } doodadWithSpawner)
                     {
-                        //Logger.Trace($"Despawning Doodad {doodad.ObjId}");
-                        doodad.Spawner.Despawn(doodad);
+                        //Logger.Trace($"Despawning Doodad {doodadWithSpawner.ObjId}");
+                        doodadWithSpawner.Spawner.Despawn(doodadWithSpawner);
                     }
                     else if (obj is Transfer { Spawner: not null } transfer)
                     {
@@ -501,15 +522,15 @@ public class SpawnManager : Singleton<SpawnManager>
                         //Logger.Trace($"Despawning Gimmick {gimmick.ObjId}");
                         gimmick.Spawner.Despawn(gimmick);
                     }
-                    else if (obj is Slave slave)
+                    else if (obj is Slave slave) // slaves don't have a spawner, but this is used for delayed despawn of un-summoned boats
                     {
                         //Logger.Trace($"Deleting Slave {slave.ObjId}");
                         slave.Delete();
                     }
-                    else if (obj is Doodad doodad2)
+                    else if (obj is Doodad doodadWithNoSpawner)
                     {
-                        //Logger.Trace($"Deleting Doodad {doodad2.ObjId}");
-                        doodad2.Delete();
+                        //Logger.Trace($"Deleting Doodad {doodadWithNoSpawner.ObjId}");
+                        doodadWithNoSpawner.Delete();
                     }
                     else
                     {

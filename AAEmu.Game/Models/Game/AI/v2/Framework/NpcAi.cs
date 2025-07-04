@@ -39,7 +39,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
         // Core properties
         public bool ShouldTick { get; set; }
         public bool AlreadyTargeted { get; set; }
-        public Npc Owner { get; init; }
+        public Npc Owner { get; set; }
         public Vector3 IdlePosition { get; set; }
         public Vector3 HomePosition { get; set; }
         public AiParams Param { get; set; }

@@ -28,6 +28,8 @@ public class OpenPortalEffect : EffectTemplate
         {
             return;
         }
-        PortalManager.Instance.OpenPortal(portalOwner, portalInfo); // TODO - Use Distance
+
+        var portal = PortalSelector.GetRandomPortal();
+        PortalManager.Instance.OpenPortal(portalOwner, portalInfo, portal.EnterPortalNpcId, portal.ExitPortalNpcId); // TODO - Use Distance
     }
 }

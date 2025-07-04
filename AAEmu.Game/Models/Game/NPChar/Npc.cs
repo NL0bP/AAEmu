@@ -16,6 +16,7 @@ using AAEmu.Game.Models.Game.Formulas;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
@@ -1382,5 +1383,55 @@ public partial class Npc : Unit
 
         // Return the position in the list 0 = most aggro, 100 = least aggro
         return 1f / sortedAggro.Count * pos;
+    }
+
+    /// <summary>
+    /// Add all spawn buffs that should be applied when the Npc gets created
+    /// </summary>
+    public virtual void InitializeSpawnBuffs()
+    {
+        // Initial Buffs
+        foreach (var buffId in Template.Buffs)
+        {
+            var buff = SkillManager.Instance.GetBuffTemplate(buffId);
+            if (buff == null)
+            {
+                Logger.Warn($"BuffId {buffId} for npc {TemplateId} not found");
+                continue;
+            }
+
+            var obj = new SkillCasterUnit(ObjId);
+            buff.Apply(this, obj, this, null, null, new EffectSource(), null, DateTime.UtcNow);
+        }
+
+        // Passive Buffs
+        foreach (var npcPassiveBuff in Template.PassiveBuffs)
+        {
+            var passive = new PassiveBuff() { Template = npcPassiveBuff.PassiveBuff };
+            passive.Apply(this);
+        }
+
+        // Stat bonus effects
+        foreach (var bonusTemplate in Template.Bonuses)
+        {
+            var bonus = new Bonus {
+                Template = bonusTemplate,
+                Value = bonusTemplate.Value // TODO using LinearLevelBonus
+            };
+            AddBonus(0, bonus);
+        }
+    }
+
+    public override void Delete()
+    {
+        // Detach AI
+        if (Ai != null)
+        {
+            Ai.ShouldTick = false;
+            Ai.Owner = null;
+            Ai = null;
+        }
+
+        base.Delete();
     }
 }

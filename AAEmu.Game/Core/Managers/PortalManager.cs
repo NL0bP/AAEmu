@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 using AAEmu.Commons.Exceptions;
 using AAEmu.Commons.IO;
@@ -380,48 +381,59 @@ public class PortalManager : Singleton<PortalManager>
         return false; // Not enough items
     }
 
-    private static void MakePortal(Unit owner, bool isExit, Portal portalInfo, SkillObjectUnk1 portalEffectObj)
+    private static Models.Game.Units.Portal MakePortal(Unit owner, bool isExit, Portal portalInfo, SkillObjectUnk1 portalEffectObj, uint portalNpcId)
     {
-        // 3891 - Portal Entrance
-        // 6949 - Portal Exit
         var portalPointDestination = new Transform(null, null,
             WorldManager.Instance.GetWorldByZone(portalInfo.ZoneId).Id, portalInfo.ZoneId,
             WorldManager.DefaultInstanceId, portalInfo.X, portalInfo.Y, portalInfo.Z,
             0f, 0f, portalInfo.ZRot);
-        var portalPointLocation = new Transform(null, null,
-            owner.Transform.WorldId, owner.Transform.ZoneId, owner.Transform.InstanceId,
-            portalEffectObj.X, portalEffectObj.Y, portalEffectObj.Z,
-            owner.Transform.World.Rotation.X, owner.Transform.World.Rotation.Y, owner.Transform.World.Rotation.Z);
-        var templateId = isExit ? 6949u : 3891u; // TODO - better way? maybe not hardcoded
-        var template = NpcManager.Instance.GetTemplate(templateId);
-        var portalUnitModel = new Models.Game.Units.Portal
+
+        var template = NpcManager.Instance.GetTemplate(portalNpcId);
+        var portalNpc = new Models.Game.Units.Portal
         {
             ObjId = ObjectIdManager.Instance.GetNextId(),
             OwnerId = ((Character)owner).Id,
-            TemplateId = templateId,
+            TemplateId = portalNpcId,
             Template = template,
             ModelId = template.ModelId,
             Faction = owner.Faction, // INFO - FactionManager.Instance.GetFaction(template.FactionId)
             Level = template.Level,
-            Transform = isExit ? portalPointDestination : portalPointLocation,
             Name = portalInfo.Name,
-            Hp = 955, // BUG - portal.MaxHp does not work 1.0
-            Mp = 290, // TODO - portal.MaxMp
             TeleportPosition = portalPointDestination
         };
-        portalUnitModel.Spawn();
 
-        var killTask = new KillPortalTask(portalUnitModel);
+        if (isExit)
+        {
+            portalNpc.Transform.Local.SetPosition(portalInfo.X, portalInfo.Y, portalInfo.Z, 0f, 0f, portalInfo.ZRot);
+        }
+        else
+        {
+            portalNpc.Transform.Local.SetPosition(portalEffectObj.X, portalEffectObj.Y, portalEffectObj.Z, owner.Transform.World.Rotation.X, owner.Transform.World.Rotation.Y, owner.Transform.World.Rotation.Z);
+        }
+
+        portalNpc.InitializeSpawnBuffs();
+        portalNpc.UpdateGearBonuses(null, null);
+
+        portalNpc.Hp = portalNpc.MaxHp;
+        portalNpc.Mp = portalNpc.MaxMp;
+
+        portalNpc.Spawn();
+
+        var killTask = new KillPortalTask(portalNpc);
         TaskManager.Instance.Schedule(killTask, TimeSpan.FromSeconds(30));
+        return portalNpc;
     }
 
-    public void OpenPortal(Character owner, SkillObjectUnk1 portalEffectObj)
+    public void OpenPortal(Character owner, SkillObjectUnk1 portalEffectObj, uint portalEnterId, uint portalExitId)
     {
         var portalInfo = owner.Portals.GetPortalInfo((uint)portalEffectObj.Id);
         if (!CheckCanOpenPortal(owner, portalInfo.ZoneId)) return;
 
-        MakePortal(owner, false, portalInfo, portalEffectObj);   // Entrance (green)
-        MakePortal(owner, true, portalInfo, portalEffectObj);    // Exit (yellow)
+        var entrance = MakePortal(owner, false, portalInfo, portalEffectObj, portalEnterId);   // Entrance (green)
+        var exit = MakePortal(owner, true, portalInfo, portalEffectObj, portalExitId);    // Exit (yellow)
+        // Linked the 2 portals
+        entrance.LinkedPortal = exit;
+        exit.LinkedPortal = entrance;
     }
 
     public static void UsePortal(Character character, uint objId)
