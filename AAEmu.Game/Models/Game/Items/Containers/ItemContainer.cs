@@ -783,7 +783,7 @@ public class ItemContainer
         // Get all items by the templateId
         if (!GetAllItemsByTemplate(templateId, out var currentItems, out var currentTotalItemCount))
         {
-            Logger.Warn($"No items found with templateId: {templateId}");
+            Logger.Warn($"No items found in container: {_containerType} with templateId: {templateId}");
         }
 
         // Calculate the total free space available for this item
