@@ -11,6 +11,7 @@ using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Units;
@@ -31,10 +32,14 @@ public class CSMoveUnitPacket : GamePacket
     private MoveType _moveType;
 
     // lighthouse ezi's
-    private Stopwatch _stopwatch = new Stopwatch();
+    private Stopwatch _stopwatch = new();
+    private Stopwatch _stopwatch2 = new();
     private const int DelayInMilliseconds = 1000; // 1 секунда
     private const double DistanceThreshold = 500.0 * 500.0; // 500 метров
+    private const double cargoShipProximityThresholdSquared = 35.0 * 35.0; // 35 метров
+    private const float cargoShipProximityThreshold = 35f; // 35 метров
     private readonly Dictionary<Character, bool> _proximityCache = new();
+    private readonly Dictionary<Character, bool> _cargoShipCache = new(); // Add new cache for cargo ship captain
     private readonly HashSet<Vector3> _targetPositions = new()
     {
         new Vector3(16672.8f, 9303.9f, 175f), // Полуостров Рассвета на восточном материке
@@ -147,10 +152,11 @@ public class CSMoveUnitPacket : GamePacket
                 }
             case UnitMoveType dmt:
                 {
-                    // Logger.Debug($"{targetUnit.Name} => ActorFlags: 0x{dmt.ActorFlags:X} - ClimbData: {dmt.ClimbData:X} - GcId: {dmt.GcId}");
+                    //Logger.Debug($"{targetUnit.Name} => ActorFlags: 0x{dmt.ActorFlags:X} - ClimbData: {dmt.ClimbData:X} - GcId: {dmt.GcId}");
 
                     // lighthouse ezi's
                     CheckProximityAndApplyBuff(character);
+                    CheckCargoShipCaptain(character);
 
                     // It moving Pets, handle Pet XP for moving
                     if (targetUnit is Mate mate)
@@ -186,12 +192,13 @@ public class CSMoveUnitPacket : GamePacket
                         // TODO: запишем в таблицу координаты игрока, чтобы потом их использовать
                         try
                         {
+                            // dmt.GcId == 8119 находимся на корабле, не требуется запись высоты
                             // If we are jumping, we don't want to update the height map
                             //var isJumping = (_moveType.Flags == MoveTypeFlags.Jumping || dmt.ActorFlags == (ushort)MoveTypeActorFlags.Jumping);
                             // Flying characters are not tracked by the /fly command
                             var isFlying = Fly.GetCacheState(character.Id); // We cache the playerId, not the ObjectId
                             // Add height to navmesh map if geodata recording by character height is enabled
-                            if (!isFlying && AppConfiguration.Instance.World.SaveGeoDataMode && dmt.ActorFlags is (ushort)MoveTypeActorFlags.StandingOnSolid or 5)
+                            if (dmt.GcId != 8119 && !isFlying && AppConfiguration.Instance.World.SaveGeoDataMode && dmt.ActorFlags is (ushort)MoveTypeActorFlags.StandingOnSolid or 5)
                                 WorldManager.Instance.ReportClientHeight(character, character.Transform.World.Position.Z);
                             //Logger.Debug($"[Jump] MoveFlags: 0x{_moveType.Flags:X}, ActorFlags: 0x{dmt.ActorFlags:X}");
                             //if (!isFlying && AppConfiguration.Instance.World.SaveGeoDataMode && !Jumping(dmt))
@@ -322,6 +329,39 @@ public class CSMoveUnitPacket : GamePacket
             unit.Buffs.TriggerRemoveOn(BuffRemoveOn.Move);
     }
 
+    private void CheckCargoShipCaptain(Character character)
+    {
+        if (IsTimeToCheck2())
+        {
+            var isWithinDistance = true;
+            var doodads= WorldManager.GetAround<Doodad>(character, cargoShipProximityThreshold);
+            // ID=12299 Cargo Ship Captain
+            if (doodads is { Count: > 0 } && doodads.Any(doodad => doodad.TemplateId == 12299))
+                isWithinDistance = false;
+
+            // Update the cache
+            _cargoShipCache[character] = isWithinDistance;
+
+            ApplyCargoShipEffects(character, isWithinDistance);
+
+            // Reset the timer and start it again
+            _stopwatch2.Restart();
+        }
+        else if (_cargoShipCache.TryGetValue(character, out var cachedResult))
+        {
+            // Use cached result
+            ApplyCargoShipEffects(character, cachedResult);
+        }
+    }
+
+    private static void ApplyCargoShipEffects(Character character, bool isWithinDistance)
+    {
+        if (isWithinDistance)
+        {
+            character.Buffs.RemoveBuff((uint)SkillConstants.CaptainsProtection);
+        }
+    }
+
     private void CheckProximityAndApplyBuff(Character character)
     {
         if (IsTimeToCheck())
@@ -369,6 +409,16 @@ public class CSMoveUnitPacket : GamePacket
         }
 
         return _stopwatch.ElapsedMilliseconds >= DelayInMilliseconds;
+    }
+    private bool IsTimeToCheck2()
+    {
+        if (!_stopwatch2.IsRunning)
+        {
+            _stopwatch2.Start();
+            return true;
+        }
+
+        return _stopwatch2.ElapsedMilliseconds >= DelayInMilliseconds;
     }
 
     public override string Verbose()

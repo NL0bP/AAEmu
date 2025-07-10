@@ -48,6 +48,17 @@ public class InteractionEffect : EffectTemplate
             // инициируем событие
             //Task.Run(() => QuestManager.Instance.DoInteractionEvents((Character)caster, target.TemplateId));
             QuestManager.Instance.DoDoodadInteractionEvents((Character)caster, (Character)caster, target.TemplateId);
+
+            // HackFix
+            //ID=3710 Wanted
+            var hasWanted = character.Buffs.CheckBuff((uint)SkillConstants.Wanted);
+            //ID=32033 Permanent Jailbreak Traces
+            var hasPermanentJailbreakTraces = character.Buffs.CheckBuff((uint)SkillConstants.PermanentJailbreakTraces);
+            // Doodad ID=12299 Cargo Ship Captain
+            if (doodad.TemplateId == 12299 && (!hasWanted || !hasPermanentJailbreakTraces))
+            {
+                character.Buffs.AddBuff((uint)SkillConstants.CaptainsProtection, character);
+            }
         }
     }
 }
