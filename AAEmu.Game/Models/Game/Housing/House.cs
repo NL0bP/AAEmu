@@ -125,6 +125,7 @@ public sealed class House : Unit
     public DateTime PlaceDate { get => _placeDate; set { _placeDate = value; _isDirty = true; } }
     public DateTime ProtectionEndDate { get => _protectionEndDate; set { _protectionEndDate = value; _isDirty = true; } }
     public DateTime TaxDueDate { get => _protectionEndDate.AddDays(-7); }
+    public bool IsAlreadyPaid { get; set; }
     public uint SellToPlayerId { get => _sellToPlayerId; set { _sellToPlayerId = value; _isDirty = true; } }
     public uint SellPrice { get => _sellPrice; set { _sellPrice = value; _isDirty = true; } }
     public bool AllowRecover { get => _allowRecover; set { _allowRecover = value; _isDirty = true; } }
@@ -353,7 +354,7 @@ public sealed class House : Unit
         stream.Write(Helpers.ConvertLongX(Transform.World.Position.X));
         stream.Write(Helpers.ConvertLongY(Transform.World.Position.Y));
         stream.Write(Transform.World.Position.Z);
-        stream.Write(Template.MainModelId); // model_id (type) не точно!
+        stream.Write(TemplateId); // model_id (type)
         stream.Write((byte)Permission);     // permission
         stream.Write(Name);                 // house // TODO max length 128
         return stream;

@@ -119,6 +119,11 @@ public class ResidentManager : Singleton<ResidentManager>
 
             character.SendPacket(new SCResidentMapPacket(resident.ZoneGroupId, Option.Insert));
         }
+        else
+        {
+            var houses = HousingManager.Instance.GetAllByCharacterId(character.Id);
+            character.SendPacket(new SCAddHousePacket(houses));
+        }
     }
 
     public void RemoveResidenMemberInfo(Character character)

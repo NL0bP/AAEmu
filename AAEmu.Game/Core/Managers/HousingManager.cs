@@ -455,7 +455,7 @@ public class HousingManager : Singleton<HousingManager>
                     // Manually placed houses (or after upgrading MySQL), will get 2 weeks for free as to not immediately trigger them into demolition
                     if (house.PlaceDate == house.ProtectionEndDate)
                     {
-                        house.ProtectionEndDate = house.PlaceDate.AddDays(14);
+                        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 2); // 14 days
                     }
 
                     UpdateTaxInfo(house);
@@ -627,6 +627,7 @@ public class HousingManager : Singleton<HousingManager>
     /// </summary>
     /// <param name="connection"></param>
     /// <param name="tlId"></param>
+    /// <param name="objId"></param>
     public void HouseTaxInfo(GameConnection connection, ushort tlId, uint objId)
     {
         if (!_housesTl.TryGetValue(tlId, out var house))
@@ -640,16 +641,22 @@ public class HousingManager : Singleton<HousingManager>
         var depositTax = baseTax * 2;
 
         // Note: I'm sure this can be done better, but it works and displays correctly
-        var requiresPayment = false;
-        sbyte weeksWithoutPay = 0;
-        if (house.TaxDueDate <= DateTime.UtcNow)
+        var requiresPayment = true;
+        sbyte weeksWithoutPay = -1;
+        var protectionEndDate = house.TaxDueDate;
+        if (house.IsAlreadyPaid)
         {
-            requiresPayment = true;
+            requiresPayment = false;
+            weeksWithoutPay = 0;
+        }
+        else if (house.TaxDueDate <= DateTime.UtcNow)
+        {
+            protectionEndDate = house.ProtectionEndDate;
             weeksWithoutPay = 0;
         }
         else if (house.ProtectionEndDate <= DateTime.UtcNow)
         {
-            requiresPayment = true;
+            protectionEndDate = house.ProtectionEndDate;
             weeksWithoutPay = 1;
         }
 
@@ -662,7 +669,7 @@ public class HousingManager : Singleton<HousingManager>
                 0,
                 depositTax, // this is used in the help text on (?) when you hover your mouse over it to display deposit tax for this building
                 totalTaxAmountDue, // Amount Due
-                house.ProtectionEndDate,
+                protectionEndDate,
                 !requiresPayment,
                 weeksWithoutPay,  // TODO: do proper calculation ?
                 (sbyte)house.PaidWeeks,
@@ -801,14 +808,12 @@ public class HousingManager : Singleton<HousingManager>
         house.Permission = HousingPermission.Private;
         house.AllowRecover = true;
         house.PlaceDate = DateTime.UtcNow;
-        house.ProtectionEndDate = DateTime.UtcNow.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
         _houses.Add(house.Id, house);
         _housesTl.Add(house.TlId, house);
 
-        connection.ActiveChar.SendPacket(new SCHouseStatePacket(house));
-
         house.Spawn();
-        UpdateTaxInfo(house);
+        UpdateTaxInfo(house, true);
         ResidentManager.Instance.AddResidenMemberInfo(connection.ActiveChar);
     }
 
@@ -919,28 +924,15 @@ public class HousingManager : Singleton<HousingManager>
         house.Permission = HousingPermission.Private;
         house.AllowRecover = true;
         house.PlaceDate = DateTime.UtcNow;
-        house.ProtectionEndDate = DateTime.UtcNow.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        house.ProtectionEndDate = DateTime.UtcNow.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 2);
         _houses.Add(house.Id, house);
         _housesTl.Add(house.TlId, house);
 
-        connection.ActiveChar.SendPacket(new SCHouseStatePacket(house));
-
         house.Spawn();
-
         UpdateTaxInfo(house);
+
         // Return items to player by mail
         ReturnHouseRefundToOwner(house, false, false, null, oldHouseName);
-
-        //// Create new Rebuild mail
-        //var newMail = new MailForRebuild(house);
-        //if (oldHouseName == "")
-        //{
-        //    oldHouseName = "Design";
-        //}
-
-        //newMail.FinalizeMail(oldHouseName);
-        //newMail.Send();
-        //Logger.Debug($"New Tax Mail sent for {house.Name} owned by {house.OwnerId}");
 
         ResidentManager.Instance.AddResidenMemberInfo(connection.ActiveChar);
 
@@ -1164,11 +1156,7 @@ public class HousingManager : Singleton<HousingManager>
         oneWeekTaxCount = 0;
 
         var userHouses = new Dictionary<uint, House>();
-        if (GetByAccountId(userHouses, accountId) <= 0)
-        {
-            return false;
-        }
-
+        GetByAccountId(userHouses, accountId);
         // Count the houses on this account
         foreach (var h in userHouses)
         {
@@ -1218,8 +1206,8 @@ public class HousingManager : Singleton<HousingManager>
     /// This function updates related tax mails of a house (if needed)
     /// </summary>
     /// <param name="house"></param>
-    /// <param name="isRebuilding"></param>
-    public static void UpdateTaxInfo(House house)
+    /// <param name="buildingNewHouse"></param>
+    public static void UpdateTaxInfo(House house, bool buildingNewHouse = false)
     {
         var isDemolished = house.ProtectionEndDate <= DateTime.UtcNow;
         var isTaxDue = house.TaxDueDate <= DateTime.UtcNow;
@@ -1238,7 +1226,7 @@ public class HousingManager : Singleton<HousingManager>
         {
             MailManager.Instance.DeleteHouseMails(house.Id);
         }
-        else if (isTaxDue)
+        else if (isTaxDue || buildingNewHouse)
         {
             // TODO: update corresponding mails if needed (like update weeks unpaid etc.)
             var allMails = MailManager.Instance.GetMyHouseMails(house.Id);
@@ -1249,14 +1237,14 @@ public class HousingManager : Singleton<HousingManager>
                 var newMail = new MailForTax(house);
                 newMail.FinalizeMail();
                 newMail.Send();
-                Logger.Trace($"New Tax Mail sent for {house.Name} owned by {house.OwnerId}");
+                Logger.Debug($"New Tax Mail sent for {house.Name} owned by {house.OwnerId}");
             }
             else
             {
                 foreach (var mail in allMails)
                 {
                     MailForTax.UpdateTaxInfo(mail, house);
-                    Logger.Trace($"Tax Mail {mail.Id} updated for {house.Name} ({house.Id}) owned by {house.OwnerId}");
+                    Logger.Debug($"Tax Mail {mail.Id} updated for {house.Name} ({house.Id}) owned by {house.OwnerId}");
                 }
             }
         }
@@ -1270,6 +1258,7 @@ public class HousingManager : Singleton<HousingManager>
     public static bool PayWeeklyTax(House house)
     {
         house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        house.IsAlreadyPaid = true;
         return true;
     }
 
@@ -1282,7 +1271,10 @@ public class HousingManager : Singleton<HousingManager>
             return;
         }
 
-        house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        if (house.PaidWeeks > 0)
+        {
+            house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        }
         house.PaidWeeks++;
 
         var houseTemplate = house.Template;
@@ -1983,7 +1975,7 @@ public class HousingManager : Singleton<HousingManager>
     /// <param name="house"></param>
     /// <param name="salePrice"></param>
     /// <returns></returns>
-    private static int CalculateSaleCertifcates(House house, uint salePrice)
+    private static int CalculateSaleCertificates(House house, uint salePrice)
     {
         // NOTE: In earlier AA, you need 1 appraisal certificate for every 100 gold of sales price
         // TODO: In later versions, this depends on the building-type/size
@@ -2083,7 +2075,7 @@ public class HousingManager : Singleton<HousingManager>
         // Using the GM command does not send the seller (uses null), and thus will not require certificates
         if (seller != null)
         {
-            var certAmount = CalculateSaleCertifcates(house, price);
+            var certAmount = CalculateSaleCertificates(house, price);
             if (seller.Inventory.Bag.ConsumeItem(ItemTaskType.BuyHouse, (uint)ItemConstants.AppraisalCertificate, certAmount, null) != certAmount)
             {
                 seller.SendErrorMessage(ErrorMessageType.HouseCannotSellAsNotEnoughSeal);
@@ -2115,7 +2107,7 @@ public class HousingManager : Singleton<HousingManager>
             return true;
         }
 
-        var certAmount = CalculateSaleCertifcates(house, house.SellPrice);
+        var certAmount = CalculateSaleCertificates(house, house.SellPrice);
         var owner = WorldManager.Instance.GetCharacterById(house.OwnerId);
 
         house.SellPrice = 0;
