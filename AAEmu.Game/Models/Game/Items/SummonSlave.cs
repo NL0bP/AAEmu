@@ -24,10 +24,10 @@ public class SummonSlave : Item
         set
         {
             _repairStartTime = value;
-            if (value > DateTime.MinValue)
-                IsDestroyed = 0;
-            else
-                IsDestroyed = 1;
+            //if (value > DateTime.MinValue)
+            //    IsDestroyed = 0;
+            //else
+            //    IsDestroyed = 1;
         }
     }
 

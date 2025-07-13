@@ -51,7 +51,7 @@ public class RepairSlaveEffect : EffectTemplate
                     return;
                 }
 
-                //slaveItem.IsDestroyed = 0;
+                slaveItem.IsDestroyed = 0;
                 slaveItem.RepairStartTime = DateTime.UtcNow;
                 slaveItem.IsDirty = true;
 
@@ -94,7 +94,7 @@ public class RepairSlaveEffect : EffectTemplate
                 //    Logger.Warn($"{targetPlayer.Name} tried to use the wrong repair item {slaveItem.Id} (template: {slaveItem.TemplateId} for slave type {summonTemplate.SlaveId}");
                 //    return;
                 //}
-                //slaveItem.IsDestroyed = 0;
+                slaveItem.IsDestroyed = 0;
                 slaveItem.RepairStartTime = DateTime.UtcNow;
                 slaveItem.IsDirty = true;
 
