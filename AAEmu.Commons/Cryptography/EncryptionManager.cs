@@ -107,6 +107,11 @@ namespace AAEmu.Commons.Cryptography
                     // сохраняем пакеты в список пакетов
                     keys.XorKeyConstant2 = Convert.ToUInt32(xorKeyValue2, 16);
                 }
+                // даже если этого значения нет в файле, установите переменную AdjustCryptConstantEnable
+                // even if this value is not in the file, set the variable AdjustCryptConstantEnable
+                _ = reader.ReadLine();
+                var xorKeyValue3 = reader.ReadLine()?.ToLower();
+                AdjustCryptConstantEnable = xorKeyValue3 == "true";
             }
         }
 
@@ -124,7 +129,7 @@ namespace AAEmu.Commons.Cryptography
                 // даже если этого значения нет в файле, установите переменную AdjustCryptConstantEnable
                 // even if this value is not in the file, set the variable AdjustCryptConstantEnable
                 _ = reader.ReadLine();
-                var xorKeyValue3 = reader.ReadLine();
+                var xorKeyValue3 = reader.ReadLine()?.ToLower();
                 AdjustCryptConstantEnable = xorKeyValue3 == "true";
             }
         }
