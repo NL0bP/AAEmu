@@ -66,11 +66,11 @@ public class MailForTax : BaseMail
         }
 
         // Note: I'm sure this can be done better, but it works and displays correctly
-        var lateFees = 1;
+        var lateFees = 0;
         var paymentDeadLine = house.TaxDueDate;
         if (house.TaxDueDate <= DateTime.UtcNow)
         {
-            lateFees = 0;
+            lateFees = 1;
             paymentDeadLine = house.ProtectionEndDate;
         }
 
@@ -80,8 +80,8 @@ public class MailForTax : BaseMail
         // /testmail 6 .houseTax title(25) "body('Test','1726064262','1726669062','1726064262','150000','0','1','0','150000','true','0','0')" 0 500000 0
         mail.Body.Text = string.Format("body('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}')",
             house.Name.Replace("'", ""),                // House Name
-            Helpers.UnixTime(house.PlaceDate),          // Tax period start (this might need to be the same as tax due date)
-            Helpers.UnixTime(house.ProtectionEndDate.AddDays(7)),  // Tax period end
+            Helpers.UnixTime(house.TaxDueDate),         // Tax period start (this might need to be the same as tax due date)
+            Helpers.UnixTime(house.ProtectionEndDate),  // Tax period end
             Helpers.UnixTime(paymentDeadLine),          // Tax Due Date
             house.Template.Taxation.Tax,                // This house base tax rate
             hostileTaxRate,                             // dominion tax rate (castle tax rate ?)

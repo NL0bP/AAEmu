@@ -264,9 +264,9 @@ public sealed class House : Unit
         command.CommandText =
             "REPLACE INTO `housings` " +
             "(`id`,`account_id`,`owner`,`co_owner`,`template_id`,`name`,`x`,`y`,`z`,`yaw`,`pitch`,`roll`,`current_step`,`current_action`,`permission`,`place_date`," +
-            "`protected_until`,`faction_id`,`sell_to`,`sell_price`, `allow_recover`) " +
+            "`protected_until`,`faction_id`,`sell_to`,`sell_price`, `allow_recover`, `already_paid`, `paid_weeks`) " +
             "VALUES(@id,@account_id,@owner,@co_owner,@template_id,@name,@x,@y,@z,@yaw,@pitch,@roll,@current_step,@current_action,@permission,@placedate," +
-            "@protecteduntil,@factionid,@sellto,@sellprice,@allowrecover)";
+            "@protecteduntil,@factionid,@sellto,@sellprice,@allowrecover,@already_paid,@paid_weeks)";
 
         command.Parameters.AddWithValue("@id", Id);
         command.Parameters.AddWithValue("@account_id", AccountId);
@@ -289,6 +289,8 @@ public sealed class House : Unit
         command.Parameters.AddWithValue("@sellto", SellToPlayerId);
         command.Parameters.AddWithValue("@sellprice", SellPrice);
         command.Parameters.AddWithValue("@allowrecover", AllowRecover);
+        command.Parameters.AddWithValue("@already_paid", IsAlreadyPaid);
+        command.Parameters.AddWithValue("@paid_weeks", PaidWeeks);
         command.Prepare();
         command.ExecuteNonQuery();
 

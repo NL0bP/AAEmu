@@ -148,6 +148,7 @@ public class HousingManager : Singleton<HousingManager>
         house.Faction = FactionManager.Instance.GetFaction(factionId);
         house.Name = LocalizationManager.Instance.Get("housings", "name", template.Id);
         house.Hp = house.MaxHp;
+        house.IsAlreadyPaid = false;
         // Force public on always public properties on create
         if (template.AlwaysPublic)
         {
@@ -449,6 +450,13 @@ public class HousingManager : Singleton<HousingManager>
                     house.SellToPlayerId = reader.GetUInt32("sell_to");
                     house.SellPrice = reader.GetUInt32("sell_price");
                     house.AllowRecover = reader.GetBoolean("allow_recover");
+                    house.IsAlreadyPaid = reader.GetBoolean("already_paid");
+                    house.PaidWeeks = reader.GetInt32("paid_weeks");
+
+                    // test
+                    //TimeSpan difference = house.ProtectionEndDate - house.PlaceDate;
+                    //house.PaidWeeks = difference.Days / 7;
+
                     _houses.Add(house.Id, house);
                     _housesTl.Add(house.TlId, house);
 
@@ -653,11 +661,13 @@ public class HousingManager : Singleton<HousingManager>
         {
             protectionEndDate = house.ProtectionEndDate;
             weeksWithoutPay = 0;
+            house.IsAlreadyPaid = false;
         }
         else if (house.ProtectionEndDate <= DateTime.UtcNow)
         {
             protectionEndDate = house.ProtectionEndDate;
             weeksWithoutPay = 1;
+            house.IsAlreadyPaid = false;
         }
 
         Logger.Debug($"SCHouseTaxInfoPacket; tlId:{house.TlId}, domTaxRate: 0, deposit: {depositTax}, taxDue:{totalTaxAmountDue}, protectEnd:{house.ProtectionEndDate}, isPaid:{requiresPayment}, weeksWithoutPay:{weeksWithoutPay}, isHeavy:{house.Template.HeavyTax}");
@@ -808,7 +818,7 @@ public class HousingManager : Singleton<HousingManager>
         house.Permission = HousingPermission.Private;
         house.AllowRecover = true;
         house.PlaceDate = DateTime.UtcNow;
-        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 2); // 14 days
         _houses.Add(house.Id, house);
         _housesTl.Add(house.TlId, house);
 
@@ -891,19 +901,6 @@ public class HousingManager : Singleton<HousingManager>
 
         // Spawn the actual house
         var house = Create(designId, connection.ActiveChar.Faction.Id);
-
-        // Fallback for un-translated buildings (en_us)
-        //if (house.Name == string.Empty)
-        //{
-        //    var fakeLocalizedName = LocalizationManager.Instance.Get("items", "name", sourceDesignItem.Template.Id, houseTemplate.Name);
-        //    if (fakeLocalizedName.EndsWith(" Design"))
-        //    {
-        //        fakeLocalizedName = fakeLocalizedName.Replace(" Design", "");
-        //    }
-
-        //    house.Name = fakeLocalizedName;
-        //}
-
         house.Id = HousingIdManager.Instance.GetNextId();
         house.Transform.Local.SetPosition(posX, posY, posZ);
         house.Transform.Local.SetZRotation(zRot);
@@ -1257,7 +1254,7 @@ public class HousingManager : Singleton<HousingManager>
     /// <returns></returns>
     public static bool PayWeeklyTax(House house)
     {
-        house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        //house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
         house.IsAlreadyPaid = true;
         return true;
     }
@@ -1271,11 +1268,9 @@ public class HousingManager : Singleton<HousingManager>
             return;
         }
 
-        if (house.PaidWeeks > 0)
-        {
-            house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
-        }
+        house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
         house.PaidWeeks++;
+        house.IsAlreadyPaid = true;
 
         var houseTemplate = house.Template;
         CalculateBuildingTaxInfo(connection.ActiveChar.AccountId, houseTemplate, false, out var totalTaxAmountDue, out var heavyTaxHouseCount, out var normalTaxHouseCount, out var hostileTaxRate, out var oneWeekTaxCount);
@@ -1286,7 +1281,6 @@ public class HousingManager : Singleton<HousingManager>
         if (FeaturesManager.Fsets.Check(Feature.taxItem))
         {
             // Pay in Tax Certificate
-
             var userTaxCount = connection.ActiveChar.Inventory.GetItemsCount(SlotType.Bag, (uint)ItemConstants.TaxCertificate);
             var userBoundTaxCount = connection.ActiveChar.Inventory.GetItemsCount(SlotType.Bag, (uint)ItemConstants.BoundTaxCertificate);
             var totalUserTaxCount = userTaxCount + userBoundTaxCount;

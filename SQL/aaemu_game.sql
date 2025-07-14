@@ -471,6 +471,8 @@ CREATE TABLE `housings`  (
   `sell_to` int UNSIGNED NOT NULL DEFAULT 0,
   `sell_price` bigint NOT NULL DEFAULT 0,
   `allow_recover` tinyint UNSIGNED NOT NULL DEFAULT 1,
+  `already_paid` tinyint UNSIGNED NOT NULL DEFAULT 0,
+  `paid_weeks` int NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'Player buildings' ROW_FORMAT = Dynamic;
 
