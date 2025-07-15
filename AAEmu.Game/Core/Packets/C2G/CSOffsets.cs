@@ -1,4 +1,6 @@
-﻿namespace AAEmu.Game.Core.Packets.C2G
+﻿using AAEmu.Game.Models.Game.Skills;
+
+namespace AAEmu.Game.Core.Packets.C2G
 {
     public static class CSOffsets
     {
@@ -25,7 +27,7 @@
         public const ushort CSStartDuelPacket = 0x1E0;
         //public const ushort CSResturnAddrsPacket = 0x074;
         public const ushort off_39E7E968 = 0x0E9;
-        public const ushort off_39E7EA30 = 0x06C; // улучшение Heir скиллов
+        public const ushort CSAncestrallSkillLearnPacket = 0x06C; // улучшение Heir скиллов off_39E7EA30
         public const ushort off_39E7EA40 = 0x148;
         public const ushort CSHeroRankingListPacket = 0x06D;
         public const ushort CSHeroCandidateListPacket = 0x0BB;

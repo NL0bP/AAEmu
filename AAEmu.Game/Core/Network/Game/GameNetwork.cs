@@ -41,6 +41,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSRequestCommonFarmListPacket, 5, typeof(CSRequestCommonFarmListPacket));
         RegisterPacket(CSOffsets.CSChallengeDuelPacket, 5, typeof(CSChallengeDuelPacket));
         RegisterPacket(CSOffsets.CSStartDuelPacket, 5, typeof(CSStartDuelPacket));
+        RegisterPacket(CSOffsets.CSAncestrallSkillLearnPacket, 5, typeof(CSAncestrallSkillLearnPacket));
         RegisterPacket(CSOffsets.CSHeroRankingListPacket, 5, typeof(CSHeroRankingListPacket));
         RegisterPacket(CSOffsets.CSHeroCandidateListPacket, 5, typeof(CSHeroCandidateListPacket));
         RegisterPacket(CSOffsets.CSHeroAbstainPacket, 5, typeof(CSHeroAbstainPacket));

@@ -175,7 +175,7 @@ public enum ItemTaskType : byte
     FamilyKick,                     // family-kick
     FamilyIncMember,                // family-inc-member
     FamilyChangeName,               // family-change-name
-    HeirSkillReset,                 // heir-skill-reset
+    HeirSkillReset = 171,           // heir-skill-reset
     SlaveFollow,                    // slave_follow
     RaidRecruit,                    // raid-recruit
     RestoreDisableEnchant,          // restore-disable-enchant
