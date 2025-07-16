@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Items;
+using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using MySql.Data.MySqlClient;
 
@@ -103,7 +105,15 @@ public class CharacterAbilities
 
         if (oldAbilityId != AbilityType.None)
             Abilities[oldAbilityId].Order = 255;
+
+        var tasks = new List<ItemTask>();
+        if (Owner.Money <= 33000)
+            return;
+
         Owner.BroadcastPacket(new SCAbilitySwappedPacket(Owner.ObjId, oldAbilityId, abilityId), true);
+        Owner.ChangeMoney(SlotType.Bag, -33000);
+        tasks.Add(new MoneyChange(-33000));
+        Owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.AbilityReset, tasks, []));
     }
 
     public void Load(MySqlConnection connection)
