@@ -25,34 +25,65 @@ public class CharacterSkills(Character owner)
     private Character Owner { get; } = owner;
 
     /// <summary>
-    /// Try to learn a new Skill
+    /// Tries to learn a new skill if the player meets all conditions.
     /// </summary>
-    /// <param name="skillId"></param>
+    /// <param name="skillId">Id of the skill to learn.</param>
     public void AddSkill(uint skillId)
     {
-        // Check if what we want to learn is part of an active skill tree (or not part of one)
         var template = SkillManager.Instance.GetSkillTemplate(skillId);
+
+        // 1. Skill must belong to one of the active ability trees (if any)
         if (template.AbilityId > 0 &&
-            template.AbilityId != Owner.Ability1 &&
-            template.AbilityId != Owner.Ability2 &&
-            template.AbilityId != Owner.Ability3)
+            !IsAbilityActive(template.AbilityId))
             return;
 
-        // Get total skill points for the player's level
-        var points = ExperienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
-
-        // Deduct the amount of skill points already used
-        points -= GetUsedSkillPoints(AbilityType.General);
-
-        // Check if we have enough remaining to learn this Skill
-        if (template.SkillPoints > points)
+        // 2. Must have enough skill points
+        var availablePoints = ExperienceManager.Instance.GetSkillPointsForLevel(Owner.Level) - GetUsedSkillPoints(AbilityType.General);
+        if (template.SkillPoints > availablePoints)
             return;
 
-        // Check if we already learned it
-        if (Skills.TryGetValue(skillId, out var skill))
-            Owner.SendPacket(new SCSkillLearnedPacket(skill));
+        // 3. Learn or resend already known skill
+        if (Skills.TryGetValue(skillId, out var existingSkill))
+        {
+            Owner.SendPacket(new SCSkillLearnedPacket(existingSkill));
+        }
         else
+        {
             AddSkill(template, 1, true);
+        }
+
+        // 4. Refresh buffs tied to ability trees
+        RefreshAbilityBuffs();
+    }
+
+    /// <summary>
+    /// Checks if given ability id is currently active on the owner.
+    /// </summary>
+    private bool IsAbilityActive(AbilityType abilityId)
+    {
+        return abilityId == Owner.Ability1 ||
+               abilityId == Owner.Ability2 ||
+               abilityId == Owner.Ability3;
+    }
+
+    /// <summary>
+    /// Updates buffs for all active ability trees.
+    /// </summary>
+    private void RefreshAbilityBuffs()
+    {
+        var abilities = new[] { Owner.Ability1, Owner.Ability2, Owner.Ability3 };
+
+        foreach (var ability in abilities)
+        {
+            if (ability == AbilityType.None)
+                continue;
+
+            var usedPoints = GetUsedSkillPoints(ability);
+            var buffId = SkillManager.Instance.GetIdByAbilityAndReqPoints(ability, usedPoints);
+
+            if (buffId.HasValue)
+                Owner.Skills.AddBuff(buffId.Value);
+        }
     }
 
     /// <summary>
@@ -76,38 +107,28 @@ public class CharacterSkills(Character owner)
     }
 
     /// <summary>
-    /// Try to learn a Passive Skill
+    /// Tries to learn a passive buff if the player meets all conditions.
     /// </summary>
-    /// <param name="buffId"></param>
+    /// <param name="buffId">Id from passive_buffs table.</param>
     public void AddBuff(uint buffId)
     {
-        // Check if what we want to learn is part of an active skill tree (or not part of one)
         var template = SkillManager.Instance.GetPassiveBuffTemplate(buffId);
-        if (template.AbilityId > 0 &&
-           template.AbilityId != Owner.Ability1 &&
-           template.AbilityId != Owner.Ability2 &&
-           template.AbilityId != Owner.Ability3)
+        if (template == null)
             return;
 
-        // Get total skill points for the player's level
-        var points = ExperienceManager.Instance.GetSkillPointsForLevel(Owner.Level);
-
-        // Deduct the amount of skill points already used
-        points -= GetUsedSkillPoints(AbilityType.General);
-
-        // Check if we have enough remaining to learn this Skill
-        if (points < 1)
+        // 1. Must belong to an active ability tree (if any)
+        if (template.AbilityId > 0 && !IsAbilityActive(template.AbilityId))
             return;
 
-        // Check if there are enough points already invested in this tree to allow learning this Passive
-        if (GetUsedSkillPoints(template.AbilityId) < template.ReqPoints)
-            return;
+        // 2. Must have enough points invested in this tree (uncomment if required)
+        //if (GetUsedSkillPoints(template.AbilityId) < template.ReqPoints)
+        //    return;
 
-        // Check if we already learned it
+        // 3. Already learned
         if (PassiveBuffs.ContainsKey(buffId))
             return;
 
-        // Add Passive Buff
+        // 4. Add and apply
         var buff = new PassiveBuff { Id = buffId, Template = template };
         PassiveBuffs.Add(buff.Id, buff);
         Owner.BroadcastPacket(new SCBuffLearnedPacket(Owner.ObjId, buff.Id), true);
@@ -120,6 +141,9 @@ public class CharacterSkills(Character owner)
     /// <param name="abilityId"></param>
     public void Reset(AbilityType abilityId)
     {
+        if (abilityId == AbilityType.None)
+            return;
+
         // TODO: with price...
         foreach (var skill in new List<Skill>(Skills.Values))
         {
@@ -156,9 +180,9 @@ public class CharacterSkills(Character owner)
                 points += skill.Template.SkillPoints;
 
         // Count points for Passive Skills (for Version 1.2)
-        foreach (var buff in PassiveBuffs.Values)
-            if (ability == AbilityType.General || buff.Template.AbilityId == ability)
-                points += 1; // buff.Template?.ReqPoints ?? 1;
+        //foreach (var buff in PassiveBuffs.Values)
+        //    if (ability == AbilityType.General || buff.Template.AbilityId == ability)
+        //        points += 1; // buff.Template?.ReqPoints ?? 1;
 
         return points;
     }

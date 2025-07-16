@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Models.Game.AI.Enums;
 using AAEmu.Game.Models.Game.Char;
-using AAEmu.Game.Models.Game.DoodadObj.Details;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
@@ -18,8 +16,6 @@ using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Utils.DB;
-
-using Microsoft.Data.Sqlite;
 
 using Newtonsoft.Json.Linq;
 
@@ -122,9 +118,7 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
         // if(_effects["Buff"].ContainsKey(id))
         //     return (BuffTemplate)_effects["Buff"][id];
         // return null;
-        if (_buffs.TryGetValue(id, out var template))
-            return template;
-        return null;
+        return _buffs.GetValueOrDefault(id);
     }
 
     public List<BuffTriggerTemplate> GetBuffTriggerTemplates(uint buffId)
@@ -506,7 +500,7 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
                         template.FxGroupId = reader.GetInt32("fx_group_id");
                         template.HighAbilityId = reader.GetInt32("high_ability_id");
                         template.IconId = reader.GetInt32("icon_id");
-//                        template.LinkBackpackTypeId = reader.GetInt32("link_backpack_type_id");
+                        //                        template.LinkBackpackTypeId = reader.GetInt32("link_backpack_type_id");
                         template.LinkEquipSlotId = reader.GetInt32("link_equip_slot_id");
                         template.MatchAnimationCount = reader.GetBoolean("match_animation_count");
                         template.MaxHighAbilityResource = reader.GetInt32("max_high_ability_resource");
@@ -821,7 +815,7 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
                         template.DisarmamentMusical = reader.GetBoolean("disarmament_musical");
                         template.DisarmamentOffHand = reader.GetBoolean("disarmament_off_hand");
                         template.DisarmamentRanged = reader.GetBoolean("disarmament_ranged");
-//                        template.ExtraEffects = reader.GetString("extra_effects");
+                        //                        template.ExtraEffects = reader.GetString("extra_effects");
                         template.FallDamageImmortality = reader.GetBoolean("fall_damage_immortality");
                         template.FixAbilityLevelToOne = reader.GetBoolean("fix_ability_level_to_one");
                         template.Framehold = reader.GetBoolean("framehold");
@@ -2161,5 +2155,30 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
         if (!_skills.TryGetValue(skillId, out var value))
             return ActabilityType.None;
         return (ActabilityType)value.ActabilityGroupId;
+    }
+
+    /// <summary>
+    /// Returns the BuffId of the first passive-buff entry whose
+    /// AbilityId matches <paramref name="abilityId"/> and whose
+    /// ReqPoints is greater than or equal to <paramref name="reqPoints"/>.
+    /// </summary>
+    /// <param name="abilityId">The <see cref="AbilityType"/> to filter by.</param>
+    /// <param name="reqPoints">The minimum required points the buff must have.</param>
+    /// <returns>
+    /// The BuffId if such a buff exists; otherwise <c>null</c>.
+    /// </returns>
+    public uint? GetBuffIdByAbilityAndReqPoints(AbilityType abilityId, int reqPoints)
+    {
+        return _passiveBuffs
+            .Values
+            .FirstOrDefault(p => p.AbilityId == abilityId && p.ReqPoints == reqPoints)
+            ?.BuffId;
+    }
+    public uint? GetIdByAbilityAndReqPoints(AbilityType abilityId, int reqPoints)
+    {
+        return _passiveBuffs
+            .Values
+            .FirstOrDefault(p => p.AbilityId == abilityId && p.ReqPoints == reqPoints)
+            ?.Id;
     }
 }

@@ -106,6 +106,12 @@ public class CharacterAbilities
         if (oldAbilityId != AbilityType.None)
             Abilities[oldAbilityId].Order = 255;
 
+        if (oldAbilityId == AbilityType.None)
+        {
+            Owner.BroadcastPacket(new SCAbilitySwappedPacket(Owner.ObjId, oldAbilityId, abilityId), true);
+            return;
+        }
+
         var tasks = new List<ItemTask>();
         if (Owner.Money <= 33000)
             return;
