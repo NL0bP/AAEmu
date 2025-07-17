@@ -280,7 +280,7 @@ public class MailManager : Singleton<MailManager>
 
     #endregion
 
-    public Dictionary<long, BaseMail> GetCurrentMailList(Character character)
+    public Dictionary<long, BaseMail> GetCurrentMailList0(Character character)
     {
         var tempMails = _allPlayerMails.Where(x => x.Value.Body.RecvDate <= DateTime.UtcNow && (x.Value.Header.ReceiverId == character.Id || x.Value.Header.SenderId == character.Id)).ToDictionary(x => x.Key, x => x.Value);
         character.Mails.UnreadMailCount.ResetReceived();
@@ -297,6 +297,45 @@ public class MailManager : Singleton<MailManager>
             }
         }
         return tempMails;
+    }
+
+    /// <summary>
+    /// Returns all current (already received) mails for the character and sends notification packets for new ones.
+    /// </summary>
+    public Dictionary<long, BaseMail> GetCurrentMailList(Character character)
+    {
+        var now = DateTime.UtcNow;
+        var result = new Dictionary<long, BaseMail>();
+
+        character.Mails.UnreadMailCount.ResetReceived();
+
+        foreach (var (id, mail) in _allPlayerMails)
+        {
+            // только письма, которые уже должны быть получены и относятся к персонажу
+            if (mail.Body.RecvDate > now) continue;
+            if (mail.Header.ReceiverId != character.Id && mail.Header.SenderId != character.Id) continue;
+
+            // добавляем в результат независимо от статуса
+            result[id] = mail;
+
+            // если письмо ещё не доставлено клиенту
+            //if (!mail.IsDelivered)
+            //{
+            // уведомляем только о непрочитанных/неоплаченных
+            if (mail.Header.Status is MailStatus.Unread/* or MailStatus.Unpaid or MailStatus.Read*/)
+            {
+                character.Mails.UnreadMailCount.UpdateUnreadReceived(mail.MailType, 1);
+            }
+
+            character.Mails.UnreadMailCount.UpdateReceived(mail.MailType, 1);
+            var body = mail.MailType == MailType.Charged ? mail.Body : null;
+            character.SendPacket(new SCGotMailPacket(mail.Header, character.Mails.UnreadMailCount, false, body));
+
+            mail.IsDelivered = true;
+            //}
+        }
+
+        return result;
     }
 
     public static bool NotifyNewMailByNameIfOnline(BaseMail m, string receiverName)
@@ -554,7 +593,7 @@ public class MailManager : Singleton<MailManager>
         }
 
         // Distribute the quest rewards
-        foreach(var item in totalRewardsItemsList)
+        foreach (var item in totalRewardsItemsList)
         {
             if (mail == null || mail.Body.Attachments.Count >= 10)
             {
@@ -571,7 +610,7 @@ public class MailManager : Singleton<MailManager>
                 mailCopper = 0;
                 resultList.Add(mail);
             }
-            
+
             mail.Body.Attachments.Add(item);
         }
 

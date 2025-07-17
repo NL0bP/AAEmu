@@ -24,7 +24,7 @@ public class CSRotateHousePacket : GamePacket
 
         Logger.Debug($"CSRotateHouse, objId: {objId}, zRot: {zRot}, height: {height}");
 
-        var houses = HousingManager.Instance.GetAllByCharacterId(Connection.ActiveChar.Id);
+        var houses = HousingManager.Instance.GetAllHousesByCharacterId(Connection.ActiveChar.Id);
         foreach (var house in houses.Where(house => house.ObjId == objId))
         {
             house.Transform.World.Rotation = house.Transform.World.Rotation with { Z = zRot };

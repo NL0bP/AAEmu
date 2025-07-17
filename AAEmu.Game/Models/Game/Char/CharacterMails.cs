@@ -38,13 +38,14 @@ public class CharacterMails
         {
 
             Self.SendPacket(new SCMailListPacket(true, total, mailList[SendMailIndex].Header, mailBoxListKind));
-            UnreadMailCount.UpdateSend(1);
+            //UnreadMailCount.UpdateSend(1);
             SendMailIndex++;
 
             if (SendMailIndex < total)
             {
                 return;
             }
+            UnreadMailCount.UpdateSend2(total);
         }
 
         Self.SendPacket(new SCMailListEndPacket((byte)total, UnreadMailCount));
@@ -64,6 +65,7 @@ public class CharacterMails
             SendMailIndex++;
             return;
         }
+        UnreadMailCount.UpdateSend2(total);
 
         Self.SendPacket(new SCMailListEndPacket(mailBoxListKind, UnreadMailCount));
     }
@@ -84,7 +86,7 @@ public class CharacterMails
         }
     }
 
-    public void ReadMail(bool isSent, long id)
+    public void ReadMail0(bool isSent, long id)
     {
         if (MailManager.Instance._allPlayerMails.TryGetValue(id, out var mail))
         {
@@ -98,6 +100,24 @@ public class CharacterMails
             Self.SendPacket(new SCMailReceiverOpenedPacket(mail.Id, mail.OpenDate));
             Self.SendPacket(new SCMailBodyPacket(false, isSent, mail.Body, true, UnreadMailCount));
         }
+    }
+
+    public void ReadMail(bool isSent, long id)
+    {
+        if (!MailManager.Instance._allPlayerMails.TryGetValue(id, out var mail))
+            return;
+
+        // если это входящее письмо и оно ещё не прочитано/неоплачено — уменьшаем счётчик
+        if (!isSent && (mail.Header.Status is MailStatus.Unread or MailStatus.Unpaid))
+        {
+            UnreadMailCount.UpdateUnreadReceived(mail.MailType, -1);
+        }
+
+        mail.OpenDate       = DateTime.UtcNow;
+        mail.Header.Status  = MailStatus.Read;
+
+        Self.SendPacket(new SCMailReceiverOpenedPacket(mail.Id, mail.OpenDate));
+        Self.SendPacket(new SCMailBodyPacket(false, isSent, mail.Body, true, UnreadMailCount));
     }
 
     public void SendUnreadMailCount()

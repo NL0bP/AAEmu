@@ -611,8 +611,8 @@ public class CharacterManager : Singleton<CharacterManager>
     public static void DeleteCharacterAssets(Character character, bool fullWipe)
     {
         // Demolish owned houses
-        var myHouses = new Dictionary<uint, House>();
-        if (HousingManager.Instance.GetByCharacterId(myHouses, character.Id) > 0)
+        var myHouses = HousingManager.Instance.GetHousesByCharacterId(character.Id);
+        if (myHouses.Count > 0)
         {
             foreach (var (houseId, house) in myHouses)
             {

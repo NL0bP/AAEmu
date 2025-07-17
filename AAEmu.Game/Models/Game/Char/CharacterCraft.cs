@@ -78,8 +78,8 @@ public class CharacterCraft
                 case DoodadFuncPermission.ZoneResidents:
                     hasPermission = false;
                     var zoneGroup = ZoneManager.Instance.GetZoneByKey(doodad.Transform.ZoneId)?.GroupId ?? 0;
-                    var playerHouses = new Dictionary<uint, House>();
-                    if (HousingManager.Instance.GetByAccountId(playerHouses, Owner.AccountId) > 0)
+                    var playerHouses = HousingManager.Instance.GetHousesByAccountId(Owner.AccountId);
+                    if (playerHouses.Count > 0)
                     {
                         foreach (var (houseId, playerHouse) in playerHouses)
                         {

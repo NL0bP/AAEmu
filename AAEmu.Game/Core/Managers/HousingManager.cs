@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -75,6 +76,25 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
+    /// Returns all houses for a given account.
+    /// </summary>
+    /// <param name="accountId">The account ID to filter by.</param>
+    /// <returns>A dictionary of house IDs and their corresponding houses.</returns>
+    public Dictionary<uint, House> GetHousesByAccountId(ulong accountId)
+    {
+        var result = new Dictionary<uint, House>();
+
+        foreach (var (id, house) in _houses)
+        {
+            if (house.AccountId == accountId)
+            {
+                result.Add(id, house);
+            }
+        }
+
+        return result;
+    }
+    /// <summary>
     /// Gets count all houses owned by Character
     /// </summary>
     /// <param name="values"></param>
@@ -94,34 +114,69 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
-    /// Gets all houses owned by Character
+    /// Returns all houses owned by a given character.
     /// </summary>
-    /// <param name="characterId"></param>
-    /// <returns>List all houses owned by Character</returns>
-    public List<House> GetAllByCharacterId(uint characterId)
+    /// <param name="characterId">The character ID to filter by.</param>
+    /// <returns>A dictionary of house IDs and their corresponding houses.</returns>
+    public Dictionary<uint, House> GetHousesByCharacterId(uint characterId)
     {
-        List<House> values = [];
+        var result = new Dictionary<uint, House>();
+
         foreach (var (id, house) in _houses)
         {
             if (house.OwnerId == characterId)
             {
-                values.Add(house);
+                result.Add(id, house);
             }
         }
 
-        return values;
+        return result;
     }
 
+    /// <summary>
+    /// Returns all houses owned by the given character.
+    /// </summary>
+    /// <param name="characterId">Character ID to filter by.</param>
+    /// <returns>List of houses owned by the character.</returns>
+    public List<House> GetAllHousesByCharacterId(uint characterId)
+    {
+        var result = new List<House>();
+
+        foreach (var (_, house) in _houses)
+        {
+            if (house.OwnerId == characterId)
+            {
+                result.Add(house);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the first rebuilding ID that matches the given skill and housing IDs.
+    /// Returns 0 if no match found.
+    /// </summary>
     public int GetHousingRebuildingId(int skillId, int housingId)
     {
-        int value;
-        return (from housingRebuilding in _housingRebuildings.Values
-                where housingRebuilding.SkillId == skillId && housingRebuilding.HousingId == housingId
-                select housingRebuilding.Id).FirstOrDefault();
+        foreach (var rebuilding in _housingRebuildings.Values)
+        {
+            if (rebuilding.SkillId == skillId && rebuilding.HousingId == housingId)
+                return rebuilding.Id;
+        }
+
+        return 0;
     }
-    public List<HousingRebuildingMaterial> GetMaterialsByHousingRebuildingId(int housingRebuildingId)
+
+    /// <summary>
+    /// Returns all materials for the specified rebuilding ID.
+    /// Returns an empty read-only list if none are found.
+    /// </summary>
+    public IReadOnlyList<HousingRebuildingMaterial> GetMaterialsByHousingRebuildingId(int housingRebuildingId)
     {
-        return _housingRebuildingMaterials.TryGetValue(housingRebuildingId, out var materials) ? materials : [];
+        return _housingRebuildingMaterials.TryGetValue(housingRebuildingId, out var materials)
+            ? materials
+            : Array.Empty<HousingRebuildingMaterial>();
     }
 
     /// <summary>
@@ -475,7 +530,7 @@ public class HousingManager : Singleton<HousingManager>
         Logger.Info($"Loaded {_houses.Count} Player Buildings");
 
         var houseCheckTask = new HousingTaxTask();
-        TaskManager.Instance.Schedule(houseCheckTask, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(10));
+        TaskManager.Instance.Schedule(houseCheckTask, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
         Logger.Info("Started Housing Tax Timer");
     }
@@ -533,7 +588,7 @@ public class HousingManager : Singleton<HousingManager>
     /// </summary>
     /// <param name="house"></param>
     /// <param name="isUntouchable"></param>
-    private static void SetUntouchable(House house, bool isUntouchable)
+    private static void SetUntouchable0(House house, bool isUntouchable)
     {
         if (isUntouchable)
         {
@@ -565,11 +620,45 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
+    /// Adds or removes the permanent Untouchable buff on the house.
+    /// </summary>
+    /// <param name="house">Target house.</param>
+    /// <param name="isUntouchable">True to add, false to remove.</param>
+    private static void SetUntouchable(House house, bool isUntouchable)
+    {
+        var buffId = (uint)BuffConstants.Untouchable;
+
+        if (isUntouchable)
+        {
+            if (house.Buffs.CheckBuff(buffId))
+                return;
+
+            // Permanent Untouchable buff, should only be removed when failed tax payment, or demolishing by hand
+            var template = SkillManager.Instance.GetBuffTemplate(buffId);
+            if (template == null)
+            {
+                Logger.Error("Unable to find Untouchable buff template");
+                return;
+            }
+
+            var caster = new SkillCasterUnit(house.ObjId);
+            house.Buffs.AddBuff(new Buff(house, house, caster, template, null, DateTime.UtcNow));
+            house.IsAlreadyPaid = true;
+        }
+        else
+        {
+            // Remove Untouchable if it's enabled
+            house.Buffs.RemoveBuff(buffId);
+            house.IsAlreadyPaid = false;
+        }
+    }
+
+    /// <summary>
     /// Sets or removes the removal debuff for demolishing houses
     /// </summary>
     /// <param name="house"></param>
     /// <param name="isDeteriorating"></param>
-    private static void SetRemovalDebuff(House house, bool isDeteriorating)
+    private static void SetRemovalDebuff0(House house, bool isDeteriorating)
     {
         if (isDeteriorating)
         {
@@ -580,8 +669,7 @@ public class HousingManager : Singleton<HousingManager>
                 if (protectionBuffTemplate != null)
                 {
                     var casterObj = new SkillCasterUnit(house.ObjId);
-                    house.Buffs.AddBuff(new Buff(house, house, casterObj,
-                        protectionBuffTemplate, null, DateTime.UtcNow));
+                    house.Buffs.AddBuff(new Buff(house, house, casterObj, protectionBuffTemplate, null, DateTime.UtcNow));
                 }
                 else
                 {
@@ -600,6 +688,38 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
+    /// Adds or removes the permanent removal debuff on the house.
+    /// </summary>
+    /// <param name="house">Target house.</param>
+    /// <param name="applyDebuff">True to add, false to remove.</param>
+    private static void SetRemovalDebuff(House house, bool applyDebuff)
+    {
+        const uint debuffId = (uint)BuffConstants.RemovalDebuff;
+
+        if (applyDebuff)
+        {
+            if (house.Buffs.CheckBuff(debuffId))
+                return;
+
+            // Permanent Untouchable buff, should only be removed when failed tax payment, or demolishing by hand
+            var template = SkillManager.Instance.GetBuffTemplate(debuffId);
+            if (template == null)
+            {
+                Logger.Error("Unable to find Removal Debuff template");
+                return;
+            }
+
+            var caster = new SkillCasterUnit(house.ObjId);
+            house.Buffs.AddBuff(new Buff(house, house, caster, template, null, DateTime.UtcNow));
+        }
+        else
+        {
+            // Remove Untouchable if it's enabled
+            house.Buffs.RemoveBuff(debuffId);
+        }
+    }
+
+    /// <summary>
     /// Sends tax information about a house
     /// </summary>
     /// <param name="connection"></param>
@@ -613,7 +733,14 @@ public class HousingManager : Singleton<HousingManager>
 
         var houseTemplate = _housingTemplates[designId];
 
-        CalculateBuildingTaxInfo(connection.ActiveChar.AccountId, houseTemplate, true, out var totalTaxAmountDue, out var heavyTaxHouseCount, out var normalTaxHouseCount, out _, out _);
+        CalculateBuildingTaxInfo(connection.ActiveChar.AccountId,
+            houseTemplate,
+            buildingNewHouse: true,
+            out var totalTaxAmountDue,
+            out var heavyTaxHouseCount,
+            out var normalTaxHouseCount,
+            out _,
+            out _);
 
         var baseTax = (int)(houseTemplate.Taxation?.Tax ?? 0);
         var depositTax = baseTax * 2;
@@ -628,6 +755,44 @@ public class HousingManager : Singleton<HousingManager>
                 totalTaxAmountDue
             )
         );
+    }
+
+    /// <summary>
+    /// Sends tax information for the specified house design to the client.
+    /// </summary>
+    public void SendHouseTaxInfo(GameConnection connection, uint designId, float x, float y, float z)
+    {
+        // TODO: validate position and distance to plot
+
+        if (!_housingTemplates.TryGetValue(designId, out var houseTemplate))
+        {
+            Logger.Warn($"SendHouseTaxInfo: unknown designId {designId}");
+            return;
+        }
+
+        CalculateBuildingTaxInfo(
+            connection.ActiveChar.AccountId,
+            houseTemplate,
+            buildingNewHouse: true,
+            out var totalTaxAmountDue,
+            out var heavyTaxHouseCount,
+            out var normalTaxHouseCount,
+            out _, out _
+        );
+
+        const int DepositMultiplier = 2;
+        var baseTax = (int)(houseTemplate.Taxation?.Tax ?? 0);
+        var depositTax = baseTax * DepositMultiplier;
+
+        connection.SendPacket(new SCConstructHouseTaxPacket(
+            designId,
+            heavyTaxHouseCount,
+            normalTaxHouseCount,
+            houseTemplate.HeavyTax,
+            baseTax,
+            depositTax,
+            totalTaxAmountDue
+        ));
     }
 
     /// <summary>
@@ -686,6 +851,78 @@ public class HousingManager : Singleton<HousingManager>
                 house.Template.HeavyTax
             )
         );
+    }
+
+    /// <summary>
+    /// Sends detailed tax info about the specified house to the client.
+    /// Called when player interacts with the house name plaque.
+    /// </summary>
+    public void SendHouseTaxInfo(GameConnection connection, ushort tlId, uint objId)
+    {
+        if (!_housesTl.TryGetValue(tlId, out var house))
+            return;
+
+        const int DepositMultiplier = 2;
+
+        CalculateBuildingTaxInfo(
+            house.AccountId,
+            house.Template,
+            buildingNewHouse: false,
+            out var totalTaxAmountDue,
+            heavyHouseCount: out _,
+            normalHouseCount: out _,
+            hostileTaxRate: out _,
+            oneWeekTaxCount: out _
+        );
+
+        var baseTax = (int)(house.Template.Taxation?.Tax ?? 0);
+        var depositTax = baseTax * DepositMultiplier;
+
+        var (requiresPayment, weeksWithoutPay, protectionEndDate) = CalculateTaxStatus(house);
+
+        if (Logger.IsDebugEnabled)
+        {
+            Logger.Debug(
+                $"SCHouseTaxInfoPacket; tlId:{house.TlId}, deposit:{depositTax}, taxDue:{totalTaxAmountDue}, " +
+                $"protectEnd:{protectionEndDate}, isPaid:{!requiresPayment}, weeksWithoutPay:{weeksWithoutPay}, " +
+                $"isHeavy:{house.Template.HeavyTax}");
+        }
+
+        connection.SendPacket(new SCHouseTaxInfoPacket(
+            house.TlId,
+            dominionTaxRate: 0, // TODO: implement when castles are added
+            hostileTaxRate: 0,
+            moneyAmount: depositTax,
+            moneyAmount2: totalTaxAmountDue,
+            due: protectionEndDate,
+            isAlreadyPaid: !requiresPayment,
+            weeksWithoutPay: weeksWithoutPay,
+            (sbyte)house.PaidWeeks,
+            house.Template.HeavyTax
+        ));
+    }
+
+    /// <summary>
+    /// Returns (requiresPayment, weeksWithoutPay, protectionEndDate) based on house state.
+    /// </summary>
+    private static (bool requiresPayment, sbyte weeksWithoutPay, DateTime protectionEndDate) CalculateTaxStatus(House house)
+    {
+        var now = DateTime.UtcNow;
+
+        // Already paid current period
+        if (house.IsAlreadyPaid)
+            return (requiresPayment: false, weeksWithoutPay: 0, house.ProtectionEndDate);
+
+        // Grace period expired – debt
+        if (house.TaxDueDate <= now)
+            return (requiresPayment: true, weeksWithoutPay: 1, house.ProtectionEndDate);
+
+        // Next period started, but still within protection
+        if (house.ProtectionEndDate <= now)
+            return (requiresPayment: true, weeksWithoutPay: 2, house.ProtectionEndDate);
+
+        // Standard case – payment needed, still protected
+        return (requiresPayment: true, weeksWithoutPay: 0, house.ProtectionEndDate);
     }
 
     /// <summary>
@@ -1144,7 +1381,7 @@ public class HousingManager : Singleton<HousingManager>
     /// <param name="hostileTaxRate"></param>
     /// <param name="oneWeekTaxCount"></param>
     /// <returns></returns>
-    public bool CalculateBuildingTaxInfo(ulong accountId, HousingTemplate newHouseTemplate, bool buildingNewHouse, out int totalTaxToPay, out int heavyHouseCount, out int normalHouseCount, out int hostileTaxRate, out int oneWeekTaxCount)
+    public bool CalculateBuildingTaxInfo0(ulong accountId, HousingTemplate newHouseTemplate, bool buildingNewHouse, out int totalTaxToPay, out int heavyHouseCount, out int normalHouseCount, out int hostileTaxRate, out int oneWeekTaxCount)
     {
         totalTaxToPay = 0;
         heavyHouseCount = 0;
@@ -1152,8 +1389,7 @@ public class HousingManager : Singleton<HousingManager>
         hostileTaxRate = 0; // NOTE: When castles are added, this needs to be updated depending on ruling guild's settings
         oneWeekTaxCount = 0;
 
-        var userHouses = new Dictionary<uint, House>();
-        GetByAccountId(userHouses, accountId);
+        var userHouses = GetHousesByAccountId(accountId);
         // Count the houses on this account
         foreach (var h in userHouses)
         {
@@ -1200,11 +1436,56 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
+    /// Calculates tax information for a given account and house template.
+    /// </summary>
+    /// <param name="accountId">Account that owns the house(s).</param>
+    /// <param name="newHouseTemplate">Template of the house being built or examined.</param>
+    /// <param name="buildingNewHouse">True if the house is new construction.</param>
+    /// <param name="totalTaxToPay">Total amount to pay (base + deposit).</param>
+    /// <param name="heavyHouseCount">Number of heavy-tax houses on the account.</param>
+    /// <param name="normalHouseCount">Number of normal-tax houses on the account.</param>
+    public void CalculateBuildingTaxInfo(ulong accountId, HousingTemplate newHouseTemplate, bool buildingNewHouse, out int totalTaxToPay, out int heavyHouseCount, out int normalHouseCount, out int hostileTaxRate, out int oneWeekTaxCount)
+    {
+        const float HeavyTaxMultiplier = 0.5f;
+        const int MaxHeavyTaxCounted = 5;
+        const int DepositMultiplier = 2;
+        const int HeavyThreshold = 3;
+
+        // Count existing houses
+        var userHouses = GetHousesByAccountId(accountId);
+        heavyHouseCount = userHouses.Values.Count(h => h.Template.HeavyTax);
+        normalHouseCount = userHouses.Count - heavyHouseCount;
+
+        // Include the new house if it is being built
+        if (buildingNewHouse)
+        {
+            if (newHouseTemplate.HeavyTax)
+                heavyHouseCount++;
+            else
+                normalHouseCount++;
+        }
+
+        // Calculate multiplier
+        var heavyEffective = Math.Min(heavyHouseCount, MaxHeavyTaxCounted);
+        var multiplier = (heavyHouseCount >= HeavyThreshold && newHouseTemplate.HeavyTax)
+            ? 1f + heavyEffective * HeavyTaxMultiplier
+            : 1f;
+
+        var baseTax = newHouseTemplate.Taxation?.Tax ?? 0;
+        var oneWeekTax = (int)Math.Ceiling(baseTax * multiplier);
+        var deposit = buildingNewHouse ? (int)(baseTax * DepositMultiplier) : 0;
+
+        totalTaxToPay = oneWeekTax + deposit;
+        hostileTaxRate = 0; // NOTE: When castles are added, this needs to be updated depending on ruling guild's settings
+        oneWeekTaxCount = 0;
+    }
+
+    /// <summary>
     /// This function updates related tax mails of a house (if needed)
     /// </summary>
     /// <param name="house"></param>
     /// <param name="buildingNewHouse"></param>
-    public static void UpdateTaxInfo(House house, bool buildingNewHouse = false)
+    public static void UpdateTaxInfo0(House house, bool buildingNewHouse = false)
     {
         var isDemolished = house.ProtectionEndDate <= DateTime.UtcNow;
         var isTaxDue = house.TaxDueDate <= DateTime.UtcNow;
@@ -1248,18 +1529,67 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
+    /// Updates tax buffs and tax-related mail for the given house.
+    /// </summary>
+    /// <param name="house">House to update.</param>
+    /// <param name="buildingNewHouse">True if the house was just built.</param>
+    public static void UpdateTaxInfo(House house, bool buildingNewHouse = false)
+    {
+        var now = DateTime.UtcNow;
+        var isDemolished = house.ProtectionEndDate <= now;
+        var isTaxDue = house.TaxDueDate <= now;
+
+        // Buffs
+        SetUntouchable(house, !isDemolished);
+        SetRemovalDebuff(house, isDemolished);
+
+        if (house.OwnerId == 0)
+            return;
+
+        // Если дом снесён — удаляем письма и выходим
+        if (isDemolished)
+        {
+            MailManager.Instance.DeleteHouseMails(house.Id);
+            return;
+        }
+
+        // Отправляем или обновляем налоговое письмо, если:
+        //   – налог уже просрочен, или
+        //   – это новый дом
+        if (!isTaxDue && !buildingNewHouse)
+            return;
+
+        var mails = MailManager.Instance.GetMyHouseMails(house.Id);
+
+        if (mails.Count == 0)
+        {
+            var newMail = new MailForTax(house);
+            newMail.FinalizeMail();
+            newMail.Send();
+            Logger.Debug($"New tax mail sent for {house.Name} ({house.Id}) owned by {house.OwnerId}");
+        }
+        else
+        {
+            // Обновляем первое попавшееся письмо (обычно их одно)
+            var mail = mails[0];
+            MailForTax.UpdateTaxInfo(mail, house);
+            Logger.Debug($"Tax mail {mail.Id} updated for {house.Name} ({house.Id}) owned by {house.OwnerId}");
+        }
+    }
+
+    /// <summary>
     /// Adds a week to the protection end date (pay 1 week's tax)
     /// </summary>
     /// <param name="house"></param>
     /// <returns></returns>
     public static bool PayWeeklyTax(House house)
     {
-        //house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
         house.IsAlreadyPaid = true;
         return true;
     }
 
-    public void PayingWeeklyTax(GameConnection connection, ushort tlId, bool ausp)
+    public void PayingWeeklyTax0(GameConnection connection, ushort tlId, bool ausp)
     {
         var house = GetHouseByTlId(tlId);
 
@@ -1367,6 +1697,131 @@ public class HousingManager : Singleton<HousingManager>
     }
 
     /// <summary>
+    /// Processes weekly tax payment for the specified house.
+    /// </summary>
+    public void PayingWeeklyTax(GameConnection connection, ushort tlId, bool ausp)
+    {
+        const int DepositMultiplier = 2;
+
+        var house = GetHouseByTlId(tlId);
+        if (house == null) return;
+
+        var totalTax = CalculateWeeklyTax(house);   // выделили отдельный метод
+        if (!TryPayTax(connection, totalTax))       // списание сертификатов/золота
+            return;
+
+        // Обновляем состояние дома
+        house.ProtectionEndDate = house.ProtectionEndDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment);
+        house.PaidWeeks++;
+        house.IsAlreadyPaid = true;
+
+        // Формируем и отправляем ответ клиенту
+        var status = GetTaxStatus(house);
+        LogTaxPayment(connection, house, totalTax, status);
+
+        connection.SendPacket(new SCHouseTaxInfoPacket(
+            house.TlId,
+            0,                       // TODO castles
+            0,
+            (int)(house.Template.Taxation?.Tax ?? 0) * DepositMultiplier,
+            totalTax,
+            house.ProtectionEndDate,
+            !status.RequiresPayment,
+            status.WeeksWithoutPay,
+            (sbyte)house.PaidWeeks,
+            house.Template.HeavyTax
+        ));
+    }
+
+    #region вспомогательные методы
+
+    private int CalculateWeeklyTax(House house)
+    {
+        CalculateBuildingTaxInfo(
+            house.AccountId,
+            house.Template,
+            buildingNewHouse: false,
+            out var totalTax,
+            heavyHouseCount: out _,
+            normalHouseCount: out _,
+            hostileTaxRate: out _,
+            oneWeekTaxCount: out _
+        );
+        return totalTax;
+    }
+
+    private bool TryPayTax(GameConnection connection, int amount)
+    {
+        if (FeaturesManager.Fsets.Check(Feature.taxItem))
+            return PayWithCertificates(connection, amount);
+        return PayWithGold(connection, amount);
+    }
+
+    private static bool PayWithCertificates(GameConnection connection, int amountDue)
+    {
+        const int TaxCertificateValue = 10_000;
+
+        var needed = (int)Math.Ceiling((double)amountDue / TaxCertificateValue);
+
+        var bound = connection.ActiveChar.Inventory.GetItemsCount(SlotType.Bag, (uint)ItemConstants.BoundTaxCertificate);
+        var unbound = connection.ActiveChar.Inventory.GetItemsCount(SlotType.Bag, (uint)ItemConstants.TaxCertificate);
+
+        if (bound + unbound < needed)
+        {
+            connection.ActiveChar.SendErrorMessage(ErrorMessageType.MailNotEnoughMoneyToPayTaxes);
+            return false;
+        }
+
+        // списываем bound → unbound
+        ConsumeCertificates(connection, ref needed, (uint)ItemConstants.BoundTaxCertificate, bound);
+        ConsumeCertificates(connection, ref needed, (uint)ItemConstants.TaxCertificate, unbound);
+
+        if (needed != 0)
+            Logger.Error($"Certificate consumption mismatch for {connection.ActiveChar.Name}");
+
+        return true;
+    }
+
+    private static void ConsumeCertificates(GameConnection connection, ref int needed, uint itemId, int available)
+    {
+        if (needed <= 0 || available <= 0) return;
+        var take = Math.Min(needed, available);
+        connection.ActiveChar.Inventory.Bag.ConsumeItem(ItemTaskType.HousePayTax, itemId, take, null);
+        needed -= take;
+    }
+
+    private static bool PayWithGold(GameConnection connection, int amount)
+    {
+        if (connection.ActiveChar.Money < amount)
+        {
+            connection.ActiveChar.SendErrorMessage(ErrorMessageType.MailNotEnoughMoneyToPayTaxes);
+            return false;
+        }
+        connection.ActiveChar.SubtractMoney(SlotType.Bag, amount, ItemTaskType.HousePayTax);
+        return true;
+    }
+
+    private readonly record struct TaxStatus(bool RequiresPayment, sbyte WeeksWithoutPay);
+
+    private static TaxStatus GetTaxStatus(House house)
+    {
+        var now = DateTime.UtcNow;
+        if (house.TaxDueDate <= now) return new(true, 0);
+        if (house.ProtectionEndDate <= now) return new(true, 1);
+        return new(false, 0);
+    }
+
+    [Conditional("DEBUG")]
+    private static void LogTaxPayment(GameConnection connection, House house, int totalTax, TaxStatus status)
+    {
+        Logger.Debug(
+            $"PayWeeklyTax; tlId:{house.TlId}, tax:{totalTax}, protectEnd:{house.ProtectionEndDate}, " +
+            $"paid:{!status.RequiresPayment}, weeksWithoutPay:{status.WeeksWithoutPay}");
+    }
+    
+    #endregion
+
+    /// <summary>
     /// Get house by DB Id
     /// </summary>
     /// <param name="houseId"></param>
@@ -1391,7 +1846,7 @@ public class HousingManager : Singleton<HousingManager>
     /// </summary>
     /// <param name="house"></param>
     /// <param name="factionId"></param>
-    private static void UpdateHouseFaction(House house, FactionsEnum factionId)
+    private void UpdateHouseFaction(House house, FactionsEnum factionId)
     {
         house.BroadcastPacket(new SCUnitFactionChangedPacket(house.ObjId, house.Name, house.Faction?.Id ?? 0, factionId, false), true);
         house.Faction = FactionManager.Instance.GetFaction(factionId);
@@ -1405,8 +1860,8 @@ public class HousingManager : Singleton<HousingManager>
     public void UpdateOwnedHousingFaction(uint characterId, FactionsEnum factionId)
     {
         // TODO: Does this also need to be done when temporary changing factions? (like arena)
-        var myHouses = new Dictionary<uint, House>();
-        GetByCharacterId(myHouses, characterId);
+        var myHouses = GetHousesByCharacterId(characterId);
+
         foreach (var h in myHouses)
         {
             if (h.Value.Faction == null || h.Value.Faction.Id != factionId)
@@ -2289,9 +2744,7 @@ public class HousingManager : Singleton<HousingManager>
     public void CheckHousingTaxes()
     {
         if (_isCheckingTaxTiming)
-        {
             return;
-        }
 
         _isCheckingTaxTiming = true;
         try
@@ -2301,9 +2754,7 @@ public class HousingManager : Singleton<HousingManager>
             foreach (var house in _houses)
             {
                 if (house.Value?.ProtectionEndDate <= DateTime.UtcNow && house.Value?.OwnerId > 0)
-                {
                     expiredHouseList.Add(house.Value);
-                }
 
                 UpdateTaxInfo(house.Value);
             }

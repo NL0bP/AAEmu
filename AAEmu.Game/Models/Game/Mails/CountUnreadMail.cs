@@ -108,4 +108,14 @@ public class CountUnreadMail : PacketMarshaler
 
         Logger.Debug($"UpdateSend: TotalSent={TotalSent}");
     }
+    public void UpdateSend2(int amount)
+    {
+        TotalSent = amount;
+        if (TotalSent <= 0)
+        {
+            TotalSent = 0;
+        }
+
+        Logger.Debug($"UpdateSend: TotalSent={TotalSent}");
+    }
 }

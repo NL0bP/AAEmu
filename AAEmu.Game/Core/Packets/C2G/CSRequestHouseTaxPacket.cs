@@ -19,6 +19,6 @@ public class CSRequestHouseTaxPacket : GamePacket
 
         Logger.Debug($"RequestHouseTax, Tl: {tl}, objId: {objId}");
 
-        HousingManager.Instance.HouseTaxInfo(Connection, tl, objId);
+        HousingManager.Instance.SendHouseTaxInfo(Connection, tl, objId);
     }
 }

@@ -47,6 +47,8 @@ public class CSBroadcastVisualOption_0_Packet() : GamePacket(CSOffsets.CSBroadca
         Connection.ActiveChar.PushSubscriber(TimeManager.Instance.Subscribe(Connection, new TimeOfDayObserver(Connection.ActiveChar)));
         //Connection.SendPacket(new SCDetailedTimeOfDayPacket(12f));
 
+        Connection.ActiveChar.SendPacket(new SCQuestContextResetBulkPacket([5971, 7372, 7662, 7747, 7805, 8609, 8612, 8615, 8638, 8000131, 8000132, 8000133, 8000136]));
+
         Connection.ActiveChar.SendPacket(new SCDailyCountPacket(0, 0, 5));
         Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.Instance));
         Connection.ActiveChar.SendPacket(new SCDailyResetPacket(DailyResetKind.AbilitySetFreeActivationCount));

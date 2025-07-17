@@ -150,8 +150,7 @@ public class GameConnection
             */
         }
 
-        Houses.Clear();
-        HousingManager.Instance.GetByAccountId(Houses, AccountId);
+        Houses = HousingManager.Instance.GetHousesByAccountId(AccountId);
     }
 
     /// <summary>

@@ -21,6 +21,6 @@ public class CSConstructHouseTaxPacket : GamePacket
         var z = stream.ReadSingle();
 
         Logger.Debug("ConstructHouseTax");
-        HousingManager.Instance.ConstructHouseTax(Connection, designId, x, y, z);
+        HousingManager.Instance.SendHouseTaxInfo(Connection, designId, x, y, z);
     }
 }

@@ -95,8 +95,8 @@ public class ResidentManager : Singleton<ResidentManager>
 
     public void AddResidenMemberInfo(Character character)
     {
-        var myHouses = new Dictionary<uint, House>();
-        if (HousingManager.Instance.GetByCharacterId(myHouses, character.Id) > 0 && character.Level >= 30)
+        var myHouses = HousingManager.Instance.GetHousesByCharacterId(character.Id);
+        if (myHouses.Count > 0 && character.Level >= 30)
         {
             var zoneGroupId = ZoneManager.Instance.GetZoneIdByKey(character.Transform.ZoneId);
             var resident = GetResidentByZoneGroupId(zoneGroupId);
@@ -114,14 +114,14 @@ public class ResidentManager : Singleton<ResidentManager>
                 resident.AddMember(residentMember);
             }
 
-            var houses = HousingManager.Instance.GetAllByCharacterId(character.Id);
+            var houses = HousingManager.Instance.GetAllHousesByCharacterId(character.Id);
             character.SendPacket(new SCAddHousePacket(houses));
 
             character.SendPacket(new SCResidentMapPacket(resident.ZoneGroupId, Option.Insert));
         }
         else
         {
-            var houses = HousingManager.Instance.GetAllByCharacterId(character.Id);
+            var houses = HousingManager.Instance.GetAllHousesByCharacterId(character.Id);
             character.SendPacket(new SCAddHousePacket(houses));
         }
     }
