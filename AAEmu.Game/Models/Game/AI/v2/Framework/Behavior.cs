@@ -29,6 +29,7 @@ public abstract class Behavior
     protected float _nextTimeToDelay;
     protected float _minWeaponRange;
     protected float _maxWeaponRange;
+    private const float MeleeAttackRange = 4f;
 
     /// <summary>
     /// The AI context for this behavior (contains owner, parameters, etc).
@@ -125,7 +126,7 @@ public abstract class Behavior
         }
 
         // Hackfix for melee attack range
-        if (pickedSkillId == 2 && targetDist > 4.0f)
+        if (pickedSkillId == 2 && targetDist > MeleeAttackRange)
         {
             return SkillResult.TooFarRange;
         }
@@ -320,7 +321,7 @@ public abstract class Behavior
             if (unit.IsDead || unit.Hp <= 0)
                 continue;
 
-            var maxHeightGap = Ai.Owner.CanFly ? (Ai.Owner.ModelSize * Ai.Owner.Scale * 4f) : (Ai.Owner.ModelSize * Ai.Owner.Scale * 1.75f);
+            var maxHeightGap = Ai.Owner.CanFly ? (Ai.Owner.ModelSize * Ai.Owner.Scale * MeleeAttackRange) : (Ai.Owner.ModelSize * Ai.Owner.Scale * 1.75f);
             if (MathUtil.IsFront(Ai.Owner, unit, Ai.Owner.Template.SightFovScale) &&
                 Math.Abs(Ai.Owner.Transform.World.Position.Z - unit.Transform.World.Position.Z) < maxHeightGap)
             {
@@ -440,5 +441,23 @@ public abstract class Behavior
     {
         Ai.SetDefaultBehavior(this);
         return this;
+    }
+    /// <summary>
+    /// Validates whether the associated AI instance has a defined owner.
+    /// </summary>
+    /// <returns><see langword="true"/> if the <c>Ai</c> property is not <see langword="null"/> and its <c>Owner</c> property is
+    /// defined; otherwise, <see langword="false"/>.</returns>
+    protected bool Validate() => Ai?.Owner != null;
+
+    /// <summary>
+    /// Last tick timestamp for throttling.
+    /// </summary>
+    private DateTime _lastTick;
+    protected bool Throttle(float interval = 0.1f)
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastTick).TotalSeconds < interval) return false;
+        _lastTick = now;
+        return true;
     }
 }

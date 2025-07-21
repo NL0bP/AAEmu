@@ -22,21 +22,12 @@ public class HoldPositionBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
+
         InitializeHoldPosition();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered hold position state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"HoldPositionBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeHoldPosition()
@@ -47,6 +38,7 @@ public class HoldPositionBehavior : BaseCombatBehavior
         // Stop all current actions
         Ai.Owner.InterruptSkills();
         Ai.Owner.StopMovement();
+        Ai.Owner.CurrentTarget = Ai.Owner;
         // Initialize timers and state
         _lastTick = DateTime.UtcNow;
         _lastSkillCheck = DateTime.UtcNow;
@@ -57,8 +49,10 @@ public class HoldPositionBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
+
         ProcessTickActions(delta);
     }
 
@@ -69,20 +63,7 @@ public class HoldPositionBehavior : BaseCombatBehavior
             Logger.Warn($"HoldPositionBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"HoldPositionBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
@@ -90,9 +71,11 @@ public class HoldPositionBehavior : BaseCombatBehavior
     {
         // Handle skill usage if possible
         ProcessSkillUsage();
+
         // Check for aggression or alert state
         if (CheckCombatStates())
             return;
+
         // If not following an NPC, try to follow the nearest one
         if (!_isFollowingNpc)
         {
@@ -105,11 +88,14 @@ public class HoldPositionBehavior : BaseCombatBehavior
         var now = DateTime.UtcNow;
         if ((now - _lastSkillCheck).TotalSeconds < SkillCheckInterval)
             return;
+
         _lastSkillCheck = now;
         if (Ai.Owner.CurrentTarget != null)
         {
             var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
             PickSkillAndUseIt(SkillUseConditionKind.InIdle, Ai.Owner, targetDist);
+
+            Ai.GoToTalk();
         }
     }
 
@@ -122,6 +108,7 @@ public class HoldPositionBehavior : BaseCombatBehavior
             //Logger.Debug($"Unit {Ai.Owner.ObjId} switched to aggression state");
             return true;
         }
+
         // Check for alert state
         if (CheckAlert())
         {
@@ -129,6 +116,7 @@ public class HoldPositionBehavior : BaseCombatBehavior
             //Logger.Debug($"Unit {Ai.Owner.ObjId} switched to alert state");
             return true;
         }
+
         return false;
     }
 
@@ -144,8 +132,9 @@ public class HoldPositionBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
+
         //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exited hold position state");
         _isInitialized = false;
         _isFollowingNpc = false;

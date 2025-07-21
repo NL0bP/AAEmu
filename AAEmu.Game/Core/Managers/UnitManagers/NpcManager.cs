@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using AAEmu.Commons.Utils;
+using AAEmu.Commons.Utils.Creatures;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
@@ -15,8 +16,6 @@ using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Merchant;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Game.Skills;
-using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.StaticValues;
@@ -42,6 +41,13 @@ public class NpcManager : Singleton<NpcManager>
     public Dictionary<uint, NpcSpawnerNpc> _npcSpawnerNpc;    // npcSpawnerId, nsn
     public Dictionary<uint, NpcSpawnerTemplate> _npcSpawners; // npcSpawnerId, template
     public Dictionary<uint, List<uint>> _npcMemberAndSpawnerId; // memberId, List<npcSpawnerId>
+    private static Dictionary<uint, Creature> _creatures = new();
+
+    
+    public static string GetSpawnName(uint id)
+    {
+        return _creatures.TryGetValue(id, out var creature) ? creature.Title : string.Empty;
+    }
 
     public bool Exist(uint templateId)
     {
@@ -89,6 +95,7 @@ public class NpcManager : Singleton<NpcManager>
 
         var npc = new Npc();
         npc.ObjId = objectId > 0 ? objectId : ObjectIdManager.Instance.GetNextId();
+        npc.Name = GetSpawnName(id);
 
         //Logger.Info($"Used ObjId={npc.ObjId}");
 
@@ -377,6 +384,8 @@ public class NpcManager : Singleton<NpcManager>
         _tccLookup = new Dictionary<uint, List<uint>>();
         _totalCharacterCustoms = new Dictionary<uint, TotalCharacterCustom>();
         _itemBodyParts = new Dictionary<uint, Dictionary<uint, List<BodyPartTemplate>>>();
+
+        _creatures = Creature.GetAllCreatures();
 
         Logger.Info("Loading npc templates...");
         using (var connection = SQLite.CreateConnection())

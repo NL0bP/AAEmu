@@ -24,22 +24,12 @@ public class RunCommandSetBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeCommandState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered command set execution state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"RunCommandSetBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeCommandState()
@@ -54,7 +44,7 @@ public class RunCommandSetBehavior : BaseCombatBehavior
         if (!ValidateTickState())
             return;
 
-        if (!ThrottleTick())
+        if (!Validate() || !Throttle())
             return;
 
         ProcessCommandExecution(delta);
@@ -68,58 +58,31 @@ public class RunCommandSetBehavior : BaseCombatBehavior
             return false;
         }
 
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"RunCommandSetBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-
-        _lastTick = now;
         return true;
     }
 
     private void ProcessCommandExecution(TimeSpan delta)
     {
-        // Check if we're still waiting for current command to complete
         if (Ai.AiCurrentCommandRunTime > TimeSpan.Zero)
         {
             Ai.AiCurrentCommandRunTime -= delta;
             return;
         }
 
-        // Process next command if available
-        if (Ai.AiCurrentCommand != null || Ai.AiCommandsQueue.Count > 0)
+        if (TryGetNextCommand(out var cmd))
         {
-            ProcessNextCommand(delta);
+            Ai.AiCurrentCommand = cmd;
+            Ai.AiCurrentCommandStartTime = DateTime.UtcNow;
+            ExecuteCurrentCommand(cmd, delta);
             return;
         }
 
-        // No more commands to execute
-        //Logger.Debug($"Unit {Ai.Owner.ObjId} completed command set execution");
         Ai.GoToIdle();
     }
 
-    private void ProcessNextCommand(TimeSpan delta)
+    private bool TryGetNextCommand(out AiCommands cmd)
     {
-        // Get next command if needed
-        if (Ai.AiCurrentCommand == null)
-        {
-            Ai.AiCurrentCommand = Ai.AiCommandsQueue.Dequeue();
-            Ai.AiCurrentCommandStartTime = DateTime.UtcNow;
-            //Logger.Debug($"Unit {Ai.Owner.ObjId} starting new command: {Ai.AiCurrentCommand.CmdId}");
-        }
-
-        // Process current command
-        ExecuteCurrentCommand(Ai.AiCurrentCommand, delta);
+        return Ai.AiCommandsQueue.TryDequeue(out cmd);
     }
 
     private void ExecuteCurrentCommand(AiCommands aiCommand, TimeSpan delta)
@@ -180,23 +143,30 @@ public class RunCommandSetBehavior : BaseCombatBehavior
 
     private void HandleFollowPathCommand(AiCommands aiCommand)
     {
+        var pathName = aiCommand.Param2 ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(pathName))
+        {
+            Logger.Warn($"FollowPath command has empty path name for unit {Ai.Owner.ObjId}");
+            CompleteCurrentCommand();
+            return;
+        }
+
         bool appendToQueue = aiCommand.Param1 == 1;
-        Ai.LoadAiPathPoints(Ai.AiFileName, appendToQueue);
+        Ai.LoadAiPathPoints(pathName, appendToQueue);
 
         if (appendToQueue)
         {
-            // Add return command at the end of path
             Ai.PathHandler.AiPathPointsRemaining.Enqueue(new AiPathPoint
             {
                 Position = Vector3.Zero,
                 Action = AiPathPointAction.ReturnToCommandSet,
                 Param = string.Empty
             });
-            Ai.AiFileName = aiCommand.Param2;
+            Ai.AiFileName = pathName;
         }
         else
         {
-            Ai.AiFileName2 = aiCommand.Param2;
+            Ai.AiFileName2 = pathName;
         }
 
         Ai.GoToFollowPath();
@@ -240,7 +210,7 @@ public class RunCommandSetBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting command set execution state");

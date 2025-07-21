@@ -17,21 +17,12 @@ public class FollowUnitBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
+
         InitializeFollowState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} started following a unit");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"FollowUnitBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeFollowState()
@@ -45,14 +36,19 @@ public class FollowUnitBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
+
         if (!UpdateTarget())
             Ai.Owner.SetTarget(null);
+
         if (CheckAggression() || CheckAlert())
             return;
+
         if (!ValidateFollowTarget())
             return;
+
         ProcessFollowMovement(delta);
     }
 
@@ -60,17 +56,7 @@ public class FollowUnitBehavior : BaseCombatBehavior
     {
         if (!_isInitialized)
             return false;
-        if (Ai?.Owner == null)
-            return false;
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
@@ -91,6 +77,13 @@ public class FollowUnitBehavior : BaseCombatBehavior
     private void ProcessFollowMovement(TimeSpan delta)
     {
         var target = Ai.AiFollowUnitObj;
+        if (target == null)
+        {
+            Logger.Debug($"Unit {Ai.Owner.ObjId} lost follow target, switching to Idle");
+            Ai.AiFollowUnitObj = null;
+            Ai.GoToIdle();
+            return;
+        }
         // Calculate distance to the target
         var targetDistance = Ai.Owner.GetDistanceTo(target, true);
         // Adjust speed based on distance (up to a maximum multiplier)
@@ -106,6 +99,9 @@ public class FollowUnitBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
+        if (!_isInitialized || Ai?.Owner == null)
+            return;
+
         _isInitialized = false;
     }
 }

@@ -19,22 +19,12 @@ public class IdleBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeIdleState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered idle state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"IdleBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeIdleState()
@@ -45,11 +35,13 @@ public class IdleBehavior : BaseCombatBehavior
         Ai.Owner.InterruptSkills();
         Ai.Owner.StopMovement();
         Ai.Owner.SetTarget(null);
-        Ai.Owner.SendPacketToPlayers([Ai.Owner.CurrentTarget], new SCAggroTargetChangedPacket(Ai.Owner.ObjId, 0));
+
+        if (Ai.Owner.CurrentTarget != null)
+            Ai.Owner.SendPacketToPlayers([Ai.Owner.CurrentTarget], new SCAggroTargetChangedPacket(Ai.Owner.ObjId, 0));
+
         if (Ai.Owner is { } npc)
-        {
             npc.Events.InIdle(this, new InIdleArgs { Owner = npc });
-        }
+
         _lastTick = DateTime.UtcNow;
     }
 
@@ -57,8 +49,10 @@ public class IdleBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
+
         ProcessTickActions();
     }
 
@@ -69,20 +63,7 @@ public class IdleBehavior : BaseCombatBehavior
             Logger.Warn($"IdleBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"IdleBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
@@ -124,6 +105,9 @@ public class IdleBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
+        if (!_isInitialized || Ai?.Owner == null)
+            return;
+
         _isInitialized = false;
     }
 }

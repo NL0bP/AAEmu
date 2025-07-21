@@ -28,24 +28,38 @@ public static class AIUtils
         if (ai?.Owner == null || ai.IdlePosition == default)
             return Vector3.Zero;
 
-        // Calculate random offset from idle position within roaming bounds
         var randomOffset = new Vector2(
             (Rand.NextSingle() - 0.5f) * DefaultMaxRoamingDistance * 2,
-            (Rand.NextSingle() - 0.5f) * DefaultMaxRoamingDistance * 2
-        );
+            (Rand.NextSingle() - 0.5f) * DefaultMaxRoamingDistance * 2);
 
-        // Calculate new position
         var newPosition = new Vector3(
             ai.IdlePosition.X + randomOffset.X,
             ai.IdlePosition.Y + randomOffset.Y,
-            ai.IdlePosition.Z
-        );
+            ai.IdlePosition.Z);
 
         // Get terrain height at new position
         newPosition.Z = ai.Owner.GetReferenceHeight(newPosition.X, newPosition.Y, newPosition.Z, ai.Owner.Transform.ZoneId);
 
         return newPosition;
     }
+
+    private static readonly System.Collections.Generic.Dictionary<AiParamType, System.Func<Npc, NpcAi>> _aiFactory =
+        new()
+        {
+            { AiParamType.AlmightyNpc, owner => new AlmightyNpcAiCharacter { Owner = owner } },
+            { AiParamType.ArcherHoldPosition, owner => new ArcherHoldPositionAiCharacter { Owner = owner } },
+            { AiParamType.ArcherRoaming, owner => new ArcherRoamingAiCharacter { Owner = owner } },
+            { AiParamType.BigMonsterHoldPosition, owner => new BigMonsterHoldPositionAiCharacter { Owner = owner } },
+            { AiParamType.BigMonsterRoaming, owner => new BigMonsterRoamingAiCharacter { Owner = owner } },
+            { AiParamType.Default, owner => new DefaultAiCharacter { Owner = owner } },
+            { AiParamType.Dummy, owner => new DummyAiCharacter { Owner = owner } },
+            { AiParamType.Flytrap, owner => new FlytrapAiCharacter { Owner = owner } },
+            { AiParamType.HoldPosition, owner => new HoldPositionAiCharacter { Owner = owner } },
+            { AiParamType.Roaming, owner => new RoamingAiCharacter { Owner = owner } },
+            { AiParamType.TowerDefenseAttacker, owner => new TowerDefenseAttackerAiCharacter { Owner = owner } },
+            { AiParamType.WildBoarHoldPosition, owner => new WildBoarHoldPositionAiCharacter { Owner = owner } },
+            { AiParamType.WildBoarRoaming, owner => new WildBoarRoamingAiCharacter { Owner = owner } }
+        };
 
     /// <summary>
     /// Creates and returns an appropriate AI controller based on the AI parameter type.
@@ -55,38 +69,7 @@ public static class AIUtils
     /// <returns>A configured NpcAi instance, or null if type is not supported</returns>
     public static NpcAi GetAiByType(AiParamType type, Npc owner)
     {
-        if (owner == null)
-            return null;
-
-        return type switch
-        {
-            // Combat AIs
-            AiParamType.AlmightyNpc => new AlmightyNpcAiCharacter { Owner = owner },
-
-            // Archer variants
-            AiParamType.ArcherHoldPosition => new ArcherHoldPositionAiCharacter { Owner = owner },
-            AiParamType.ArcherRoaming => new ArcherRoamingAiCharacter { Owner = owner },
-
-            // Big monster variants
-            AiParamType.BigMonsterRoaming => new BigMonsterRoamingAiCharacter { Owner = owner },
-            AiParamType.BigMonsterHoldPosition => new BigMonsterHoldPositionAiCharacter { Owner = owner },
-
-            // Basic behaviors
-            AiParamType.Default => new DefaultAiCharacter { Owner = owner },
-            AiParamType.Dummy => new DummyAiCharacter { Owner = owner },
-            AiParamType.Flytrap => new FlytrapAiCharacter { Owner = owner },
-            AiParamType.HoldPosition => new HoldPositionAiCharacter { Owner = owner },
-            AiParamType.Roaming => new RoamingAiCharacter { Owner = owner },
-
-            // Special behaviors
-            AiParamType.TowerDefenseAttacker => new TowerDefenseAttackerAiCharacter { Owner = owner },
-
-            // Wild boar variants
-            AiParamType.WildBoarHoldPosition => new WildBoarHoldPositionAiCharacter { Owner = owner },
-            AiParamType.WildBoarRoaming => new WildBoarRoamingAiCharacter { Owner = owner },
-
-            // Unsupported types
-            _ => null
-        };
+        if (owner == null) return null;
+        return _aiFactory.TryGetValue(type, out var factory) ? factory(owner) : null;
     }
 }

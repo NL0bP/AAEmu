@@ -19,22 +19,12 @@ public class FlytrapAlertBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeAlertState();
         _isInitialized = true;
         Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered flytrap alert state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"FlytrapAlertBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeAlertState()
@@ -60,7 +50,8 @@ public class FlytrapAlertBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
 
         // Check for combat triggers
@@ -74,26 +65,13 @@ public class FlytrapAlertBehavior : BaseCombatBehavior
             Logger.Warn($"FlytrapAlertBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"FlytrapAlertBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting flytrap alert state");

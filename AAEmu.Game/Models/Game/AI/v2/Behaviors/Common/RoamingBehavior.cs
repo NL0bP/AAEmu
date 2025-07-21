@@ -29,22 +29,12 @@ public class RoamingBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeRoamingState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered roaming state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"RoamingBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeRoamingState()
@@ -68,7 +58,7 @@ public class RoamingBehavior : BaseCombatBehavior
         if (!ValidateTickState())
             return;
 
-        if (!ThrottleTick())
+        if (!Validate() || !Throttle())
             return;
 
         ProcessTickActions(delta);
@@ -82,22 +72,6 @@ public class RoamingBehavior : BaseCombatBehavior
             return false;
         }
 
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"RoamingBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-
-        _lastTick = now;
         return true;
     }
 
@@ -152,14 +126,13 @@ public class RoamingBehavior : BaseCombatBehavior
 
     private void UpdateRoamingPosition()
     {
-        _targetRoamPosition = AIUtils.CalcNextRoamingPosition(Ai);
+        var pos = AIUtils.CalcNextRoamingPosition(Ai);
+        if (pos == Vector3.Zero) return;
 
-        if (!_targetRoamPosition.Equals(Vector3.Zero))
-        {
-            _isMoving = true;
-            Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, false), false);
-            //Logger.Debug($"Unit {Ai.Owner.ObjId} selected new roaming position at {_targetRoamPosition}");
-        }
+        _targetRoamPosition = pos;
+        _isMoving = true;
+        Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, false), false);
+        //Logger.Debug($"Unit {Ai.Owner.ObjId} selected new roaming position at {_targetRoamPosition}");
     }
 
     private void MoveTowardsTarget(TimeSpan delta)
@@ -198,13 +171,11 @@ public class RoamingBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         if (_isMoving)
-        {
             Ai.Owner.StopMovement();
-        }
 
         //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting roaming state");
         _isInitialized = false;

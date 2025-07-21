@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Numerics;
+
 using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Utils;
+
+using Microsoft.Extensions.ObjectPool;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Controls;
 
 public class AiPathHandler(NpcAi aiOwner)
 {
+    private static readonly ObjectPool<AiPathPoint> PathPointPool = new DefaultObjectPool<AiPathPoint>(new DefaultPooledObjectPolicy<AiPathPoint>());
+
     public NpcAi Owner { get; } = aiOwner;
 
     /// <summary>
@@ -121,5 +125,18 @@ public class AiPathHandler(NpcAi aiOwner)
     public bool HasPathMovementData()
     {
         return AiPathPointsRemaining.Count > 0 || (AiPathLooping && AiPathPoints.Count > 0);
+    }
+
+    /// <summary>
+    /// Clears all path points and resets the target position to its default value.
+    /// </summary>
+    /// <remarks>This method removes all points from the current path and any remaining path points,  and sets
+    /// the target position to <see cref="Vector3.Zero"/>. Use this method to reset  the pathfinding state before
+    /// recalculating or setting a new path.</remarks>
+    public void ClearPath()
+    {
+        AiPathPoints.Clear();
+        AiPathPointsRemaining.Clear();
+        TargetPosition = Vector3.Zero;
     }
 }

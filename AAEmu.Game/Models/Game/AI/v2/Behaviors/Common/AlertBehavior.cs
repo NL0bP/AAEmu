@@ -24,22 +24,12 @@ public class AlertBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeAlertState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered alert state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"AlertBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeAlertState()
@@ -93,7 +83,7 @@ public class AlertBehavior : BaseCombatBehavior
         if (!ValidateTickState())
             return;
 
-        if (!ThrottleTick())
+        if (!Validate() || !Throttle())
             return;
 
         ProcessAlertState();
@@ -107,22 +97,6 @@ public class AlertBehavior : BaseCombatBehavior
             return false;
         }
 
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"AlertBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-
-        _lastTick = now;
         return true;
     }
 
@@ -170,7 +144,7 @@ public class AlertBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, true), false);

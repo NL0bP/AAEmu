@@ -20,22 +20,12 @@ public class AttackBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeCombatState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered attack state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"AttackBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeCombatState()
@@ -59,10 +49,13 @@ public class AttackBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
+
         if (!UpdateCombatTarget())
             return;
+
         ProcessCombatActions(delta);
     }
 
@@ -70,17 +63,7 @@ public class AttackBehavior : BaseCombatBehavior
     {
         if (!_isInitialized)
             return false;
-        if (Ai?.Owner == null)
-            return false;
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
@@ -131,6 +114,9 @@ public class AttackBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
+        if (!_isInitialized || Ai?.Owner == null)
+            return;
+
         _isInitialized = false;
     }
 }

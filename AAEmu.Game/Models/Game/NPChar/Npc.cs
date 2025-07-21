@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-
+using AAEmu.Commons.Utils.Creatures;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
@@ -94,7 +94,6 @@ public partial class Npc : Unit
     /// Tagging works differently to Aggro and has its own system 
     /// </summary>
     public Tagging CharacterTagging { get; set; }
-
 
     public override float BaseMoveSpeed
     {

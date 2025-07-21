@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 using AAEmu.Commons.Utils;
+using AAEmu.Commons.Utils.Creatures;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
@@ -52,6 +53,13 @@ public class DoodadManager : Singleton<DoodadManager>
 
     // ReSharper disable once FieldCanBeMadeReadOnly.Local
     private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
+    private static Dictionary<uint, Creature> _creatures = new();
+
+    
+    public static string GetSpawnName(uint id)
+    {
+        return _creatures.TryGetValue(id, out var creature) ? creature.Title : string.Empty;
+    }
 
     public bool Exist(uint templateId)
     {

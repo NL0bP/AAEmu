@@ -28,22 +28,12 @@ public class WildBoarAttackBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeCombatState();
         _isInitialized = true;
         Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered wild boar attack state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"WildBoarAttackBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeCombatState()
@@ -72,7 +62,8 @@ public class WildBoarAttackBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
 
         // Update parameters and state
@@ -109,32 +100,14 @@ public class WildBoarAttackBehavior : BaseCombatBehavior
             Logger.Warn($"WildBoarAttackBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"WildBoarAttackBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
     private bool UpdateAiParameters()
     {
-        // Ensure we have wild boar AI parameters
-        Ai.Param ??= new WildBoarAiParams("");
-        if (Ai.Param is not WildBoarAiParams aiParams)
-            return false;
-
-        _aiParams = aiParams;
-        return _aiParams != null;
+        _aiParams = Ai.Param as WildBoarAiParams ?? new WildBoarAiParams("");
+        return true;
     }
 
     private void ProcessSkillUsage()
@@ -152,7 +125,7 @@ public class WildBoarAttackBehavior : BaseCombatBehavior
         var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
 
         // Check for spurt skills based on health conditions
-        if (_aiParams.OnSpurtSkills != null && _aiParams.OnSpurtSkills.Count > 0)
+        if (_aiParams?.OnSpurtSkills == null || _aiParams.OnSpurtSkills.Count == 0)
         {
             ProcessSpurtSkills(targetDist);
         }
@@ -217,7 +190,7 @@ public class WildBoarAttackBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting wild boar attack state");

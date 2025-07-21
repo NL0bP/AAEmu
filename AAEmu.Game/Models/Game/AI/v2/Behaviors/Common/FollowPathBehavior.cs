@@ -26,33 +26,16 @@ public class FollowPathBehavior : BaseCombatBehavior
     private DateTime _lastTick;
     private bool _isInitialized;
     private AlmightyNpcAiParams _aiParams;
+    private bool _healthCheckPerformed;
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializePathFollowing();
         _isInitialized = true;
         Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered path following state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"FollowPathBehavior.Enter called with null Ai or Owner");
-            return false;
-        }
-
-        if (!(Ai.Owner.Template.AiParams is AlmightyNpcAiParams aiParams))
-        {
-            Logger.Warn($"FollowPathBehavior.Enter called with invalid AI params for unit {Ai.Owner.ObjId}");
-            return false;
-        }
-
-        _aiParams = aiParams;
-        return true;
     }
 
     private void InitializePathFollowing()
@@ -92,7 +75,7 @@ public class FollowPathBehavior : BaseCombatBehavior
         if (!ValidateTickState())
             return;
 
-        if (!ThrottleTick())
+        if (!Validate() || !Throttle())
             return;
 
         ProcessTickActions(delta);
@@ -101,27 +84,8 @@ public class FollowPathBehavior : BaseCombatBehavior
     private bool ValidateTickState()
     {
         if (!_isInitialized)
-        {
-            //Logger.Warn($"FollowPathBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
-            return false;
-        }
-
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"FollowPathBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
             return false;
 
-        _lastTick = now;
         return true;
     }
 
@@ -132,8 +96,7 @@ public class FollowPathBehavior : BaseCombatBehavior
             return;
 
         // Process path following
-        if (!ProcessPathFollowing(delta))
-            return;
+        ProcessPathFollowing(delta);
 
         // Check for health-based state changes
         CheckHealthState();
@@ -176,12 +139,12 @@ public class FollowPathBehavior : BaseCombatBehavior
         }
 
         // Check if we have any path points left
-        if (IsPathComplete())
-        {
-            Logger.Debug($"Unit {Ai.Owner.ObjId} completed path, transitioning to idle");
-            Ai.GoToIdle();
-            return false;
-        }
+        //if (IsPathComplete())
+        //{
+        //    Logger.Debug($"Unit {Ai.Owner.ObjId} completed path, transitioning to idle");
+        //    Ai.GoToIdle();
+        //    return false;
+        //}
 
         return true;
     }
@@ -196,9 +159,10 @@ public class FollowPathBehavior : BaseCombatBehavior
     private void CheckHealthState()
     {
         var healthRatio = (float)Ai.Owner.Hp / Ai.Owner.MaxHp * 100;
-        if (healthRatio <= LowHealthThreshold)
+        if (healthRatio <= LowHealthThreshold && !_healthCheckPerformed)
         {
             Logger.Debug($"Unit {Ai.Owner.ObjId} health below threshold ({healthRatio:F1}%), stopping patrol");
+            _healthCheckPerformed = true;
             DisablePathFollowing();
             Ai.GoToDefaultBehavior();
         }
@@ -216,7 +180,7 @@ public class FollowPathBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         DisablePathFollowing();
@@ -350,32 +314,33 @@ public class FollowPathBehavior : BaseCombatBehavior
             // first, let's select the allowed skills based on life value
             if ((s.HealthRangeMin == 0 && s.HealthRangeMax == 0) || (s.HealthRangeMin < healthRatio && healthRatio <= s.HealthRangeMax))
             {
-                Logger.Info($"RequestAvailableSkillList: HealthCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice={s.Dice}");
+                //Logger.Info($"RequestAvailableSkillList: HealthCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice={s.Dice}");
 
                 // then, select the allowed skills by time
                 if ((s.TimeRangeStart >= 0 && s.TimeRangeEnd > 0) || (s.TimeRangeStart > 0 && s.TimeRangeEnd >= 0))
                 {
                     if (s.TimeRangeStart <= timeElapsed && s.TimeRangeEnd == 0)
                     {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
+                        //Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
 
                         availableSkillLists.Add(s);
                     }
                     else if (s.TimeRangeStart <= timeElapsed && timeElapsed <= s.TimeRangeEnd)
                     {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
+                        //Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
 
                         availableSkillLists.Add(s);
                     }
                 }
                 else if (s.TimeRangeStart == 0 && s.TimeRangeEnd == 0)
                 {
-                    Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
+                    //Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], SkillLists Count={s.SkillLists.Count}, Dice= {s.Dice}");
 
                     availableSkillLists.Add(s);
                 }
             }
         }
+        Logger.Debug($"Processed {availableSkillLists.Count} skill lists for {Ai.Owner.ObjId}");
 
         return availableSkillLists;
     }
@@ -393,32 +358,33 @@ public class FollowPathBehavior : BaseCombatBehavior
             // first, let's select the allowed skills based on life value
             if ((s.HealthRangeMin == 0 && s.HealthRangeMax == 0) || (s.HealthRangeMin < healthRatio && healthRatio <= s.HealthRangeMax))
             {
-                Logger.Info($"RequestAvailableSkillList: HealthCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice={s.Dice}");
+                //Logger.Info($"RequestAvailableSkillList: HealthCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice={s.Dice}");
 
                 // then, select the allowed skills by time
                 if ((s.TimeRangeStart >= 0 && s.TimeRangeEnd > 0) || (s.TimeRangeStart > 0 && s.TimeRangeEnd >= 0))
                 {
                     if (s.TimeRangeStart <= timeElapsed && s.TimeRangeEnd == 0)
                     {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
+                        //Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
 
                         availableSkillLists.Add(s);
                     }
                     else if (s.TimeRangeStart <= timeElapsed && timeElapsed <= s.TimeRangeEnd)
                     {
-                        Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
+                        //Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
 
                         availableSkillLists.Add(s);
                     }
                 }
                 else if (s.TimeRangeStart == 0 && s.TimeRangeEnd == 0)
                 {
-                    Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
+                    //Logger.Info($"RequestAvailableSkillList: TimeCheck passed successfully for Ai.Owner={Ai.Owner.ObjId}:{Ai.Owner.TemplateId}, health={healthRatio}, healthRange=[{s.HealthRangeMin}.{s.HealthRangeMax}], timeElapsed={timeElapsed}, timeRange=[{s.TimeRangeStart}.{s.TimeRangeEnd}], skills Count={s.Skills.Count}, Dice= {s.Dice}");
 
                     availableSkillLists.Add(s);
                 }
             }
         }
+        Logger.Debug($"Processed {availableSkillLists.Count} skill lists for {Ai.Owner.ObjId}");
 
         return availableSkillLists;
     }

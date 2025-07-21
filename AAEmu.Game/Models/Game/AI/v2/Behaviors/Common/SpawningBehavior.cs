@@ -20,22 +20,12 @@ public class SpawningBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeSpawningState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered spawning state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"SpawningBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeSpawningState()
@@ -63,6 +53,9 @@ public class SpawningBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
+        
+        if (!Validate() || !Throttle())
+            return;
 
         // Use spawn skills if available and not already used
         TryUseSpawnSkills();
@@ -78,11 +71,7 @@ public class SpawningBehavior : BaseCombatBehavior
             Logger.Warn($"SpawningBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"SpawningBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
+
         return true;
     }
 
@@ -112,6 +101,9 @@ public class SpawningBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
+        if (!_isInitialized || Ai?.Owner == null)
+            return;
+
         _isInitialized = false;
         _usedSpawnSkills = false;
     }

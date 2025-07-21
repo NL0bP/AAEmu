@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -49,7 +51,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
         /// <summary>
         /// Queue of AI commands that take priority over normal behaviors
         /// </summary>
-        public Queue<AiCommands> AiCommandsQueue { get; set; } = new();
+        public ConcurrentQueue<AiCommands> AiCommandsQueue { get; set; } = new();
 
         /// <summary>
         /// Currently executing AI command
@@ -165,7 +167,7 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
         public Behavior AddTransition(Behavior source, Transition target)
         {
             if (!_transitions.ContainsKey(source))
-                _transitions.Add(source, new List<Transition>());
+                _transitions.Add(source, []);
             _transitions[source].Add(target);
             return source;
         }
@@ -196,46 +198,35 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
 
         private bool ValidateTickState()
         {
-            return Owner != null && Owner.Region != null;
+            return Owner is { Region: not null };
         }
 
         private void ProcessTick(TimeSpan delta)
         {
             _currentBehavior?.Tick(delta);
 
-            if (Owner.AggroTable == null)
+            if (Owner.AggroTable == null || Owner.AggroTable.Count == 0)
+            {
+                if (!Owner.IsDead && GetCurrentBehavior() is not DeadBehavior)
+                    OnNoAggroTarget();
                 return;
+            }
 
             ProcessAggroTable();
         }
 
         private void ProcessAggroTable()
         {
-            if (Owner.AggroTable.Count <= 0)
-            {
-                if (Owner.IsDead || GetCurrentBehavior() is DeadBehavior)
-                    return;
+            var toRemove = Owner.AggroTable.Values
+                .Where(a => ShouldRemoveAggro(a.Owner))
+                .Select(a => a.Owner)
+                .ToList();
 
+            foreach (var unit in toRemove)
+                Owner.ClearAggroOfUnit(unit);
+
+            if (Owner.AggroTable.Count == 0 && !Owner.IsDead && GetCurrentBehavior() is not DeadBehavior)
                 OnNoAggroTarget();
-                return;
-            }
-
-            List<Unit> toRemove = null;
-            foreach (var pair in Owner.AggroTable)
-            {
-                var aggro = pair.Value;
-                if (ShouldRemoveAggro(aggro.Owner))
-                {
-                    toRemove ??= new List<Unit>(Owner.AggroTable.Count / 2);
-                    toRemove.Add(aggro.Owner);
-                }
-            }
-
-            if (toRemove != null)
-            {
-                foreach (var unit in toRemove)
-                    Owner.ClearAggroOfUnit(unit);
-            }
         }
 
         private bool ShouldRemoveAggro(Unit unit)
@@ -297,10 +288,10 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
         /// <param name="addOnly">If true, won't switch to RunCommandSet behavior</param>
         public void EnqueueAiCommands(IEnumerable<AiCommands> aiCommandsList, bool addOnly = false)
         {
-            foreach (var aiCommand in aiCommandsList)
-                AiCommandsQueue.Enqueue(aiCommand);
+            foreach (var cmd in aiCommandsList)
+                AiCommandsQueue.Enqueue(cmd);
 
-            if (!addOnly && AiCommandsQueue.Count > 0)
+            if (!addOnly && !AiCommandsQueue.IsEmpty)
                 GoToRunCommandSet();
         }
 
@@ -336,20 +327,19 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
 
         private void ProcessLoadedPathPoints(List<AiPathPoint> points, bool addToQueueOnly)
         {
+            PathHandler.ClearPath();
             if (!addToQueueOnly)
             {
-                var aiPathPoints = PathHandler.AiPathPoints;
-                aiPathPoints.Clear();
+                var list = PathHandler.AiPathPoints;
                 PathHandler.AiPathLooping = true;
-                if (aiPathPoints.Capacity < points.Count)
-                    aiPathPoints.Capacity = points.Count;
-                aiPathPoints.AddRange(points);
+                list.Capacity = points.Count;
+                list.AddRange(points);
             }
             else
             {
-                var remainingQueue = PathHandler.AiPathPointsRemaining;
-                foreach (var point in points)
-                    remainingQueue.Enqueue(point);
+                var queue = PathHandler.AiPathPointsRemaining;
+                foreach (var p in points)
+                    queue.Enqueue(p);
             }
         }
         #endregion

@@ -26,22 +26,12 @@ public class BigMonsterAttackBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeCombatState();
         _isInitialized = true;
         Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered big monster attack state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"BigMonsterAttackBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeCombatState()
@@ -70,7 +60,8 @@ public class BigMonsterAttackBehavior : BaseCombatBehavior
     {
         if (!ValidateTickState())
             return;
-        if (!ThrottleTick())
+
+        if (!Validate() || !Throttle())
             return;
 
         // Ensure we have big monster AI parameters
@@ -105,20 +96,7 @@ public class BigMonsterAttackBehavior : BaseCombatBehavior
             Logger.Warn($"BigMonsterAttackBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"BigMonsterAttackBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-        return true;
-    }
 
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-        _lastTick = now;
         return true;
     }
 
@@ -159,8 +137,7 @@ public class BigMonsterAttackBehavior : BaseCombatBehavior
 
         // Filter skills based on conditions
         return aiParams.CombatSkills
-            .Where(s => s.HealthRangeMin <= healthRatio && healthRatio <= s.HealthRangeMax)
-            .Where(s => !Ai.Owner.Cooldowns.CheckCooldown(s.SkillType))
+            .Where(s => s.HealthRangeMin <= healthRatio && healthRatio <= s.HealthRangeMax && !Ai.Owner.Cooldowns.CheckCooldown(s.SkillType))
             .Where(s =>
             {
                 var template = SkillManager.Instance.GetSkillTemplate(s.SkillType);
@@ -171,8 +148,7 @@ public class BigMonsterAttackBehavior : BaseCombatBehavior
             .ToList();
     }
 
-    private AAEmu.Game.Models.Game.AI.V2.Params.BigMonster.BigMonsterCombatSkill PickSkill(
-        List<AAEmu.Game.Models.Game.AI.V2.Params.BigMonster.BigMonsterCombatSkill> skills)
+    private AAEmu.Game.Models.Game.AI.V2.Params.BigMonster.BigMonsterCombatSkill PickSkill(List<AAEmu.Game.Models.Game.AI.V2.Params.BigMonster.BigMonsterCombatSkill> skills)
     {
         if (skills.Count > 0)
             return skills[Rand.Next(0, skills.Count)];
@@ -193,7 +169,7 @@ public class BigMonsterAttackBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
+        if (!_isInitialized || Ai?.Owner == null)
             return;
 
         Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting big monster attack state");

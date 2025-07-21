@@ -28,22 +28,12 @@ public class ReturnStateBehavior : BaseCombatBehavior
 
     public override void Enter()
     {
-        if (!ValidateEnterState())
+        if (!Validate())
             return;
 
         InitializeReturnState();
         _isInitialized = true;
         //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered return state");
-    }
-
-    private bool ValidateEnterState()
-    {
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"ReturnStateBehavior.Enter: Ai or Owner is null");
-            return false;
-        }
-        return true;
     }
 
     private void InitializeReturnState()
@@ -124,7 +114,7 @@ public class ReturnStateBehavior : BaseCombatBehavior
         if (!ValidateTickState())
             return;
 
-        if (!ThrottleTick())
+        if (!Validate() || !Throttle())
             return;
 
         ProcessReturnMovement(delta);
@@ -138,22 +128,6 @@ public class ReturnStateBehavior : BaseCombatBehavior
             return false;
         }
 
-        if (Ai?.Owner == null)
-        {
-            Logger.Warn($"ReturnStateBehavior.Tick called with null Ai or Owner");
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ThrottleTick()
-    {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTick).TotalSeconds < MinimumTickInterval)
-            return false;
-
-        _lastTick = now;
         return true;
     }
 
@@ -185,10 +159,10 @@ public class ReturnStateBehavior : BaseCombatBehavior
     private void OnCompletedReturn()
     {
         var distanceToIdle = MathUtil.CalculateDistance(Ai.IdlePosition, Ai.Owner.Transform.World.Position);
-        if (distanceToIdle > TeleportThreshold * TeleportThreshold)
+        if (distanceToIdle > TeleportThreshold)
         {
-            // Emergency teleport if too far
-            Ai.Owner.MoveTowards(Ai.IdlePosition, EmergencyTeleportSpeed);
+            //Ai.Owner.MoveTowards(Ai.IdlePosition, EmergencyTeleportSpeed);
+            Ai.Owner.Transform.Local.SetPosition(Ai.IdlePosition); // Teleport to idle position
             Ai.Owner.StopMovement();
         }
 
@@ -203,18 +177,19 @@ public class ReturnStateBehavior : BaseCombatBehavior
 
     public override void Exit()
     {
-        if (!_isInitialized)
-            return;
-
-        // Clean up return state
-        if (_hasRestoredHealth)
+        try
         {
-            Ai.Owner.Buffs.RemoveBuff((uint)BuffConstants.NpcReturn);
+            if (!_isInitialized || Ai?.Owner == null)
+                return;
+
+            if (_hasRestoredHealth)
+                Ai.Owner.Buffs.RemoveBuff((uint)BuffConstants.NpcReturn);
+
+            Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, true), false);
         }
-
-        Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, true), false);
-
-        //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exiting return state");
-        _isInitialized = false;
+        finally
+        {
+            _isInitialized = false;
+        }
     }
 }

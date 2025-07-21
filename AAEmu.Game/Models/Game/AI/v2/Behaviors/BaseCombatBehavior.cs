@@ -34,7 +34,7 @@ public abstract class BaseCombatBehavior : Behavior
     // Internal state
     internal bool _strafeDuringDelay;
     internal DateTime _combatStartTime;
-    internal Queue<AiSkill> _skillQueue;
+    internal Queue<AiSkill> _skillQueue = new();
     internal string _pipeName;
 
     private uint _phaseType;
@@ -42,7 +42,6 @@ public abstract class BaseCombatBehavior : Behavior
 
     protected BaseCombatBehavior()
     {
-        _skillQueue = new Queue<AiSkill>();
         _combatStartTime = DateTime.UtcNow;
         _delayEnd = DateTime.MinValue;
     }
@@ -288,20 +287,15 @@ public abstract class BaseCombatBehavior : Behavior
     /// <returns>True if a valid target was found and set, false otherwise</returns>
     public bool UpdateTarget()
     {
-        if (Ai?.Owner == null)
-            return false;
+        if (Ai?.Owner == null) return false;
 
-        var aggroList = Ai.Owner.AggroTable.Values;
-        var potentialTargets = aggroList
-            .OrderByDescending(o => o.TotalAggro)
-            .Select(o => o.Owner)
-            .OfType<Unit>()
-            .ToList();
-
-        foreach (var target in potentialTargets)
+        foreach (var aggro in Ai.Owner.AggroTable.Values.OrderByDescending(a => a.TotalAggro))
         {
-            if (ProcessTargetSelection(target))
+            if (aggro.Owner is Unit u && IsValidTarget(u))
+            {
+                ProcessTargetSelection(u);
                 return true;
+            }
         }
 
         ClearInvalidTarget();
@@ -398,12 +392,10 @@ public abstract class BaseCombatBehavior : Behavior
 
         var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
 
-        if (skillLists.Count > 0)
-        {
-            return ProcessSkillLists(skillLists, aiParams, targetDist);
-        }
+        if (skillLists.Count == 0)
+            return TryUseBaseSkill();
 
-        return TryUseBaseSkill();
+        return ProcessSkillLists(skillLists, aiParams, targetDist);
     }
 
     private bool ValidateSkillQueueParameters(List<AiSkillList> skillLists, AiParams aiParams)

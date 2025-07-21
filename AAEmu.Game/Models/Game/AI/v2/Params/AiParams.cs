@@ -48,7 +48,7 @@ public class AiParams
             case AiParamType.Dummy:
             case AiParamType.Default:
             default:
-                return null;
+                return new DefaultAiParams(aiParamsString);
         }
     }
 }
