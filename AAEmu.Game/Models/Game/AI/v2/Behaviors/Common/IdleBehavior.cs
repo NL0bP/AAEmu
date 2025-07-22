@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Models;
@@ -13,8 +15,15 @@ namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 /// </summary>
 public class IdleBehavior : BaseCombatBehavior
 {
-    private const float MinimumTickInterval = 0.1f; // 100ms between ticks
-    private DateTime _lastTick;
+    // -------------------- configurable --------------------
+    private const float GreetTimer = 5f;         // minutes
+    private const float GreetRange = 5f;         // metres
+    private const double GreetFovScale = 0.6667; // 120.0 / 180.0 for IsFront
+    // ------------------------------------------------------
+    private static readonly TimeSpan GreetCooldown = TimeSpan.FromMinutes(GreetTimer);
+    private readonly Dictionary<uint, DateTime> _greeted = new();
+    // ------------------------------------------------------
+
     private bool _isInitialized;
 
     public override void Enter()
@@ -41,8 +50,6 @@ public class IdleBehavior : BaseCombatBehavior
 
         if (Ai.Owner is { } npc)
             npc.Events.InIdle(this, new InIdleArgs { Owner = npc });
-
-        _lastTick = DateTime.UtcNow;
     }
 
     public override void Tick(TimeSpan delta)
@@ -90,7 +97,9 @@ public class IdleBehavior : BaseCombatBehavior
             // Try to follow the nearest NPC, otherwise go to default behavior
             if (Ai.DoFollowDefaultNearestNpc())
                 return;
-            Ai.GoToDefaultBehavior();
+
+            // Talk has low priority
+            CheckForTalk();
         }
     }
 
@@ -101,6 +110,30 @@ public class IdleBehavior : BaseCombatBehavior
             var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
             PickSkillAndUseIt(SkillUseConditionKind.InIdle, Ai.Owner, targetDist);
         }
+    }
+
+    private void CheckForTalk()
+    {
+        if (Ai.GetCurrentBehavior() is TalkBehavior) return;
+
+        var now = DateTime.UtcNow;
+        var playersInRange = GetPlayersInRange(Ai.Owner, GreetRange, GreetFovScale, _greeted, GreetCooldown);
+
+        // greet new / cooled-down players
+        foreach (var player in playersInRange)
+        {
+            if (!_greeted.TryGetValue(player.ObjId, out var lastTime) || now - lastTime >= GreetCooldown)
+                _greeted[player.ObjId] = now;
+        }
+
+        // remove players that left or already greeted long ago
+        var toRemove = _greeted.Keys
+            .Where(id => playersInRange.All(p => p.ObjId != id) && now - _greeted[id] >= GreetCooldown)
+            .ToList();
+        toRemove.ForEach(id => _greeted.Remove(id));
+
+        if (playersInRange.Any())
+            Ai.GoToTalk();
     }
 
     public override void Exit()

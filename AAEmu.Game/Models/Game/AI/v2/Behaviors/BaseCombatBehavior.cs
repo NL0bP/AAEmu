@@ -10,6 +10,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Game.AI.v2.Params;
 using AAEmu.Game.Models.Game.AI.v2.Params.Almighty;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Units;
@@ -499,4 +500,23 @@ public abstract class BaseCombatBehavior : Behavior
     }
 
     #endregion
+
+    /// <summary>
+    /// Returns nearby players within range, in front, and not greeted recently.
+    /// </summary>
+    public static List<Character> GetPlayersInRange(
+        Unit owner,
+        float range,
+        double fovScale,
+        Dictionary<uint, DateTime> greeted,
+        TimeSpan cooldown)
+    {
+        var now = DateTime.UtcNow;
+
+        return WorldManager
+            .GetAround<Character>(owner, range, true)
+            .Where(p => MathUtil.IsFront(owner, p, fovScale))
+            .Where(p => !greeted.TryGetValue(p.ObjId, out var last) || now - last >= cooldown)
+            .ToList();
+    }
 }

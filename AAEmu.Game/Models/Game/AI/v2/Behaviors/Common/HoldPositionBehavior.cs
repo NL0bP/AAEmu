@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.Skills.Static;
@@ -7,18 +9,24 @@ using AAEmu.Game.Models.Game.Units.Movements;
 namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 
 /// <summary>
-/// Represents the behavior of an NPC when holding its position.
-/// Handles skill usage, aggression checks, and following the nearest NPC if needed.
+/// NPC stays in place, greets nearby players and may follow default NPC if configured.
+/// Transitions to TalkBehavior on first close player, or to combat/alert when threatened.
 /// </summary>
 public class HoldPositionBehavior : BaseCombatBehavior
 {
-    private const float MinimumTickInterval = 0.1f; // 100ms between ticks
-    private const float SkillCheckInterval = 1.0f; // 1 second between skill checks
+    // -------------------- configurable --------------------
+    private const float SkillCheckInterval  = 1.0f;  // 1 s between idle-skill tries
+    private const float GreetTimer = 5f;         // minutes
+    private const float GreetRange = 5f;         // metres
+    private const double GreetFovScale = 0.6667; // 120.0 / 180.0 for IsFront
+    // ------------------------------------------------------
+    private static readonly TimeSpan GreetCooldown = TimeSpan.FromMinutes(GreetTimer);
+    private readonly Dictionary<uint, DateTime> _greeted = new();
+    // ------------------------------------------------------
 
-    private DateTime _lastTick;
     private DateTime _lastSkillCheck;
-    private bool _isInitialized;
-    private bool _isFollowingNpc;
+    private bool     _isInitialized;
+    private bool     _isFollowingNpc;
 
     public override void Enter()
     {
@@ -27,22 +35,20 @@ public class HoldPositionBehavior : BaseCombatBehavior
 
         InitializeHoldPosition();
         _isInitialized = true;
-        //Logger.Debug($"Unit {Ai.Owner.ObjId}:{Ai.Owner.TemplateId} entered hold position state");
     }
 
     private void InitializeHoldPosition()
     {
-        // Set stance and alertness
         Ai.Owner.CurrentGameStance = GameStanceType.Relaxed;
-        Ai.Owner.CurrentAlertness = MoveTypeAlertness.Idle;
-        // Stop all current actions
+        Ai.Owner.CurrentAlertness  = MoveTypeAlertness.Idle;
+
         Ai.Owner.InterruptSkills();
         Ai.Owner.StopMovement();
         Ai.Owner.CurrentTarget = Ai.Owner;
-        // Initialize timers and state
-        _lastTick = DateTime.UtcNow;
-        _lastSkillCheck = DateTime.UtcNow;
-        _isFollowingNpc = false;
+
+        //_lastTick        = DateTime.UtcNow;
+        _lastSkillCheck  = DateTime.UtcNow;
+        _isFollowingNpc  = false;
     }
 
     public override void Tick(TimeSpan delta)
@@ -53,7 +59,19 @@ public class HoldPositionBehavior : BaseCombatBehavior
         if (!Validate() || !Throttle())
             return;
 
-        ProcessTickActions(delta);
+        // 1. Combat states
+        if (CheckCombatStates())
+            return;
+
+        // 2. Try to use idle self-skills
+        ProcessSkillUsage();
+
+        // 3. Optional follow default NPC
+        if (!_isFollowingNpc)
+            ProcessNpcFollowing();
+
+        // 4. Talk has low priority
+        CheckForTalk();
     }
 
     private bool ValidateTickState()
@@ -63,24 +81,49 @@ public class HoldPositionBehavior : BaseCombatBehavior
             Logger.Warn($"HoldPositionBehavior.Tick called before initialization for unit {Ai?.Owner?.ObjId}");
             return false;
         }
-
         return true;
     }
 
-    private void ProcessTickActions(TimeSpan delta)
+    private void CheckForTalk()
     {
-        // Handle skill usage if possible
-        ProcessSkillUsage();
+        if (Ai.GetCurrentBehavior() is TalkBehavior) return;
 
-        // Check for aggression or alert state
-        if (CheckCombatStates())
-            return;
+        var now = DateTime.UtcNow;
 
-        // If not following an NPC, try to follow the nearest one
-        if (!_isFollowingNpc)
+        var playersInRange = GetPlayersInRange(Ai.Owner, GreetRange, GreetFovScale, _greeted, GreetCooldown);
+
+        // greet new / cooled-down players
+        foreach (var player in playersInRange)
         {
-            ProcessNpcFollowing();
+            if (!_greeted.TryGetValue(player.ObjId, out var lastTime) || now - lastTime >= GreetCooldown)
+                _greeted[player.ObjId] = now;
         }
+
+        // remove players that left or already greeted long ago
+        var toRemove = _greeted.Keys
+            .Where(id => playersInRange.All(p => p.ObjId != id) && now - _greeted[id] >= GreetCooldown)
+            .ToList();
+        toRemove.ForEach(id => _greeted.Remove(id));
+
+        if (playersInRange.Any())
+            Ai.GoToTalk();
+    }
+    
+    private bool CheckCombatStates()
+    {
+        if (CheckAggression())
+        {
+            _isFollowingNpc = false;
+            return true;
+        }
+
+        if (CheckAlert())
+        {
+            _isFollowingNpc = false;
+            return true;
+        }
+
+        return false;
     }
 
     private void ProcessSkillUsage()
@@ -90,44 +133,18 @@ public class HoldPositionBehavior : BaseCombatBehavior
             return;
 
         _lastSkillCheck = now;
+
         if (Ai.Owner.CurrentTarget != null)
         {
             var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
             PickSkillAndUseIt(SkillUseConditionKind.InIdle, Ai.Owner, targetDist);
-
-            Ai.GoToTalk();
         }
-    }
-
-    private bool CheckCombatStates()
-    {
-        // Check for aggression
-        if (CheckAggression())
-        {
-            _isFollowingNpc = false;
-            //Logger.Debug($"Unit {Ai.Owner.ObjId} switched to aggression state");
-            return true;
-        }
-
-        // Check for alert state
-        if (CheckAlert())
-        {
-            _isFollowingNpc = false;
-            //Logger.Debug($"Unit {Ai.Owner.ObjId} switched to alert state");
-            return true;
-        }
-
-        return false;
     }
 
     private void ProcessNpcFollowing()
     {
-        // Try to follow the nearest NPC if possible
         if (Ai.DoFollowDefaultNearestNpc())
-        {
             _isFollowingNpc = true;
-            //Logger.Debug($"Unit {Ai.Owner.ObjId} started following the nearest NPC");
-        }
     }
 
     public override void Exit()
@@ -135,8 +152,7 @@ public class HoldPositionBehavior : BaseCombatBehavior
         if (!_isInitialized || Ai?.Owner == null)
             return;
 
-        //Logger.Debug($"Unit {Ai.Owner?.ObjId}:{Ai.Owner?.TemplateId} exited hold position state");
-        _isInitialized = false;
-        _isFollowingNpc = false;
+        _isInitialized    = false;
+        _isFollowingNpc   = false;
     }
 }
