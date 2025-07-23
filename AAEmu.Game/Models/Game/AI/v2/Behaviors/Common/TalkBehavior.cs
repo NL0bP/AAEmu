@@ -20,9 +20,9 @@ namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 public class TalkBehavior : BaseCombatBehavior
 {
     // -------------------- configurable --------------------
-    private const float GreetTimer = 5f;      // minutes
-    private const float GreetRange = 5f;      // metres
-    private const float SpyglassDist = 1.5f;    // metres
+    private const float GreetTimer = 5f;     // minutes
+    private const float GreetRange = 5f;     // metres
+    private const float SpyglassDist = 1.5f; // metres
     private const double GreetFov = 0.6667;  // 120° / 180°
     private const uint VehicleNickId = 22;
     private const uint SpyglassId = 6129;
@@ -67,7 +67,7 @@ public class TalkBehavior : BaseCombatBehavior
             .ToList();
         toRemove.ForEach(id => _greeted.Remove(id));
 
-        if (!playersInRange.Any())
+        if (playersInRange.Count == 0)
             Ai.GoToDefaultBehavior();
     }
 
@@ -129,8 +129,8 @@ public class TalkBehavior : BaseCombatBehavior
     private (string EventName, float Weight) DetermineEventType(Character player)
     {
         var npcId = (int)Ai.Owner.TemplateId;
-        int lvl   = player.Level;
-                
+        int lvl = player.Level;
+
         // 1. Enemy check
         if (Ai.Owner.CanAttack(player) && !IsFriendly(player) && AiGameData.Instance.GetEvents(npcId, "OnEnemySeen").Count > 0)
         {
@@ -139,8 +139,7 @@ public class TalkBehavior : BaseCombatBehavior
 
         // 2. All records for NPC
         var records = new List<(string Name, float Weight)>();
-        //foreach (var name in new[] { "OnCollision", "OnClientGreeting", "OnFriendNearSeen" })
-        foreach (var name in new[] { "OnClientGreeting", "OnFriendNearSeen" })
+        foreach (var name in new[] { "OnCollision", "OnClientGreeting", "OnFriendNearSeen" })
         {
             var events = AiGameData.Instance.GetEvents(npcId, name);
             foreach (var ev in events)
@@ -153,7 +152,7 @@ public class TalkBehavior : BaseCombatBehavior
             < 15 => 500f,
             < 30 => 300f,
             < 45 => 200f,
-            _    => 60f
+            _ => 60f
         };
 
         // 4. Get the entry with the highest weight not exceeding maxWeight

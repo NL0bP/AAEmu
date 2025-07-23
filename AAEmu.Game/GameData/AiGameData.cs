@@ -24,7 +24,6 @@ public class AiGameData : Singleton<AiGameData>, IGameDataLoader
     private Dictionary<uint, AiCommandSets> _aiCommandSets = new();
     private readonly Dictionary<int, NpcChatBubble> _npcChatBubbles = new();
     private readonly Dictionary<int, List<AiEvent>> _aiEventsByNpc = new();
-    //private readonly Dictionary<int, AiEvent> _aiEvents = new();
 
     public AiParams GetAiParamsForId(uint id)
     {
@@ -106,7 +105,7 @@ public class AiGameData : Singleton<AiGameData>, IGameDataLoader
                     template.Id = reader.GetUInt32("id");
                     if (tempListId.Contains(template.Id))
                     {
-                        continue; // в таблице есть дубли
+                        continue; // duplicates found in the table
                     }
 
                     tempListId.Add(template.Id);
@@ -117,7 +116,7 @@ public class AiGameData : Singleton<AiGameData>, IGameDataLoader
 
                     if (!_aiCommands.ContainsKey(template.CmdSetId))
                     {
-                        _aiCommands.Add(template.CmdSetId, new List<AiCommands>());
+                        _aiCommands.Add(template.CmdSetId, []);
                     }
                     _aiCommands[template.CmdSetId].Add(template);
                 }
@@ -164,11 +163,10 @@ public class AiGameData : Singleton<AiGameData>, IGameDataLoader
             bubble.Bubble = reader.GetString("bubble");
             bubble.ShowUi = reader.GetBoolean("show_ui", false);
 
-            // Добавляем в контейнер по ID
             _npcChatBubbles[bubble.AiEventId] = bubble;
         }
 
-        Logger.Info($"Загружено {_npcChatBubbles.Count} записей из npc_chat_bubbles.");
+        Logger.Info($"Loaded {_npcChatBubbles.Count} entries from npc_chat_bubbles.");
     }
 
     private void LoadAiEvents(SqliteConnection connection)
@@ -191,22 +189,18 @@ public class AiGameData : Singleton<AiGameData>, IGameDataLoader
             aiEvent.OrUnitReqs = reader.GetBoolean("or_unit_reqs", false);
             aiEvent.SkillId = reader.GetInt32("skill_id");
 
-            // Добавляем в контейнер по ID
-            //_aiEvents[aiEvent.Id] = aiEvent;
-
-            // Опционально: добавить в группировку по NPC
             if (!_aiEventsByNpc.ContainsKey(aiEvent.NpcId))
                 _aiEventsByNpc[aiEvent.NpcId] = [];
             _aiEventsByNpc[aiEvent.NpcId].Add(aiEvent);
         }
 
-        Logger.Info($"Загружено {_aiEventsByNpc.Count} записей из ai_events.");
+        Logger.Info($"Loaded {_aiEventsByNpc.Count} entries from ai_events.");
     }
 
     public bool TryGet(int id, out NpcChatBubble bubble) => _npcChatBubbles.TryGetValue(id, out bubble);
 
     /// <summary>
-    /// Получить все события для NPC по имени события
+    /// Get all events for an NPC by event name.
     /// </summary>
     /// <param name="npcId"></param>
     /// <param name="eventName"></param>

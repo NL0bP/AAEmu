@@ -1,19 +1,8 @@
-﻿using System.Collections.Generic;
-
-using AAEmu.Commons.Network;
-using AAEmu.Commons.Utils.Creatures;
-using AAEmu.Game.Core.Managers.World;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.NPChar;
-using AAEmu.Game.Models.Json;
-using AAEmu.Game.Scripts.SubCommands.Doodads;
-using AAEmu.Game.Scripts.SubCommands.Npcs;
-
-using Google.Protobuf;
-
-using static Google.Protobuf.WellKnownTypes.Field.Types;
 
 namespace AAEmu.Game.Core.Packets.G2C;
 

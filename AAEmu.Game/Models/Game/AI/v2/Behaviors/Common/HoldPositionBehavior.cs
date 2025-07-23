@@ -15,10 +15,10 @@ namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 public class HoldPositionBehavior : BaseCombatBehavior
 {
     // -------------------- configurable --------------------
-    private const float SkillCheckInterval  = 1.0f;  // 1 s between idle-skill tries
-    private const float GreetTimer = 5f;         // minutes
-    private const float GreetRange = 5f;         // metres
-    private const double GreetFovScale = 0.6667; // 120.0 / 180.0 for IsFront
+    private const float SkillCheckInterval  = 1.0f; // 1 s between idle-skill tries
+    private const float GreetTimer = 5f;            // minutes
+    private const float GreetRange = 5f;            // metres
+    private const double GreetFovScale = 0.6667;    // 120.0 / 180.0 for IsFront
     // ------------------------------------------------------
     private static readonly TimeSpan GreetCooldown = TimeSpan.FromMinutes(GreetTimer);
     private readonly Dictionary<uint, DateTime> _greeted = new();
@@ -105,7 +105,7 @@ public class HoldPositionBehavior : BaseCombatBehavior
             .ToList();
         toRemove.ForEach(id => _greeted.Remove(id));
 
-        if (playersInRange.Any())
+        if (playersInRange.Count != 0)
             Ai.GoToTalk();
     }
     
