@@ -132,7 +132,7 @@ public class IdleBehavior : BaseCombatBehavior
             .ToList();
         toRemove.ForEach(id => _greeted.Remove(id));
 
-        if (playersInRange.Count != 0)
+        if (playersInRange.Count > 0)
             Ai.GoToTalk();
     }
 

@@ -2976,6 +2976,7 @@ public class DoodadManager : Singleton<DoodadManager>
         doodad ??= new Doodad();
 
         doodad.ObjId = bcId > 0 ? bcId : ObjectIdManager.Instance.GetNextId();
+        doodad.Name = GetSpawnName(templateId);
         doodad.TemplateId = template.Id; // copy the templateId
         doodad.Template = template;
         doodad.OwnerObjId = ownerObject?.ObjId ?? 0;
