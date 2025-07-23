@@ -139,7 +139,8 @@ public class TalkBehavior : BaseCombatBehavior
 
         // 2. All records for NPC
         var records = new List<(string Name, float Weight)>();
-        foreach (var name in new[] { "OnCollision", "OnClientGreeting", "OnFriendNearSeen" })
+        //foreach (var name in new[] { "OnCollision", "OnClientGreeting", "OnFriendNearSeen" })
+        foreach (var name in new[] { "OnClientGreeting", "OnFriendNearSeen" })
         {
             var events = AiGameData.Instance.GetEvents(npcId, name);
             foreach (var ev in events)
