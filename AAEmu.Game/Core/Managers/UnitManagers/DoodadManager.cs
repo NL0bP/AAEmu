@@ -96,6 +96,7 @@ public class DoodadManager : Singleton<DoodadManager>
                 _phaseFuncTemplates.Add(type.Name, new Dictionary<uint, DoodadPhaseFuncTemplate>());
             }
         }
+        _creatures = Creature.GetAllCreatures();
 
         _doodadFuncConsumeChangerItem = new Dictionary<uint, DoodadFuncConsumeChangerItem>();
 

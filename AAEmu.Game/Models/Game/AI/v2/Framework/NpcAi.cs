@@ -141,6 +141,10 @@ namespace AAEmu.Game.Models.Game.AI.v2.Framework
         /// </summary>
         private void SetCurrentBehavior(Behavior behavior)
         {
+            // Skip if behavior is already active
+            if (ReferenceEquals(_currentBehavior, behavior))
+                return;
+
             Logger.Trace($"NPC {Owner.TemplateId}:{Owner.ObjId} transitioning from {_currentBehavior?.GetType().Name ?? "none"} to {behavior?.GetType().Name ?? "none"}");
             _currentBehavior?.Exit();
             _currentBehavior = behavior;

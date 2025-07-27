@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using System.Threading.Tasks;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -22,53 +23,75 @@ using AAEmu.Game.Utils;
 using Newtonsoft.Json;
 
 using NLog;
-
-using static AAEmu.Commons.Utils.Rand;
+// ReSharper disable ForCanBeConvertedToForeach - Используется для оптимизации циклов
+// ReSharper disable ForCanBeConvertedToForeach - Used for loop optimization
 
 namespace AAEmu.Game.Models.Game.NPChar
 {
+    /// <summary>
+    /// Manages the spawning and despawning of NPCs based on various conditions like schedules, player proximity, and population limits.
+    /// </summary>
     public class NpcSpawner : Spawner<Npc>
     {
         #region Static & Const
+
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private static readonly object SpawnLock = new();
+        private static readonly object SpawnLock = new(); // Глобальная блокировка для операций спавна/деспавна
+
         #endregion
 
         #region Fields
-        private int _scheduledCount;
-        private DateTime _lastSpawnTime = DateTime.MinValue;
 
-        private readonly Dictionary<int, SpawnerPlayerCountCache> _playerCountCache = new();
-        private readonly Dictionary<int, SpawnerPlayerInRadiusCache> _playerInRadiusCache = new();
-        private readonly Dictionary<int, SpawnerNpcsInZoneCache> _npcsInZoneCache = new();
+        private int _scheduledCount; // Количество запланированных к спавну NPC
+        private DateTime _lastSpawnTime = DateTime.MinValue; // Время последнего спавна
+        private readonly TimeSpan _cacheLifetime = TimeSpan.FromSeconds(10); // Время жизни кэша
+        private readonly ReaderWriterLockSlim _spawnLock = new(); // Блокировка для основного Update
+        private readonly ConcurrentDictionary<int, SpawnerPlayerCountCache> _playerCountCache = new(); // Кэш количества игроков
+        private readonly ConcurrentDictionary<int, SpawnerPlayerInRadiusCache> _playerInRadiusCache = new(); // Кэш наличия игроков рядом
+        private readonly ConcurrentDictionary<int, SpawnerNpcsInZoneCache> _npcsInZoneCache = new(); // Кэш других NPC в зоне
+
         #endregion
 
         #region Properties
+
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(1f)]
         public uint Count { get; set; } = 1;
 
         public List<uint> NpcSpawnerIds { get; set; } = [];
-        public NpcSpawnerTemplate Template { get; set; }
-        private List<NpcSpawnerNpc> SpawnableNpcs { get; set; } = [];
-        private ConcurrentDictionary<uint, List<Npc>> SpawnedNpcs { get; set; } = new();
 
+        public NpcSpawnerTemplate Template { get; set; }
+
+        private List<NpcSpawnerNpc> SpawnableNpcs { get; set; } = [];
+
+        // Хранит список заспавненных NPC по SpawnerId
+        private ConcurrentDictionary<uint, List<Npc>> SpawnedNpcs { get; } = new();
+
+        // Текущее количество заспавненных NPC для этого спавнера
         private int CurrentSpawnCount => SpawnedNpcs.TryGetValue(SpawnerId, out var list) ? list.Count : 0;
 
-        private bool IsSpawnScheduled { get; set; }
-        private bool IsDespawnScheduled { get; set; }
-        private bool RespawnDenied { get; set; }
+        private bool IsSpawnScheduled { get; set; } // Флаг, установлен ли спавн по расписанию
+        private bool IsDespawnScheduled { get; set; } // Флаг, установлен ли деспавн
+        private bool RespawnDenied { get; set; } // Флаг, запрещен ли респавн (не используется в текущем коде)
+
         #endregion
 
         #region Ctors
+
         public NpcSpawner()
         {
             IsSpawnScheduled = false;
             IsDespawnScheduled = false;
         }
+
         #endregion
 
         #region Initialization
+
+        /// <summary>
+        /// Initializes the list of NPCs that can be spawned from this spawner template.
+        /// </summary>
+        /// <param name="template">The spawner template containing NPC definitions.</param>
         internal void InitializeSpawnableNpcs(NpcSpawnerTemplate template)
         {
             if (template?.Npcs == null)
@@ -77,38 +100,75 @@ namespace AAEmu.Game.Models.Game.NPChar
                 return;
             }
 
-            SpawnableNpcs = [..template.Npcs];
+            SpawnableNpcs = [.. template.Npcs];
         }
+
         #endregion
 
         #region Public Update
+
         /// <summary>
-        /// Main update method for the NpcSpawner.
+        /// Main update method for the NpcSpawner. Checks conditions and performs spawn/despawn actions.
         /// </summary>
         public void Update()
         {
             try
             {
-                lock (SpawnLock)
+                _spawnLock.EnterUpgradeableReadLock();
+                try
                 {
                     var didAction = false;
 
                     if (CanDespawnNpcs())
                     {
-                        DespawnNpcs();
-                        didAction = true;
+                        _spawnLock.EnterWriteLock();
+                        try
+                        {
+                            DespawnNpcs();
+                            didAction = true;
+                        }
+                        finally
+                        {
+                            _spawnLock.ExitWriteLock();
+                        }
                     }
                     else if (!IsPlayerInSpawnRadius() && CurrentSpawnCount > 0)
                     {
-                        DespawnNpcsNow();
-                        didAction = true;
+                        _spawnLock.EnterWriteLock();
+                        try
+                        {
+                            DespawnNpcsNow();
+                            didAction = true;
+                        }
+                        finally
+                        {
+                            _spawnLock.ExitWriteLock();
+                        }
                     }
 
                     if (!didAction && CanSpawnNpcs())
                     {
-                        DoSpawn();
-                        didAction = true;
+                        _spawnLock.EnterWriteLock();
+                        try
+                        {
+                            DoSpawn();
+                            didAction = true;
+                        }
+                        finally
+                        {
+                            _spawnLock.ExitWriteLock();
+                        }
                     }
+
+                    // Периодически очищаем устаревший кэш
+                    if (!didAction)
+                    {
+                        CleanupCache();
+                    }
+                }
+                finally
+                {
+                    _spawnLock.ExitUpgradeableReadLock();
                 }
             }
             catch (Exception ex)
@@ -116,16 +176,56 @@ namespace AAEmu.Game.Models.Game.NPChar
                 Logger.Error(ex, $"Error during NpcSpawner update [SpawnerId={SpawnerId}, UnitId={UnitId}]");
             }
         }
+
+        /// <summary>
+        /// Cleans up expired cache entries.
+        /// </summary>
+        private void CleanupCache()
+        {
+            var now = DateTime.UtcNow;
+
+            // Очистка кэша количества игроков
+            var expiredPlayerCountKeys = _playerCountCache
+                .Where(kvp => (now - kvp.Value.LastUpdate) > _cacheLifetime)
+                .Select(kvp => kvp.Key)
+                .ToList(); // Создаем список для безопасного перебора
+
+            foreach (var key in expiredPlayerCountKeys)
+            {
+                _playerCountCache.TryRemove(key, out _);
+            }
+
+            // Очистка кэша игроков в радиусе
+            var expiredPlayerInRadiusKeys = _playerInRadiusCache
+                .Where(kvp => (now - kvp.Value.LastUpdate) > _cacheLifetime)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var key in expiredPlayerInRadiusKeys)
+            {
+                _playerInRadiusCache.TryRemove(key, out _);
+            }
+
+            // Очистка кэша других NPC в зоне
+            var expiredNpcsInZoneKeys = _npcsInZoneCache
+                .Where(kvp => (now - kvp.Value.LastUpdate) > _cacheLifetime)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var key in expiredNpcsInZoneKeys)
+            {
+                _npcsInZoneCache.TryRemove(key, out _);
+            }
+        }
+
         #endregion
 
         #region Spawn Logic
+
         /// <summary>
-        /// Determines whether spawning is allowed based on various conditions.
+        /// Determines whether basic spawning conditions are met.
         /// </summary>
-        /// <remarks>This method evaluates multiple conditions to determine if spawning is allowed,
-        /// including the presence of a valid template,  the absence of a corpse, and whether spawning schedules and
-        /// counts are optimal and enabled.</remarks>
-        /// <returns><see langword="true"/> if spawning is permitted; otherwise, <see langword="false"/>.</returns>
+        /// <returns>True if basic conditions allow spawning.</returns>
         private bool CanSpawn() => Template != null &&
                                    !HasCorpse() &&
                                    !IsDespawnScheduled &&
@@ -135,8 +235,9 @@ namespace AAEmu.Game.Models.Game.NPChar
                                    CheckSpawnCountCanSpawn();
 
         /// <summary>
-        /// Determines whether spawning NPCs is allowed based on various conditions.
+        /// Determines whether all conditions for spawning NPCs are met.
         /// </summary>
+        /// <returns>True if spawning is allowed.</returns>
         private bool CanSpawnNpcs()
         {
             if (!CanSpawn()) return false;
@@ -144,6 +245,10 @@ namespace AAEmu.Game.Models.Game.NPChar
             return true;
         }
 
+        /// <summary>
+        /// Checks if the minimum spawn delay has elapsed since the last spawn.
+        /// </summary>
+        /// <returns>True if the delay has not elapsed.</returns>
         private bool IsSpawnDelayNotElapsed()
         {
             if (_lastSpawnTime == DateTime.MinValue) return false;
@@ -153,10 +258,6 @@ namespace AAEmu.Game.Models.Game.NPChar
         /// <summary>
         /// Spawns NPCs based on the current spawner configuration and conditions.
         /// </summary>
-        /// <remarks>This method attempts to spawn NPCs using the available templates and spawner
-        /// settings.  It checks preconditions such as the maximum population limit and suspended spawn count  before
-        /// proceeding. If spawning is successful, the spawned NPCs are added to the active  list and the spawn count is
-        /// updated.</remarks>
         public void DoSpawn()
         {
             if (Template == null)
@@ -174,7 +275,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             {
                 try
                 {
-                    lock (SpawnLock)
+                    lock (SpawnLock) // Блокируем глобально для операции спавна
                     {
                         var spawned = npcTemplate.Spawn(this);
                         if (spawned == null || spawned.Count == 0) continue;
@@ -182,8 +283,10 @@ namespace AAEmu.Game.Models.Game.NPChar
                         spawnedNpcs.AddRange(spawned);
                         foreach (var npc in spawned)
                         {
+                            // Корректируем позицию для избежания коллизий
                             npc.Transform.Local.Position = AdjustSpawnPosition(npc);
                             AddNpcToSpawned(npc.Spawner.SpawnerId, npc);
+                            RaiseNpcSpawned(npc); // Вызываем событие спавна
                         }
                     }
                 }
@@ -195,17 +298,15 @@ namespace AAEmu.Game.Models.Game.NPChar
 
             if (spawnedNpcs.Count == 0) return;
 
-            DecrementCount(spawnedNpcs);
+            // Уменьшаем счетчик запланированных NPC
+            DecrementCount(spawnedNpcs.Count);
             _lastSpawnTime = DateTime.UtcNow;
         }
 
         /// <summary>
-        /// Initiates the spawning process for all entities.
+        /// Initiates the spawning process for all entities, unless a schedule is active.
         /// </summary>
-        /// <remarks>This method does not perform any action if the spawning schedule is enabled. Ensure
-        /// that the spawning schedule is disabled before calling this method.</remarks>
-        /// <param name="beginning">A value indicating whether the spawning process is starting from the beginning. If <see langword="true"/>,
-        /// the spawning process starts from the initial state; otherwise, it continues from the current state.</param>
+        /// <param name="beginning">Unused parameter.</param>
         public void SpawnAll(bool beginning = false)
         {
             if (IsSpawningScheduleEnabled()) return;
@@ -215,11 +316,8 @@ namespace AAEmu.Game.Models.Game.NPChar
         /// <summary>
         /// Spawns an NPC associated with the current spawner.
         /// </summary>
-        /// <remarks>This method attempts to spawn an NPC and retrieve the first NPC associated with the
-        /// spawner. If no NPCs are available, the method returns <see langword="null"/>.</remarks>
         /// <param name="objId">The unique identifier for the object to be spawned.</param>
-        /// <returns>The first NPC spawned by the spawner if successful; otherwise, <see langword="null"/> if no NPCs were
-        /// spawned.</returns>
+        /// <returns>The first NPC spawned by the spawner if successful; otherwise, null.</returns>
         public override Npc Spawn(uint objId)
         {
             DoSpawn();
@@ -229,11 +327,8 @@ namespace AAEmu.Game.Models.Game.NPChar
         /// <summary>
         /// Forces the spawning of an NPC associated with the specified object ID.
         /// </summary>
-        /// <remarks>If no NPCs have been initialized, this method will ensure that spawnable NPCs are
-        /// prepared before attempting to spawn.</remarks>
         /// <param name="objId">The unique identifier of the object for which the NPC should be spawned.</param>
-        /// <returns>The first spawned NPC associated with the spawner, or <see langword="null"/> if no NPCs were successfully
-        /// spawned.</returns>
+        /// <returns>The first spawned NPC associated with the spawner, or null if no NPCs were successfully spawned.</returns>
         public override Npc ForceSpawn(uint objId)
         {
             if (SpawnedNpcs.Count == 0) InitializeSpawnableNpcs(Template);
@@ -241,35 +336,73 @@ namespace AAEmu.Game.Models.Game.NPChar
             return SpawnedNpcs.TryGetValue(SpawnerId, out var list) && list.Count > 0 ? list[0] : null;
         }
 
+        /// <summary>
+        /// Asynchronously spawns an NPC.
+        /// </summary>
+        public async Task<Npc> SpawnAsync(uint objId)
+        {
+            await Task.Run(() => DoSpawn());
+            return SpawnedNpcs.TryGetValue(SpawnerId, out var list) && list.Count > 0 ? list[0] : null;
+        }
+
+        /// <summary>
+        /// Asynchronously forces the spawning of an NPC.
+        /// </summary>
+        public async Task<Npc> ForceSpawnAsync(uint objId)
+        {
+            if (SpawnedNpcs.Count == 0) InitializeSpawnableNpcs(Template);
+            await Task.Run(() => DoSpawn());
+            return SpawnedNpcs.TryGetValue(SpawnerId, out var list) && list.Count > 0 ? list[0] : null;
+        }
+
+        /// <summary>
+        /// Adds a newly spawned NPC to the internal tracking list.
+        /// </summary>
         private void AddNpcToSpawned(uint key, Npc newNpc)
         {
             if (newNpc == null) return;
-            SpawnedNpcs.AddOrUpdate(key, _ =>
-                    [newNpc], updateValueFactory: (_, existing) => {
-                    lock (existing)
+
+            SpawnedNpcs.AddOrUpdate(key,
+                _ => [newNpc],
+                (_, existing) =>
+                {
+                    lock (existing) // Блокируем список для безопасного добавления
                     {
                         existing.Add(newNpc);
                     }
-
-                    return existing; });
+                    return existing;
+                });
         }
- 
+
+        /// <summary>
+        /// Sets the spawn scheduled flag.
+        /// </summary>
         public void SetSpawnScheduled(bool value)
         {
             IsSpawnScheduled = value;
         }
+
         #endregion
 
         #region Despawn Logic
-        private bool CanDespawnNpcs() =>
-            IsDespawningScheduleEnabled(SpawnerId);
 
+        /// <summary>
+        /// Checks if despawning conditions are met.
+        /// </summary>
+        private bool CanDespawnNpcs() => IsDespawningScheduleEnabled(SpawnerId);
+
+        /// <summary>
+        /// Schedules despawning of NPCs if conditions are met.
+        /// </summary>
         private void DespawnNpcs()
         {
             if (IsDespawnScheduled) return;
             if (SpawnedNpcs.TryGetValue(SpawnerId, out var npcs)) DoDespawns(npcs);
         }
 
+        /// <summary>
+        /// Immediately despawns NPCs if no players are in range.
+        /// </summary>
         private void DespawnNpcsNow()
         {
             if (IsDespawnScheduled) return;
@@ -279,32 +412,49 @@ namespace AAEmu.Game.Models.Game.NPChar
         /// <summary>
         /// Schedules despawn for a list of NPCs.
         /// </summary>
-        /// <param name="npcs"></param>
         internal void DoDespawns(List<Npc> npcs)
         {
             if (npcs == null) return;
-            lock (SpawnLock)
+
+            lock (SpawnLock) // Блокируем глобально для операции деспавна
             {
                 IsDespawnScheduled = true;
+                // Используем ToList() для создания копии списка, чтобы избежать модификации во время итерации
                 foreach (var npc in npcs.ToList())
                 {
-                    try { DoDespawn(npc); }
-                    catch (Exception ex) { Logger.Error(ex, $"DoDespawns failed for {npc?.ObjId}"); }
+                    try
+                    {
+                        DoDespawn(npc);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, $"DoDespawns failed for {npc?.ObjId}");
+                    }
                 }
                 IsDespawnScheduled = false;
             }
         }
 
+        /// <summary>
+        /// Immediately despawns a list of NPCs.
+        /// </summary>
         private void DoDespawnsNow(List<Npc> npcs)
         {
             if (npcs == null) return;
+
             lock (SpawnLock)
             {
                 IsDespawnScheduled = true;
                 foreach (var npc in npcs.ToList())
                 {
-                    try { DoDespawnNow(npc); }
-                    catch (Exception ex) { Logger.Error(ex, $"DoDespawnsNow failed for {npc?.ObjId}"); }
+                    try
+                    {
+                        DoDespawnNow(npc);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, $"DoDespawnsNow failed for {npc?.ObjId}");
+                    }
                 }
                 IsDespawnScheduled = false;
             }
@@ -313,10 +463,10 @@ namespace AAEmu.Game.Models.Game.NPChar
         /// <summary>
         /// Despawns the NPC and schedules it for respawn if conditions are met.
         /// </summary>
-        /// <param name="npc"></param>
         public override void Despawn(Npc npc)
         {
             if (npc == null) return;
+
             try
             {
                 lock (SpawnLock)
@@ -325,36 +475,44 @@ namespace AAEmu.Game.Models.Game.NPChar
                     UnregisterAndDeleteNpc(npc);
                     npc.IsDespawnScheduled = false;
                     IsDespawnScheduled = false;
+                    RaiseNpcDespawned(npc); // Вызываем событие деспавна
                 }
             }
-            catch (Exception ex) { Logger.Error(ex, $"Failed to despawn NPC {npc.TemplateId}"); }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, $"Failed to despawn NPC {npc.TemplateId}");
+            }
         }
 
         /// <summary>
         /// Despawns the NPC and schedules it for respawn if conditions are met.
         /// </summary>
-        /// <param name="npc"></param>
         public void DespawnWithRespawn(Npc npc)
         {
             if (npc == null) return;
+
             npc.Delete();
             if (RespawnTime > 0 && AreOtherNpcsInSpawnZone().Item2 < Template.MaxPopulation)
             {
                 npc.Respawn = DateTime.UtcNow.AddSeconds(RespawnTime);
                 SpawnManager.Instance.AddRespawn(npc);
-                IncrementCount(true);
+                IncrementCount(true); // Увеличиваем счетчик для респавна
             }
         }
 
+        /// <summary>
+        /// Removes an NPC from the internal tracking list.
+        /// </summary>
         private void RemoveNpcFromSpawnedList(Npc npc)
         {
             if (npc.Spawner == null) return;
+
             var id = npc.Spawner.SpawnerId;
             lock (SpawnLock)
             {
                 if (SpawnedNpcs.TryGetValue(id, out var list))
                 {
-                    lock (list)
+                    lock (list) // Блокируем список для безопасного удаления
                     {
                         list.Remove(npc);
                         if (list.Count == 0) SpawnedNpcs.TryRemove(id, out _);
@@ -363,20 +521,28 @@ namespace AAEmu.Game.Models.Game.NPChar
             }
         }
 
+        /// <summary>
+        /// Schedules an NPC for despawn and potentially respawn.
+        /// </summary>
         private void DoDespawn(Npc npc)
         {
             lock (SpawnLock)
             {
+                // Проверяем, нужно ли планировать респавн
                 if (RespawnTime > 0 &&
                     AreOtherNpcsInSpawnZone().Item2 + _scheduledCount < Template.MaxPopulation)
                 {
-                    IncrementCount(true);
+                    IncrementCount(true); // Увеличиваем счетчик для респавна
                     npc.Respawn = DateTime.UtcNow.AddSeconds(RespawnTime);
                     SpawnManager.Instance.AddRespawn(npc);
                 }
-                else IncrementCount(false);
+                else
+                {
+                    IncrementCount(false); // Просто увеличиваем счетчик
+                }
 
                 npc.Despawn = DateTime.UtcNow.AddSeconds(DespawnTime);
+                // Увеличиваем время деспавна, если есть лут
                 if (npc.LootingContainer?.Items.Count > 0)
                     npc.Despawn += TimeSpan.FromSeconds(LootingContainer.LootDespawnExtensionTime);
 
@@ -384,24 +550,37 @@ namespace AAEmu.Game.Models.Game.NPChar
             }
         }
 
+        /// <summary>
+        /// Immediately schedules an NPC for despawn.
+        /// </summary>
         private void DoDespawnNow(Npc npc)
         {
             lock (SpawnLock)
             {
+                // Проверяем, нужно ли планировать респавн
                 if (AreOtherNpcsInSpawnZone().Item2 + _scheduledCount < Template.MaxPopulation)
-                    IncrementCount(true);
+                    IncrementCount(true); // Увеличиваем счетчик для респавна
+
                 SpawnManager.Instance.AddDespawn(npc);
             }
         }
-        
+
+        /// <summary>
+        /// Unregisters NPC events and deletes the NPC object.
+        /// </summary>
         private static void UnregisterAndDeleteNpc(Npc npc)
         {
             npc.UnregisterNpcEvents();
             npc.Delete();
         }
+
         #endregion
 
         #region Schedule Helpers
+
+        /// <summary>
+        /// Checks if the spawning schedule is currently enabled.
+        /// </summary>
         private bool IsSpawningScheduleEnabled()
         {
             if (Template == null) return false;
@@ -419,7 +598,8 @@ namespace AAEmu.Game.Models.Game.NPChar
                     return false;
                 case GameScheduleManager.PeriodStatus.NotFound:
                     break;
-                default: return false;
+                default:
+                    return false;
             }
 
             if (IsWithinSpawnTime())
@@ -431,45 +611,71 @@ namespace AAEmu.Game.Models.Game.NPChar
             return false;
         }
 
+        /// <summary>
+        /// Checks if the despawning schedule is enabled for a specific spawner.
+        /// </summary>
         private bool IsDespawningScheduleEnabled(uint spawnerId)
         {
             if (!SpawnedNpcs.TryGetValue(spawnerId, out var npcs)) return false;
             return npcs.Any(npc => IsWithinDespawnTime(npc) || IsNpcInTimeWindow(npc));
         }
 
+        /// <summary>
+        /// Checks if the current time is within the spawner's defined spawn time window.
+        /// </summary>
         private bool IsWithinSpawnTime()
         {
             if (Template.StartTime <= 0 && Template.EndTime <= 0) return true;
+
             var curTime = TimeSpan.FromHours(TimeManager.Instance.GetTime);
             var start = TimeSpan.FromHours(Template.StartTime);
             var end = TimeSpan.FromHours(Template.EndTime);
+
             return IsTimeBetween(curTime, start, end);
         }
 
+        /// <summary>
+        /// Checks if an NPC's despawn time is outside its spawner's time window.
+        /// </summary>
         private static bool IsWithinDespawnTime(Npc npc)
         {
             var t = npc.Spawner?.Template;
             if (t == null || (t.StartTime <= 0 && t.EndTime <= 0)) return false;
+
             var cur = TimeSpan.FromHours(TimeManager.Instance.GetTime);
             var s = TimeSpan.FromHours(t.StartTime);
             var e = TimeSpan.FromHours(t.EndTime);
-            return !IsTimeBetween(cur, s, e);
+
+            return !IsTimeBetween(cur, s, e); // Возвращаем true, если ВНЕ времени спавна (т.е. пора деспавнить)
         }
 
+        /// <summary>
+        /// Checks if an NPC is within an active game schedule time window.
+        /// </summary>
         private static bool IsNpcInTimeWindow(Npc npc)
         {
             var status = GameScheduleManager.Instance.GetPeriodStatusNpc((int)npc.Spawner.Template.Id);
             return status == GameScheduleManager.PeriodStatus.InProgress;
         }
 
+        /// <summary>
+        /// Helper to determine if a time is between a start and end time, handling day rollovers.
+        /// </summary>
         private static bool IsTimeBetween(TimeSpan now, TimeSpan start, TimeSpan end) =>
             start <= end ? now >= start && now <= end : now >= start || now <= end;
+
         #endregion
 
         #region Optimal Spawner Selection
 
+        /// <summary>
+        /// Checks if this is the optimal spawner to use.
+        /// </summary>
         private bool IsOptimalSpawner() => SpawnerId == SelectSpawnerId();
 
+        /// <summary>
+        /// Selects the most appropriate spawner ID based on conditions.
+        /// </summary>
         private uint? SelectSpawnerId()
         {
             if (NpcSpawnerIds.Count == 1) return SpawnerId;
@@ -480,15 +686,25 @@ namespace AAEmu.Game.Models.Game.NPChar
             return IsThereSpawningSchedule() ? SpawnerId : null;
         }
 
+        /// <summary>
+        /// Checks if there is an active spawning schedule for this spawner.
+        /// </summary>
         private bool IsThereSpawningSchedule()
         {
             var status = GameScheduleManager.Instance.GetPeriodStatusNpc((int)SpawnerId);
             if (status != GameScheduleManager.PeriodStatus.NotFound) return true;
+
             return HasSpawningTime();
         }
 
+        /// <summary>
+        /// Checks if the spawner template defines specific spawn times.
+        /// </summary>
         private bool HasSpawningTime() => Template.StartTime > 0 || Template.EndTime > 0;
 
+        /// <summary>
+        /// Checks if any of the associated spawners have a schedule defined.
+        /// </summary>
         private bool HasScheduledSpawner()
         {
             foreach (var id in NpcSpawnerIds)
@@ -497,35 +713,52 @@ namespace AAEmu.Game.Models.Game.NPChar
                 if (t != null && (t.StartTime > 0 || t.EndTime > 0 || CheckGameScheduleStatus(t)))
                     return true;
             }
+
             return false;
         }
 
+        /// <summary>
+        /// Checks the game schedule status for a specific template.
+        /// </summary>
         private static bool CheckGameScheduleStatus(NpcSpawnerTemplate t)
         {
             var status = GameScheduleManager.Instance.GetPeriodStatusNpc((int)t.Id);
             return status != GameScheduleManager.PeriodStatus.NotFound;
         }
+
         #endregion
 
         #region Count & Cache Helpers
+
+        /// <summary>
+        /// Checks if the spawn count conditions allow for new spawns.
+        /// </summary>
         private bool CheckSpawnCountCanSpawn()
         {
             var min = Template.MinPopulation == 0 ? 1 : Template.MinPopulation;
             var max = Template.MaxPopulation;
             var pc = Math.Max(GetNumberOfPlayerInSpawnRadius(Template), 1);
 
-            if (pc < min) max = (uint)pc;
-            else if (pc >= min && pc <= max) max = (uint)pc;
+            if (pc < min)
+                max = (uint)pc;
+            else if (pc >= min && pc <= max)
+                max = (uint)pc;
 
             var total = CurrentSpawnCount + AreOtherNpcsInSpawnZone().Item2;
-            if (Template.SuspendSpawnCount > 0 && total >= Template.SuspendSpawnCount) return false;
+
+            if (Template.SuspendSpawnCount > 0 && total >= Template.SuspendSpawnCount)
+                return false;
+
             return total < max;
         }
 
+        /// <summary>
+        /// Gets the number of players within the NPC spawn radius, using cache.
+        /// </summary>
         private int GetNumberOfPlayerInSpawnRadius(NpcSpawnerTemplate template)
         {
             if (_playerCountCache.TryGetValue((int)SpawnerId, out var c) &&
-                (DateTime.UtcNow - c.LastUpdate).TotalSeconds < 10)
+                (DateTime.UtcNow - c.LastUpdate).TotalSeconds < _cacheLifetime.TotalSeconds)
                 return c.PlayerCount;
 
             var count = 0;
@@ -541,13 +774,17 @@ namespace AAEmu.Game.Models.Game.NPChar
                 PlayerCount = count,
                 LastUpdate = DateTime.UtcNow
             };
+
             return count;
         }
 
+        /// <summary>
+        /// Checks if there are other NPCs in the spawn zone, using cache.
+        /// </summary>
         private (bool, int) AreOtherNpcsInSpawnZone()
         {
             if (_npcsInZoneCache.TryGetValue((int)SpawnerId, out var c) &&
-                (DateTime.UtcNow - c.LastUpdate).TotalSeconds < 10)
+                (DateTime.UtcNow - c.LastUpdate).TotalSeconds < _cacheLifetime.TotalSeconds)
                 return (c.AreNpcsInZone, c.Count);
 
             var count = 0;
@@ -565,20 +802,26 @@ namespace AAEmu.Game.Models.Game.NPChar
                 Count = count,
                 LastUpdate = DateTime.UtcNow
             };
+
             return (any, count);
         }
 
+        /// <summary>
+        /// Checks if any player is within the spawn radius, using cache.
+        /// </summary>
         internal bool IsPlayerInSpawnRadius()
         {
             var radius = Template.TestRadiusPc == 0 ? Template.TestRadiusNpc : Template.TestRadiusPc;
+
             if (_playerInRadiusCache.TryGetValue((int)SpawnerId, out var c) &&
-                (DateTime.UtcNow - c.LastUpdate).TotalSeconds < 10)
+                (DateTime.UtcNow - c.LastUpdate).TotalSeconds < _cacheLifetime.TotalSeconds)
                 return c.IsPlayerInRadius;
 
             foreach (var p in WorldManager.Instance.GetAllCharacters())
             {
                 var dist = MathUtil.CalculateDistance(p.Transform.World.Position,
                     new Vector3(Position.X, Position.Y, Position.Z));
+
                 if (dist <= radius * 50f)
                 {
                     _playerInRadiusCache[(int)SpawnerId] = new SpawnerPlayerInRadiusCache
@@ -595,65 +838,70 @@ namespace AAEmu.Game.Models.Game.NPChar
                 IsPlayerInRadius = false,
                 LastUpdate = DateTime.UtcNow
             };
+
             return false;
         }
 
+        /// <summary>
+        /// Checks if any spawned NPCs from this spawner are dead (have corpses).
+        /// </summary>
         private bool HasCorpse()
         {
             if (!SpawnedNpcs.TryGetValue(SpawnerId, out var npcs)) return false;
             return npcs.Any(npc => npc.IsDead);
         }
 
-        private void DecrementCount(List<Npc> n)
+        /// <summary>
+        /// Decrements the scheduled spawn count.
+        /// </summary>
+        private void DecrementCount(int count)
         {
+            if (count <= 0) return; // Добавлена проверка на отрицательное значение
+
             lock (SpawnLock)
             {
                 if (_scheduledCount > 0)
-                    Interlocked.Add(ref _scheduledCount, -n.Count);
+                    Interlocked.Add(ref _scheduledCount, -count);
             }
         }
 
+        /// <summary>
+        /// Increments the scheduled spawn count, typically for respawning.
+        /// </summary>
         private void IncrementCount(bool respawn = false)
         {
             if (!respawn) return;
+
             lock (SpawnLock)
             {
                 var val = Interlocked.Increment(ref _scheduledCount);
                 if (val < 0) Interlocked.Exchange(ref _scheduledCount, 0);
             }
         }
+
         #endregion
 
         #region Event / Random / Effect Spawns
+
         /// <summary>
-        /// Initiates the spawning of NPCs based on the current template and spawn conditions.
+        /// Initiates the spawning of NPCs based on the current template and spawn conditions, typically for events.
         /// </summary>
-        /// <remarks>This method checks the current spawn count and template constraints before attempting
-        /// to spawn NPCs. If the conditions are met, it retrieves the appropriate NPC configuration and spawns NPC
-        /// instances. The spawned NPCs are then added to the active spawn list, and the spawn count is updated
-        /// accordingly.</remarks>
         public void DoEventSpawn()
         {
             if (Template == null || CurrentSpawnCount >= Template.MaxPopulation) return;
+
             var nsn = Template.Npcs.FirstOrDefault(n => n.MemberId == UnitId);
             if (nsn == null) return;
 
             var spawned = nsn.Spawn(this);
             foreach (var npc in spawned) AddNpcToSpawned(SpawnerId, npc);
-            DecrementCount(spawned);
+
+            DecrementCount(spawned.Count);
         }
 
         /// <summary>
         /// Spawns a random NPC from the specified spawner template.
         /// </summary>
-        /// <remarks>This method selects an NPC template from the specified spawner based on weighted
-        /// probabilities and attempts to spawn one or more NPCs. If successful, the first spawned NPC is returned. If
-        /// the spawner template is invalid, contains no NPCs, or an error occurs during spawning, the method returns
-        /// <see langword="null"/>.</remarks>
-        /// <param name="spawnerId">The unique identifier of the spawner template to use for spawning.</param>
-        /// <param name="ownerId">The unique identifier of the owner associated with the spawned NPC. Defaults to 0 if not specified.</param>
-        /// <returns>The first NPC spawned from the template, or <see langword="null"/> if spawning fails or no NPCs are
-        /// available.</returns>
         public Npc DoRandomSpawn(uint spawnerId, uint ownerId = 0)
         {
             var template = NpcGameData.Instance.GetNpcSpawnerTemplate(spawnerId);
@@ -673,6 +921,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                 var spawnedNpc = spawned.First();
                 lock (SpawnLock) AddNpcToSpawned(spawnedNpc.Spawner.SpawnerId, spawnedNpc);
                 spawnedNpc.Spawn();
+
                 return spawnedNpc;
             }
             catch (Exception ex)
@@ -685,16 +934,6 @@ namespace AAEmu.Game.Models.Game.NPChar
         /// <summary>
         /// Spawns NPCs based on the specified spawner ID and applies the given spawn effect.
         /// </summary>
-        /// <remarks>This method retrieves the NPC spawner template associated with the given <paramref
-        /// name="spawnerId"/> and spawns NPCs according to the template configuration. The spawned NPCs can have their
-        /// faction and aggro behavior modified based on the properties of the <paramref name="effect"/> and the
-        /// provided <paramref name="caster"/> and <paramref name="target"/>.  If the <paramref name="effect"/>
-        /// specifies a lifetime, the spawned NPCs will be automatically despawned after the specified
-        /// duration.</remarks>
-        /// <param name="spawnerId">The unique identifier of the NPC spawner to use.</param>
-        /// <param name="effect">The spawn effect to apply to the spawned NPCs, including faction and aggro settings.</param>
-        /// <param name="caster">The unit responsible for initiating the spawn effect. This may influence faction or aggro behavior.</param>
-        /// <param name="target">The target unit that may influence the spawned NPCs' faction or aggro behavior.</param>
         public void DoSpawnEffect(uint spawnerId, SpawnEffect effect, BaseUnit caster, BaseUnit target)
         {
             var template = NpcGameData.Instance.GetNpcSpawnerTemplate(spawnerId);
@@ -706,6 +945,7 @@ namespace AAEmu.Game.Models.Game.NPChar
             var npcs = nsn.Spawn(this);
             foreach (var npc in npcs)
             {
+                // Применяем эффекты
                 if (effect.UseSummonerFaction)
                     npc.Faction = target is Npc ? target.Faction : caster.Faction;
 
@@ -716,6 +956,7 @@ namespace AAEmu.Game.Models.Game.NPChar
                     npc.Ai.OnAggroTargetChanged();
                 }
 
+                // Планируем автоматический деспавн, если задано время жизни
                 if (effect.LifeTime > 0)
                     TaskManager.Instance.Schedule(new NpcSpawnerDoDespawnTask(npc),
                         TimeSpan.FromSeconds(effect.LifeTime));
@@ -723,36 +964,53 @@ namespace AAEmu.Game.Models.Game.NPChar
                 AddNpcToSpawned(SpawnerId, npc);
             }
 
-            if (_scheduledCount > 0)
-                Interlocked.Add(ref _scheduledCount, -npcs.Count);
+            if (npcs.Count > 0) // Уменьшаем счетчик только если были заспавнены NPC
+                DecrementCount(npcs.Count);
         }
+
         #endregion
 
         #region Position Helpers
 
+        /// <summary>
+        /// Adjusts the spawn position to avoid collisions with other NPCs.
+        /// </summary>
         private static Vector3 AdjustSpawnPosition(Npc npc, int maxAttempts = 15)
         {
             var radius = GetCollisionRadiusForNpc(npc);
             var original = npc.Transform.CloneAsSpawnPosition().ToVector3();
+
             for (var i = 0; i < maxAttempts; i++)
             {
                 var pos = Vector3.Add(original,
-                    new Vector3((float)(NextDouble() * radius * 2 - radius),
-                                (float)(NextDouble() * radius * 2 - radius), 0));
+                    new Vector3(
+                        (float)(Rand.NextDouble() * radius * 2 - radius),
+                        (float)(Rand.NextDouble() * radius * 2 - radius),
+                        0));
 
-                if (!WorldManager.GetAround<Npc>(npc, radius * 2)
-                    .Any(n => CheckCollision(pos, n.Transform.Local.Position, radius)))
+                bool hasCollision = false;
+                // Проверяем коллизии с другими NPC в радиусе
+                foreach (var otherNpc in WorldManager.GetAround<Npc>(npc, radius * 2))
+                {
+                    if (CheckCollision(pos, otherNpc.Transform.Local.Position, radius))
+                    {
+                        hasCollision = true;
+                        break;
+                    }
+                }
+
+                if (!hasCollision)
+                {
                     return pos;
+                }
             }
-            return original;
+
+            return original; // Если не удалось найти свободное место, возвращаем оригинальную позицию
         }
 
         /// <summary>
         /// Adjusts the NPC's position to avoid collisions with other NPCs in the vicinity.
         /// </summary>
-        /// <param name="npc"></param>
-        /// <param name="maxAttempts"></param>
-        /// <returns></returns>
         public static Vector3 AdjustMovePosition(Npc npc, int maxAttempts = 5)
         {
             var collisionRadius = GetCollisionRadiusForNpc(npc);
@@ -761,48 +1019,64 @@ namespace AAEmu.Game.Models.Game.NPChar
 
             for (var i = 0; i < maxAttempts; i++)
             {
-                // Check collisions with existing entities
-                var hasCollision = WorldManager.GetAround<Npc>(npc, collisionRadius * 2)
-                    .Where(n => n is not null)
-                    .Any(n => CheckCollision(currentPos, n.Transform.Local.Position, collisionRadius));
+                bool hasCollision = false;
+                foreach (var otherNpc in WorldManager.GetAround<Npc>(npc, collisionRadius * 2))
+                {
+                    if (CheckCollision(currentPos, otherNpc.Transform.Local.Position, collisionRadius))
+                    {
+                        hasCollision = true;
+                        break;
+                    }
+                }
 
                 if (!hasCollision)
                 {
-                    //if (i > 0)
-                    //{
-                    //    Logger.Debug($"Adjusted NPC position after {i + 1} attempts");
-                    //}
                     return currentPos;
                 }
 
-                // Generate new position with random offset
-                currentPos = Vector3.Add(originalPos.ToVector3(), new Vector3((float)(NextDouble() * collisionRadius * 2 - collisionRadius), (float)(NextDouble() * collisionRadius * 2 - collisionRadius), 0f));
+                currentPos = Vector3.Add(originalPos.ToVector3(),
+                    new Vector3(
+                        (float)(Rand.NextDouble() * collisionRadius * 2 - collisionRadius),
+                        (float)(Rand.NextDouble() * collisionRadius * 2 - collisionRadius),
+                        0f));
             }
 
             return currentPos;
         }
 
+        /// <summary>
+        /// Simple 2D circle collision check.
+        /// </summary>
         private static bool CheckCollision(Vector3 pos1, Vector3 pos2, float radius)
         {
-            // Calculate horizontal distance (ignore Z-axis)
             var dx = pos1.X - pos2.X;
             var dy = pos1.Y - pos2.Y;
             return dx * dx + dy * dy < radius * radius;
         }
 
+        /// <summary>
+        /// Gets the collision radius for an NPC, defaulting to 1.5 if not specified.
+        /// </summary>
         private static float GetCollisionRadiusForNpc(Npc npc) => npc.ModelSize > 0 ? npc.ModelSize : 1.5f;
+
         #endregion
 
         #region Clone Helper
+
+        /// <summary>
+        /// Creates a shallow copy of an object.
+        /// </summary>
         public static T Clone<T>(T obj) =>
             (T)obj.GetType()
-                  .GetMethod("MemberwiseClone",
-                      System.Reflection.BindingFlags.Instance |
-                      System.Reflection.BindingFlags.NonPublic)?
-                  .Invoke(obj, null);
+                .GetMethod("MemberwiseClone",
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.NonPublic)?
+                .Invoke(obj, null);
+
         #endregion
 
         #region Cache Structs
+
         private struct SpawnerPlayerCountCache
         {
             public int PlayerCount;
@@ -821,6 +1095,40 @@ namespace AAEmu.Game.Models.Game.NPChar
             public bool AreNpcsInZone;
             public DateTime LastUpdate;
         }
+
+        #endregion
+
+        #region Events
+
+        public event EventHandler<NpcSpawnedEventArgs> OnNpcSpawned;
+        public event EventHandler<NpcDespawnedEventArgs> OnNpcDespawned;
+
+        protected virtual void RaiseNpcSpawned(Npc npc)
+        {
+            OnNpcSpawned?.Invoke(this, new NpcSpawnedEventArgs(npc));
+        }
+
+        protected virtual void RaiseNpcDespawned(Npc npc)
+        {
+            OnNpcDespawned?.Invoke(this, new NpcDespawnedEventArgs(npc));
+        }
+
+        #endregion
+
+        #region Event Args
+
+        public class NpcSpawnedEventArgs : EventArgs
+        {
+            public Npc Npc { get; }
+            public NpcSpawnedEventArgs(Npc npc) => Npc = npc;
+        }
+
+        public class NpcDespawnedEventArgs : EventArgs
+        {
+            public Npc Npc { get; }
+            public NpcDespawnedEventArgs(Npc npc) => Npc = npc;
+        }
+
         #endregion
     }
 }

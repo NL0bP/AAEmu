@@ -100,7 +100,12 @@ public class IdleBehavior : BaseCombatBehavior
 
             // Talk has low priority
             CheckForTalk();
+
+            Ai.GoToDefaultBehavior();
         }
+
+        // Talk has low priority
+        CheckForTalk();
     }
 
     private void TryUseIdleSkill()
