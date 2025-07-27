@@ -95,7 +95,7 @@ public class NpcManager : Singleton<NpcManager>
 
         var npc = new Npc();
         npc.ObjId = objectId > 0 ? objectId : ObjectIdManager.Instance.GetNextId();
-        npc.Name = GetSpawnName(id);
+        //npc.Name = GetSpawnName(id);
 
         //Logger.Info($"Used ObjId={npc.ObjId}");
 

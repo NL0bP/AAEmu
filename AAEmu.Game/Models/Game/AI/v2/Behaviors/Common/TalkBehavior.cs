@@ -179,7 +179,7 @@ public class TalkBehavior : BaseCombatBehavior
 
         var pos = Ai.Owner.Transform.CloneDetached();
         pos.Local.AddDistanceToFront(SpyglassDist);
-        var yaw = (float)MathUtil.CalculateAngleFrom(pos, Ai.Owner.Transform);
+        //var yaw = (float)MathUtil.CalculateAngleFrom(pos, Ai.Owner.Transform);
 
         var spawner = new DoodadSpawner
         {
@@ -187,9 +187,9 @@ public class TalkBehavior : BaseCombatBehavior
             UnitId = SpyglassId,
             Position = pos.CloneAsSpawnPosition()
         };
-        spawner.Position.Yaw = yaw;
-        spawner.Position.Pitch = 0;
-        spawner.Position.Roll = 0;
+        //spawner.Position.Yaw = yaw;
+        //spawner.Position.Pitch = 0;
+        //spawner.Position.Roll = 0;
         _ = spawner.Spawn(0, 0, Ai.Owner.ObjId);
     }
 }
