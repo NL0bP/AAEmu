@@ -30,7 +30,7 @@ namespace AAEmu.Game.Scripts.Commands;
 
 public class Announce : ICommand
 {
-    public string[] CommandNames { get; set; } = new string[] { "announce" };
+    public string[] CommandNames { get; set; } = ["announce"];
 
     public void OnLoad()
     {
@@ -120,7 +120,7 @@ public class Announce : ICommand
                 messageType = typeVal;
             }
 
-            if (messageType < 1 || messageType > 3)
+            if (messageType is < 1 or > 3)
             {
                 // Invalid type, assume the user only provided text, and handle everything automatically
                 firstArg = 0;
@@ -142,8 +142,7 @@ public class Announce : ICommand
             }
 
             //broadcast to all online clients in server
-            WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(messageType, messageColor,
-                messageVisibleTime, message));
+            WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(messageType, messageColor, messageVisibleTime, message, null));
 
             //send back confirmation script executed to script runner
             CommandManager.SendNormalText(this, messageOutput, $"Announcement sent.");

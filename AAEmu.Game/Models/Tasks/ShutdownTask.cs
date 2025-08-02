@@ -62,7 +62,7 @@ public class ShutdownTask : Task
     {
         _shutdownTime = shutdownTime;
         var remaining = (int)Math.Ceiling((_shutdownTime - DateTime.UtcNow).TotalMinutes);
-        WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Red, 10000, $"Server shutdown has been rescheduled to {remaining} minutes from now!"));
+        WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Red, 10000, $"Server shutdown has been rescheduled to {remaining} minutes from now!", null));
         _nextTriggerTime = CalculateLargestNextTrigger();
     }
 
@@ -89,8 +89,7 @@ public class ShutdownTask : Task
 
             if (SaveManager.Instance.DoSave())
             {
-                WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000,
-                    "The server is shutting down right now!"));
+                WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000, "The server is shutting down right now!", null));
                 Environment.Exit(_exitCode); // Manual Shutdown
             }
 
@@ -128,9 +127,10 @@ public class ShutdownTask : Task
         }
 
         WorldManager.Instance.BroadcastPacketToServer(
-            new SCNoticeMessagePacket(3, 
-                Color.Red, 
-                popupTime, 
-                shutdownText));
+            new SCNoticeMessagePacket(3,
+                Color.Red,
+                popupTime,
+                shutdownText,
+                null));
     }
 }

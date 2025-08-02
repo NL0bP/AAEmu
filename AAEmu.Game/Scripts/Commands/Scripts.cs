@@ -93,7 +93,7 @@ public class Scripts : ICommand
                 {
                     SaveManager.Instance.ShutdownTask.Cancel();
                     CommandManager.SendNormalText(this, messageOutput, $"Shutdown cancelled.");
-                    WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Aqua, 10000, "The server shutdown has been cancelled!"));
+                    WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Aqua, 10000, "The server shutdown has been cancelled!", null));
                     SaveManager.Instance.ShutdownTask = null;
                     return;
                 }
@@ -124,7 +124,7 @@ public class Scripts : ICommand
 
                 break;
             case "forcedshutdown":
-                WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000, "The server is shutting down right now!"));
+                WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000, "The server is shutting down right now!", null));
                 CommandManager.SendNormalText(this, messageOutput, "Shutting down immediately!");
                 Environment.Exit(-2); // Manual Forced Shutdown (-2)
                 break;

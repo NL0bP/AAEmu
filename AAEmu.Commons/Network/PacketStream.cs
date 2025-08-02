@@ -1558,6 +1558,10 @@ public class PacketStream : ICloneable, IComparable
     {
         try
         {
+            // Разрешаем null: если строка == null, записываем только 0-байт(ы) длины
+            if (value is null)
+                return Write(Array.Empty<byte>(), appendSize);
+
             var str = Encoding.UTF8.GetBytes(appendTerminator ? value + '\u0000' : value); // utf-8
             return Write(str, appendSize);
         }

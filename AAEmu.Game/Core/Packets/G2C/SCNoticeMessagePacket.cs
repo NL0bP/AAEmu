@@ -13,8 +13,9 @@ public class SCNoticeMessagePacket : GamePacket
     private readonly string _alphahex = "FF";
     private readonly string _colorhex = "80FF80";
     private readonly int _vistime = 1000;
+    private readonly string _name = "Administrator";
 
-    public SCNoticeMessagePacket(byte type, Color ARGBColor, int vistime, string message) : base(SCOffsets.SCNoticeMessagePacket, 5)
+    public SCNoticeMessagePacket(byte type, Color ARGBColor, int vistime, string message, string name) : base(SCOffsets.SCNoticeMessagePacket, 5)
     {
         // Set Opacity to max if none was provided
         if (ARGBColor.A <= 0)
@@ -27,6 +28,7 @@ public class SCNoticeMessagePacket : GamePacket
         _colorhex = ARGBColor.R.ToString("X2") + ARGBColor.G.ToString("X2") + ARGBColor.B.ToString("X2");
         _vistime = vistime;
         _message = message;
+        _name = name;
     }
 
     public override PacketStream Write(PacketStream stream)
@@ -35,6 +37,7 @@ public class SCNoticeMessagePacket : GamePacket
         stream.Write(_alphahex); // A-component of ARGB color value
         stream.Write(_vistime); // visibleTime (Miliseconds)
         stream.Write(_colorhex + _message); // RGB-component of ARGB color value with added message
+        stream.Write(_name); // name
 
         return stream;
     }
