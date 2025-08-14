@@ -1414,10 +1414,8 @@ public partial class Character : Unit, ICharacter
             actabilityStep = Actability.Actabilities[(uint)actabilityId].Step;
             actabilityChange = Actability.AddPoint((uint)actabilityId, actabilityChange);
         }
-        else
-        {
-            LaborPower += change;
-        }
+
+        LaborPower += change;
 
         // Only grant xp if consuming labor
         if (change < 0)
@@ -1449,10 +1447,8 @@ public partial class Character : Unit, ICharacter
             actabilityChange = Actability.AddPoint((uint)actabilityId, actabilityChange);
             change = 0;
         }
-        else
-        {
-            LaborPower += change;
-        }
+
+        LaborPower += change;
 
         // Only grant xp if consuming labor
         if (change < 0)
