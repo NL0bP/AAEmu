@@ -83,7 +83,7 @@ public class SpecialtyManager : Singleton<SpecialtyManager>
                         template.ItemId = reader.GetUInt32("item_id");
                         template.SpecialtyBundleId = reader.GetUInt32("specialty_bundle_id");
                         template.Profit = reader.GetUInt32("profit");
-                        template.Ratio = reader.GetUInt32("ratio");
+                        template.Ratio = reader.GetInt32("ratio");
                         _specialtyBundleItems.Add(template.Id, template);
 
                         // Проверка на дубликат в _specialtyBundleItems
@@ -465,7 +465,7 @@ public class SpecialtyManager : Singleton<SpecialtyManager>
         foreach (var bundleItem in bundleItems)
         {
             var basePrice = GetBasePriceForItem(player, npcTemplateId, bundleItem.ItemId);
-            var priceRatio = GetRatioForItem(player, bundleItem.ItemId);;
+            var priceRatio = GetRatioForItem(player, bundleItem.ItemId);
             var finalPriceNoInterest = basePrice * (priceRatio / 100f);
 
             var productInformation = new ProductInformation();

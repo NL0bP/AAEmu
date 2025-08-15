@@ -105,7 +105,7 @@ public class ShutdownTask : Task
 
         var showSeconds = remainingSeconds <= 100;
         var showMinutes = remainingSeconds <= 3600 && !showSeconds;
-        var showHours = remainingSeconds > 3600 && !showSeconds;;
+        var showHours = remainingSeconds > 3600 && !showSeconds;
 
         var shutdownText = "The server is shutting down soon!";
         var popupTime = 3000;
