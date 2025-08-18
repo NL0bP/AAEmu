@@ -1,4 +1,5 @@
 ﻿using AAEmu.Commons.Network;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Chat;
@@ -14,6 +15,7 @@ public class SCNpcChatMessagePacket : GamePacket
     private readonly uint _type;
     private readonly byte _kind;
     private readonly string _message;
+    private readonly string _npcName;
 
     public SCNpcChatMessagePacket(ChatType chatType, Npc npc, Character character, byte kind, uint type, string message)
         : base(SCOffsets.SCNpcChatMessagePacket, 5)
@@ -24,6 +26,7 @@ public class SCNpcChatMessagePacket : GamePacket
         _kind = kind;
         _type = type;
         _message = message;
+        _npcName = NpcManager.GetSpawnName(npc.Id);
     }
 
     public override PacketStream Write(PacketStream stream)
@@ -35,7 +38,7 @@ public class SCNpcChatMessagePacket : GamePacket
         #endregion Int64_chat
 
         stream.WriteBc(_npc.ObjId);             // bc
-        stream.Write(_npc.Name);                // name
+        stream.Write(_npcName);                 // name
         stream.WriteBc(_character?.ObjId ?? 0); // bc
         stream.Write(_kind);                    // kind
         if (_kind == 1)
