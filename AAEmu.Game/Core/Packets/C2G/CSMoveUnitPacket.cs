@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Numerics;
 
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
@@ -18,6 +17,7 @@ using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
+using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Scripts.Commands;
 using AAEmu.Game.Utils;
@@ -34,20 +34,12 @@ public class CSMoveUnitPacket : GamePacket
     // lighthouse ezi's
     private Stopwatch _stopwatch = new();
     private Stopwatch _stopwatch2 = new();
-    private const int DelayInMilliseconds = 1000; // 1 секунда
-    private const double DistanceThreshold = 500.0 * 500.0; // 500 метров
-    private const double cargoShipProximityThresholdSquared = 35.0 * 35.0; // 35 метров
-    private const float cargoShipProximityThreshold = 35f; // 35 метров
     private readonly Dictionary<Character, bool> _proximityCache = new();
     private readonly Dictionary<Character, bool> _cargoShipCache = new(); // Add new cache for cargo ship captain
-    private readonly HashSet<Vector3> _targetPositions = new()
-    {
-        new Vector3(16672.8f, 9303.9f, 175f), // Полуостров Рассвета на восточном материке
-        new Vector3(13131f, 10105.2f, 175.2f), // Две Короны на западном материке
-        new Vector3(18962.6f, 26838f, 176.3f), // Сверкающее побережье на изначальном материке
-        new Vector3(19971f, 26927.2f, 175.8f), // Сверкающее побережье на изначальном материке
-        new Vector3(15227.6f, 22731f, 185.8f)
-    };
+    private readonly HashSet<Character> _activeCharacters = new();
+    private long _lastCacheUpdate = 0;
+    private const long CacheUpdateIntervalMs = 30_000; // Update every 30 seconds
+
     public CSMoveUnitPacket() : base(CSOffsets.CSMoveUnitPacket, 5)
     {
     }
@@ -113,6 +105,9 @@ public class CSMoveUnitPacket : GamePacket
                     // Logger.Debug("ShipRequestMoveType - Throttle: {0} - Steering {1}", srmt.Throttle, srmt.Steering);
                     if (targetUnit is not Slave ship)
                         return;
+
+                    // lighthouse ezi's
+                    CheckProximityAndApplyBuff(character);
 
                     // TODO: Validate if targetUnit is actually a ship
 
@@ -321,6 +316,8 @@ public class CSMoveUnitPacket : GamePacket
                 Logger.Warn("Unknown MoveType: {0} by {1} for {2} ", _moveType, character.Name, targetUnit.Name);
                 break;
         }
+
+        CleanupProximityCache(); // to clean up caches
     }
 
     private static void RemoveEffects(BaseUnit unit, MoveType moveType)
@@ -334,7 +331,7 @@ public class CSMoveUnitPacket : GamePacket
         if (IsTimeToCheck2())
         {
             var isWithinDistance = true;
-            var doodads= WorldManager.GetAround<Doodad>(character, cargoShipProximityThreshold);
+            var doodads= WorldManager.GetAround<Doodad>(character, WorldConstants.CargoShipProximityThreshold);
             // ID=12299 Cargo Ship Captain
             if (doodads is { Count: > 0 } && doodads.Any(doodad => doodad.TemplateId == 12299))
                 isWithinDistance = false;
@@ -367,8 +364,8 @@ public class CSMoveUnitPacket : GamePacket
         if (IsTimeToCheck())
         {
             var characterPosition = character.Transform.World.Position;
-            var isWithinDistance = _targetPositions.Any(targetPosition =>
-                (characterPosition - targetPosition).LengthSquared() <= DistanceThreshold);
+            var isWithinDistance = WorldConstants.TargetPositions.Any(targetPosition =>
+                (characterPosition - targetPosition).LengthSquared() <= WorldConstants.DistanceThresholdSquared);
 
             // Update the cache
             _proximityCache[character] = isWithinDistance;
@@ -408,8 +405,9 @@ public class CSMoveUnitPacket : GamePacket
             return true;
         }
 
-        return _stopwatch.ElapsedMilliseconds >= DelayInMilliseconds;
+        return _stopwatch.ElapsedMilliseconds >= WorldConstants.DelayInMilliseconds;
     }
+
     private bool IsTimeToCheck2()
     {
         if (!_stopwatch2.IsRunning)
@@ -418,7 +416,30 @@ public class CSMoveUnitPacket : GamePacket
             return true;
         }
 
-        return _stopwatch2.ElapsedMilliseconds >= DelayInMilliseconds;
+        return _stopwatch2.ElapsedMilliseconds >= WorldConstants.DelayInMilliseconds;
+    }
+
+    private void UpdateActiveCharactersCache()
+    {
+        var currentTime = _stopwatch.ElapsedMilliseconds;
+        if (!_stopwatch.IsRunning || currentTime - _lastCacheUpdate >= CacheUpdateIntervalMs)
+        {
+            _activeCharacters.Clear();
+            _activeCharacters.UnionWith(WorldManager.Instance.GetAllCharacters());
+            _lastCacheUpdate = currentTime;
+            if (!_stopwatch.IsRunning) _stopwatch.Start();
+        }
+    }
+
+    private void CleanupProximityCache()
+    {
+        UpdateActiveCharactersCache();
+
+        _proximityCache.Keys.Where(k => !_activeCharacters.Contains(k)).ToList()
+            .ForEach(k => _proximityCache.Remove(k));
+
+        _cargoShipCache.Keys.Where(k => !_activeCharacters.Contains(k)).ToList()
+            .ForEach(k => _cargoShipCache.Remove(k));
     }
 
     public override string Verbose()

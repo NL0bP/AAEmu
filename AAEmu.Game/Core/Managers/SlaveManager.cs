@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -66,6 +67,9 @@ public class SlaveManager : Singleton<SlaveManager>
 
     private object _slaveListLock;
     private Dictionary<uint, List<SlaveEquipSlots>> _slaveEquipSlots; // slaveId -> List<SlaveEquipSlots>
+
+    private readonly Dictionary<Slave, (bool IsNear, long LastCheck)> _proximityCacheShip = new();
+    private readonly Stopwatch _stopwatch = new();
 
     public bool Exist(uint templateId)
     {
@@ -2120,21 +2124,108 @@ public class SlaveManager : Singleton<SlaveManager>
     /// </summary>
     public void SendMySlavePacketToAllOwners()
     {
-        var slaves = WorldManager.Instance.GetAllSlaves();
+        var worldManager = WorldManager.Instance;
+        var slaves = worldManager.GetAllSlaves();
 
         foreach (var slave in slaves)
         {
-            if (slave.Summoner is not null && slave.SummoningItem is not null)
-            {
-                var owner = WorldManager.Instance.GetCharacterByObjId(slave.Summoner.ObjId);
-                owner?.SendPacket(new SCMySlavePacket(slave.ObjId, slave.TlId, slave.Name, slave.TemplateId,
-                    slave.Hp,
-                    slave.MaxHp,
-                    slave.Transform.World.Position.X,
-                    slave.Transform.World.Position.Y,
-                    slave.Transform.World.Position.Z));
-            }
+            SendPacketToOwner(slave, worldManager);
+            ApplyBuffIfShip(slave);
         }
+
+        CleanupProximityCache(slaves);
+    }
+
+    private void SendPacketToOwner(Slave slave, WorldManager worldManager)
+    {
+        if (slave.Summoner is null || slave.SummoningItem is null) return;
+
+        var owner = worldManager.GetCharacterByObjId(slave.Summoner.ObjId);
+        owner?.SendPacket(new SCMySlavePacket(
+            slave.ObjId,
+            slave.TlId,
+            slave.Name,
+            slave.TemplateId,
+            slave.Hp,
+            slave.MaxHp,
+            slave.Transform.World.Position.X,
+            slave.Transform.World.Position.Y,
+            slave.Transform.World.Position.Z));
+    }
+
+    private void ApplyBuffIfShip(Slave slave)
+    {
+        var shipKinds = new[]
+        {
+            SlaveKind.BigSailingShip,
+            SlaveKind.SmallSailingShip,
+            SlaveKind.Speedboat,
+            SlaveKind.Boat,
+            SlaveKind.Fishboat,
+            SlaveKind.MerchantShip,
+            SlaveKind.Leviathan
+        };
+
+        if (shipKinds.Contains(slave.Template.SlaveKind))
+        {
+            CheckProximityAndApplyBuffOnShip(slave);
+        }
+    }
+
+    private void CheckProximityAndApplyBuffOnShip(Slave ship)
+    {
+        if (IsTimeToCheck(ship, out bool isWithinDistance))
+        {
+            _proximityCacheShip[ship] = (isWithinDistance, _stopwatch.ElapsedMilliseconds);
+            ApplyBuff(ship, isWithinDistance);
+        }
+        else if (_proximityCacheShip.TryGetValue(ship, out var cache))
+        {
+            ApplyBuff(ship, cache.IsNear);
+        }
+    }
+
+    private bool IsTimeToCheck(Slave ship, out bool isWithinDistance)
+    {
+        isWithinDistance = false;
+        if (!_stopwatch.IsRunning)
+        {
+            _stopwatch.Start();
+            return true;
+        }
+
+        if (_stopwatch.ElapsedMilliseconds < WorldConstants.ProximityCheckDelayMs &&
+            _proximityCacheShip.TryGetValue(ship, out var cache) &&
+            _stopwatch.ElapsedMilliseconds - cache.LastCheck < WorldConstants.ProximityCheckDelayMs)
+        {
+            isWithinDistance = cache.IsNear;
+            return false;
+        }
+
+        var position = ship.Transform.World.Position;
+        isWithinDistance = WorldConstants.TargetPositions.Any(target =>
+            Vector3.DistanceSquared(position, target) <= WorldConstants.DistanceThresholdSquared);
+        return true;
+    }
+
+    private static void ApplyBuff(Slave ship, bool isWithinDistance)
+    {
+        var hasBuff = ship.Buffs.CheckBuff((uint)SkillConstants.Moored);
+        if (isWithinDistance && !hasBuff)
+        {
+            ship.Buffs.AddBuff((uint)SkillConstants.Moored, ship);
+        }
+        else if (!isWithinDistance && hasBuff)
+        {
+            ship.Buffs.RemoveBuff((uint)SkillConstants.Moored);
+        }
+    }
+
+    private void CleanupProximityCache(IEnumerable<Slave> activeSlaves)
+    {
+        var activeSet = new HashSet<Slave>(activeSlaves);
+        _proximityCacheShip.Keys.Where(k => !activeSet.Contains(k)).ToList()
+            .ForEach(k => _proximityCacheShip.Remove(k));
     }
 
     /// <summary>
