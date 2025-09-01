@@ -18,52 +18,52 @@ namespace AAEmu.Game.Models.Game.Items.Containers
         {
             base.OnEnterContainer(item, lastContainer, previousSlot); // base EquipmentContainer
 
-            // Extra pockets for slaves
-            if (ParentUnit is not Units.slaves.Slave slave)
-            {
-                return;
-            }
+            //// Extra pockets for slaves
+            //if (ParentUnit is not Units.slaves.Slave slave)
+            //{
+            //    return;
+            //}
 
-            var slaveItem = new ItemAndLocation()
-            {
-                Item = null,
-                SlotType = item.SlotType, // newContainer
-                SlotNumber = (byte)item.Slot,
-            };
-            var inventoryItem = new ItemAndLocation()
-            {
-                Item = item,
-                SlotType = ContainerType,
-                SlotNumber = previousSlot,
-            };
-            // Owner.SendDebugMessage($"SlaveEquipmentContainer - {slaveItem} -> {inventoryItem}, SlaveTl: {slave.TlId}");
-            Owner.SendPacket(new SCSlaveEquipmentChangedPacket(slaveItem, inventoryItem, slave.TlId, Owner.Id, 0, false, true, DateTime.MinValue));
+            //var slaveItem = new ItemAndLocation()
+            //{
+            //    Item = null,
+            //    SlotType = item.SlotType, // newContainer
+            //    SlotNumber = (byte)item.Slot,
+            //};
+            //var inventoryItem = new ItemAndLocation()
+            //{
+            //    Item = item,
+            //    SlotType = ContainerType,
+            //    SlotNumber = previousSlot,
+            //};
+            //// Owner.SendDebugMessage($"SlaveEquipmentContainer - {slaveItem} -> {inventoryItem}, SlaveTl: {slave.TlId}");
+            //Owner.SendPacket(new SCSlaveEquipmentChangedPacket(slaveItem, inventoryItem, slave.TlId, Owner.Id, 0, false, true, DateTime.MinValue));
         }
 
         public override void OnLeaveContainer(Item item, ItemContainer newContainer, byte previousSlot)
         {
             base.OnLeaveContainer(item, newContainer, previousSlot); // base EquipmentContainer
 
-            // Extra pockets for slaves
-            if (ParentUnit is not Units.slaves.Slave slave)
-            {
-                return;
-            }
+            //// Extra pockets for slaves
+            //if (ParentUnit is not Units.slaves.Slave slave)
+            //{
+            //    return;
+            //}
 
-            var slaveItem = new ItemAndLocation()
-            {
-                Item = null,
-                SlotType = item.SlotType, // newContainer
-                SlotNumber = (byte)item.Slot,
-            };
-            var inventoryItem = new ItemAndLocation()
-            {
-                Item = item,
-                SlotType = ContainerType,
-                SlotNumber = previousSlot,
-            };
-            // Owner.SendDebugMessage($"SlaveEquipmentContainer - {slaveItem} -> {inventoryItem}, SlaveTl: {slave.TlId}");
-            Owner.SendPacket(new SCSlaveEquipmentChangedPacket(slaveItem, inventoryItem, slave.TlId, Owner.Id, 0, false, true, DateTime.MinValue));
+            //var slaveItem = new ItemAndLocation()
+            //{
+            //    Item = null,
+            //    SlotType = item.SlotType, // newContainer
+            //    SlotNumber = (byte)item.Slot,
+            //};
+            //var inventoryItem = new ItemAndLocation()
+            //{
+            //    Item = item,
+            //    SlotType = ContainerType,
+            //    SlotNumber = previousSlot,
+            //};
+            //// Owner.SendDebugMessage($"SlaveEquipmentContainer - {slaveItem} -> {inventoryItem}, SlaveTl: {slave.TlId}");
+            //Owner.SendPacket(new SCSlaveEquipmentChangedPacket(slaveItem, inventoryItem, slave.TlId, Owner.Id, 0, false, true, DateTime.MinValue));
         }
     }
 }

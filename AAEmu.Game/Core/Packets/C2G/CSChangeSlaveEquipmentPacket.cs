@@ -1,15 +1,9 @@
-﻿using System;
-
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
-using AAEmu.Game.Models.Game.Slaves;
-using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Core.Packets.C2G
 {
@@ -52,10 +46,14 @@ namespace AAEmu.Game.Core.Packets.C2G
                 var slaveItem = new ItemAndLocation();
 
                 playerItem.Item = new Item();
-                stream.Read(playerItem.Item);
+                playerItem.Item.Read(stream);
+                if (playerItem.Item is SlaveEquip slaveEquip)
+                    playerItem.Item = slaveEquip;
 
                 slaveItem.Item = new Item();
-                stream.Read(slaveItem.Item);
+                slaveItem.Item.Read(stream);
+                if (slaveItem.Item is SlaveEquip slaveEquip2)
+                    slaveItem.Item = slaveEquip2;
 
                 playerItem.SlotType = (SlotType)stream.ReadByte();
                 playerItem.SlotNumber = stream.ReadByte();

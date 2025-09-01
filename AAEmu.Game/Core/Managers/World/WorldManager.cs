@@ -876,6 +876,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         }
         return res;
     }
+
     public List<Slave> GetAttachedSlavesByObjId(uint objId)
     {
         var res = new List<Slave>();
@@ -888,6 +889,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         }
         return res;
     }
+
     public List<Doodad> GetAttachedDoodadsByObjId(uint objId, uint templateId)
     {
         var res = new List<Doodad>();

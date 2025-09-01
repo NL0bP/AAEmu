@@ -86,7 +86,10 @@ public class RepairSlaveEffect : EffectTemplate
                 }
 
                 if (slaveItem.Template is not SummonSlaveTemplate summonTemplate)
+                {
+                    Logger.Warn($"RepairSlaveEffect target item {scit.Id} is not a salve summon item");
                     return;
+                }
 
                 //if (!SlaveManager.Instance._repairableSlaves.TryGetValue(summonTemplate.SlaveId, out var expectedEffectId) || (expectedEffectId != Id))
                 //{

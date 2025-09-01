@@ -24,10 +24,6 @@ public class SummonSlave : Item
         set
         {
             _repairStartTime = value;
-            //if (value > DateTime.MinValue)
-            //    IsDestroyed = 0;
-            //else
-            //    IsDestroyed = 1;
         }
     }
 
@@ -36,38 +32,25 @@ public class SummonSlave : Item
 
     public SummonSlave()
     {
-        //
     }
 
     public SummonSlave(ulong id, ItemTemplate template, int count) : base(id, template, count)
     {
-        //
     }
 
     public override void ReadDetails(PacketStream stream)
     {
         if (stream.LeftBytes < DetailBytesLength)
             return;
-        SlaveType = stream.ReadByte(); // Type? (2 = slave?)
-        SlaveDbId = stream.ReadBc();   // DbId
-        IsDestroyed = stream.ReadByte();
-        try
+        SlaveType = stream.ReadByte();   // 1 Type? (2 = slave?)
+        SlaveDbId = stream.ReadBc();     // 3 4 DbId
+        IsDestroyed = stream.ReadByte(); // 1 5
+        if (IsDestroyed == 0)
+            RepairStartTime = DateTime.MinValue;
+        else
         {
-            // Читаем Unix timestamp (4 байта)
-            var unixTime = stream.ReadInt32();
-            if (unixTime != 0)
-                RepairStartTime = DateTimeOffset.FromUnixTimeSeconds(unixTime).UtcDateTime;
-            else
-                RepairStartTime = DateTime.MinValue;
-
-            // Read remaining bytes
-            stream.ReadInt32();
-            _ = stream.ReadBytes((int)DetailBytesLength - 1 - 4 - 4); // Filler, Equipment?
-        }
-        catch
-        {
-            // hackfix
-            RepairStartTime = IsDestroyed == 0 ? DateTime.UtcNow - TimeSpan.FromMinutes(5) : DateTime.MinValue;
+            long ticks = stream.ReadInt64();       // 8 13 Считываем 8 байт и преобразуем в long
+            RepairStartTime = new DateTime(ticks); // Восстанавливаем DateTime
         }
     }
 
@@ -77,18 +60,10 @@ public class SummonSlave : Item
         stream.WriteBc(SlaveDbId); // 3 4
         stream.Write(IsDestroyed); // 1 5
 
-        if (RepairStartTime == DateTime.MinValue)
-        {
-            stream.Write(0); // 4 9
-        }
-        else
-        {
-            // Convert DateTime to Unix timestamp (4 bytes)
-            var unixTime = (int)((RepairStartTime.ToUniversalTime() - DateTime.UnixEpoch).TotalSeconds);
-            stream.Write(unixTime); // 4 9
-        }
-
-        stream.Write(0); // 4 13 // If this is anything besides 0, it will count as being in recovering (negative at that)
+        if (IsDestroyed == 0)
+            RepairStartTime = DateTime.MinValue;
+        long ticks = RepairStartTime.Ticks;
+        stream.Write(ticks); // 8 13 запишем 8 байт
 
         // The following 16 bytes somehow determine where a Vehicle is allowed to be summoned
         // TODO: Get real live data capture of this value being set
@@ -97,7 +72,7 @@ public class SummonSlave : Item
         stream.Write(0); // 4 21
         stream.Write(0); // 4 25
         stream.Write(0); // 4 29
-        stream.Write(0); // 4 33
+        stream.Write(0); // 4 33 in 5+
     }
 
     public override void WriteAdditionalDetails(PacketStream stream)

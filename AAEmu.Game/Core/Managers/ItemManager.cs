@@ -22,7 +22,9 @@ using AAEmu.Game.Models.Game.Items.Slave;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Templates;
+using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Tasks.Item;
 using AAEmu.Game.Utils.DB;
@@ -382,15 +384,13 @@ public class ItemManager : Singleton<ItemManager>
         if (item.Grade <= 0)
             item.Grade = grade;
 
-        item.Grade = grade;
-
         if (item.Template.BindType == ItemBindType.BindOnPickup) // Bind on pickup.
             item.SetFlag(ItemFlag.SoulBound);
 
         if (item.Template.FixedGrade >= 0)
             item.Grade = (byte)item.Template.FixedGrade;
         item.CreateTime = DateTime.UtcNow;
-
+        
         // Fix Durability
         if (item is EquipItem equipItem)
             if (equipItem.Durability < equipItem.MaxDurability)
@@ -404,6 +404,47 @@ public class ItemManager : Singleton<ItemManager>
                 return null;
             }
         }
+
+        return item;
+    }
+
+    public SlaveEquip CreateSlaveEquipment(SlaveInitialItems initialItem, int count, byte grade, Slave summonedSlave, bool generateId = true)
+    {
+        var id = generateId ? Instance.GetNewId() : 0u;
+        var template = GetTemplate(initialItem.ItemId);
+        if (template == null)
+            return null;
+
+        SlaveEquip item = new(id, template, count, (uint)summonedSlave.Hp, DateTime.MinValue);
+
+        // If item already has a default generated grade, then do not override it (used for graded loot like TreasureMaps)
+        if (item.Grade <= 0)
+            item.Grade = grade;
+
+        if (item.Template.BindType == ItemBindType.BindOnPickup) // Bind on pickup.
+            item.SetFlag(ItemFlag.SoulBound);
+
+        if (item.Template.FixedGrade >= 0)
+            item.Grade = (byte)item.Template.FixedGrade;
+        item.CreateTime = DateTime.UtcNow;
+        if (generateId)
+        {
+            if (!_allItems.TryAdd(item.Id, item))
+            {
+                Logger.Error($"Failed to load item with ID {item.Id}, possible duplicate entries!");
+                return null;
+            }
+        }
+
+        item.SlotType = SlotType.SlaveEquipment;
+        item.Slot = initialItem.EquipSlotId;
+        item.ItemFlags = ItemFlag.SoulBound; // связанный
+        item.ChargeUseSkillTime = DateTime.UtcNow;
+        var byteArray = new byte[12];
+        Buffer.BlockCopy(BitConverter.GetBytes(summonedSlave.Hp), 0, byteArray, 0, 4);
+        item.Detail = byteArray;
+        item.DetailType = ItemDetailType.SlaveEquipment;
+        item.DetailBytesLength = (uint)byteArray.Length;
 
         return item;
     }
