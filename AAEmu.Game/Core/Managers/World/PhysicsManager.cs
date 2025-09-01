@@ -322,7 +322,7 @@ namespace AAEmu.Game.Core.Managers.World
             slave.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
 
             // Update all to main Slave and it's children
-            slave.Transform.FinalizeTransform();
+            //slave.Transform.FinalizeTransform();
         }
 
         private bool ApplyCollisions(Slave slave, RigidBody rigidBody, ShipModel shipModel)
