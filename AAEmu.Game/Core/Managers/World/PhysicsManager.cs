@@ -44,6 +44,9 @@ namespace AAEmu.Game.Core.Managers.World
         internal Buoyancy _buoyancy;
         public bool ThreadRunning { get; set; }
 
+        // --- Добавляем tracker ---
+        private readonly LimitedCallTracker _finalizeTransformTracker = new(5);
+
         private readonly Dictionary<uint, ShipController> _shipControllers = new();
 
         private readonly ConcurrentQueue<Action> _pendingActions = new();
@@ -260,6 +263,9 @@ namespace AAEmu.Game.Core.Managers.World
             EnqueueAddBody(slave.RigidBody);
             _buoyancy.AddForRectangularParallelepiped(slave.RigidBody, 3);
 
+            // Reset FinalizeTransform counter on spawn
+            _finalizeTransformTracker.Reset(slave.Id);
+
             Logger.Debug($"AddShip {slave.Name} -> {SimulationWorld.Name}");
         }
 
@@ -275,6 +281,9 @@ namespace AAEmu.Game.Core.Managers.World
             _shipControllers.Remove(slave.Id);
             slave.ShipController = null;
             slave.RigidBody = null;
+
+            // Cleanup FinalizeTransform counter
+            _finalizeTransformTracker.Remove(slave.Id);
 
             Logger.Debug($"RemoveShip {slave.Name} <- {SimulationWorld.Name}");
         }
@@ -321,8 +330,12 @@ namespace AAEmu.Game.Core.Managers.World
             var movements = new (uint, MoveType)[] { (slave.ObjId, moveType) };
             slave.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
 
-            // Update all to main Slave and it's children
-            //slave.Transform.FinalizeTransform();
+            // Call FinalizeTransform only first 5 times per Slave
+            if (_finalizeTransformTracker.TryCall(slave.Id))
+            {
+                // Update all to main Slave and it's children
+                slave.Transform.FinalizeTransform();
+            }
         }
 
         private bool ApplyCollisions(Slave slave, RigidBody rigidBody, ShipModel shipModel)
@@ -420,13 +433,47 @@ namespace AAEmu.Game.Core.Managers.World
         {
             var jq = JQuaternion.CreateFromMatrix(matrix);
 
-            return new Quaternion()
-            {
-                X = jq.X,
-                Y = jq.Y,
-                Z = jq.Z,
-                W = jq.W
-            };
+            return new Quaternion() { X = jq.X, Y = jq.Y, Z = jq.Z, W = jq.W };
         }
+
     }
 }
+
+// --- Новый helper-класс ---
+public class LimitedCallTracker
+{
+    private readonly Dictionary<uint, int> _callCounts = new();
+    private readonly int _maxCalls;
+
+    public LimitedCallTracker(int maxCalls = 5)
+    {
+        _maxCalls = maxCalls;
+    }
+
+    // Returns true if call is allowed (increments counter)
+    public bool TryCall(uint id)
+    {
+        var count = _callCounts.GetValueOrDefault(id, 0);
+
+        if (count < _maxCalls)
+        {
+            _callCounts[id] = count + 1;
+            return true;
+        }
+
+        return false;
+    }
+
+    // Reset counter for object (e.g. on spawn)
+    public void Reset(uint id)
+    {
+        _callCounts[id] = 0;
+    }
+
+    // Remove counter for object (e.g. on despawn)
+    public void Remove(uint id)
+    {
+        _callCounts.Remove(id);
+    }
+}
+
