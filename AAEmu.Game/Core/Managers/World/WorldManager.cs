@@ -82,7 +82,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     Was originally set to 1, recommended 3 and max 5
     anything higher is overkill as you can't target it anymore in the client at that distance
     */
-    public const sbyte REGION_NEIGHBORHOOD_SIZE = 1;
+    public const sbyte REGION_NEIGHBORHOOD_SIZE = 2;
     // ReSharper enable InconsistentNaming
 
     public const float DefaultCombatTimeout = 15f;
@@ -1026,8 +1026,13 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
 
         foreach (var region in regionsToRemove)
         {
+            // 🚗 Если объект транспорт или Slave – не удаляем из видимости
+            if (obj is Transfer || obj is Slave)
+                continue;
+
             region?.RemoveFromCharacters(obj);
         }
+
         foreach (var region in regionsToAdd)
         {
             if (obj.IsVisible)
