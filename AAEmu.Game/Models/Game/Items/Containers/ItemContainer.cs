@@ -11,6 +11,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Items.Templates;
+using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 
 using NLog;
@@ -956,13 +957,19 @@ public class ItemContainer
     /// <returns>Amount of item units that can be added before the bag is full</returns>
     public int SpaceLeftForItem(uint templateId)
     {
-        GetAllItemsByTemplate(templateId, -1, out var currentItems, out var currentTotalItemCount);
         var template = ItemManager.Instance.GetTemplate(templateId);
         if (template == null)
         {
             return 0; // Invalid item templateId
         }
 
+        // Special handling for money
+        if (templateId == (uint)ItemConstants.Coins)
+        {
+            return CalculateSpaceLeftForMoney(template.MaxCount);
+        }
+
+        GetAllItemsByTemplate(templateId, -1, out var currentItems, out var currentTotalItemCount);
         return currentItems.Count * template.MaxCount - currentTotalItemCount + FreeSlotCount * template.MaxCount;
     }
 
@@ -980,8 +987,45 @@ public class ItemContainer
             return 0;
         }
 
+        if (SpaceLeftForMoney(itemToAdd, out currentItems, out var spaceLeftForItem))
+        {
+            return spaceLeftForItem;
+        }
+
         GetAllItemsByTemplate(itemToAdd.TemplateId, itemToAdd.Grade, out currentItems, out var currentTotalItemCount);
         return currentItems.Count * itemToAdd.Template.MaxCount - currentTotalItemCount + FreeSlotCount * itemToAdd.Template.MaxCount;
+    }
+
+    private bool SpaceLeftForMoney(Item itemToAdd, out List<Item> currentItems, out int spaceLeftForItem)
+    {
+        if (itemToAdd.TemplateId == (uint)ItemConstants.Coins)
+        {
+            currentItems = [itemToAdd];
+            spaceLeftForItem = CalculateSpaceLeftForMoney(itemToAdd.Template.MaxCount);
+            return true;
+        }
+
+        currentItems = [];
+        spaceLeftForItem = 0;
+        return false;
+    }
+
+    /// <summary>
+    /// Calculates how much more money can be added based on the owner's balance and max stack size.
+    /// Always returns value >= 0
+    /// </summary>
+    /// <param name="maxCount">Maximum stack size for money item</param>
+    /// <returns>Space left for money</returns>
+    private int CalculateSpaceLeftForMoney(int maxCount)
+    {
+        // Ensure non-negative money value
+        var moneyCount = Math.Max(0L, _owner.Money);
+
+        // Clamp to MaxCount and int range
+        var count = (int)Math.Min(moneyCount, (long)maxCount);
+
+        // How many more can be added (always >= 0)
+        return maxCount - count;
     }
 
     /// <summary>
