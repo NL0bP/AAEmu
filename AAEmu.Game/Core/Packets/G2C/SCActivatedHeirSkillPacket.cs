@@ -5,20 +5,20 @@ namespace AAEmu.Game.Core.Packets.G2C;
 
 public class SCActivatedHeirSkillPacket : GamePacket
 {
-    private readonly uint _type;
+    private readonly uint _heirSkillId;
     private readonly uint _skillId;
     private readonly bool _isChange;
 
-    public SCActivatedHeirSkillPacket(uint type, uint skillId, bool isChange) : base(SCOffsets.SCActivatedHeirSkillPacket, 5)
+    public SCActivatedHeirSkillPacket(uint heirSkillId, uint skillId, bool isChange) : base(SCOffsets.SCActivatedHeirSkillPacket, 5)
     {
-        _type = type;
+        _heirSkillId = heirSkillId;
         _skillId = skillId;
         _isChange = isChange;
     }
 
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write(_type);
+        stream.Write(_heirSkillId);
         stream.Write(_skillId);
         stream.Write(_isChange);
 

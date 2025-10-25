@@ -1255,18 +1255,12 @@ public partial class Character : Unit, ICharacter
         {
             var reqTotalExp = Math.Min(HeirExp + exp, ExperienceManager.Instance.GetExpForHeirLevel(HeirLevel));
             if (reqTotalExp <= HeirExp + exp)
-            {
-                HeirExp = (uint)(reqTotalExp - 1);
-            }
+                HeirExp = (uint)(reqTotalExp);
             else
-            {
                 HeirExp += (uint)exp;
-            }
         }
         else
-        {
             Experience += exp;
-        }
 
         if (shouldAddAbilityExp)
             Abilities.AddActiveExp(exp); // TODO ... or all?
@@ -1278,9 +1272,7 @@ public partial class Character : Unit, ICharacter
         // инициируем событие
         //Task.Run(() => QuestManager.Instance.DoOnLevelUpEvents(Connection.ActiveChar));
         if (Connection != null)
-        {
             QuestManager.Instance.DoOnLevelUpEvents(Connection.ActiveChar);
-        }
     }
 
     public void CheckLevelUp()
@@ -1313,20 +1305,16 @@ public partial class Character : Unit, ICharacter
     {
         var needExp = ExperienceManager.Instance.GetExpForHeirLevel(HeirLevel);
         if (HeirExp + 1 < needExp)
-        {
             return;
-        }
 
         var reqItemCount = ExperienceManager.Instance.GetReqItemCountForHeirLevel(HeirLevel);
         var reqItemId = ExperienceManager.Instance.GetReqItemIdForHeirLevel(HeirLevel);
         var needItemCount = Inventory.GetItemsCount(SlotType.Bag, (uint)reqItemId);
         if (reqItemCount > needItemCount)
-        {
             return;
-        }
 
         var step = ExperienceManager.Instance.GetStepForHeirLevel(HeirLevel);
-        HeirLevel++;
+        HeirLevel = ExperienceManager.Instance.GetHeirLevelFromExp(HeirExp);
         Inventory.Bag.ConsumeItem(ItemTaskType.FamilyJoin, (uint)reqItemId, reqItemCount, null);
         BroadcastPacket(new SCHeirLevelUpPacket(ObjId), true);
         ResidentManager.Instance.AddResidenMemberInfo(this);

@@ -4,6 +4,7 @@ using System.Linq;
 
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Templates;
 
@@ -197,6 +198,160 @@ public class CharacterSkills(Character owner)
             skill.Template.AbilityLevel == skillTemplate.AbilityLevel);
     }
 
+    public List<HeirSkill> GetHeroSkillsFromSkills()
+    {
+        var heirSkills = new List<HeirSkill>();
+
+        foreach (var skill in Skills.Values)
+        {
+            // Пропускаем обычные (не heir) умения
+            if (skill.Id < 36400)
+                continue;
+
+            // Получаем детали heir-навыка
+            var heirSkillDetail = SkillManager.Instance.GetHeirSkillDetail(skill.Id);
+            if (heirSkillDetail == null)
+                continue;
+
+            // Формируем итоговую структуру HeirSkill
+            var heirSkill = new HeirSkill();
+            heirSkill.Id = heirSkillDetail.HeirSkillId;
+            heirSkill.SkillId = SkillManager.Instance.GetSkillIdByHeirSkillId(heirSkillDetail.HeirSkillId) ?? 0;
+            heirSkill.HeirSkillId = heirSkillDetail.SkillId;
+            heirSkill.SkillLevel = skill.Level;
+            heirSkill.Ability = (byte)skill.Template.AbilityId;
+            heirSkill.HighAbility = (byte)skill.Template.HighAbilityId;
+            heirSkill.ActiveType = false;
+
+            heirSkills.Add(heirSkill);
+        }
+
+        return heirSkills;
+    }
+
+    public void AddHeroSkill(uint HeirSkillId, uint skillId, bool isChange = false, bool packet = false)
+    {
+        // Check if what we want to learn is part of an active skill tree (or not part of one)
+        var template = SkillManager.Instance.GetSkillTemplate(skillId);
+        if (template.AbilityId > 0 &&
+            template.AbilityId != Owner.Ability1 &&
+            template.AbilityId != Owner.Ability2 &&
+            template.AbilityId != Owner.Ability3)
+            return;
+
+        if (packet)
+        {
+            if (isChange)
+            {
+                Owner.Skills.HeroReset(HeirSkillId, (byte)template.AbilityId, skillId, true);
+                Owner.SendPacket(new SCActivatedHeirSkillPacket(HeirSkillId, skillId, true));
+            }
+            else
+                Owner.SendPacket(new SCActivatedHeirSkillPacket(HeirSkillId, skillId, false));
+        }
+
+        var skill = new Skill
+        {
+            Id = template.Id,
+            Template = template,
+            Level = (template.LevelStep > 0 ? (byte)(((Owner.GetAbLevel(template.AbilityId) - (template.AbilityLevel)) / template.LevelStep) + 1) : (byte)1)
+        };
+        Skills.TryAdd(skill.Id, skill);
+    }
+
+    public void AddHeroSkill(uint skillId)
+    {
+        // Check if what we want to learn is part of an active skill tree (or not part of one)
+        var template = SkillManager.Instance.GetSkillTemplate(skillId);
+        if (template.AbilityId > 0 &&
+            template.AbilityId != Owner.Ability1 &&
+            template.AbilityId != Owner.Ability2 &&
+            template.AbilityId != Owner.Ability3)
+            return;
+
+        var skill = new Skill
+        {
+            Id = template.Id,
+            Template = template,
+            Level = (template.LevelStep > 0 ? (byte)(((Owner.GetAbLevel(template.AbilityId) - (template.AbilityLevel)) / template.LevelStep) + 1) : (byte)1)
+        };
+        Skills.Add(skill.Id, skill);
+    }
+
+    public void HeroReset(uint resetKind, byte abilityId, uint skillId, bool isChange = false)
+    {
+        if (Owner.Money < 6500)
+        {
+            Owner.SendErrorMessage(ErrorMessageType.NotEnoughMoney);
+            return;
+        }
+
+        var tasks = new List<ItemTask>();
+
+        if (isChange)
+        {
+            var removeSkillId = 0u;
+
+            // Получаем информацию о новом скилле
+            var newSkillDetail = SkillManager.Instance.GetHeirSkillDetail(skillId);
+            if (newSkillDetail == null)
+            {
+                //Owner.SendErrorMessage(ErrorMessageType.InvalidSkill);
+                return;
+            }
+
+            var newSkillTemplate = SkillManager.Instance.GetHeirSkillTemplate(newSkillDetail.HeirSkillId);
+            if (newSkillTemplate == null)
+            {
+                //Owner.SendErrorMessage(ErrorMessageType.InvalidSkill);
+                return;
+            }
+
+            // Ищем скиллы для замены среди изученных скиллов того же abilityId
+            foreach (var skill in new List<Skill>(Skills.Values))
+            {
+                if (skill.Template.AbilityId != (AbilityType)abilityId)
+                    continue;
+
+                if (skill.Id <= 36400) // с 36401 начинаются героические скиллы
+                    continue;
+
+                // Получаем информацию о текущем изученном скилле
+                var currentSkillDetail = SkillManager.Instance.GetHeirSkillDetail(skill.Id);
+                if (currentSkillDetail == null)
+                    continue;
+
+                var currentSkillsTemplate = SkillManager.Instance.GetHeirSkillsDetail(currentSkillDetail.HeirSkillId);
+                foreach (var detailTemplate in currentSkillsTemplate)
+                {
+                    if (detailTemplate == null)
+                        continue;
+                    // Проверяем, являются ли скиллы взаимозаменяемыми (одинаковый Pos)
+                    if (detailTemplate.HeirSkillId == newSkillDetail.HeirSkillId)
+                    {
+                        removeSkillId = skill.Id;
+                        Skills.Remove(skill.Id);
+                        _removed.Add(skill.Id);
+                        break;
+                    }
+                }
+            }
+
+            Owner.SendPacket(new SCResetHeirSkillPacket(resetKind, removeSkillId, abilityId));
+        }
+        else
+        {
+            // Удаляем skillId
+            Skills.Remove(skillId);
+            _removed.Add(skillId);
+            Owner.SendPacket(new SCResetHeirSkillPacket(resetKind, skillId, abilityId));
+        }
+
+        //Owner.ChangeMoney(SlotType.Inventory, -6500);
+        tasks.Add(new MoneyChange(-6500));
+        Owner.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.HeirSkillReset, tasks, []));
+    }
+
     #region database
     public void Load(MySqlConnection connection)
     {
@@ -217,7 +372,12 @@ public class CharacterSkills(Character owner)
                                 Id = reader.GetUInt32("id"),
                                 Level = reader.GetByte("level")
                             };
-                            AddSkill(skill.Id);
+
+                            if (skill.Id > 36400) // с 36401 начинаются героические скиллы
+                                AddHeroSkill(skill.Id);
+                            else
+                                AddSkill(skill.Id);
+
                             break;
                         case SkillType.Buff:
                             var buffId = reader.GetUInt32("id");

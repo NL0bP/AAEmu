@@ -44,6 +44,9 @@ public class CSBroadcastVisualOption_0_Packet() : GamePacket(CSOffsets.CSBroadca
         Connection.SendPacket(new SCCooldownsPacket(Connection.ActiveChar));
         Connection.SendPacket(new SCListSkillActiveTypsPacket([]));
 
+        var heirSkills = character.Skills.GetHeroSkillsFromSkills();
+        Connection.SendPacket(new SCHeirSkillListPacket(heirSkills));
+
         Connection.ActiveChar.PushSubscriber(TimeManager.Instance.Subscribe(Connection, new TimeOfDayObserver(Connection.ActiveChar)));
         //Connection.SendPacket(new SCDetailedTimeOfDayPacket(12f));
 

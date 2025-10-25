@@ -48,6 +48,8 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
     private Dictionary<uint, SkillReagent> _skillReagents;
     private Dictionary<uint, SkillProduct> _skillProducts;
     private DynamicEffects _dynamicEffects;
+    private Dictionary<uint, HeirSkillTemplate> _heirSkills = new();
+    private Dictionary<uint, HeirSkillDetailTemplate> _heirSkillDetails = new();
 
     // private HashSet<ushort> _skillIds = new();
     // private ushort _skillIdIndex = 1;
@@ -550,6 +552,54 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
             }
 
             Logger.Info("Loaded {0} skills", _skills.Count);
+
+            Logger.Info("Loading heir skills...");
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM heir_skills";
+                command.Prepare();
+                using (var sqliteReader = command.ExecuteReader())
+                using (var reader = new SQLiteWrapperReader(sqliteReader))
+                {
+                    while (reader.Read())
+                    {
+                        // updated to 3.0.3.0
+                        var template = new HeirSkillTemplate();
+                        template.Id = reader.GetUInt32("id");
+                        template.SkillId = reader.GetUInt32("skill_id");
+                        template.Step = reader.GetInt32("step");
+
+                        _heirSkills.Add(template.Id, template);
+                    }
+                }
+            }
+            Logger.Info("Loaded {0} heir skills", _heirSkills.Count);
+
+            Logger.Info("Loading heir skill details...");
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM heir_skill_details";
+                command.Prepare();
+                using (var sqliteReader = command.ExecuteReader())
+                using (var reader = new SQLiteWrapperReader(sqliteReader))
+                {
+                    while (reader.Read())
+                    {
+                        // updated to 5.0.7.0
+                        var template = new HeirSkillDetailTemplate();
+                        template.Id = reader.GetUInt32("id");
+                        template.ActiveItemId = reader.GetUInt32("active_item_id");
+                        template.Desc = reader.GetString("desc");
+                        template.HeirSkillId = reader.GetUInt32("heir_skill_id");
+                        template.Pos = reader.GetInt32("pos");
+                        template.SkillActiveTypeId = reader.GetUInt32("skill_active_type_id");
+                        template.SkillId = reader.GetUInt32("skill_id");
+
+                        _heirSkillDetails.Add(template.Id, template);
+                    }
+                }
+            }
+            Logger.Info("Loaded {0} heir skill details", _heirSkillDetails.Count);
 
             using (var command = connection.CreateCommand())
             {
@@ -2174,11 +2224,76 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
             .FirstOrDefault(p => p.AbilityId == abilityId && p.ReqPoints == reqPoints)
             ?.BuffId;
     }
+
     public uint? GetIdByAbilityAndReqPoints(AbilityType abilityId, int reqPoints)
     {
         return _passiveBuffs
             .Values
             .FirstOrDefault(p => p.AbilityId == abilityId && p.ReqPoints == reqPoints)
             ?.Id;
+    }
+
+    /// <summary>
+    /// Finds HeirSkillId from heir_skill_details by SkillId.
+    /// </summary>
+    /// <param name="skillId">Skill ID from heir_skill_details</param>
+    /// <returns>HeirSkillId or null if not found</returns>
+    public uint? GetHeirSkillIdByDetailSkillId(uint skillId)
+    {
+        var detail = _heirSkillDetails.Values.FirstOrDefault(d => d.SkillId == skillId);
+        return detail?.HeirSkillId;
+    }
+
+    /// <summary>
+    /// Finds SkillId from heir_skills by HeirSkillId.
+    /// </summary>
+    /// <param name="heirSkillId">ID from heir_skills</param>
+    /// <returns>SkillId or null if not found</returns>
+    public uint? GetSkillIdByHeirSkillId(uint heirSkillId)
+    {
+        if (_heirSkills.TryGetValue(heirSkillId, out var heirSkill))
+            return heirSkill.SkillId;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Combined method — finds SkillId from heir_skills using Detail SkillId.
+    /// </summary>
+    /// <param name="detailSkillId">SkillId from heir_skill_details</param>
+    /// <returns>Main SkillId or null if not found</returns>
+    public uint? GetMainSkillIdByDetailSkillId(uint detailSkillId)
+    {
+        var heirSkillId = GetHeirSkillIdByDetailSkillId(detailSkillId);
+        if (heirSkillId == null)
+            return null;
+
+        return GetSkillIdByHeirSkillId(heirSkillId.Value);
+    }
+
+    /// <summary>
+    /// Gets HeirSkillTemplate by ID
+    /// </summary>
+    /// <param name="heirSkillId">Heir Skill ID</param>
+    /// <returns>HeirSkillTemplate or null if not found</returns>
+    public HeirSkillTemplate GetHeirSkillTemplate(uint heirSkillId)
+    {
+        _heirSkills.TryGetValue(heirSkillId, out var template);
+        return template;
+    }
+
+    /// <summary>
+    /// Gets HeirSkillDetailTemplate by Skill ID
+    /// </summary>
+    /// <param name="skillId">Skill ID</param>
+    /// <returns>HeirSkillDetailTemplate or null if not found</returns>
+    public HeirSkillDetailTemplate GetHeirSkillDetail(uint skillId)
+    {
+        return _heirSkillDetails.Values.FirstOrDefault(d => d.SkillId == skillId);
+    }
+
+    public List<HeirSkillDetailTemplate> GetHeirSkillsDetail(uint heirSkillId)
+    {
+        return [_heirSkillDetails.Values.FirstOrDefault(d => d.HeirSkillId == heirSkillId)];
     }
 }

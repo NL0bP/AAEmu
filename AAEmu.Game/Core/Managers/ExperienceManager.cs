@@ -74,7 +74,7 @@ public class ExperienceManager : Singleton<ExperienceManager>
         foreach (var (level, levelTemplate) in _heirLevels)
         {
             if (exp < levelTemplate.ReqTotalExp)
-                return (byte)(level-1);
+                return (byte)(level);
         }
         return 0;
     }
