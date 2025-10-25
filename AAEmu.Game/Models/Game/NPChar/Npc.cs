@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+
 using AAEmu.Commons.Utils.Creatures;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
@@ -20,6 +21,7 @@ using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
+using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Utils;
@@ -941,6 +943,20 @@ public partial class Npc : Unit
             var unit = WorldManager.Instance.GetGameObject(objId);
             if (unit is Character player)
                 playerAggroList.Add(player);
+            else if (unit is Units.Mate { OwnerObjId: > 0 } mate)
+            {
+                // Handle pet/mount aggro - find the owner player
+                var ownerPlayer = WorldManager.Instance.GetCharacterByObjId(mate.OwnerObjId);
+                if (ownerPlayer != null && !playerAggroList.Contains(ownerPlayer))
+                    playerAggroList.Add(ownerPlayer);
+            }
+            else if (unit is Slave { OwnerObjId: > 0 } slave)
+            {
+                // Handle slave aggro - find the owner player
+                var ownerPlayer = WorldManager.Instance.GetCharacterByObjId(slave.OwnerObjId);
+                if (ownerPlayer != null && !playerAggroList.Contains(ownerPlayer))
+                    playerAggroList.Add(ownerPlayer);
+            }
         }
         // Clear the aggro table
         AggroTable.Clear();
@@ -1033,7 +1049,26 @@ public partial class Npc : Unit
         }
 
         if (player == null)
+        {
+            // Handle pet/mount aggro - find the owner player
+            if (unit is Units.Mate { OwnerObjId: > 0 } mate)
+            {
+                var ownerPlayer = WorldManager.Instance.GetCharacterByObjId(mate.OwnerObjId);
+                if (ownerPlayer != null && aggro.TotalAggro > 0 && !IsDead && Hp > 0 && !ownerPlayer.IsInAggroListOf.ContainsKey(this.ObjId))
+                {
+                    ownerPlayer.IsInAggroListOf.TryAdd(this.ObjId, this);
+                }
+            }
+            else if (unit is Slave { OwnerObjId: > 0 } slave)
+            {
+                var ownerPlayer = WorldManager.Instance.GetCharacterByObjId(slave.OwnerObjId);
+                if (ownerPlayer != null && aggro.TotalAggro > 0 && !IsDead && Hp > 0 && !ownerPlayer.IsInAggroListOf.ContainsKey(this.ObjId))
+                {
+                    ownerPlayer.IsInAggroListOf.TryAdd(this.ObjId, this);
+                }
+            }
             return;
+        }
 
         if (aggro.TotalAggro > 0 && !IsDead && Hp > 0 && !player.IsInAggroListOf.ContainsKey(this.ObjId))
         {
@@ -1413,7 +1448,8 @@ public partial class Npc : Unit
         // Stat bonus effects
         foreach (var bonusTemplate in Template.Bonuses)
         {
-            var bonus = new Bonus {
+            var bonus = new Bonus
+            {
                 Template = bonusTemplate,
                 Value = bonusTemplate.Value // TODO using LinearLevelBonus
             };
