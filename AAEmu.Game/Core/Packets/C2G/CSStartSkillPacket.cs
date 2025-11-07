@@ -105,6 +105,16 @@ public class CSStartSkillPacket : GamePacket
                 }
             }
 
+            // HACKFIX: dismount from slave
+            if (skillId == (uint)SkillConstants.Dismount)
+            {
+                slave = (Slave)WorldManager.Instance.GetBaseUnit(skillCastTarget.ObjId);
+                if (slave != null)
+                {
+                    SlaveManager.Instance.UnbindSlave(Connection.ActiveChar, slave.TlId, AttachUnitReason.SlaveUnbinding);
+                }
+            }
+
             // If no rider/operator skill is linked, we can stop here
             if (mountAttachedSkill == 0)
                 return;

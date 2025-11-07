@@ -68,6 +68,7 @@ public class Slave : Unit
     public List<uint> Charges { get; set; }
     public bool IsLoadedPlayerSlave { get; set; }
     public ShipController ShipController { get; set; }
+    public bool HideSpawnEffect { get; set; }
 
     public Slave()
     {
@@ -606,7 +607,7 @@ public class Slave : Unit
 
     public override void AddVisibleObject(Character character)
     {
-        character.SendPacket(new SCUnitStatePacket(this));
+        character.SendPacket(new SCUnitStatePacket(this, HideSpawnEffect));
         character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp, HighAbilityRsc));
         character.SendPacket(new SCSlaveStatusPacket(this));
 

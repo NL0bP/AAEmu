@@ -942,6 +942,8 @@ public class SlaveManager : Singleton<SlaveManager>
         summonedSlave.PostUpdateCurrentHp(summonedSlave, 0, summonedSlave.Hp, KillReason.Unknown);
         UpdateSlaveRepairPoints(summonedSlave);
 
+        summonedSlave.HideSpawnEffect = true; // портал показываем, только при спавне
+
         return summonedSlave;
     }
 

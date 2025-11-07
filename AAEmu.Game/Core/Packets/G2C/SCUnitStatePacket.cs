@@ -24,8 +24,9 @@ public class SCUnitStatePacket : GamePacket
     private readonly Unit _unit;
     private readonly BaseUnitType _baseUnitType;
     private ModelPostureType _modelPostureType;
+    private bool _hideSpawnEffect;
 
-    public SCUnitStatePacket(Unit unit) : base(SCOffsets.SCUnitStatePacket, 5)
+    public SCUnitStatePacket(Unit unit, bool hideSpawnEffect = false) : base(SCOffsets.SCUnitStatePacket, 5)
     {
         _unit = unit;
         _modelPostureType = unit.ModelPostureType;
@@ -42,6 +43,7 @@ public class SCUnitStatePacket : GamePacket
             case Slave:
                 _baseUnitType = BaseUnitType.Slave;
                 _modelPostureType = ModelPostureType.None; // was TurretState = 8
+                _hideSpawnEffect = hideSpawnEffect;
                 unit.ModelPostureType = _unit switch
                 {
                     Slave when _unit.ModelId == 895 => ModelPostureType.TurretState, // Harpoon
@@ -455,10 +457,13 @@ public class SCUnitStatePacket : GamePacket
                 //}
                 stream.Write((ushort)8192); // flags - нейтральный флаг, нет дополнительных данных в пакете
                 break;
-             case Slave:
-                stream.Write((ushort)0x800); // flags - Spawn is done from the portal
+            case Slave:
+                if (_hideSpawnEffect)
+                    stream.Write((ushort)0); // flags
+                else
+                    stream.Write((ushort)0x800); // flags - Spawn is done from the portal
                 break;
-           default:
+            default:
                 stream.Write((ushort)0); // flags
                 break;
         }
