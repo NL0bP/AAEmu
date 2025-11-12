@@ -8,7 +8,7 @@ namespace AAEmu.Game.Scripts.Commands;
 
 public class AddProficiency : ICommand
 {
-    public string[] CommandNames { get; set; } = new string[] { "addproficiency", "ap", "addproficiency", "addp_roficiency" };
+    public string[] CommandNames { get; set; } = new string[] { "addproficiency", "ap", "addproficiency", "add_proficiency" };
 
     public void OnLoad()
     {
