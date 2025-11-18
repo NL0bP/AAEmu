@@ -1,4 +1,4 @@
-﻿/*
+/*
  * by uranusq https://github.com/NL0bP/aaa_emulator
  * by Nikes
  * by NLObP: метод шифрации для ВСЕХ
@@ -21,6 +21,7 @@ namespace AAEmu.Commons.Cryptography
         public byte CSMessageCount { get; set; }
         public byte CSOffsetSequence { get; set; }
         public uint CSSecondaryOffsetSequence { get; set; }
+        public uint LastConnectionId { get; set; }
 
         public ConnectionKeychain(uint connId, RSACryptoServiceProvider kp)
         {
@@ -31,6 +32,7 @@ namespace AAEmu.Commons.Cryptography
             XorKey = 0;
             XorKeyConstant1 = 0;
             XorKeyConstant2 = 0;
+            LastConnectionId = connId;
         }
     }
 }

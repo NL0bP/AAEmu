@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -55,6 +55,7 @@ public class GameProtocolHandler : BaseProtocolHandler
             var con = GameConnectionTable.Instance.GetConnection(session.SessionId);
             if (con != null)
             {
+                var accountId = con.AccountId;
                 if (con.ActiveChar != null)
                 {
                     // On crash, force people out of the chat channels so we don't get phantom or duplicates
@@ -64,6 +65,10 @@ public class GameProtocolHandler : BaseProtocolHandler
                 con.OnDisconnect();
                 StreamManager.Instance.RemoveToken(con.Id);
                 GameConnectionTable.Instance.RemoveConnection(session.SessionId);
+                if (accountId != 0)
+                {
+                    EncryptionManager.Instance.RemoveConnectionKeys(accountId);
+                }
             }
             else
             {

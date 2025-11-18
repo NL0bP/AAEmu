@@ -1,4 +1,4 @@
-﻿/*
+/*
  * by uranusq https://github.com/NL0bP/aaa_emulator
  * by Nikes
  * by NLObP: оригинальный метод шифрации (как в crynetwork.dll)
@@ -36,10 +36,22 @@ namespace AAEmu.Commons.Cryptography
 
         private ConnectionKeychain GetOrCreateConnectionKeys(uint connectionId, ulong accountId)
         {
-            if (ConnectionKeys.TryGetValue(accountId, out var keys) && keys.ConnectionId == connectionId)
+            if (ConnectionKeys.TryGetValue(accountId, out var keys))
             {
+                if (keys.ConnectionId != connectionId)
+                {
+                    Logger.Debug("[{0}] ConnectionId mismatch during session: stored={1}, current={2}. Rebinding existing keychain.", accountId, keys.ConnectionId, connectionId);
+                    keys.ConnectionId = connectionId;
+                }
+
+                if (keys.LastConnectionId != connectionId)
+                {
+                    keys.LastConnectionId = connectionId;
+                }
+
                 return keys;
             }
+
             return GenerateRsaKeyPair(connectionId, accountId);
         }
 
@@ -48,13 +60,22 @@ namespace AAEmu.Commons.Cryptography
             ConnectionKeys.Remove(accountId);
             var rsaKeyPair = new RSACryptoServiceProvider();
             var keys = new ConnectionKeychain(connectionId, rsaKeyPair);
+            Logger.Debug("[{0}] Generated new RSA key pair for connection {1}.", accountId, connectionId);
             ConnectionKeys.Add(accountId, keys);
             return keys;
         }
 
+        public void RemoveConnectionKeys(ulong accountId)
+        {
+            if (ConnectionKeys.Remove(accountId))
+            {
+                Logger.Trace("[{0}] Removed connection keychain due to disconnect.", accountId);
+            }
+        }
+
         public PacketStream WriteKeyParams(uint connectionId, ulong accountId, PacketStream stream)
         {
-            var keychain = GenerateRsaKeyPair(connectionId, accountId);
+            var keychain = GetOrCreateConnectionKeys(connectionId, accountId);
             var rsaParameters = keychain.RsaKeyPair.ExportParameters(false);
             stream.Write(rsaParameters.Modulus);
             stream.Write(new byte[125]);
