@@ -234,24 +234,27 @@ public class Skill
             maxRangeCheck = maxWeaponRange;
         }
 
-        // TODO временно отключил проверку дистанции скилла.
-        //if (targetDist < minRangeCheck)
-        //{
-        //    SkillTlIdManager.ReleaseId(TlId);
-        //    TlId = 0;
-        //    Logger.Info($"TooCloseRange targetDist={targetDist}, minRangeCheck={minRangeCheck}, SkillTlId {TlId} for Skill {Template.Id}, Caster {caster.Name} ({caster.TemplateId}:{caster.ObjId}) with target {target.Name} ({target.TemplateId}:{target.ObjId})");
-        //    return SkillResult.TooCloseRange;
-        //}
+        // Используем ValidateRange для проверки дистанции
+        var rangeValidation = ValidateRange(unit, target, Template);
+        if (rangeValidation != SkillResult.Success)
+        {
+            // Останавливаем авто-атаку, если она активна, при ошибке дистанции
+            if (character is { IsAutoAttack: true })
+            {
+                character.IsAutoAttack = false;
+                if (character.AutoAttackTask != null)
+                {
+                    character.AutoAttackTask.Cancelled = true;
+                    character.AutoAttackTask = null;
+                }
+                Logger.Info($"Stopped auto-attack due to range validation failure for skill {Template.Id}");
+            }
 
-        // TODO: Remove exception for doodads
-        // TODO: Remove exceptions for slave initiated by Doodads (needed to fix repair points on ships)
-        //if (targetDist > maxRangeCheck && target is not Doodad && target is not Slave)
-        //{
-        //    SkillTlIdManager.ReleaseId(TlId);
-        //    TlId = 0;
-        //    Logger.Info($"TooFarRange targetDist={targetDist}, maxRangeCheck={maxRangeCheck}, SkillTlId {TlId} for Skill {Template.Id}, Caster {caster.Name} ({caster.TemplateId}:{caster.ObjId}) with target {target.Name} ({target.TemplateId}:{target.ObjId})");
-        //    return SkillResult.TooFarRange;
-        //}
+            SkillTlIdManager.ReleaseId(TlId);
+            TlId = 0;
+            Logger.Info($"Range validation failed: {rangeValidation}, SkillTlId {TlId} for Skill {Template.Id}, Caster {caster.Name} ({caster.TemplateId}:{caster.ObjId}) with target {target.Name} ({target.TemplateId}:{target.ObjId})");
+            return rangeValidation;
+        }
 
         if (character is { AccessLevel: < 100 })
         {
@@ -675,7 +678,17 @@ public class Skill
         unit.SkillTask = null;
 
         ConsumeMana(caster);
-        unit.Cooldowns.AddCooldown(Template.Id, (uint)Template.CooldownTime);
+        
+        // Для базовых навыков ближнего боя (ID=2,3,4) устанавливаем минимальный кулдаун 1000ms
+        // Это предотвращает слишком частое использование ближней атаки
+        var cooldownTime = Template.CooldownTime;
+        if ((Template.Id == 2 || Template.Id == 3 || Template.Id == 4) && cooldownTime < 1000)
+        {
+            cooldownTime = 1000;
+            Logger.Trace("Skill.Cast adjusted cooldown for melee skill {0} to {1}ms", Template?.Id, cooldownTime);
+        }
+        
+        unit.Cooldowns.AddCooldown(Template.Id, (uint)cooldownTime);
 
         // if (Id == 2 || Id == 3 || Id == 4)
         // {
@@ -1520,5 +1533,94 @@ AlwaysHit:
 
         character.LastCast = DateTime.UtcNow;
         character.IsInPostCast = true;
+    }
+
+    /// <summary>
+    /// Вычисляет минимальную и максимальную дистанцию для навыка
+    /// </summary>
+    public static (double MinRange, double MaxRange) CalculateRange(Unit unit, SkillTemplate template)
+    {
+        var skillRange = unit.SkillModifiersCache.ApplyModifiers(template.Id, SkillAttribute.Range, template.MaxRange);
+        
+        // Для базовых навыков ближнего боя (ID=2,3,4) ограничиваем максимальную дистанцию разумным значением
+        // Это предотвращает использование слишком больших значений из Template (например, 25 метров)
+        if (template.Id == 2 || template.Id == 3 || template.Id == 4)
+        {
+            // Если дистанция в Template равна 0 или слишком большая (> 5 метров), используем значение по умолчанию
+            if (skillRange == 0 || skillRange > 5.0)
+                skillRange = 4f;
+        }
+        else
+        {
+            if (skillRange == 0)
+                skillRange = 4f;
+        }
+
+        var minRangeCheck = template.MinRange * 1.0;
+        var maxRangeCheck = skillRange;
+
+        // HackFix: для квеста Unblock the Spring (3707), невозможно использовать валун из-за "слишком близко"
+        // Дистанция навыка Remove Stone (16462) определена как 100~200, что не может быть правильным
+        if (template.TargetType == SkillTargetType.Doodad && template.MinRange >= 100)
+            minRangeCheck = template.MinRange / 100.0;
+
+        // Если используется оружие для расчета дистанции, используем его
+        // Но для базовых навыков ближнего боя (ID=2,3,4) используем максимальное значение между дистанцией скилла и оружия
+        if (template.WeaponSlotForRangeId > 0)
+        {
+            var minWeaponRange = 0.0f; // Кулаки по умолчанию
+            var maxWeaponRange = 3.0f; // Кулаки по умолчанию
+            if (unit.Equipment.GetItemBySlot(template.WeaponSlotForRangeId)?.Template is WeaponTemplate weaponTemplate)
+            {
+                minWeaponRange = weaponTemplate.HoldableTemplate.MinRange;
+                maxWeaponRange = weaponTemplate.HoldableTemplate.MaxRange;
+            }
+
+            // Для базовых навыков ближнего боя (ID=2,3,4) используем минимальное значение для maxRange
+            // Это ограничивает дистанцию ближнего боя реальной дистанцией оружия (мечом нельзя достать на 25 метров)
+            // Но используем максимальное значение для minRange, чтобы не было проблем с минимальной дистанцией
+            if (template.Id == 2 || template.Id == 3 || template.Id == 4)
+            {
+                minRangeCheck = Math.Min(minRangeCheck, minWeaponRange); // Используем минимальное значение для minRange
+                // Для maxRange используем минимальное значение между дистанцией скилла и оружия
+                // Это ограничивает дистанцию ближнего боя реальной дистанцией оружия
+                maxRangeCheck = Math.Min(maxRangeCheck, maxWeaponRange);
+            }
+            else
+            {
+                // Для других скиллов используем дистанцию оружия как раньше
+                minRangeCheck = minWeaponRange;
+                maxRangeCheck = maxWeaponRange;
+            }
+        }
+
+        return (minRangeCheck, maxRangeCheck);
+    }
+
+    /// <summary>
+    /// Проверяет, находится ли цель в допустимом диапазоне
+    /// </summary>
+    public static SkillResult ValidateRange(Unit unit, BaseUnit target, SkillTemplate template)
+    {
+        var (minRange, maxRange) = CalculateRange(unit, template);
+        // Используем точное значение дистанции без округления вниз для более точной проверки
+        // Math.Floor может привести к неправильной проверке (например, 2.5 метра становится 2 метра)
+        var targetDist = unit.GetDistanceTo(target, true);
+
+        // Логирование для отладки проблем с дистанцией
+        if (template.Id == 2 || template.Id == 3 || template.Id == 4)
+        {
+            NLog.LogManager.GetCurrentClassLogger().Debug($"ValidateRange: skill={template.Id}, distance={targetDist:F2}, minRange={minRange:F2}, maxRange={maxRange:F2}, weaponSlot={template.WeaponSlotForRangeId}");
+        }
+
+        if (targetDist < minRange)
+            return SkillResult.TooCloseRange;
+
+        // TODO: Убрать исключение для doodads
+        // TODO: Убрать исключения для slave, инициированных Doodads (нужно для исправления точек ремонта на кораблях)
+        if (targetDist > maxRange && target is not DoodadObj.Doodad && target is not Units.slaves.Slave)
+            return SkillResult.TooFarRange;
+
+        return SkillResult.Success;
     }
 }

@@ -19,11 +19,19 @@ public class SkillModifiers
 
     public double ApplyModifiers(Skill skill, SkillAttribute attribute, double baseValue)
     {
+        if (skill == null)
+            return baseValue;
+
+        return ApplyModifiers(skill.Template.Id, attribute, baseValue);
+    }
+
+    public double ApplyModifiers(uint skillId, SkillAttribute attribute, double baseValue)
+    {
         double endValue = baseValue;
 
-        List<SkillModifier> modifiers = GetModifiersForSkillIdWithAttribute(skill.Template.Id, attribute).OrderBy(mod => mod.UnitModifierType).ToList();
+        List<SkillModifier> modifiers = GetModifiersForSkillIdWithAttribute(skillId, attribute).OrderBy(mod => mod.UnitModifierType).ToList();
 
-        foreach (var tag in SkillManager.Instance.GetSkillTags(skill.Template.Id))
+        foreach (var tag in SkillManager.Instance.GetSkillTags(skillId))
         {
             modifiers.AddRange(GetModifiersForTagIdWithAttribute(tag, attribute));
         }

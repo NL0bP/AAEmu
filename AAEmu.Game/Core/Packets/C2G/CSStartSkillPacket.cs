@@ -197,13 +197,16 @@ public class CSStartSkillPacket : GamePacket
 
             skillResult = skill.Use(casterUnit, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
 
+            // Убрана автоматическая активация автоатаки для базовых навыков ближнего боя
+            // Автоатака должна запускаться только явно игроком (например, через удержание кнопки или специальный флаг)
+            // Это позволяет использовать базовые навыки (ID=2,3,4) как одиночные атаки без автоматического продолжения
             // Check if this is a basic combat skill and player is the direct caster (not mounted)
-            if ((skillResult == SkillResult.Success) && (skillId < 5000) && (skillCaster.ObjId == player.ObjId) && (player?.AttachedPoint == AttachPointKind.None))
-            {
-                // All basic combat skills are below ID 5000, only 2 (melee),3 (offhand) and 4 (ranged) exist, next actual skill used is 5001
-                player.IsAutoAttack = true;
-                player.StartAutoSkill(skill);
-            }
+            //if ((skillResult == SkillResult.Success) && (skillId < 5000) && (skillCaster.ObjId == player.ObjId) && (player?.AttachedPoint == AttachPointKind.None))
+            //{
+            //    // All basic combat skills are below ID 5000, only 2 (melee),3 (offhand) and 4 (ranged) exist, next actual skill used is 5001
+            //    player.IsAutoAttack = true;
+            //    player.StartAutoSkill(skill);
+            //}
         }
         else if (skillCaster is SkillItem si)
         {

@@ -352,7 +352,7 @@ namespace AAEmu.Game.Core.Packets.C2G
         public const ushort CSDeleteAbilitySetPacket = 0x01E;
         public const ushort CSRepairSlaveItemsPacket = 0x068;
         public const ushort CSRepairPetItemsPacket = 0x18E;
-        public const ushort CSSaveTutorialPacket = 0x173; //off_39ECDECC
+        public const ushort CSSaveTutorialPacket = 0x18B; //off_39ECDECC 0x173
         public const ushort CSFactionIssuanceOfMobilizationOrderPacket = 0x1DE;
         public const ushort CSGetExpeditionMyRecruitmentsPacket = 0x19F;
         public const ushort CSExpeditionRecruitmentAddPacket = 0x0EF;
