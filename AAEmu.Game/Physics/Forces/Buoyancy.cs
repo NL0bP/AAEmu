@@ -33,7 +33,7 @@ public class Buoyancy : ForceGenerator
     /// <summary>
     /// The axis aligned bounding box representing the fluid.
     /// </summary>
-    public JBBox FluidBox { get; set; }
+    public JBoundingBox FluidBox { get; set; }
 
     /// <summary>
     /// Density of the fluid. Default is 2.0.

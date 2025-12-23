@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -13,6 +13,9 @@
     <ProjectReference Include="..\AAEmu.Commons\AAEmu.Commons.csproj" />
     <InternalsVisibleTo Include="AAEmu.IntegrationTests" />
     <InternalsVisibleTo Include="AAEmu.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
   </ItemGroup>
 
   <ItemGroup>
@@ -68,25 +71,22 @@
 
   <ItemGroup>
     <PackageReference Include="Jace" Version="1.0.0" />
-    <PackageReference Include="Jitter2" Version="2.6.4" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.14.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.7" />
-    <PackageReference Include="NCrontab" Version="3.3.3" />
-    <PackageReference Include="NLog" Version="5.4.0" />
-    <PackageReference Include="NLua" Version="1.7.5" />
+    <PackageReference Include="Jitter2" Version="2.7.6" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.1" />
+    <PackageReference Include="NCrontab" Version="3.4.0" />
+    <PackageReference Include="NLog" Version="6.0.7" />
+    <PackageReference Include="NLua" Version="1.7.6" />
     <PackageReference Include="Ionic.Zlib.Core" Version="1.0.0" />
     <PackageReference Include="OSVersionExt.NetStd" Version="3.0.1" />
     <PackageReference Include="Speckle.Triangle" Version="1.0.0" />
-    <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
-    <PackageReference Include="System.Private.Uri" Version="4.3.2" />
   </ItemGroup>
 </Project>

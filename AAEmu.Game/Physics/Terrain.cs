@@ -2,6 +2,7 @@
 using System.Linq;
 using Jitter2.Collision;
 using Jitter2.Collision.Shapes;
+using Jitter2.Dynamics;
 using Jitter2.LinearMath;
 
 namespace AAEmu.Game.Physics;
@@ -15,11 +16,11 @@ public class Heightmap(float[,] heights)
 
     public float GetHeight(int x, int z) => heights[x, z];
 
-    public JBBox GetBoundingBox()
+    public JBoundingBox GetBoundingBox()
     {
         var min = new JVector(0, MinHeight, 0);
         var max = new JVector(Width - 1, MaxHeight, Height - 1);
-        return new JBBox(min, max);
+        return new JBoundingBox(min, max);
     }
 }
 
@@ -30,7 +31,7 @@ public class HeightmapTester(Heightmap heightmap) : IDynamicTreeProxy, IRayCasta
     public Heightmap Heightmap { get; } = heightmap;
 
     public JVector Velocity => JVector.Zero;
-    public JBBox WorldBoundingBox { get; } = heightmap.GetBoundingBox();
+    public JBoundingBox WorldBoundingBox { get; } = heightmap.GetBoundingBox();
 
     private void RayCastTriangle(in JVector origin, in JVector direction,
         in JVector a, in JVector b, in JVector c, out JVector normal, out float lambda)
@@ -244,11 +245,11 @@ public class HeightmapDetection : IBroadPhaseFilter
 
                 var normal = JVector.Normalize((triangle.C - triangle.A) % (triangle.B - triangle.A));
 
-                var hit = NarrowPhase.MPREPA(triangle, rbs, body.Orientation, body.Position, out var pointA, out var pointB, out _, out var penetration);
+                var hit = NarrowPhase.MprEpa(triangle, rbs, body.Orientation, body.Position, out var pointA, out var pointB, out _, out var penetration);
 
                 if (hit)
                 {
-                    _world.RegisterContact(rbs.ShapeId, _minIndex + index, _world.NullBody, rbs.RigidBody, pointA, pointB, normal, penetration);
+                    _world.RegisterContact(rbs.ShapeId, _minIndex + index, _world.NullBody, rbs.RigidBody, pointA, pointB, normal, (ContactData.SolveMode)penetration);
                 }
 
                 // Second triangle of the quad
@@ -260,11 +261,11 @@ public class HeightmapDetection : IBroadPhaseFilter
 
                 normal = JVector.Normalize((triangle.C - triangle.A) % (triangle.B - triangle.A));
 
-                hit = NarrowPhase.MPREPA(triangle, rbs, body.Orientation, body.Position, out pointA, out pointB, out _, out penetration);
+                hit = NarrowPhase.MprEpa(triangle, rbs, body.Orientation, body.Position, out pointA, out pointB, out _, out penetration);
 
                 if (hit)
                 {
-                    _world.RegisterContact(rbs.ShapeId, _minIndex + index, _world.NullBody, rbs.RigidBody, pointA, pointB, normal, penetration);
+                    _world.RegisterContact(rbs.ShapeId, _minIndex + index, _world.NullBody, rbs.RigidBody, pointA, pointB, normal, (ContactData.SolveMode)penetration);
                 }
             }
         }

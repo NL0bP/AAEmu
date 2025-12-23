@@ -50,7 +50,7 @@ namespace AAEmu.Game.Core.Managers.World
         private readonly Dictionary<uint, ShipController> _shipControllers = new();
 
         private readonly ConcurrentQueue<Action> _pendingActions = new();
-        private readonly object _worldLock = new();
+        private readonly Lock _worldLock = new();
         private readonly List<RigidBody> _bodies = [];
 
         public void Initialize()
@@ -59,7 +59,7 @@ namespace AAEmu.Game.Core.Managers.World
             _physWorld.Gravity = new JVector(0, -9.81f, 0);
 
             _buoyancy = new Buoyancy(_physWorld);
-            _buoyancy.FluidBox = new JBBox(
+            _buoyancy.FluidBox = new JBoundingBox(
                 new JVector(0, 0, 0), // Bottom
                 new JVector(SimulationWorld.CellX * WorldManager.CELL_SIZE, SimulationWorld.OceanLevel, SimulationWorld.CellY * WorldManager.CELL_SIZE) // Surface
             );

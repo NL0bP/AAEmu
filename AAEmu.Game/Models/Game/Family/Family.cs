@@ -1,4 +1,4 @@
-﻿using AAEmu.Commons.Network;
+using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
@@ -61,16 +61,25 @@ public class Family : PacketMarshaler
 
     public void RemoveMember(FamilyMember member)
     {
+        if (member == null)
+            return;
+            
         Members.Remove(member);
         _removedMembers.Add(member.Id);
-        member.Character.ApplyFamilyEffects();
+        member.Character?.ApplyFamilyEffects();
     }
 
     public void RemoveMember(Character character)
     {
+        if (character == null)
+            return;
+            
         var member = GetMember(character);
-        RemoveMember(member);
-        character.Family = 0;
+        if (member != null)
+        {
+            RemoveMember(member);
+            character.Family = 0;
+        }
     }
 
     public FamilyMember GetMember(Character character)

@@ -1,4 +1,5 @@
-﻿using AAEmu.Commons.IO;
+﻿using System;
+using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
@@ -22,20 +23,57 @@ public class QuestManagerTests
         if (_managersLoaded)
             return;
 
-        var mainConfig = Path.Combine(FileManager.AppPath, "Config.json");
-        var configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.AddJsonFile(mainConfig);
+        // Create in-memory configuration for testing
+        var testConfig = new Dictionary<string, string>
+        {
+            {"Connections:MySQLProvider:Host", "localhost"},
+            {"Connections:MySQLProvider:Port", "3306"},
+            {"Connections:MySQLProvider:User", "root"},
+            {"Connections:MySQLProvider:Password", ""},
+            {"Connections:MySQLProvider:Database", "aaemu_test"},
+            {"Connections:MySQLProvider:ConvertZeroDateTime", "true"},
+            {"Connections:MySQLProvider:AllowZeroDateTime", "true"},
+            {"Connections:MySQLProvider:ConnectionTimeout", "30"},
+            {"Connections:MySQLProvider:DefaultCommandTimeout", "120"},
+            {"Connections:MySQLProvider:UseAffectedRows", "true"},
+            {"Connections:MySQLProvider:AutoEnlist", "false"}
+        };
+
+        var configurationBuilder = new ConfigurationBuilder()
+            .AddInMemoryCollection(testConfig);
+            
         configurationBuilder.AddUserSecrets<QuestManager>();
         var configurationBuilderResult = configurationBuilder.Build();
-        configurationBuilderResult.Bind(AppConfiguration.Instance);
+        
+        // Initialize configuration
+        var config = new AppConfiguration();
+        configurationBuilderResult.Bind(config);
+        
+        // Set the instance
+        var property = typeof(AppConfiguration).GetProperty("Instance", 
+            System.Reflection.BindingFlags.Public | 
+            System.Reflection.BindingFlags.Static | 
+            System.Reflection.BindingFlags.SetProperty);
+            
+        property?.SetValue(null, config);
 
-        MySQL.SetConfiguration(AppConfiguration.Instance.Connections.MySQLProvider);
+        MySQL.SetConfiguration(config.Connections.MySQLProvider);
 
-        // Loads all quests from DB
-        TaskIdManager.Instance.Initialize();
-        TaskManager.Instance.Initialize();
-        ZoneManager.Instance.Load();
-        QuestManager.Instance.Load();
+        try
+        {
+            // Loads all quests from DB
+            TaskIdManager.Instance.Initialize();
+            TaskManager.Instance.Initialize();
+            ZoneManager.Instance.Load();
+            QuestManager.Instance.Load();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing managers: {ex.Message}");
+            throw;
+        }
+        
+        _managersLoaded = true;
     }
 
     public QuestManagerTests()
