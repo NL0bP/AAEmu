@@ -1233,7 +1233,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         {
             FamilyManager.Instance.OnCharacterLogin(character);
         }
-
+        character.Skills.SendLoadedPassiveBuffs();
         StartingFirstJourney(character);
     }
 
