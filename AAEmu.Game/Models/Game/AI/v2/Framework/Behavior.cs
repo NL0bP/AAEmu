@@ -5,6 +5,7 @@ using System.Linq;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
@@ -25,6 +26,7 @@ public abstract class Behavior
 
     protected DateTime _delayEnd;
     protected float _nextTimeToDelay;
+    protected float _minWeaponRange;
     protected float _maxWeaponRange;
 
     public NpcAi Ai { get; set; }
@@ -42,15 +44,166 @@ public abstract class Behavior
         return Ai.AddTransition(this, transition);
     }
 
-    public float CheckSightRangeScale(float value)
+    public SkillResult PickSkillAndUseIt(SkillUseConditionKind kind, BaseUnit target, float targetDist)
     {
-        var sightRangeScale = value * Ai.Owner.Template.SightRangeScale;
-        if (sightRangeScale < value)
+        var res = SkillResult.InvalidSkill;
+        // Attack behavior probably only uses base skill ?
+        var skills = new List<NpcSkill>();
+        if (Ai.Owner.Template.Skills.TryGetValue(kind, out var templateSkill))
         {
-            sightRangeScale = value;
+            skills = templateSkill;
+        }
+        if (skills.Count > 0)
+        {
+            skills = skills
+                .Where(s => !Ai.Owner.Cooldowns.CheckCooldown(s.SkillId))
+                .Where(s =>
+                {
+                    var template = SkillManager.Instance.GetSkillTemplate(s.SkillId);
+                    return template != null && (targetDist >= template.MinRange && targetDist <= template.MaxRange || template.TargetType == SkillTargetType.Self);
+                }).ToList();
         }
 
-        return sightRangeScale;
+        if (targetDist == 0 && kind == SkillUseConditionKind.InIdle)
+        {
+            // This SkillTargetType.Self & SkillUseConditionKind.InIdle
+            if (skills.Count <= 0)
+            {
+                return res;
+            }
+            var skillSelfId = skills[Rand.Next(skills.Count)].SkillId;
+            var skillTemplateSelf = SkillManager.Instance.GetSkillTemplate(skillSelfId);
+            var skillSelf = new Skill(skillTemplateSelf);
+
+            var delay1 = (int)(Ai.Owner.Template.BaseSkillDelay * 1000);
+            if (Ai.Owner.Template.BaseSkillDelay == 0)
+            {
+                const uint Delay1 = 10000u;
+                const uint Delay2 = 13000u;
+                delay1 = (int)Rand.Next(Delay1, Delay2);
+            }
+
+            if (this.CheckInterval(delay1))
+            {
+                Logger.Debug("PickSkillAndUseIt:UseSelfSkill Owner.ObjId {0}, Owner.TemplateId {1}, SkillId {2}", Ai.Owner.ObjId, Ai.Owner.TemplateId, skillTemplateSelf.Id);
+                res = UseSkill(skillSelf, target);
+            }
+            return res;
+        }
+
+        // This SkillUseConditionKind.InCombat
+        var pickedSkillId = (uint)Ai.Owner.Template.BaseSkillId;
+        if (skills.Count > 0)
+        {
+            pickedSkillId = skills[Rand.Next(skills.Count)].SkillId;
+        }
+
+        // Hackfix for Melee attack. Needs to look at the held weapon (if any) or default to 3m
+        if (pickedSkillId == 2 && targetDist > 4.0f)
+        {
+            return SkillResult.TooFarRange;
+        }
+        var skillTemplate = SkillManager.Instance.GetSkillTemplate(pickedSkillId);
+        var skill = new Skill(skillTemplate);
+
+        SetWeaponRange(skill, target); // установим максимальную дистанцию для атаки скиллом
+
+        var delay2 = (int)(Ai.Owner.Template.BaseSkillDelay * 1000);
+        if (Ai.Owner.Template.BaseSkillDelay == 0)
+        {
+            const uint Delay1 = 1500u;
+            const uint Delay2 = 1550u;
+            delay2 = (int)Rand.Next(Delay1, Delay2);
+        }
+
+        if (this.CheckInterval(delay2))
+        {
+            Logger.Debug("PickSkillAndUseIt:UseSkill Owner.ObjId {0}, Owner.TemplateId {1}, SkillId {2} on Target {3}", Ai.Owner.ObjId, Ai.Owner.TemplateId, skillTemplate.Id, target.ObjId);
+            res = UseSkill(skill, target);
+        }
+
+        return res;
+    }
+
+    /// <summary>
+    /// Use a skill
+    /// </summary>
+    /// <param name="skill">Skill object to use</param>
+    /// <param name="target">Target Unit</param>
+    /// <param name="delay">Delay (in seconds) after this skill is used before the next one is allowed</param>
+    /// <returns>Skill result of the used skill</returns>
+    public SkillResult UseSkill(Skill skill, BaseUnit target, float delay = 0)
+    {
+        if (target == null)
+        {
+            return SkillResult.NoTarget;
+        }
+
+        if (skill == null)
+        {
+            return SkillResult.Failure;
+        }
+
+        if (Ai.Owner.Cooldowns.CheckCooldown(skill.Id))
+        {
+            return SkillResult.CooldownTime;
+        }
+
+        var targetDist = Ai.Owner.GetDistanceTo(target);
+        if (targetDist < skill.Template.MinRange)
+        {
+            return SkillResult.TooCloseRange;
+        }
+
+        if (targetDist > skill.Template.MaxRange)
+        {
+            return SkillResult.TooFarRange;
+        }
+
+        _nextTimeToDelay = delay;
+        var skillCaster = SkillCaster.GetByType(SkillCasterType.Unit);
+        skillCaster.ObjId = Ai.Owner.ObjId;
+
+        SkillCastTarget skillCastTarget;
+        switch (skill.Template.TargetType)
+        {
+            case SkillTargetType.Pos:
+                var pos = Ai.Owner.Transform.World.Position;
+                skillCastTarget = new SkillCastPositionTarget()
+                {
+                    ObjId = Ai.Owner.ObjId,
+                    PosX = pos.X,
+                    PosY = pos.Y,
+                    PosZ = pos.Z,
+                    PosRot = Ai.Owner.Transform.World.ToRollPitchYawDegrees().Z // (float)MathUtil.ConvertDirectionToDegree(pos.RotationZ) //Is this rotation right?
+                };
+                break;
+            default:
+                skillCastTarget = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
+                skillCastTarget.ObjId = target.ObjId;
+                break;
+        }
+
+        var skillObject = SkillObject.GetByType(SkillObjectType.None);
+
+        skill.Callback = OnSkillEnded;
+        var result = skill.Use(Ai.Owner, skillCaster, skillCastTarget, skillObject, false, out _);
+        // fix the eastward turn when using SelfSkill
+        if (skill.Template.TargetType != SkillTargetType.Self && result == SkillResult.Success)
+            Ai.Owner.LookTowards(target.Transform.World.Position);
+        return result;
+    }
+
+    public virtual void OnSkillEnded()
+    {
+        try
+        {
+            _delayEnd = DateTime.UtcNow.AddSeconds(_nextTimeToDelay);
+        }
+        catch
+        {
+            // Do nothing
+        }
     }
 
     /// <summary>
@@ -81,14 +234,18 @@ public abstract class Behavior
             unitsWithDistance.Add((nearbyUnit, rangeOfUnit));
         }
         unitsWithDistance.Sort((p, q) => p.Item2.CompareTo(q.Item2));
-        
+
         foreach (var (unit, rangeOfUnit) in unitsWithDistance)
         {
             if (unit.IsDead || unit.Hp <= 0)
                 continue; // not counting dead Npc
 
-            // Need to check for stealth detection here
-            if (MathUtil.IsFront(Ai.Owner, unit, Ai.Owner.Template.SightFovScale))
+            // Arbitrary value
+            var maxHeightGap = Ai.Owner.CanFly ? (Ai.Owner.ModelSize * Ai.Owner.Scale * 3.5f) : (Ai.Owner.ModelSize * Ai.Owner.Scale * 1.5f);
+
+            // Check if in front, and not too far up or down
+            if (MathUtil.IsFront(Ai.Owner, unit, Ai.Owner.Template.SightFovScale) &&
+                Math.Abs(Ai.Owner.Transform.World.Position.Z - unit.Transform.World.Position.Z) < maxHeightGap)
             {
                 if (Ai.Owner.CanAttack(unit) && (rangeOfUnit < 1f || Ai.Owner.CanSeeTarget(unit)))
                 {
@@ -143,7 +300,7 @@ public abstract class Behavior
 
         var res = false;
         var nearbyUnits = WorldManager.GetAround<Unit>(Ai.Owner, Ai.Owner.Template.SightRangeScale * 15f);
-        
+
         // Sort by distance
         var unitsWithDistance = new List<(Unit, float)>();
         foreach (var nearbyUnit in nearbyUnits)
@@ -152,14 +309,18 @@ public abstract class Behavior
             unitsWithDistance.Add((nearbyUnit, rangeOfUnit));
         }
         unitsWithDistance.Sort((p, q) => p.Item2.CompareTo(q.Item2));
-        
+
         foreach (var (unit, rangeOfUnit) in unitsWithDistance)
         {
             if (unit.IsDead || unit.Hp <= 0)
                 continue; // not counting dead Npc
 
-            // Need to check for stealth detection here
-            if (MathUtil.IsFront(Ai.Owner, unit, Ai.Owner.Template.SightFovScale))
+            // Arbitrary value 
+            var maxHeightGap = Ai.Owner.CanFly ? (Ai.Owner.ModelSize * Ai.Owner.Scale * 4f) : (Ai.Owner.ModelSize * Ai.Owner.Scale * 1.75f);
+
+            // Check if in front, and not too far up or down
+            if (MathUtil.IsFront(Ai.Owner, unit, Ai.Owner.Template.SightFovScale) &&
+                Math.Abs(Ai.Owner.Transform.World.Position.Z - unit.Transform.World.Position.Z) < maxHeightGap)
             {
                 if (Ai.Owner.CanAttack(unit) && (rangeOfUnit < 1f || Ai.Owner.CanSeeTarget(unit)))
                 {
@@ -187,30 +348,56 @@ public abstract class Behavior
         return res;
     }
 
-    /// <summary>
-    /// Check if this NPC can get help, and if so, make them aggro the abuser
-    /// </summary>
-    /// <param name="abuser">The attacking Unit</param>
-    /// <param name="radius">Maximum range to check for help, this is not the range of the NPCs that will help, but rather possibly help. Maximum range defined in the DB is 100m</param>
-    public void UpdateAggroHelp(Unit abuser, int radius = 20)
+    public void UpdateAggroHelp(Unit abuser, int radius = 200)
     {
-        var npcs = WorldManager.GetAround<Npc>(Ai.Owner,  Ai.Owner.Template.AttackStartRangeScale * radius);
+        bool needHelp;
+        var npcs = WorldManager.GetAround<Npc>(Ai.Owner, Ai.Owner.Template.AttackStartRangeScale * radius);
         if (npcs == null)
+        {
             return;
+        }
 
         foreach (var npc in npcs
-                     .Where(npc => npc.Template.Aggression && !npc.IsInBattle && npc.Template.AcceptAggroLink)
-                     .Where(npc => npc.GetDistanceTo(npc.Ai.Owner) <= npc.Template.AggroLinkHelpDist))
+                     .Where(npc => !npc.IsInBattle && npc.Template.AcceptAggroLink)
+                     .Where(npc => npc.GetDistanceTo(Ai.Owner) <= npc.Template.AggroLinkHelpDist))
         {
-            if (Ai.Owner.IsInBattle)
-                return; // already in battle, let's not change the target
+            if (npc.Template.Aggression && npc.Template.AggroLinkSpecialRuleId == AggroLinkSpecialRuleKind.None)
+            {
+                needHelp = true;
+            }
+            else
+            {
+                if (!(npc.Template.AggroLinkSightCheck && npc.CanSeeTarget(abuser)))
+                {
+                    continue;
+                }
+
+                switch (npc.Template.AggroLinkSpecialRuleId)
+                {
+                    case AggroLinkSpecialRuleKind.FactionHelp when npc.Faction.Id == Ai.Owner.Faction.Id:
+                    case AggroLinkSpecialRuleKind.FriendlyHelp when npc.GetRelationStateTo(Ai.Owner) == RelationState.Friendly:
+                    case AggroLinkSpecialRuleKind.NeutralHelp when npc.GetRelationStateTo(Ai.Owner) == RelationState.Neutral:
+                    case AggroLinkSpecialRuleKind.EveryoneHelp:
+                        needHelp = true;
+                        break;
+                    case AggroLinkSpecialRuleKind.None:
+                    default:
+                        needHelp = false;
+                        break;
+                }
+            }
+
+            if (!needHelp)
+            {
+                continue;
+            }
 
             npc.Ai.Owner.AddUnitAggro(AggroKind.Damage, abuser, 1);
             npc.Ai.OnAggroTargetChanged();
         }
     }
 
-    public void SetMaxWeaponRange(Skill skill, BaseUnit target)
+    public void SetWeaponRange(Skill skill, BaseUnit target)
     {
         var unit = (Unit)target;
         // Check if target is within range
@@ -237,6 +424,18 @@ public abstract class Behavior
             maxRangeCheck = maxWeaponRange;
         }
 
+        _minWeaponRange = (float)minRangeCheck;
         _maxWeaponRange = (float)maxRangeCheck;
+    }
+
+    public bool CheckFollowPath()
+    {
+        return Ai.PathHandler.HasPathMovementData();
+    }
+
+    public Behavior SetDefaultBehavior()
+    {
+        Ai.SetDefaultBehavior(this);
+        return this;
     }
 }
