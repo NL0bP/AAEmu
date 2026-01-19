@@ -2,13 +2,16 @@
 using System.Linq;
 
 using AAEmu.Commons.Network;
+using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Route;
@@ -29,14 +32,26 @@ public class CSSelectCharacterPacket : GamePacket
 
         if (Connection.Characters.TryGetValue(characterId, out var character))
         {
-            // Despawn any old pets this character might have even before loading it
-            //var character = Connection.Characters[characterId];
+            using var dbConn = MySQL.CreateConnection();
+
+            // 1. Загружаем базовые данные персонажа
             character.Load();
+
+            // 2. Загружаем скиллы и пассивки (это ключевой момент!)
+            character.Skills.Load(dbConn);
+
+            // Лог для проверки — сколько реально загрузилось
+            Logger.Info($"[EnterWorld] {character.Name} (Id {character.Id}): " +
+                        $"активных скиллов: {character.Skills.Skills.Count}, " +
+                        $"пассивных баффов: {character.Skills.PassiveBuffs.Count}");
+
             character.Connection = Connection;
+
             var houses = Connection.Houses.Values.Where(x => x.OwnerId == character.Id).ToList();
             MateManager.Instance.RemoveAndDespawnAllActiveOwnedMates(character);
 
             Connection.ActiveChar = character;
+
             if (Character.UsedCharacterObjIds.TryGetValue(character.Id, out var oldObjId))
             {
                 Connection.ActiveChar.ObjId = oldObjId;
@@ -52,31 +67,22 @@ public class CSSelectCharacterPacket : GamePacket
             {
                 Logger.Warn($"{Connection.ActiveChar.Name}: Interrupting the transport shutdown task");
                 mySlave.CancelTokenSource.Cancel();
-                // TODO найти, как восстанавливать контроль
-                Unit.DespawSlave(Connection.ActiveChar); // despawn because we lost control over them
+                Unit.DespawSlave(Connection.ActiveChar);
             }
+
             var myMates = MateManager.Instance.GetActiveMates(Connection.ActiveChar.ObjId);
             if (myMates != null)
             {
-                Unit.DespawnMate(Connection.ActiveChar); // despawn because we lost control over them
+                Unit.DespawnMate(Connection.ActiveChar);
             }
 
             Connection.ActiveChar.Simulation = new Simulation(character);
 
-            // TODO: Fix the patron and auction house license buff issue
-            if (Connection.ActiveChar is { } unit)
-            {
-                if (!unit.Buffs.CheckBuff((uint)SkillConstants.Patron)) //TODO Wrong place
-                {
-                    unit.Buffs.AddBuff(new Buff(unit, unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000011), null, System.DateTime.Now));
-                }
+            // Ручные баффы (Patron, Auction и т.д.)
+            Connection.ActiveChar.Buffs.AddBuff((uint)SkillConstants.Patron, Connection.ActiveChar);
+            Connection.ActiveChar.Buffs.AddBuff((uint)SkillConstants.AuctionLicense, Connection.ActiveChar);
 
-                if (!unit.Buffs.CheckBuff((uint)SkillConstants.AuctionLicense)) //TODO Wrong place
-                {
-                    unit.Buffs.AddBuff(new Buff(unit, unit, SkillCaster.GetByType(SkillCasterType.Unit), SkillManager.Instance.GetBuffTemplate(8000012), null, System.DateTime.Now));
-                }
-            }
-
+            // Отправка всех основных пакетов
             Connection.SendPacket(new SCResidentInfoListPacket(ResidentManager.Instance.GetInfo()));
             Connection.SendPacket(new SCCharacterStatePacket(character));
             Connection.SendPacket(new SCCharacterGamePointsPacket(character));
@@ -114,8 +120,8 @@ public class CSSelectCharacterPacket : GamePacket
 
             Connection.ActiveChar.Buffs.AddBuff((uint)BuffConstants.LoggedOn, Connection.ActiveChar);
 
+            // Баффы от расы/пола
             var template = CharacterManager.Instance.GetTemplate(character.Race, character.Gender);
-
             foreach (var buff in template.Buffs)
             {
                 var buffTemplate = SkillManager.Instance.GetBuffTemplate(buff);
@@ -125,13 +131,35 @@ public class CSSelectCharacterPacket : GamePacket
 
             character.Breath = character.LungCapacity;
 
-            Connection.SendPacket(new SCScheduledEventStartedPacket());
-
             Connection.ActiveChar.OnZoneChange(0, Connection.ActiveChar.Transform.ZoneId);
+
+            // ────────────────────────────────────────────────────────────────
+            // ФИНАЛЬНАЯ ЧАСТЬ: Применяем и отправляем пассивные скиллы клиенту
+            // ────────────────────────────────────────────────────────────────
+
+            // Применяем все пассивки (на случай, если Apply не вызвался в Load)
+            foreach (var passive in character.Skills.PassiveBuffs.Values.ToList())
+            {
+                passive.Apply(character);
+            }
+
+            // Повторно отправляем пакеты Learned для каждой пассивки
+            // (это заставляет клиент отобразить их в пассивном табе после релога)
+            foreach (var passive in character.Skills.PassiveBuffs.Values.ToList())
+            {
+                Connection.SendPacket(new SCBuffLearnedPacket(character.ObjId, passive.Id));
+            }
+
+            // Если активные скиллы тоже иногда не видны — раскомментируй:
+            // Connection.SendPacket(new SCSkillListPacket(character));
+
+            // Пересчитываем статы после применения всех пассивок
+            //character.RecalculateBonuses();   // или UpdateAllStats(), BroadcastStats() — как у вас называется
         }
         else
         {
-            // TODO ...
+            // TODO: обработка ошибки — персонаж не найден
+            Logger.Warn($"Character ID {characterId} not found for connection");
         }
     }
 }

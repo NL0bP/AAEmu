@@ -30,7 +30,7 @@ public class NpcTemplate
     public bool ShowNameTag { get; set; }
     public bool VisibleToCreatorOnly { get; set; }
     public bool NoExp { get; set; }
-    public int PetItemId { get; set; }
+    public uint PetItemId { get; set; }
     public int BaseSkillId { get; set; }
     public bool TrackFriendship { get; set; }
     public bool Priest { get; set; }
@@ -54,7 +54,7 @@ public class NpcTemplate
     public int NpcAiParamId { get; set; }
     public bool NonPushableByActor { get; set; }
     public bool Banker { get; set; }
-    public int AggroLinkSpecialRuleId { get; set; }
+    public AggroLinkSpecialRuleKind AggroLinkSpecialRuleId { get; set; }
     public float AggroLinkHelpDist { get; set; }
     public bool AggroLinkSightCheck { get; set; }
     public bool Expedition { get; set; }
@@ -69,6 +69,7 @@ public class NpcTemplate
     public uint SpecialtyCoinId { get; set; }
     public bool UseRangeMod { get; set; }
     public int NpcPostureSetId { get; set; }
+    public List<NpcPosture> NpcPostureSets { get; set; } = new();
     public int MateEquipSlotPackId { get; set; }
     public int MateKindId { get; set; }
     public uint EngageCombatGiveQuestId { get; set; }
@@ -81,7 +82,6 @@ public class NpcTemplate
     public bool LookConverter { get; set; }
     public bool UseDDCMSMountSkill { get; set; }
     public bool CrowdEffect { get; set; }
-    public uint AnimActionId { get; set; }
     public byte Race { get; set; }
     public byte Gender { get; set; }
     public uint MerchantPackId { get; set; }

@@ -1,9 +1,11 @@
 ﻿using System;
 
 using AAEmu.Commons.Utils;
+using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.Movements;
 
 namespace AAEmu.Game.Models.Game.AI.v2.Behaviors.Common;
 
@@ -15,6 +17,9 @@ public class AttackBehavior : BaseCombatBehavior
     {
         Ai.Owner.InterruptSkills();
         Ai.Owner.CurrentGameStance = GameStanceType.Combat;
+        Ai.Owner.CurrentAlertness = MoveTypeAlertness.Combat;
+        Ai.Owner.BroadcastPacket(new SCUnitModelPostureChangedPacket(Ai.Owner, Ai.Owner.AnimActionId, false), false);
+
         Ai.Owner.IsInBattle = true;
         if (Ai.Owner is { } npc)
         {
@@ -28,7 +33,7 @@ public class AttackBehavior : BaseCombatBehavior
         if (!_enter)
             return; // not initialized yet Enter()
 
-        if (!UpdateTarget() || ShouldReturn) // проверим, что таблица abuser не пустая и назначим текущую цель
+        if (!UpdateTarget() || ShouldReturn)
         {
             Ai.OnNoAggroTarget();
             return;
@@ -43,10 +48,17 @@ public class AttackBehavior : BaseCombatBehavior
         if (!CanUseSkill)
             return;
 
+        var delay = 150;
         // Will delay for 150 Milliseconds to eliminate the hanging of the skill
-        if (!Ai.Owner.CheckInterval(Delay)) { return; }
-        var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
-        PickSkillAndUseIt(SkillUseConditionKind.OnAlert, Ai.Owner.CurrentTarget, targetDist); // используем скиллы на врага
+        if (!Ai.Owner.CheckInterval(delay))
+        {
+            Logger.Trace($"Skill: CooldownTime [{delay}]!");
+        }
+        else
+        {
+            var targetDist = Ai.Owner.GetDistanceTo(Ai.Owner.CurrentTarget);
+            PickSkillAndUseIt(SkillUseConditionKind.InCombat, Ai.Owner.CurrentTarget, targetDist);
+        }
     }
 
     public override void Exit()

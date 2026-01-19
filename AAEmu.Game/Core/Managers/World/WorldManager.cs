@@ -10,6 +10,7 @@ using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.XML;
 using AAEmu.Game.Core.Managers.Id;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.IO;
@@ -17,6 +18,7 @@ using AAEmu.Game.Models;
 using AAEmu.Game.Models.ClientData;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.DoodadObj.Funcs;
 using AAEmu.Game.Models.Game.Gimmicks;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
@@ -1238,25 +1240,32 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     private void StartingFirstJourney(Character character)
     {
         var questId = 0u;
+        var sphereId = 0u;
         switch (character.Race)
         {
             case Race.Nuian: // Nuian
                 questId = 6839;
+                sphereId = 2321;
                 break;
             case Race.Dwarf: // Dwarf
                 questId = 5811;
+                sphereId = 2613;
                 break;
             case Race.Elf: // Elf
                 questId = 6840;
+                sphereId = 2322;
                 break;
             case Race.Hariharan: // Hariharan
                 questId = 6842;
+                sphereId = 2324;
                 break;
             case Race.Ferre: // Ferre
                 questId = 6841;
+                sphereId = 2323;
                 break;
             case Race.Warborn: // Warborn
                 questId = 8228;
+                sphereId = 2600;
                 break;
             case Race.Fairy:
                 break;
@@ -1266,7 +1275,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         // showing it once
         if (character.Updated - character.Created < TimeSpan.FromMinutes(1))
         {
-            character.Quests.AddQuest(questId);
+            character.Quests.AddQuestFromSphere(questId, sphereId);
         }
     }
 

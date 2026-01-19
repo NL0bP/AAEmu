@@ -1357,6 +1357,7 @@ public partial class Character : Unit, ICharacter
             change = true;
             Level++;
             needExp = ExperienceManager.Instance.GetExpForLevel((byte)(Level + 1));
+            Expedition?.OnCharacterRefresh(this);
         }
 
         if (change)
@@ -1377,6 +1378,7 @@ public partial class Character : Unit, ICharacter
         {
             Level++;
             needExp = ExperienceManager.Instance.GetExpForLevel((byte)(Level + 1));
+            Expedition?.OnCharacterRefresh(this);
         }
     }
 
@@ -1577,6 +1579,7 @@ public partial class Character : Unit, ICharacter
         }
         if (newZone != null)
         {
+            Expedition?.OnCharacterRefresh(this);
             // Apply the new zone buff if needed
             var newZoneGroup = ZoneManager.Instance.GetZoneGroupById(newZone.GroupId);
             if ((newZoneGroup != null) && (newZoneGroup.BuffId != 0))
@@ -1756,6 +1759,8 @@ public partial class Character : Unit, ICharacter
     {
         get { return (Breath <= 0); }
     }
+
+    public TimeSpan OnlineTime { get; set; } = TimeSpan.Zero;
 
     public override void ReduceCurrentHp(BaseUnit attacker, int value, KillReason killReason = KillReason.Damage)
     {
@@ -2054,6 +2059,7 @@ public partial class Character : Unit, ICharacter
                     character.Created = reader.GetDateTime("created_at");
                     character.Updated = reader.GetDateTime("updated_at");
                     character.ReturnDistrictId = reader.GetUInt32("return_district");
+                    character.OnlineTime = TimeSpan.FromSeconds(reader.GetUInt32("online_time"));
 
                     character.Inventory = new Inventory(character);
 
@@ -2170,6 +2176,7 @@ public partial class Character : Unit, ICharacter
                     character.Created = reader.GetDateTime("created_at");
                     character.Updated = reader.GetDateTime("updated_at");
                     character.ReturnDistrictId = reader.GetUInt32("return_district");
+                    character.OnlineTime = TimeSpan.FromSeconds(reader.GetUInt32("online_time"));
 
                     character.Inventory = new Inventory(character);
 
@@ -2396,7 +2403,7 @@ public partial class Character : Unit, ICharacter
                     "`faction_id`,`faction_name`,`expedition_id`,`family`,`dead_count`,`dead_time`,`rez_wait_duration`,`rez_time`,`rez_penalty_duration`,`leave_time`," +
                     "`money`,`money2`,`honor_point`,`vocation_point`,`crime_point`,`crime_record`,`jury_point`," +
                     "`delete_request_time`,`transfer_request_time`,`delete_time`,`auto_use_aapoint`,`prev_point`,`point`,`gift`," +
-                    "`num_inv_slot`,`num_bank_slot`,`expanded_expert`,`slots`,`created_at`,`updated_at`,`return_district`" +
+                    "`num_inv_slot`,`num_bank_slot`,`expanded_expert`,`slots`,`created_at`,`updated_at`,`return_district`,`online_time`" +
                     ") VALUES (" +
                     "@id,@account_id,@name,@access_level,@race,@gender,@unit_model_params,@level,@experience,@recoverable_exp," +
                     "@hp,@mp,@consumed_lp,@ability1,@ability2,@ability3," +
@@ -2404,7 +2411,7 @@ public partial class Character : Unit, ICharacter
                     "@faction_id,@faction_name,@expedition_id,@family,@dead_count,@dead_time,@rez_wait_duration,@rez_time,@rez_penalty_duration,@leave_time," +
                     "@money,@money2,@honor_point,@vocation_point,@crime_point,@crime_record,@jury_point," +
                     "@delete_request_time,@transfer_request_time,@delete_time,@auto_use_aapoint,@prev_point,@point,@gift," +
-                    "@num_inv_slot,@num_bank_slot,@expanded_expert,@slots,@created_at,@updated_at,@return_district)";
+                    "@num_inv_slot,@num_bank_slot,@expanded_expert,@slots,@created_at,@updated_at,@return_district,@online_time)";
 
                 command.Parameters.AddWithValue("@id", Id);
                 command.Parameters.AddWithValue("@account_id", AccountId);
@@ -2463,6 +2470,7 @@ public partial class Character : Unit, ICharacter
                 command.Parameters.AddWithValue("@created_at", Created);
                 command.Parameters.AddWithValue("@updated_at", Updated);
                 command.Parameters.AddWithValue("@return_district", ReturnDistrictId);
+                command.Parameters.AddWithValue("@online_time", OnlineTime.TotalSeconds);
                 command.ExecuteNonQuery();
             }
 

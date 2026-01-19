@@ -116,6 +116,7 @@ public sealed class GameService : IHostedService, IDisposable
 
         FormulaManager.Instance.Load();
         ExperienceManager.Instance.Load();
+        AiPathsManager.Instance.Load();
 
         TlIdManager.Instance.Initialize();
         SpecialtyManager.Instance.Load();
@@ -220,6 +221,7 @@ public sealed class GameService : IHostedService, IDisposable
         WorldManager.Instance.StartPhysics();
 
         CharacterManager.CheckForDeletedCharacters();
+        CharacterManager.Instance.StartOnlineTracking();
 
         GameNetwork.Instance.Start();
         StreamNetwork.Instance.Start();

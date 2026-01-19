@@ -7,6 +7,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
+using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Models.Game.Skills.SkillControllers;
@@ -71,7 +72,7 @@ public class LeapSkillController : SkillController
         TickManager.Instance.OnTick.UnSubscribe(Tick);
     }
 
-    public void MoveTowards(float distance, byte flags = 4)
+    public void MoveTowards(float distance, byte actorFlags = 4)
     {
         distance *= Owner.MoveSpeedMul; // Apply speed modifier
         if (distance < 0.01f)
@@ -138,15 +139,15 @@ public class LeapSkillController : SkillController
         moveType.RotationX = rx;
         moveType.RotationY = ry;
         moveType.RotationZ = rz;
-        moveType.ActorFlags = flags;     // 5-walk, 4-run, 3-stand still
-        moveType.Flags = 4;
+        moveType.ActorFlags = actorFlags;     // 5-walk, 4-run, 3-stand still
+        moveType.Flags = MoveTypeFlags.Moving; // 4
 
         moveType.DeltaMovement = new sbyte[3];
         moveType.DeltaMovement[0] = 0;
         moveType.DeltaMovement[1] = 127;
         moveType.DeltaMovement[2] = 0;
         moveType.Stance = 0;    // COMBAT = 0x0, IDLE = 0x1
-        moveType.Alertness = 2; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
+        moveType.Alertness = MoveTypeAlertness.Combat; // IDLE = 0x0, ALERT = 0x1, COMBAT = 0x2
         moveType.Time = (uint)(DateTime.UtcNow - DateTime.UtcNow.Date).TotalMilliseconds;
 
         Owner.CheckMovedPosition(oldPosition);

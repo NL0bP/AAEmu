@@ -1,4 +1,5 @@
 ﻿using System;
+
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Char;
@@ -47,6 +48,9 @@ public class FishingLoot : SpecialEffectAction
             return;
         }
 
-        pack.GiveLootPack(character, ItemTaskType.SkillEffectGainItem);
+        if (!pack.GiveLootPack(character, ItemTaskType.SkillEffectGainItem))
+        {
+            character.SendErrorMessage(ErrorMessageType.BagFull);
+        }
     }
 }

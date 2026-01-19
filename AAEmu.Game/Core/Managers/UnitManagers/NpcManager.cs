@@ -134,6 +134,7 @@ public class NpcManager : Singleton<NpcManager>
                 SetEquipItemTemplate(npc, template.BodyItems[i].ItemId, slot, 0, template.BodyItems[i].NpcOnly);
         }
 
+        // Initial Buffs
         foreach (var buffId in template.Buffs)
         {
             var buff = SkillManager.Instance.GetBuffTemplate(buffId);
@@ -147,12 +148,14 @@ public class NpcManager : Singleton<NpcManager>
             buff.Apply(npc, obj, npc, null, null, new EffectSource(), null, DateTime.UtcNow);
         }
 
+        // Passive Buffs
         foreach (var npcPassiveBuff in template.PassiveBuffs)
         {
             var passive = new PassiveBuff() { Template = npcPassiveBuff.PassiveBuff };
             passive.Apply(npc);
         }
 
+        // Stat bonus effects
         foreach (var bonusTemplate in template.Bonuses)
         {
             var bonus = new Bonus();
@@ -535,7 +538,7 @@ public class NpcManager : Singleton<NpcManager>
                         template.ShowNameTag = reader.GetBoolean("show_name_tag", true);
                         template.VisibleToCreatorOnly = reader.GetBoolean("visible_to_creator_only", true);
                         template.NoExp = reader.GetBoolean("no_exp", true);
-                        template.PetItemId = reader.GetInt32("pet_item_id", 0);
+                        template.PetItemId = reader.GetUInt32("pet_item_id", 0);
                         template.BaseSkillId = reader.GetInt32("base_skill_id");
                         template.TrackFriendship = reader.GetBoolean("track_friendship", true);
                         template.Priest = reader.GetBoolean("priest", true);
@@ -559,7 +562,7 @@ public class NpcManager : Singleton<NpcManager>
                         template.NpcAiParamId = reader.GetInt32("npc_ai_param_id");
                         template.NonPushableByActor = reader.GetBoolean("non_pushable_by_actor", true);
                         template.Banker = reader.GetBoolean("banker", true);
-                        template.AggroLinkSpecialRuleId = reader.GetInt32("aggro_link_special_rule_id");
+                        template.AggroLinkSpecialRuleId = (AggroLinkSpecialRuleKind)reader.GetInt32("aggro_link_special_rule_id");
                         template.AggroLinkHelpDist = reader.GetFloat("aggro_link_help_dist");
                         template.AggroLinkSightCheck = reader.GetBoolean("aggro_link_sight_check", true);
                         template.Expedition = reader.GetBoolean("expedition", true);
@@ -734,14 +737,22 @@ public class NpcManager : Singleton<NpcManager>
                         {
                             using (var command2 = connection.CreateCommand())
                             {
-                                command2.CommandText = "SELECT * FROM npc_postures WHERE npc_posture_set_id=@id";
+                                // Sort it by reverse "Time Of Day" so it's easier to do searches on it later
+                                command2.CommandText = "SELECT * FROM npc_postures WHERE npc_posture_set_id=@id ORDER BY start_tod_time DESC";
                                 command2.Parameters.AddWithValue("id", template.NpcPostureSetId);
                                 command2.Prepare();
                                 using (var sqliteReader2 = command2.ExecuteReader())
                                 using (var reader2 = new SQLiteWrapperReader(sqliteReader2))
                                 {
-                                    if (reader2.Read())
-                                        template.AnimActionId = reader2.GetUInt32("anim_action_id");
+                                    while (reader2.Read())
+                                    {
+                                        var npcPosture = new NpcPosture();
+                                        npcPosture.NpcPostureSetId = reader2.GetUInt32("npc_posture_set_id");
+                                        npcPosture.AnimActionId = reader2.GetUInt32("anim_action_id");
+                                        npcPosture.TalkAnim = reader2.GetString("talk_anim");
+                                        npcPosture.StartTodTime = reader2.GetFloat("start_tod_time");
+                                        template.NpcPostureSets.Add(npcPosture);
+                                    }
                                 }
                             }
                         }
