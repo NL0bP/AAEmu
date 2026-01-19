@@ -256,4 +256,23 @@ public class CharacterSkills(Character owner)
     }
 
     #endregion
+
+    /// <summary>
+    /// Sends SCBuffLearnedPacket for all loaded passive buffs (visual only)
+    /// </summary>
+    public void SendLoadedPassiveBuffs()
+    {
+        if (Owner == null)
+            return;
+
+        foreach (var buff in PassiveBuffs.Values)
+        {
+            if (buff == null)
+                continue;
+
+            Owner.SendPacket(
+                new SCBuffLearnedPacket(Owner.ObjId, buff.Id)
+            );
+        }
+    }
 }
