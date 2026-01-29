@@ -249,7 +249,7 @@ public class ItemManager : Singleton<ItemManager>
 
     public AttributeModifiers GetAttributeModifiers(uint id)
     {
-        return _modifiers[id];
+        return _modifiers.GetValueOrDefault(id);
     }
 
     public List<uint> GetItemIdsFromDoodad(uint doodadId)
@@ -323,14 +323,14 @@ public class ItemManager : Singleton<ItemManager>
     private ItemLookConvert GetWearableItemLookConvert(uint slotTypeId)
     {
         if (_wearableItemLookConverts.TryGetValue(slotTypeId, out var convert))
-            return _itemLookConverts[convert];
+            return _itemLookConverts.GetValueOrDefault(convert);
         return null;
     }
 
     private ItemLookConvert GetHoldableItemLookConvert(uint holdableId)
     {
         if (_holdableItemLookConverts.TryGetValue(holdableId, out var convert))
-            return _itemLookConverts[convert];
+            return _itemLookConverts.GetValueOrDefault(convert);
         return null;
     }
 
@@ -836,9 +836,29 @@ public class ItemManager : Singleton<ItemManager>
                         var slotTypeId = reader.GetUInt32("slot_type_id");
                         var typeId = reader.GetUInt32("type_id");
 
-                        template.WearableTemplate = _wearables[typeId * 128 + slotTypeId];
-                        template.KindTemplate = _wearableKinds[typeId];
-                        template.SlotTemplate = _wearableSlots[slotTypeId];
+                        if (_wearables.TryGetValue(typeId * 128 + slotTypeId, out var wearableTemplate))
+                            template.WearableTemplate = wearableTemplate;
+                        else
+                        {
+                            Logger.Warn($"Wearable template with ID {typeId * 128 + slotTypeId} not found for armor template {template.Id}");
+                            continue; // Skip this item if wearable template is not found
+                        }
+
+                        if (_wearableKinds.TryGetValue(typeId, out var kindTemplate))
+                            template.KindTemplate = kindTemplate;
+                        else
+                        {
+                            Logger.Warn($"Wearable kind template with ID {typeId} not found for armor template {template.Id}");
+                            continue; // Skip this item if wearable kind template is not found
+                        }
+
+                        if (_wearableSlots.TryGetValue(slotTypeId, out var slotTemplate))
+                            template.SlotTemplate = slotTemplate;
+                        else
+                        {
+                            Logger.Warn($"Wearable slot template with ID {slotTypeId} not found for armor template {template.Id}");
+                            continue; // Skip this item if wearable slot template is not found
+                        }
                         template.BaseEnchantable = reader.GetBoolean("base_enchantable", true);
                         template.ModSetId = reader.GetUInt32("mod_set_id", 0);
                         template.Repairable = reader.GetBoolean("repairable", true);
@@ -885,7 +905,14 @@ public class ItemManager : Singleton<ItemManager>
                         var template = new WeaponTemplate();
                         template.Id = reader.GetUInt32("item_id");
                         template.BaseEnchantable = reader.GetBoolean("base_enchantable");
-                        template.HoldableTemplate = _holdables[holdableId];
+                        if (_holdables.TryGetValue(holdableId, out var holdableTemplate))
+                            template.HoldableTemplate = holdableTemplate;
+                        else
+                        {
+                            Logger.Warn($"Holdable template with ID {holdableId} not found for weapon template {template.Id}");
+                            // Optionally skip loading this template if the holdable is required
+                            continue; // Skip this item if holdable template is not found
+                        }
                         template.ModSetId = reader.GetUInt32("mod_set_id", 0);
                         template.Repairable = reader.GetBoolean("repairable", true);
                         template.DurabilityMultiplier = reader.GetInt32("durability_multiplier");
@@ -931,9 +958,30 @@ public class ItemManager : Singleton<ItemManager>
 
                         var template = new AccessoryTemplate();
                         template.Id = reader.GetUInt32("item_id");
-                        template.WearableTemplate = _wearables[typeId * 128 + slotTypeId];
-                        template.KindTemplate = _wearableKinds[typeId];
-                        template.SlotTemplate = _wearableSlots[slotTypeId];
+
+                        if (_wearables.TryGetValue(typeId * 128 + slotTypeId, out var accWearableTemplate))
+                            template.WearableTemplate = accWearableTemplate;
+                        else
+                        {
+                            Logger.Warn($"Wearable template with ID {typeId * 128 + slotTypeId} not found for accessory template {template.Id}");
+                            continue; // Skip this item if wearable template is not found
+                        }
+
+                        if (_wearableKinds.TryGetValue(typeId, out var accKindTemplate))
+                            template.KindTemplate = accKindTemplate;
+                        else
+                        {
+                            Logger.Warn($"Wearable kind template with ID {typeId} not found for accessory template {template.Id}");
+                            continue; // Skip this item if wearable kind template is not found
+                        }
+
+                        if (_wearableSlots.TryGetValue(slotTypeId, out var accSlotTemplate))
+                            template.SlotTemplate = accSlotTemplate;
+                        else
+                        {
+                            Logger.Warn($"Wearable slot template with ID {slotTypeId} not found for accessory template {template.Id}");
+                            continue; // Skip this item if wearable slot template is not found
+                        }
                         template.ModSetId = reader.GetUInt32("mod_set_id", 0);
                         template.Repairable = reader.GetBoolean("repairable", true);
                         template.DurabilityMultiplier = reader.GetInt32("durability_multiplier");

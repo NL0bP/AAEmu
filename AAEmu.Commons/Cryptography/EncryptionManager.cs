@@ -1,4 +1,4 @@
-/*
+﻿/*
  * by uranusq https://github.com/NL0bP/aaa_emulator
  * by Nikes
  * by NLObP: оригинальный метод шифрации (как в crynetwork.dll)
@@ -159,7 +159,7 @@ namespace AAEmu.Commons.Cryptography
         {
             var keys = GetOrCreateConnectionKeys(connectionId, accountId);
             var mc = keys.SCMessageCount;
-            Logger.Trace("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
+            //Logger.Trace("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
             return mc;
         }
 
@@ -173,7 +173,7 @@ namespace AAEmu.Commons.Cryptography
         {
             var keys = GetOrCreateConnectionKeys(connectionId, accountId);
             var mc = keys.SCMessageCount++;
-            Logger.Warn("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
+            //Logger.Warn("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
             return mc;
         }
 
