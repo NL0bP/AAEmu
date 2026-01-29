@@ -39,7 +39,10 @@ public class GameServer
 
     public void SendPacket(InternalPacket packet)
     {
-        Connection.SendPacket(packet);
+        if (Connection != null)
+        {
+            Connection.SendPacket(packet);
+        }
     }
 
     public override bool Equals(object obj)
