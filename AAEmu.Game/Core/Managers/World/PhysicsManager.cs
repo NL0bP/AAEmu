@@ -55,6 +55,12 @@ namespace AAEmu.Game.Core.Managers.World
 
         public void Initialize()
         {
+            if (SimulationWorld == null)
+            {
+                Logger.Error("SimulationWorld is null, cannot initialize PhysicsManager");
+                return;
+            }
+
             _physWorld = new Jitter2.World();
             _physWorld.Gravity = new JVector(0, -9.81f, 0);
 
@@ -144,7 +150,26 @@ namespace AAEmu.Game.Core.Managers.World
                         // Potentially step multiple times to catch up if we were running behind.
                         while (accumulatedTime > fixedStep)
                         {
-                            _physWorld.Step((float)fixedStep.TotalSeconds, false);
+                            try
+                            {
+                                // Проверяем, что физический мир существует перед выполнением шага
+                                if (_physWorld != null)
+                                {
+                                    _physWorld.Step((float)fixedStep.TotalSeconds, false);
+                                }
+                            }
+                            catch (AccessViolationException ex)
+                            {
+                                Logger.Error(ex, "AccessViolationException при выполнении шага физической симуляции. Попытка восстановления...");
+                                // В случае ошибки, можно попробовать пересоздать физический мир или пропустить этот шаг
+                                break; // Прерываем цикл, чтобы избежать повторного возникновения ошибки
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error(ex, "Произошла ошибка при выполнении шага физической симуляции");
+                                break; // Прерываем цикл при любой другой ошибке
+                            }
+
                             accumulatedTime -= fixedStep;
                             if (++steps >= MaxPhysicsSteps) { break; }
                         }
@@ -276,8 +301,31 @@ namespace AAEmu.Game.Core.Managers.World
             var rigidBody = slave.RigidBody;
             rigidBody.SetActivationState(false);
             EnqueueRemoveBody(rigidBody);
-            _physWorld.Remove(rigidBody);
-            _buoyancy.Remove(rigidBody);
+
+            try
+            {
+                if (_physWorld != null && rigidBody != null)
+                {
+                    _physWorld.Remove(rigidBody);
+                }
+            }
+            catch (AccessViolationException ex)
+            {
+                Logger.Error(ex, "AccessViolationException при удалении тела из физического мира");
+            }
+
+            try
+            {
+                if (_buoyancy != null && rigidBody != null)
+                {
+                    _buoyancy.Remove(rigidBody);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Ошибка при удалении тела из системы буйности");
+            }
+
             _shipControllers.Remove(slave.Id);
             slave.ShipController = null;
             slave.RigidBody = null;
@@ -385,9 +433,42 @@ namespace AAEmu.Game.Core.Managers.World
         public void Stop()
         {
             ThreadRunning = false;
+
+            // Дожидаемся завершения потока физики, если он существует
+            if (_thread != null && _thread.IsAlive)
+            {
+                try
+                {
+                    // Даем потоку немного времени на завершение
+                    if (!_thread.Join(TimeSpan.FromSeconds(5)))
+                    {
+                        Logger.Warn("Физический поток не завершился вовремя, прерывание...");
+                        // В .NET Core/Framework не рекомендуется использовать Abort(),
+                        // но в крайних случаях это может помочь избежать зависания
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Ошибка при ожидании завершения физического потока");
+                }
+            }
         }
 
-        public void Dispose() => _physWorld?.Dispose();
+        public void Dispose()
+        {
+            try
+            {
+                _physWorld?.Dispose();
+            }
+            catch (AccessViolationException ex)
+            {
+                Logger.Error(ex, "AccessViolationException при освобождении физического мира");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Ошибка при освобождении физического мира");
+            }
+        }
 
         public bool CustomWater(ref JVector area)
         {

@@ -1480,8 +1480,15 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
         {
             foreach (var world in _worlds)
             {
-                world.Value?.Physics?.Stop();
-                world.Value?.Physics?.Dispose();
+                try
+                {
+                    world.Value?.Physics?.Stop();
+                    world.Value?.Physics?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Ошибка при остановке физического менеджера мира");
+                }
             }
         }
     }
