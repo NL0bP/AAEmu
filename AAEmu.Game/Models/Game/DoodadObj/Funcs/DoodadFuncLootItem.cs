@@ -24,7 +24,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
             _log.Trace("DoodadFuncLootItem: skillId {0}, nextPhase {1},  ItemId {2}, CountMin {3}, CountMax {4},  Percent {5}, RemainTime {6}, GroupId {7}",
                 skillId, nextPhase, ItemId, CountMin, CountMax, Percent, RemainTime, GroupId);
 
-            var character = (Character)caster;
+            var character = caster as Character;
             var res = true;
             if (character == null)
                 return;

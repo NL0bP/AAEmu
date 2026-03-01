@@ -15,7 +15,9 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
         {
             _log.Trace("DoodadFuncRecoverItem");
 
-            var character = (Character)caster;
+            var character = caster as Character;
+            if (character == null)
+                return;
             var addedItem = false;
             var item = ItemManager.Instance.GetItemByItemId(owner.ItemId);
             if (owner.ItemId > 0)
@@ -69,7 +71,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
                 _log.Warn("DoodadFuncRecoverItem: Doodad {0} has no item information attached to it", owner.InstanceId);
             }
 
-            if (addedItem && item != null && item._holdingContainer.ContainerType == SlotType.Equipment)
+            if (addedItem && item != null && item._holdingContainer?.ContainerType == SlotType.Equipment)
                 character.BroadcastPacket(new SCUnitEquipmentsChangedPacket(character.ObjId,(byte)item.Slot,item), false);
         }
     }

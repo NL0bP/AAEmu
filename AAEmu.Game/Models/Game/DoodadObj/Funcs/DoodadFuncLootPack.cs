@@ -17,7 +17,7 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs
         {
             _log.Trace("DoodadFuncLootPack : LootPackId {0}, SkillId {1}", LootPackId, skillId);
 
-            var character = (Character)caster;
+            var character = caster as Character;
             if (character == null)
                 return;
 
