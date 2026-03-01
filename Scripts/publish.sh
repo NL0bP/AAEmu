@@ -9,6 +9,9 @@
 
 set -euo pipefail
 
+# Switch to parent directory (project root)
+cd "$(dirname "$0")/.." || exit
+
 # Version configuration
 VERSION_PREFIX=0.0.2.0
 VERSION_SUFFIX=alpha

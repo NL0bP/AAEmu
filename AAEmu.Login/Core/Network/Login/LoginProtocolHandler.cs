@@ -37,6 +37,12 @@ namespace AAEmu.Login.Core.Network.Login
 
         public override void OnDisconnect(Session session)
         {
+            if (session?.Ip == null)
+            {
+                _log.Info("Client disconnected (session or session.Ip is null)");
+                return;
+            }
+
             try
             {
                 var con = LoginConnectionTable.Instance.GetConnection(session.SessionId);
