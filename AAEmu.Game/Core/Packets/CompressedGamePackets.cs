@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
-using Ionic.Zlib;
 
 namespace AAEmu.Game.Core.Packets
 {
@@ -19,6 +20,20 @@ namespace AAEmu.Game.Core.Packets
         public void AddPacket(GamePacket packet)
         {
             Packets.Add(packet);
+        }
+
+        private static byte[] CompressBuffer(byte[] data)
+        {
+            using (var inputStream = new MemoryStream(data))
+            using (var outputStream = new MemoryStream())
+            {
+                // Using ZLibStream for compatibility with Ionic.Zlib format
+                using (var zlibStream = new ZLibStream(outputStream, CompressionMode.Compress, true))
+                {
+                    inputStream.CopyTo(zlibStream);
+                }
+                return outputStream.ToArray();
+            }
         }
 
         public override PacketStream Encode()
@@ -41,7 +56,7 @@ namespace AAEmu.Game.Core.Packets
                         .Write(packet);
                 }
 
-                var packetsData = DeflateStream.CompressBuffer(packets);
+                var packetsData = CompressBuffer(packets.GetBytes());
                 stream.Write(packetsData);
                 ps.Write(stream);
                 stopwatch.Stop();

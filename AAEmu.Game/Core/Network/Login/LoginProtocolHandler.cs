@@ -21,7 +21,8 @@ namespace AAEmu.Game.Core.Network.Login
             _packets = new ConcurrentDictionary<uint, Type>();
         }
 
-        public override void OnConnect(Session session)
+        // Client-side connection using ClientSession
+        public override void OnConnect(ClientSession session)
         {
             _log.Info("Connect to {0} established, session id: {1}", session.Ip.ToString(), session.SessionId.ToString(CultureInfo.InvariantCulture));
             var con = new LoginConnection(session);
@@ -29,7 +30,7 @@ namespace AAEmu.Game.Core.Network.Login
             LoginNetwork.Instance.SetConnection(con);
         }
 
-        public override void OnDisconnect(Session session)
+        public override void OnDisconnect(ClientSession session)
         {
             _log.Info("Connect to LoginServer has been lost");
             LoginNetwork.Instance.SetConnection(null);
@@ -40,7 +41,7 @@ namespace AAEmu.Game.Core.Network.Login
             LoginNetwork.Instance.Start();
         }
 
-        public override void OnReceive(Session session, byte[] buf, int bytes)
+        public override void OnReceive(ClientSession session, byte[] buf, int bytes)
         {
             var stream = new PacketStream();
             var connection = LoginNetwork.Instance.GetConnection();

@@ -272,18 +272,16 @@ namespace AAEmu.Commons.Cryptography
         //--------------------------------------------------------------------------------------
         private const int Size = 16;
         //--------------------------------------------------------------------------------------
-        private static RijndaelManaged CryptAes(byte[] aesKey, byte[] iv)
+        private static Aes CryptAes(byte[] aesKey, byte[] iv)
         {
-            var rm = new RijndaelManaged
-            {
-                KeySize = 128,
-                BlockSize = 128,
-                Padding = PaddingMode.None,
-                Mode = CipherMode.CBC,
-                Key = aesKey,
-                IV = iv
-            };
-            return rm;
+            var aes = Aes.Create();
+            aes.KeySize = 128;
+            aes.BlockSize = 128;
+            aes.Padding = PaddingMode.None;
+            aes.Mode = CipherMode.CBC;
+            aes.Key = aesKey;
+            aes.IV = iv;
+            return aes;
         }
         //--------------------------------------------------------------------------------------
         /// <summary>

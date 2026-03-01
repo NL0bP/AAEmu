@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:3.1.409-focal as builder
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble as builder
 ARG CONFIGURATION
 ARG RUNTIME
 
@@ -7,7 +7,7 @@ COPY ./AAEmu.Commons ./AAEmu.Commons
 COPY ./AAEmu.Login ./AAEmu.Login
 RUN dotnet publish ./AAEmu.Login/AAEmu.Login.csproj -c $CONFIGURATION -r $RUNTIME --self-contained true
 
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 ARG CONFIGURATION
 ARG FRAMEWORK
 ARG RUNTIME

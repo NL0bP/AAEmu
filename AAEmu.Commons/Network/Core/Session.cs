@@ -14,19 +14,14 @@ namespace AAEmu.Commons.Network.Core
         public uint SessionId { get; set; }
         public IPAddress Ip { get; private set; }
         
-        public Client Client { get; set; }
+        /// <summary>
+        /// Reference to client session (used when this session represents an outgoing connection)
+        /// </summary>
+        public ClientSession ClientSession { get; set; }
 
         public Session(Server server) : base(server)
         {
             ProtocolHandler = server.GetHandler();
-        }
-
-        public Session(Client client) : base(null)
-        {
-            Client = client;
-            ProtocolHandler = client.GetHandler();
-            Ip = client.Endpoint.Address;
-            SessionId = (uint) client.Endpoint.GetHashCode();
         }
 
         protected override void OnConnected()
