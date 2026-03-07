@@ -39,7 +39,18 @@ public class GameProtocolHandler : BaseProtocolHandler
         {
             var con = new GameConnection(session);
             GameConnection.OnConnect();
+            
+            // Check if connection already exists before adding
+            var existingCon = GameConnectionTable.Instance.GetConnection(session.SessionId);
+            if (existingCon != null)
+            {
+                Logger.Warn("Connection with session id {0} already exists! Attempting to remove old connection first.", session.SessionId);
+                // Force remove the old connection
+                GameConnectionTable.Instance.RemoveConnection(session.SessionId);
+            }
+            
             GameConnectionTable.Instance.AddConnection(con);
+            Logger.Debug("Successfully added connection with session id {0} to GameConnectionTable", session.SessionId);
         }
         catch (Exception e)
         {
@@ -50,6 +61,7 @@ public class GameProtocolHandler : BaseProtocolHandler
 
     public override void OnDisconnect(ISession session)
     {
+        Logger.Info("Disconnect request from {0}, session id: {1}", session.Ip.ToString(), session.SessionId);
         try
         {
             var con = GameConnectionTable.Instance.GetConnection(session.SessionId);
@@ -64,7 +76,8 @@ public class GameProtocolHandler : BaseProtocolHandler
                 }
                 con.OnDisconnect();
                 StreamManager.Instance.RemoveToken(con.Id);
-                GameConnectionTable.Instance.RemoveConnection(session.SessionId);
+                var removed = GameConnectionTable.Instance.RemoveConnection(session.SessionId);
+                Logger.Info("Connection removed for session id {0}, result: {1}", session.SessionId, removed != null);
                 if (accountId != 0)
                 {
                     EncryptionManager.Instance.RemoveConnectionKeys(accountId);
@@ -72,7 +85,7 @@ public class GameProtocolHandler : BaseProtocolHandler
             }
             else
             {
-                Logger.Error($"{nameof(OnDisconnect)}: connection for session id {session.SessionId} is null");
+                Logger.Warn("{0}: connection for session id {1} is null - possible orphaned connection", nameof(OnDisconnect), session.SessionId);
             }
         }
         catch (Exception e)
