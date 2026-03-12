@@ -51,6 +51,7 @@ public class GameProtocolHandler : BaseProtocolHandler
             
             GameConnectionTable.Instance.AddConnection(con);
             Logger.Debug("Successfully added connection with session id {0} to GameConnectionTable", session.SessionId);
+            Logger.Debug("Connection added to table: AccountId={0}, ConnectionId={1}", con.AccountId, con.Id);
         }
         catch (Exception e)
         {
@@ -80,6 +81,7 @@ public class GameProtocolHandler : BaseProtocolHandler
                 Logger.Info("Connection removed for session id {0}, result: {1}", session.SessionId, removed != null);
                 if (accountId != 0)
                 {
+                    Logger.Debug("Removing connection keys for AccountId={0}", accountId);
                     EncryptionManager.Instance.RemoveConnectionKeys(accountId);
                 }
             }

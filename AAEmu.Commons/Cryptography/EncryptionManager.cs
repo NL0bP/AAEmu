@@ -40,8 +40,8 @@ namespace AAEmu.Commons.Cryptography
             {
                 if (keys.ConnectionId != connectionId)
                 {
-                    Logger.Debug("[{0}] ConnectionId mismatch during session: stored={1}, current={2}. Rebinding existing keychain.", accountId, keys.ConnectionId, connectionId);
-                    keys.ConnectionId = connectionId;
+                    // Generate new keys instead of rebinding to avoid encryption mismatches
+                    return GenerateRsaKeyPair(connectionId, accountId);
                 }
 
                 if (keys.LastConnectionId != connectionId)
