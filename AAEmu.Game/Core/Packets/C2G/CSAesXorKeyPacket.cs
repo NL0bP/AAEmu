@@ -28,9 +28,10 @@ public class CSAesXorKeyPacket : GamePacket
         Connection.SendPacket(new SCGetSlotCountPacket(0));
         // not needed in 5070
         //Connection.SendPacket(new SCAccountInfoPacket((int)Connection.Payment.Method, Connection.Payment.Location, Connection.Payment.StartTime, Connection.Payment.EndTime));
-        // needed in 5070, but I don’t know how to add it here yet
+        // needed in 5070, but I don't know how to add it here yet
         //Connection.SendPacket(new SCAccountAttendancePacket(31));
-        Connection.SendPacket(new SCRaceCongestionPacket());
+
+        // Load account data BEFORE sending race congestion to avoid zone entry issues
         Connection.LoadAccount();
         var characters = Connection.Characters.Values.ToArray();
 
@@ -48,6 +49,9 @@ public class CSAesXorKeyPacket : GamePacket
                 Connection.SendPacket(new SCCharacterListPacket(last, temp));
             }
         }
+
+        // Send race congestion AFTER character list to prevent premature zone entry
+        Connection.SendPacket(new SCRaceCongestionPacket());
 
         // TODO пакеты будут ответом на CSRequestUIDataPacket
         //Connection.ActiveChar.SendOption(1);

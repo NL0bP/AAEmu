@@ -39,16 +39,31 @@ public class GameProtocolHandler : BaseProtocolHandler
         {
             var con = new GameConnection(session);
             GameConnection.OnConnect();
-            
+
             // Check if connection already exists before adding
             var existingCon = GameConnectionTable.Instance.GetConnection(session.SessionId);
             if (existingCon != null)
             {
                 Logger.Warn("Connection with session id {0} already exists! Attempting to remove old connection first.", session.SessionId);
                 // Force remove the old connection
+                var oldAccountId = existingCon.AccountId;
                 GameConnectionTable.Instance.RemoveConnection(session.SessionId);
+                if (oldAccountId != 0)
+                {
+                    Logger.Warn("Removed stale encryption keys for AccountId={0} due to reconnection", oldAccountId);
+                    EncryptionManager.Instance.RemoveConnectionKeysByConnectionId(session.SessionId);
+                }
             }
-            
+
+            // Clean up any leftover encryption keys from previous sessions of the same account
+            // This prevents encryption mismatches when client reconnects quickly after a crash
+            var existingConnectionByAccount = GameConnectionTable.Instance.GetConnectionByAccount(con.AccountId);
+            if (existingConnectionByAccount != null && existingConnectionByAccount.Id != con.Id)
+            {
+                Logger.Warn("Found orphaned connection for AccountId={0}, cleaning up encryption keys", con.AccountId);
+                EncryptionManager.Instance.RemoveConnectionKeysByConnectionId(existingConnectionByAccount.Id);
+            }
+
             GameConnectionTable.Instance.AddConnection(con);
             Logger.Debug("Successfully added connection with session id {0} to GameConnectionTable", session.SessionId);
             Logger.Debug("Connection added to table: AccountId={0}, ConnectionId={1}", con.AccountId, con.Id);
@@ -69,6 +84,7 @@ public class GameProtocolHandler : BaseProtocolHandler
             if (con != null)
             {
                 var accountId = con.AccountId;
+                var connectionId = con.Id;
                 if (con.ActiveChar != null)
                 {
                     // On crash, force people out of the chat channels so we don't get phantom or duplicates
@@ -77,13 +93,14 @@ public class GameProtocolHandler : BaseProtocolHandler
                 }
                 con.OnDisconnect();
                 StreamManager.Instance.RemoveToken(con.Id);
+                
+                // Remove encryption keys BEFORE removing the connection from the table
+                // Use connectionId as the key since that's how they're stored now
+                Logger.Debug("Removing connection keys for ConnectionId={0}, AccountId={1}", connectionId, accountId);
+                EncryptionManager.Instance.RemoveConnectionKeysByConnectionId(connectionId);
+                
                 var removed = GameConnectionTable.Instance.RemoveConnection(session.SessionId);
                 Logger.Info("Connection removed for session id {0}, result: {1}", session.SessionId, removed != null);
-                if (accountId != 0)
-                {
-                    Logger.Debug("Removing connection keys for AccountId={0}", accountId);
-                    EncryptionManager.Instance.RemoveConnectionKeys(accountId);
-                }
             }
             else
             {

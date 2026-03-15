@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -21,7 +22,9 @@ namespace AAEmu.Commons.Cryptography
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static readonly int DwKeySize = 1024;
-        private Dictionary<ulong, ConnectionKeychain> ConnectionKeys { get; set; } //Dictionary of valid keys bound to account Id and connection Id
+        // Dictionary of valid keys bound to ConnectionId (unique per session)
+        // This prevents encryption mismatches when same account connects from multiple sessions
+        private Dictionary<uint, ConnectionKeychain> ConnectionKeys { get; set; }
         public static bool needNewkey2;
         public static bool needNewkey1;
         public static bool AdjustCryptConstantEnable;
@@ -29,26 +32,16 @@ namespace AAEmu.Commons.Cryptography
 
         public void Load()
         {
-            ConnectionKeys = new Dictionary<ulong, ConnectionKeychain>();
+            ConnectionKeys = new Dictionary<uint, ConnectionKeychain>();
             LoadCryptConfig();
             Logger.Info("Loaded Encryption Manager.");
         }
 
         private ConnectionKeychain GetOrCreateConnectionKeys(uint connectionId, ulong accountId)
         {
-            if (ConnectionKeys.TryGetValue(accountId, out var keys))
+            // Use ConnectionId as the primary key since it's unique per session
+            if (ConnectionKeys.TryGetValue(connectionId, out var keys))
             {
-                if (keys.ConnectionId != connectionId)
-                {
-                    // Generate new keys instead of rebinding to avoid encryption mismatches
-                    return GenerateRsaKeyPair(connectionId, accountId);
-                }
-
-                if (keys.LastConnectionId != connectionId)
-                {
-                    keys.LastConnectionId = connectionId;
-                }
-
                 return keys;
             }
 
@@ -57,19 +50,41 @@ namespace AAEmu.Commons.Cryptography
 
         private ConnectionKeychain GenerateRsaKeyPair(uint connectionId, ulong accountId)
         {
-            ConnectionKeys.Remove(accountId);
+            // Always remove old keys for this connection first to prevent encryption mismatches
+            if (ConnectionKeys.TryGetValue(connectionId, out var oldKeys))
+            {
+                Logger.Warn("Replacing old RSA key pair for ConnectionId={0}, AccountId={1}", 
+                    connectionId, oldKeys.RsaKeyPair != null ? accountId : 0);
+                ConnectionKeys.Remove(connectionId);
+            }
+            
             var rsaKeyPair = new RSACryptoServiceProvider();
             var keys = new ConnectionKeychain(connectionId, rsaKeyPair);
             Logger.Debug("[{0}] Generated new RSA key pair for connection {1}.", accountId, connectionId);
-            ConnectionKeys.Add(accountId, keys);
+            ConnectionKeys.Add(connectionId, keys);
             return keys;
         }
 
+        /// <summary>
+        /// Removes encryption keys by AccountId (legacy method, kept for compatibility)
+        /// In the new architecture, keys are stored by ConnectionId, so this method does nothing
+        /// </summary>
+        [Obsolete("Use RemoveConnectionKeysByConnectionId instead")]
         public void RemoveConnectionKeys(ulong accountId)
         {
-            if (ConnectionKeys.Remove(accountId))
+            // Legacy method - keys are now stored by ConnectionId, not AccountId
+            // Cleanup happens automatically in GenerateRsaKeyPair when connection is reused
+            Logger.Debug("RemoveConnectionKeys(ulong) is deprecated. Keys are stored by ConnectionId.");
+        }
+        
+        /// <summary>
+        /// Removes encryption keys by ConnectionId (unique per session)
+        /// </summary>
+        public void RemoveConnectionKeysByConnectionId(uint connectionId)
+        {
+            if (ConnectionKeys.Remove(connectionId))
             {
-                Logger.Trace("[{0}] Removed connection keychain due to disconnect.", accountId);
+                Logger.Trace("Removed connection keychain for ConnectionId={0}.", connectionId);
             }
         }
 
@@ -85,26 +100,38 @@ namespace AAEmu.Commons.Cryptography
 
         public void StoreClientKeys(byte[] aesKeyEncrypted, byte[] xorKeyEncrypted, ulong accountId, ulong connectionId)
         {
-            if (!ConnectionKeys.TryGetValue(accountId, out var keys))
+            // Use connectionId as the key since it's unique per session
+            if (!ConnectionKeys.TryGetValue((uint)connectionId, out var keys))
             {
+                Logger.Warn("StoreClientKeys: No RSA key found for ConnectionId={0}, AccountId={1}", connectionId, accountId);
                 return;
             }
 
             Logger.Warn("AccountId: {0}, ConnectionId: {1}", accountId, connectionId);
-            var xorConstRaw = keys.RsaKeyPair.Decrypt(xorKeyEncrypted, false);
-            var head = BitConverter.ToUInt32(xorConstRaw, 0);
-            Logger.Warn("XOR: {0}", head); // <-- этот сырой XOR записываем в поле xorConst from AAEMU моего OpcodeFinder`a
-            //head = (head ^ 0x15a0248e) * head ^ 0x070f1f23 & 0xffffffff; // 3.0.3.0 archerage.to
-            //head = (head ^ 0x15A314A2) * head ^ 0x070F1F23 & 0xffffffff; // 3.0.4.2 AAClassic
-            head = (head ^ 0x15A02464) * head ^ 0x070F1F23 & 0xffffffff; // 5.0.7.0 AAFree
-            keys.XorKey = head * head & 0xffffffff;
-            keys.AesKey = keys.RsaKeyPair.Decrypt(aesKeyEncrypted, false);
-            keys.RecievedKeys = true;
-            Logger.Warn("AES: {0} XOR: {1}", Helpers.ByteArrayToString(keys.AesKey), keys.XorKey);
 
-            // для автоматического подбора констант
-            if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
-                LoadXorKeyConstant(keys);
+            try
+            {
+                var xorConstRaw = keys.RsaKeyPair.Decrypt(xorKeyEncrypted, false);
+                var head = BitConverter.ToUInt32(xorConstRaw, 0);
+                Logger.Warn("XOR: {0}", head); // <-- этот сырой XOR записываем в поле xorConst from AAEMU моего OpcodeFinder`a
+                //head = (head ^ 0x15a0248e) * head ^ 0x070f1f23 & 0xffffffff; // 3.0.3.0 archerage.to
+                //head = (head ^ 0x15A314A2) * head ^ 0x070F1F23 & 0xffffffff; // 3.0.4.2 AAClassic
+                head = (head ^ 0x15A02464) * head ^ 0x070F1F23 & 0xffffffff; // 5.0.7.0 AAFree
+                keys.XorKey = head * head & 0xffffffff;
+                keys.AesKey = keys.RsaKeyPair.Decrypt(aesKeyEncrypted, false);
+                keys.RecievedKeys = true;
+                Logger.Warn("AES: {0} XOR: {1}", Helpers.ByteArrayToString(keys.AesKey), keys.XorKey);
+
+                // для автоматического подбора констант
+                if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
+                    LoadXorKeyConstant(keys);
+            }
+            catch (CryptographicException ex)
+            {
+                Logger.Error(ex, "Failed to decrypt client keys for AccountId: {0}, ConnectionId: {1}. Possible causes: wrong RSA key, corrupted data, or client version mismatch.", accountId, connectionId);
+                // Очищаем ключи, чтобы клиент получил новые при следующем подключении
+                ConnectionKeys.Remove((uint)connectionId);
+            }
         }
 
         private static void LoadXorKeyConstant(ConnectionKeychain keys)
