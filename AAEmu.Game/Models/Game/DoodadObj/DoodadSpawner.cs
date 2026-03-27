@@ -34,7 +34,7 @@ public class DoodadSpawner : Spawner<Doodad>
     public List<uint> RelatedIds { get; set; }
     //---
     public uint RespawnDoodadTemplateId { get; set; }
-    private bool  notFoundInScheduler  { get; set; } = false;
+    private bool notFoundInScheduler { get; set; } = false;
 
     public DoodadSpawner()
     {
@@ -152,6 +152,18 @@ public class DoodadSpawner : Spawner<Doodad>
         }
 
         Last = null;
+    }
+
+    public void AttachPersistentDoodad(Doodad doodad)
+    {
+        if (doodad == null)
+            return;
+
+        doodad.Spawner = this;
+        Last = doodad;
+
+        if (!_spawned.Contains(doodad))
+            _spawned.Add(doodad);
     }
 
     public void DecreaseCount(Doodad doodad)

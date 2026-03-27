@@ -47,6 +47,9 @@ public class SpawnManager : Singleton<SpawnManager>
     private readonly ConcurrentDictionary<byte, ConcurrentDictionary<uint, GimmickSpawner>> _gimmickSpawners = new();
     private readonly ConcurrentDictionary<byte, ConcurrentDictionary<uint, SlaveSpawner>> _slaveSpawners = new();
     private readonly ConcurrentBag<Doodad> _playerDoodads = [];
+    private readonly HashSet<WorldDoodadKey> _persistedWorldDoodadKeys = new();
+
+    private readonly record struct WorldDoodadKey(uint SourceTemplateId, long X, long Y, long Z);
 
     private uint _nextId = 1u;
     private uint _fakeSpawnerId = 9000001u;
@@ -143,6 +146,7 @@ public class SpawnManager : Singleton<SpawnManager>
     {
         Logger.Info("Loading persistent doodads...");
         var doodadsSpawned = SpawnPersistentDoodads(DoodadOwnerType.Housing) +
+                             SpawnPersistentWorldDoodads() +
                              SpawnPersistentDoodads(DoodadOwnerType.System) +
                              SpawnPersistentDoodads(DoodadOwnerType.Character);
         Logger.Info($"{doodadsSpawned} doodads loaded.");
@@ -1110,6 +1114,133 @@ public class SpawnManager : Singleton<SpawnManager>
     }
 
     /// <summary>
+    /// Spawns persistent world doodads from the world_doodads table.
+    /// </summary>
+    public int SpawnPersistentWorldDoodads(bool doSpawn = false)
+    {
+        var spawnCount = 0;
+        using var connection = MySQL.CreateConnection();
+        using var command = connection.CreateCommand();
+
+        command.CommandText = "SELECT * FROM world_doodads ORDER BY `plant_time`";
+        command.Prepare();
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var sourceTemplateId = reader.GetUInt32("source_template_id");
+            var templateId = reader.GetUInt32("template_id");
+            var dbId = reader.GetUInt32("id");
+            var phaseId = reader.GetUInt32("current_phase_id");
+            var x = reader.GetFloat("x");
+            var y = reader.GetFloat("y");
+            var z = reader.GetFloat("z");
+            var roll = reader.GetFloat("roll");
+            var pitch = reader.GetFloat("pitch");
+            var yaw = reader.GetFloat("yaw");
+            var scale = reader.GetFloat("scale");
+            var plantTime = reader.GetDateTime("plant_time");
+            var growthTime = reader.GetDateTime("growth_time");
+            var phaseTime = reader.GetDateTime("phase_time");
+            var freshnessTime = reader.GetDateTime("freshness_time");
+            var data = reader.GetInt32("data");
+
+            if (sourceTemplateId == 0)
+            {
+                Logger.Warn($"Skipping world doodad DB row {dbId} with empty source_template_id");
+                continue;
+            }
+
+            var doodad = DoodadManager.Instance.Create(0, templateId, null, true);
+            doodad.IsPersistent = true;
+            doodad.DbId = dbId;
+            doodad.FuncGroupId = phaseId;
+            doodad.OwnerType = DoodadOwnerType.System;
+            doodad.SourceTemplateId = sourceTemplateId;
+            doodad.PlantTime = plantTime;
+            doodad.GrowthTime = growthTime;
+            doodad.OverridePhaseTime = phaseTime;
+            doodad.PhaseTime = phaseTime;
+            doodad.FreshnessTime = freshnessTime;
+            doodad.SetScale(scale != 0f ? scale : 1f);
+            doodad.SetData(data);
+            doodad.Transform.Local.SetPosition(x, y, z);
+            doodad.Transform.Local.SetRotation(roll, pitch, yaw);
+
+            _persistedWorldDoodadKeys.Add(BuildWorldDoodadKey(sourceTemplateId, x, y, z));
+
+            doodad.InitDoodad();
+            _playerDoodads.Add(doodad);
+            spawnCount++;
+
+            if (doSpawn)
+            {
+                if (!TryBindPersistentWorldDoodad(doodad))
+                    continue;
+
+                doodad.Spawn();
+            }
+        }
+
+        return spawnCount;
+    }
+
+    private bool TryBindPersistentWorldDoodad(Doodad doodad)
+    {
+        if (doodad == null || doodad.SourceTemplateId == 0)
+            return true;
+
+        DoodadSpawner spawner = null;
+        foreach (var worldSpawners in _doodadSpawners.Values)
+        {
+            foreach (var ds in worldSpawners.Values)
+            {
+                if (BuildWorldDoodadKey(ds) == BuildWorldDoodadKey(doodad))
+                {
+                    spawner = ds;
+                    break;
+                }
+            }
+            if (spawner != null) break;
+        }
+
+        if (spawner == null)
+        {
+            var pos = doodad.Transform?.Local.Position;
+            Logger.Warn($"Failed to rebind persistent world doodad DbId:{doodad.DbId} TemplateId:{doodad.TemplateId} SourceTemplateId:{doodad.SourceTemplateId} Pos:{pos?.X:F3},{pos?.Y:F3},{pos?.Z:F3}");
+            return false;
+        }
+
+        doodad.Transform.ApplyWorldSpawnPosition(spawner.Position);
+        spawner.AttachPersistentDoodad(doodad);
+        return true;
+    }
+
+    private static WorldDoodadKey BuildWorldDoodadKey(DoodadSpawner spawner)
+    {
+        return BuildWorldDoodadKey(spawner.UnitId, spawner.Position.X, spawner.Position.Y, spawner.Position.Z);
+    }
+
+    private static WorldDoodadKey BuildWorldDoodadKey(Doodad doodad)
+    {
+        return BuildWorldDoodadKey(
+            doodad.SourceTemplateId > 0 ? doodad.SourceTemplateId : doodad.TemplateId,
+            doodad.Transform?.Local.Position.X ?? 0f,
+            doodad.Transform?.Local.Position.Y ?? 0f,
+            doodad.Transform?.Local.Position.Z ?? 0f);
+    }
+
+    private static WorldDoodadKey BuildWorldDoodadKey(uint sourceTemplateId, float x, float y, float z)
+    {
+        return new WorldDoodadKey(sourceTemplateId, QuantizeWorldCoord(x), QuantizeWorldCoord(y), QuantizeWorldCoord(z));
+    }
+
+    private static long QuantizeWorldCoord(float value)
+    {
+        return decimal.ToInt64(decimal.Round((decimal)value * 1000m, 0, MidpointRounding.AwayFromZero));
+    }
+
+    /// <summary>
     /// Spawns all objects in the world.
     /// </summary>
     public void SpawnAll()
@@ -1132,6 +1263,9 @@ public class SpawnManager : Singleton<SpawnManager>
                 var count = 0;
                 foreach (var spawner in worldSpawners.Values)
                 {
+                    if (_persistedWorldDoodadKeys.Contains(BuildWorldDoodadKey(spawner)))
+                        continue;
+
                     spawner.Spawn(0);
                     count++;
                     if (count % 1000 == 0 && worldId == 0)
@@ -1212,7 +1346,10 @@ public class SpawnManager : Singleton<SpawnManager>
             Logger.Info($"Spawning {_playerDoodads.Count} Player Doodads");
             foreach (var doodad in _playerDoodads)
             {
-                if (doodad.Spawner == null)
+                if (doodad.SourceTemplateId > 0 && !TryBindPersistentWorldDoodad(doodad))
+                    continue;
+
+                if (doodad.Spawner == null || doodad.DbId > 0)
                 {
                     doodad.Spawn();
                 }

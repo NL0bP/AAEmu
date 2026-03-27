@@ -19,6 +19,7 @@ using AAEmu.Game.GameData.Framework;
 using AAEmu.Game.IO;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game;
+using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Utils.Scripts;
 
 using Microsoft.Extensions.Hosting;
@@ -59,6 +60,7 @@ public sealed class GameService : IHostedService, IDisposable
         stopWatch.Start();
 
         TickManager.Instance.Initialize();
+        TickManager.Instance.OnTick.Subscribe(_ => Doodad.ProcessPendingOperations(), TimeSpan.FromSeconds(1), true);
         TaskIdManager.Instance.Initialize();
         TaskManager.Instance.Initialize();
 
@@ -256,6 +258,7 @@ public sealed class GameService : IHostedService, IDisposable
         */
         WorldManager.Instance.Stop();
 
+        Doodad.ProcessPendingOperations(true);
         TickManager.Instance.Stop();
         TimeManager.Instance.Stop();
 
