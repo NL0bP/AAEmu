@@ -33,7 +33,7 @@ CREATE TABLE `navigation_mesh_raw`  (
   `cy` float NOT NULL,
   `cz` float NOT NULL,
   UNIQUE INDEX `uk_nav_mesh_raw`(`zone_id`, `ax`, `ay`, `az`, `bx`, `by`, `bz`, `cx`, `cy`, `cz`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of navigation_mesh_raw
@@ -7233,3 +7233,4 @@ INSERT INTO `navigation_mesh_raw` VALUES (178, 15600.2, 13775.7, 192.389, 15599.
 INSERT INTO `navigation_mesh_raw` VALUES (178, 15600.2, 13776.2, 192.389, 15599.5, 13776.7, 192.389, 15599.5, 13775.8, 192.389);
 
 SET FOREIGN_KEY_CHECKS = 1;
+

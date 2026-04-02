@@ -45,7 +45,7 @@ internal class CharacterController : BaseController
                     {
                         var id = reader.GetUInt32("id");
                         var charName = reader.GetString("name");
-                        var createdAt = reader.GetDateTime("created_at");
+                        var createdAt = reader.GetDateTimeOrMinValue("created_at");
                         var character = WorldManager.Instance.GetCharacterById(id);
 
                         var level = reader.GetUInt32("level");

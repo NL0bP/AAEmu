@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using AAEmu.Commons.Network;
+using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
@@ -211,13 +212,13 @@ public class Expedition : SystemFaction
                 command.Parameters.AddWithValue("@owner_name", this.OwnerName);
                 command.Parameters.AddWithValue("@name", this.Name);
                 command.Parameters.AddWithValue("@mother", this.MotherId);
-                command.Parameters.AddWithValue("@created_at", this.Created);
+                command.Parameters.AddDateTimeOrNull("@created_at", this.Created);
                 command.Parameters.AddWithValue("@level", this.Level);
                 command.Parameters.AddWithValue("@exp", this.Exp);
-                command.Parameters.AddWithValue("@protect_time", this.ProtectTime);
+                command.Parameters.AddDateTimeOrNull("@protect_time", this.ProtectTime);
                 command.Parameters.AddWithValue("@war_deposit", this.WarDeposit);
                 command.Parameters.AddWithValue("@daily_exp", this.DailyExp);
-                command.Parameters.AddWithValue("@last_exp_update_time", this.LastExpUpdateTime);
+                command.Parameters.AddDateTimeOrNull("@last_exp_update_time", this.LastExpUpdateTime);
                 command.Parameters.AddWithValue("@is_level_update", this.IsLevelUpdate);
                 command.Parameters.AddWithValue("@interest", this.Interest);
                 command.Parameters.AddWithValue("@motd_title", this.MotdTitle);

@@ -15,9 +15,10 @@ CREATE TABLE `world_doodads` (
   `plant_time` datetime NOT NULL,
   `growth_time` datetime NOT NULL,
   `phase_time` datetime NOT NULL,
-  `freshness_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
+  `freshness_time` datetime NULL DEFAULT NULL,
   `scale` float NOT NULL DEFAULT '1',
   `data` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `ux_world_doodads_anchor` (`source_template_id`, `x`, `y`, `z`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Persistent state overrides for static world doodads';
+

@@ -211,7 +211,7 @@ namespace AAEmu.Game.Models.Game.Attendance
             {
                 var record = new AttendanceRecord
                 {
-                    AccountAttendance = reader.GetDateTime("account_attendance"),
+                    AccountAttendance = reader.GetDateTimeOrMinValue("account_attendance"),
                     Accept = reader.GetBoolean("accept")
                 };
                 Records.Add(record);
@@ -236,7 +236,7 @@ namespace AAEmu.Game.Models.Game.Attendance
                 command.CommandText = "REPLACE INTO attendances(`id`, `owner`, `account_attendance`, `accept`) VALUES (@id, @owner, @account_attendance, @accept)";
                 command.Parameters.AddWithValue("@id", i);
                 command.Parameters.AddWithValue("@owner", AccountId);
-                command.Parameters.AddWithValue("@account_attendance", record.AccountAttendance);
+                command.Parameters.AddDateTimeOrNull("@account_attendance", record.AccountAttendance);
                 command.Parameters.AddWithValue("@accept", record.Accept);
 
                 command.ExecuteNonQuery();

@@ -2120,11 +2120,11 @@ public partial class Character : Unit, ICharacter
                     character.Expedition = ExpeditionManager.Instance.GetExpedition((FactionsEnum)reader.GetUInt32("expedition_id"));
                     character.Family = reader.GetUInt32("family");
                     character.DeadCount = reader.GetInt16("dead_count");
-                    character.DeadTime = reader.GetDateTime("dead_time");
+                    character.DeadTime = reader.GetDateTimeOrMinValue("dead_time");
                     character.RezWaitDuration = reader.GetInt32("rez_wait_duration");
-                    character.RezTime = reader.GetDateTime("rez_time");
+                    character.RezTime = reader.GetDateTimeOrMinValue("rez_time");
                     character.RezPenaltyDuration = reader.GetInt32("rez_penalty_duration");
-                    character.LeaveTime = reader.GetDateTime("leave_time");
+                    character.LeaveTime = reader.GetDateTimeOrMinValue("leave_time");
                     character.Money = reader.GetInt64("money");
                     character.Money2 = reader.GetInt64("money2");
                     character.HonorPoint = reader.GetInt32("honor_point");
@@ -2134,9 +2134,9 @@ public partial class Character : Unit, ICharacter
                     character.JuryPoint = reader.GetInt32("jury_point");
                     character.HostileFactionKills = reader.GetUInt32("hostile_faction_kills");
                     character.HonorGainedInCombat = reader.GetUInt32("pvp_honor");
-                    character.TransferRequestTime = reader.GetDateTime("transfer_request_time");
-                    character.DeleteRequestTime = reader.GetDateTime("delete_request_time");
-                    character.DeleteTime = reader.GetDateTime("delete_time");
+                    character.TransferRequestTime = reader.GetDateTimeOrMinValue("transfer_request_time");
+                    character.DeleteRequestTime = reader.GetDateTimeOrMinValue("delete_request_time");
+                    character.DeleteTime = reader.GetDateTimeOrMinValue("delete_time");
                     character.AutoUseAAPoint = reader.GetBoolean("auto_use_aapoint");
                     character.PrevPoint = reader.GetInt32("prev_point");
                     character.Point = reader.GetInt32("point");
@@ -2144,8 +2144,8 @@ public partial class Character : Unit, ICharacter
                     character.NumInventorySlots = reader.GetByte("num_inv_slot");
                     character.NumBankSlots = reader.GetInt16("num_bank_slot");
                     character.ExpandedExpert = reader.GetByte("expanded_expert");
-                    character.Created = reader.GetDateTime("created_at");
-                    character.Updated = reader.GetDateTime("updated_at");
+                    character.Created = reader.GetDateTimeOrMinValue("created_at");
+                    character.Updated = reader.GetDateTimeOrMinValue("updated_at");
                     character.ReturnDistrictId = reader.GetUInt32("return_district");
                     character.OnlineTime = TimeSpan.FromSeconds(reader.GetUInt32("online_time"));
 
@@ -2240,11 +2240,11 @@ public partial class Character : Unit, ICharacter
                     character.Expedition = ExpeditionManager.Instance.GetExpedition((FactionsEnum)reader.GetUInt32("expedition_id"));
                     character.Family = reader.GetUInt32("family");
                     character.DeadCount = reader.GetInt16("dead_count");
-                    character.DeadTime = reader.GetDateTime("dead_time");
+                    character.DeadTime = reader.GetDateTimeOrMinValue("dead_time");
                     character.RezWaitDuration = reader.GetInt32("rez_wait_duration");
-                    character.RezTime = reader.GetDateTime("rez_time");
+                    character.RezTime = reader.GetDateTimeOrMinValue("rez_time");
                     character.RezPenaltyDuration = reader.GetInt32("rez_penalty_duration");
-                    character.LeaveTime = reader.GetDateTime("leave_time");
+                    character.LeaveTime = reader.GetDateTimeOrMinValue("leave_time");
                     character.Money = reader.GetInt64("money");
                     character.Money2 = reader.GetInt64("money2");
                     character.HonorPoint = reader.GetInt32("honor_point");
@@ -2254,9 +2254,9 @@ public partial class Character : Unit, ICharacter
                     character.JuryPoint = reader.GetInt16("jury_point");
                     character.HostileFactionKills = reader.GetUInt32("hostile_faction_kills");
                     character.HonorGainedInCombat = reader.GetUInt32("pvp_honor");
-                    character.TransferRequestTime = reader.GetDateTime("transfer_request_time");
-                    character.DeleteRequestTime = reader.GetDateTime("delete_request_time");
-                    character.DeleteTime = reader.GetDateTime("delete_time");
+                    character.TransferRequestTime = reader.GetDateTimeOrMinValue("transfer_request_time");
+                    character.DeleteRequestTime = reader.GetDateTimeOrMinValue("delete_request_time");
+                    character.DeleteTime = reader.GetDateTimeOrMinValue("delete_time");
                     // character.BmPoint = reader.GetInt32("bm_point");
                     character.AutoUseAAPoint = reader.GetBoolean("auto_use_aapoint");
                     character.PrevPoint = reader.GetInt32("prev_point");
@@ -2265,8 +2265,8 @@ public partial class Character : Unit, ICharacter
                     character.NumInventorySlots = reader.GetByte("num_inv_slot");
                     character.NumBankSlots = reader.GetInt16("num_bank_slot");
                     character.ExpandedExpert = reader.GetByte("expanded_expert");
-                    character.Created = reader.GetDateTime("created_at");
-                    character.Updated = reader.GetDateTime("updated_at");
+                    character.Created = reader.GetDateTimeOrMinValue("created_at");
+                    character.Updated = reader.GetDateTimeOrMinValue("updated_at");
                     character.ReturnDistrictId = reader.GetUInt32("return_district");
                     character.OnlineTime = TimeSpan.FromSeconds(reader.GetUInt32("online_time"));
 
@@ -2537,11 +2537,11 @@ public partial class Character : Unit, ICharacter
                 command.Parameters.AddWithValue("@expedition_id", Expedition?.Id ?? 0);
                 command.Parameters.AddWithValue("@family", Family);
                 command.Parameters.AddWithValue("@dead_count", DeadCount);
-                command.Parameters.AddWithValue("@dead_time", DeadTime);
+                command.Parameters.AddDateTimeOrNull("@dead_time", DeadTime);
                 command.Parameters.AddWithValue("@rez_wait_duration", RezWaitDuration);
-                command.Parameters.AddWithValue("@rez_time", RezTime);
+                command.Parameters.AddDateTimeOrNull("@rez_time", RezTime);
                 command.Parameters.AddWithValue("@rez_penalty_duration", RezPenaltyDuration);
-                command.Parameters.AddWithValue("@leave_time", LeaveTime);
+                command.Parameters.AddDateTimeOrNull("@leave_time", LeaveTime);
                 command.Parameters.AddWithValue("@money", Money);
                 command.Parameters.AddWithValue("@money2", Money2);
                 command.Parameters.AddWithValue("@honor_point", HonorPoint);
@@ -2551,9 +2551,9 @@ public partial class Character : Unit, ICharacter
                 command.Parameters.AddWithValue("@jury_point", JuryPoint);
                 command.Parameters.AddWithValue("@hostile_faction_kills", HostileFactionKills);
                 command.Parameters.AddWithValue("@pvp_honor", HonorGainedInCombat);
-                command.Parameters.AddWithValue("@delete_request_time", DeleteRequestTime);
-                command.Parameters.AddWithValue("@transfer_request_time", TransferRequestTime);
-                command.Parameters.AddWithValue("@delete_time", DeleteTime);
+                command.Parameters.AddDateTimeOrNull("@delete_request_time", DeleteRequestTime);
+                command.Parameters.AddDateTimeOrNull("@transfer_request_time", TransferRequestTime);
+                command.Parameters.AddDateTimeOrNull("@delete_time", DeleteTime);
                 command.Parameters.AddWithValue("@auto_use_aapoint", AutoUseAAPoint);
                 command.Parameters.AddWithValue("@prev_point", PrevPoint);
                 command.Parameters.AddWithValue("@point", Point);
@@ -2562,8 +2562,8 @@ public partial class Character : Unit, ICharacter
                 command.Parameters.AddWithValue("@num_bank_slot", NumBankSlots);
                 command.Parameters.AddWithValue("@expanded_expert", ExpandedExpert);
                 command.Parameters.AddWithValue("@slots", GetActionSlotsAsBlob());
-                command.Parameters.AddWithValue("@created_at", Created);
-                command.Parameters.AddWithValue("@updated_at", Updated);
+                command.Parameters.AddDateTimeOrNull("@created_at", Created);
+                command.Parameters.AddDateTimeOrNull("@updated_at", Updated);
                 command.Parameters.AddWithValue("@return_district", ReturnDistrictId);
                 command.Parameters.AddWithValue("@online_time", OnlineTime.TotalSeconds);
                 command.ExecuteNonQuery();

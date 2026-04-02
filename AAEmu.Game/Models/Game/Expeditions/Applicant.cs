@@ -1,6 +1,7 @@
 ﻿using System;
 
 using AAEmu.Commons.Network;
+using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Models.StaticValues;
 using MySql.Data.MySqlClient;
 
@@ -64,7 +65,7 @@ public class Applicant : PacketMarshaler
         command.Parameters.AddWithValue("@character_name", CharacterName);
         command.Parameters.AddWithValue("@character_level", CharacterLevel);
         command.Parameters.AddWithValue("@memo", Memo);
-        command.Parameters.AddWithValue("@reg_time", RegTime);
+        command.Parameters.AddDateTimeOrNull("@reg_time", RegTime);
         command.ExecuteNonQuery();
     }
 }

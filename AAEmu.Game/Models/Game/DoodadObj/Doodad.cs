@@ -1014,7 +1014,7 @@ public class Doodad : BaseUnit
         command.Parameters.AddWithValue("@plant_time", PlantTime);
         command.Parameters.AddWithValue("@growth_time", GrowthTime);
         command.Parameters.AddWithValue("@phase_time", PhaseTime);
-        command.Parameters.AddWithValue("@freshness_time", FreshnessTime);
+        command.Parameters.AddDateTimeOrNull("@freshness_time", FreshnessTime);
         command.Parameters.AddWithValue("@x", Transform?.Local.Position.X ?? 0f);
         command.Parameters.AddWithValue("@y", Transform?.Local.Position.Y ?? 0f);
         command.Parameters.AddWithValue("@z", Transform?.Local.Position.Z ?? 0f);
@@ -1053,7 +1053,7 @@ public class Doodad : BaseUnit
         command.Parameters.AddWithValue("@plant_time", PlantTime);
         command.Parameters.AddWithValue("@growth_time", GrowthTime);
         command.Parameters.AddWithValue("@phase_time", PhaseTime);
-        command.Parameters.AddWithValue("@freshness_time", FreshnessTime);
+        command.Parameters.AddDateTimeOrNull("@freshness_time", FreshnessTime);
         command.Parameters.AddWithValue("@scale", Scale);
         command.Parameters.AddWithValue("@data", Data);
     }

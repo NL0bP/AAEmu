@@ -89,7 +89,7 @@ public class UccManager : Singleton<UccManager>
                                 Color3R = reader.GetUInt32("color3R"),
                                 Color3G = reader.GetUInt32("color3G"),
                                 Color3B = reader.GetUInt32("color3B"),
-                                Modified = reader.GetDateTime("modified")
+                                Modified = reader.GetDateTimeOrMinValue("modified")
                             };
 
                             _uccs.Add(id, ucc);
@@ -112,7 +112,7 @@ public class UccManager : Singleton<UccManager>
                                 Color3R = reader.GetUInt32("color3R"),
                                 Color3G = reader.GetUInt32("color3G"),
                                 Color3B = reader.GetUInt32("color3B"),
-                                Modified = reader.GetDateTime("modified"),
+                                Modified = reader.GetDateTimeOrMinValue("modified"),
                             };
 
 #if STORE_UCC_AS_FILE

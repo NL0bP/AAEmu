@@ -1099,7 +1099,7 @@ public class SpawnManager : Singleton<SpawnManager>
                     var plantTime = reader.GetDateTime("plant_time");
                     var growthTime = reader.GetDateTime("growth_time");
                     var phaseTime = reader.GetDateTime("phase_time");
-                    var freshnessTime = reader.GetDateTime("freshness_time");
+                    var freshnessTime = reader.GetDateTimeOrMinValue("freshness_time");
                     var ownerId = reader.GetUInt32("owner_id");
                     var ownerType = (DoodadOwnerType)reader.GetByte("owner_type");
                     var attachPoint = (AttachPointKind)reader.GetUInt32("attach_point");
@@ -1240,7 +1240,7 @@ public class SpawnManager : Singleton<SpawnManager>
             var plantTime = reader.GetDateTime("plant_time");
             var growthTime = reader.GetDateTime("growth_time");
             var phaseTime = reader.GetDateTime("phase_time");
-            var freshnessTime = reader.GetDateTime("freshness_time");
+            var freshnessTime = reader.GetDateTimeOrMinValue("freshness_time");
             var data = reader.GetInt32("data");
 
             if (sourceTemplateId == 0)

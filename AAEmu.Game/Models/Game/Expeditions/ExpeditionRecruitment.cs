@@ -1,6 +1,7 @@
 ﻿using System;
 
 using AAEmu.Commons.Network;
+using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.StaticValues;
 using MySql.Data.MySqlClient;
@@ -48,8 +49,8 @@ public class ExpeditionRecruitment : PacketMarshaler
         command.Parameters.AddWithValue("@level", Level);
         command.Parameters.AddWithValue("@owner_name", OwnerName);
         command.Parameters.AddWithValue("@introduce", Introduce);
-        command.Parameters.AddWithValue("@reg_time", RegTime);
-        command.Parameters.AddWithValue("@end_time", EndTime);
+        command.Parameters.AddDateTimeOrNull("@reg_time", RegTime);
+        command.Parameters.AddDateTimeOrNull("@end_time", EndTime);
         command.Parameters.AddWithValue("@interest", Interest);
         command.Parameters.AddWithValue("@member_count", MemberCount);
         command.Parameters.AddWithValue("@apply", Apply);

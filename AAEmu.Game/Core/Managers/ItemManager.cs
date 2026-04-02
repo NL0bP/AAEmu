@@ -1765,21 +1765,21 @@ public class ItemManager : Singleton<ItemManager>
                     //command.Parameters.AddWithValue("@additional_details", additionalDetails.GetBytes());
                     command.Parameters.AddWithValue("@lifespan_mins", item.LifespanMins);
                     command.Parameters.AddWithValue("@made_unit_id", item.MadeUnitId);
-                    command.Parameters.AddWithValue("@unsecure_time", item.UnsecureTime);
-                    command.Parameters.AddWithValue("@unpack_time", item.UnpackTime);
-                    command.Parameters.AddWithValue("@created_at", item.CreateTime);
+                    command.Parameters.AddDateTimeOrNull("@unsecure_time", item.UnsecureTime);
+                    command.Parameters.AddDateTimeOrNull("@unpack_time", item.UnpackTime);
+                    command.Parameters.AddDateTimeOrNull("@created_at", item.CreateTime);
                     command.Parameters.AddWithValue("@owner", item.OwnerId);
                     command.Parameters.AddWithValue("@grade", item.Grade);
                     command.Parameters.AddWithValue("@flags", (byte)item.ItemFlags);
                     command.Parameters.AddWithValue("@ucc", item.UccId);
-                    command.Parameters.AddWithValue("@expire_time", item.ExpirationTime);
+                    command.Parameters.AddDateTimeOrNull("@expire_time", item.ExpirationTime);
                     command.Parameters.AddWithValue("@expire_online_minutes", item.ExpirationOnlineMinutesLeft);
-                    command.Parameters.AddWithValue("@charge_time", item.ChargeTime);
+                    command.Parameters.AddDateTimeOrNull("@charge_time", item.ChargeTime);
                     command.Parameters.AddWithValue("@charge_count", item.ChargeCount);
-                    command.Parameters.AddWithValue("@freshness_time", item.FreshnessTime);
-                    command.Parameters.AddWithValue("@charge_use_skill_time", item.ChargeUseSkillTime);
-                    command.Parameters.AddWithValue("@charge_start_time", item.ChargeStartTime);
-                    command.Parameters.AddWithValue("@charge_proc_time", item.ChargeProcTime);
+                    command.Parameters.AddDateTimeOrNull("@freshness_time", item.FreshnessTime);
+                    command.Parameters.AddDateTimeOrNull("@charge_use_skill_time", item.ChargeUseSkillTime);
+                    command.Parameters.AddDateTimeOrNull("@charge_start_time", item.ChargeStartTime);
+                    command.Parameters.AddDateTimeOrNull("@charge_proc_time", item.ChargeProcTime);
 
                     try
                     {
@@ -2015,9 +2015,9 @@ public class ItemManager : Singleton<ItemManager>
                     item.Count = reader.GetInt32("count");
                     item.LifespanMins = reader.GetInt32("lifespan_mins");
                     item.MadeUnitId = reader.GetUInt32("made_unit_id");
-                    item.UnsecureTime = reader.GetDateTime("unsecure_time");
-                    item.UnpackTime = reader.GetDateTime("unpack_time");
-                    item.CreateTime = reader.GetDateTime("created_at");
+                    item.UnsecureTime = reader.GetDateTimeOrMinValue("unsecure_time");
+                    item.UnpackTime = reader.GetDateTimeOrMinValue("unpack_time");
+                    item.CreateTime = reader.GetDateTimeOrMinValue("created_at");
                     item.ItemFlags = (ItemFlag)reader.GetByte("flags");
                     item.UccId = reader.GetUInt32("ucc"); // Make sure this UCC is set BEFORE reading details as UccItem needs to be able to override it
 
@@ -2032,14 +2032,14 @@ public class ItemManager : Singleton<ItemManager>
                     else if (item.Template.Gradable)
                         item.Grade = reader.GetByte("grade"); // Load from our DB if the item is gradable
 
-                    item.ExpirationTime = reader.IsDBNull("expire_time") ? DateTime.MinValue : reader.GetDateTime("expire_time");
+                    item.ExpirationTime = reader.GetDateTimeOrMinValue("expire_time");
                     item.ExpirationOnlineMinutesLeft = reader.GetDouble("expire_online_minutes");
-                    item.ChargeTime = reader.IsDBNull("charge_time") ? DateTime.MinValue : reader.GetDateTime("charge_time");
+                    item.ChargeTime = reader.GetDateTimeOrMinValue("charge_time");
                     item.ChargeCount = reader.GetInt16("charge_count");
-                    item.FreshnessTime = reader.IsDBNull("freshness_time") ? DateTime.MinValue : reader.GetDateTime("freshness_time");
-                    item.ChargeUseSkillTime = reader.IsDBNull("charge_use_skill_time") ? DateTime.MinValue : reader.GetDateTime("charge_use_skill_time");
-                    item.ChargeStartTime = reader.IsDBNull("charge_start_time") ? DateTime.MinValue : reader.GetDateTime("charge_start_time");
-                    item.ChargeProcTime = reader.IsDBNull("charge_proc_time") ? DateTime.MinValue : reader.GetDateTime("charge_proc_time");
+                    item.FreshnessTime = reader.GetDateTimeOrMinValue("freshness_time");
+                    item.ChargeUseSkillTime = reader.GetDateTimeOrMinValue("charge_use_skill_time");
+                    item.ChargeStartTime = reader.GetDateTimeOrMinValue("charge_start_time");
+                    item.ChargeProcTime = reader.GetDateTimeOrMinValue("charge_proc_time");
 
                     // Add it to the global pool
                     if (!_allItems.TryAdd(item.Id, item))

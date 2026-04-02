@@ -116,7 +116,7 @@ public class FriendMananger : Singleton<FriendMananger>
                             IsOnline = false,
                             Race = (Race)reader.GetUInt32("race"),
                             Level = reader.GetByte("level"),
-                            LastWorldLeaveTime = reader.GetDateTime("leave_time"),
+                            LastWorldLeaveTime = reader.GetDateTimeOrMinValue("leave_time"),
                             Health = reader.GetInt32("hp"),
                             Ability1 = (AbilityType)reader.GetByte("ability1"),
                             Ability2 = (AbilityType)reader.GetByte("ability2"),

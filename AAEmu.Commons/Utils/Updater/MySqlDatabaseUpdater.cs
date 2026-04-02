@@ -163,7 +163,7 @@ public static class MySqlDatabaseUpdater
                 command.Parameters.Clear();
                 command.Parameters.AddWithValue("@script_name", Path.GetFileName(fName));
                 command.Parameters.AddWithValue("@installed", success ? 1 : 0);
-                command.Parameters.AddWithValue("@install_date", success ? DateTime.UtcNow : DateTime.MinValue);
+                command.Parameters.AddWithValue("@install_date", DateTime.UtcNow);
                 command.Parameters.AddWithValue("@last_error", errorText);
 
                 command.ExecuteNonQuery();

@@ -721,7 +721,7 @@ public class CharacterManager : Singleton<CharacterManager>
 
                 command.Connection = dbConnection;
                 command.CommandText = "UPDATE `characters` SET `deleted`='1', `delete_time`=@new_delete_time, `name`=@deletedname WHERE `id`=@char_id and `account_id`=@account_id;";
-                command.Parameters.AddWithValue("@new_delete_time", DateTime.MinValue);
+                command.Parameters.AddDateTimeOrNull("@new_delete_time", DateTime.MinValue);
                 command.Parameters.AddWithValue("@char_id", character.Id);
                 command.Parameters.AddWithValue("@account_id", character.AccountId);
                 command.Parameters.AddWithValue("@deletedname", deletedName);
@@ -769,7 +769,7 @@ public class CharacterManager : Singleton<CharacterManager>
                     while (reader.Read())
                     {
                         // Check the delete time for this entry
-                        var deleteTime = reader.GetDateTime("delete_time");
+                        var deleteTime = reader.GetDateTimeOrMinValue("delete_time");
                         var charId = reader.GetUInt32("id");
                         var accountId = reader.GetUInt32("account_id");
                         if ((deleteTime > DateTime.MinValue) && (deleteTime <= DateTime.UtcNow))
@@ -842,8 +842,8 @@ public class CharacterManager : Singleton<CharacterManager>
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "UPDATE characters SET `delete_request_time` = @delete_request_time, `delete_time` = @delete_time WHERE `id` = @id";
-                    command.Parameters.AddWithValue("@delete_request_time", character.DeleteRequestTime);
-                    command.Parameters.AddWithValue("@delete_time", character.DeleteTime);
+                    command.Parameters.AddDateTimeOrNull("@delete_request_time", character.DeleteRequestTime);
+                    command.Parameters.AddDateTimeOrNull("@delete_time", character.DeleteTime);
                     command.Parameters.AddWithValue("@id", character.Id);
                     command.Prepare();
                     if (command.ExecuteNonQuery() == 1)
@@ -880,8 +880,8 @@ public class CharacterManager : Singleton<CharacterManager>
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "UPDATE characters SET `delete_request_time` = @delete_request_time, `delete_time` = @delete_time WHERE `id` = @id";
-                    command.Parameters.AddWithValue("@delete_request_time", character.DeleteRequestTime);
-                    command.Parameters.AddWithValue("@delete_time", character.DeleteTime);
+                    command.Parameters.AddDateTimeOrNull("@delete_request_time", character.DeleteRequestTime);
+                    command.Parameters.AddDateTimeOrNull("@delete_time", character.DeleteTime);
                     command.Parameters.AddWithValue("@id", character.Id);
                     command.Prepare();
                     command.ExecuteNonQuery();
@@ -908,7 +908,7 @@ public class CharacterManager : Singleton<CharacterManager>
                     while (reader.Read())
                     {
                         // Skip this char in the list if it's read to be deleted
-                        var deleteTime = reader.GetDateTime("delete_time");
+                        var deleteTime = reader.GetDateTimeOrMinValue("delete_time");
                         if ((deleteTime > DateTime.MinValue) && (deleteTime < DateTime.UtcNow))
                             continue;
 
@@ -995,7 +995,7 @@ public class CharacterManager : Singleton<CharacterManager>
                 {
                     while (reader.Read())
                     {
-                        return reader.GetBoolean("deleted") || reader.GetDateTime("delete_request_time") > DateTime.MinValue;
+                        return reader.GetBoolean("deleted") || reader.GetDateTimeOrMinValue("delete_request_time") > DateTime.MinValue;
                     }
                 }
             }

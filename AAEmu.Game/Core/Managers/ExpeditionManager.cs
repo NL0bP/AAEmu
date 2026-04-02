@@ -91,10 +91,10 @@ public class ExpeditionManager : Singleton<ExpeditionManager>
                     expedition.DiplomacyTarget = false;
                     expedition.Level = reader.GetUInt32("level");
                     expedition.Exp = reader.GetUInt32("exp");
-                    expedition.ProtectTime = reader.GetDateTime("protect_time");
+                    expedition.ProtectTime = reader.GetDateTimeOrMinValue("protect_time");
                     expedition.WarDeposit = reader.GetUInt32("war_deposit");
                     expedition.DailyExp = reader.GetUInt32("daily_exp");
-                    expedition.LastExpUpdateTime = reader.GetDateTime("last_exp_update_time");
+                    expedition.LastExpUpdateTime = reader.GetDateTimeOrMinValue("last_exp_update_time");
                     expedition.IsLevelUpdate = reader.GetBoolean("is_level_update");
                     expedition.Interest = reader.GetInt16("interest");
                     expedition.MotdTitle = reader.GetString("motd_title");
@@ -181,8 +181,8 @@ public class ExpeditionManager : Singleton<ExpeditionManager>
                         recruitment.Level = reader.GetUInt32("level");
                         recruitment.OwnerName = reader.GetString("owner_name");
                         recruitment.Introduce = reader.GetString("introduce");
-                        recruitment.RegTime = reader.GetDateTime("reg_time");
-                        recruitment.EndTime = reader.GetDateTime("end_time");
+                        recruitment.RegTime = reader.GetDateTimeOrMinValue("reg_time");
+                        recruitment.EndTime = reader.GetDateTimeOrMinValue("end_time");
                         recruitment.Interest = reader.GetUInt16("interest");
                         recruitment.MemberCount = reader.GetInt32("member_count");
                         recruitment.Apply = reader.GetBoolean("apply");
@@ -206,7 +206,7 @@ public class ExpeditionManager : Singleton<ExpeditionManager>
                         pretender.CharacterName = reader.GetString("character_name");
                         pretender.CharacterLevel = reader.GetByte("character_level");
                         pretender.Memo = reader.GetString("memo");
-                        pretender.RegTime = reader.GetDateTime("reg_time");
+                        pretender.RegTime = reader.GetDateTimeOrMinValue("reg_time");
                         _pretenders.Add(pretender);
                     }
                 }

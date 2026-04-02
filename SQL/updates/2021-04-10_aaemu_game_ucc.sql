@@ -15,6 +15,6 @@ CREATE TABLE `uccs` (
   `color3R` int(11) unsigned NOT NULL,
   `color3G` int(11) unsigned NOT NULL,
   `color3B` int(11) unsigned NOT NULL,
-  `modified` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
+  `modified` datetime NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
