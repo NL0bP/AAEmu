@@ -12,5 +12,6 @@ public class CSGameEventPacket() : GamePacket(CSOffsets.CSGameEventPacket, 5)
         Logger.Debug("Entering in CSGameEvent...");
 
         Connection.SendPacket(new SCGameEvent2Packet());
+        Connection.ActiveChar?.TodayAssignments?.Send();
     }
 }

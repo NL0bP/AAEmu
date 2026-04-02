@@ -165,21 +165,21 @@ CREATE TABLE `audit_ics_sales`  (
 -- Table structure for audit_char_sus
 -- ----------------------------
 CREATE TABLE `audit_char_sus` (
-	`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-	`sus_date` DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Time of incident',
-	`sus_category` VARCHAR(64) NULL DEFAULT 'None' COMMENT 'Category name for the activity' COLLATE 'utf8mb4_general_ci',
-	`sus_account` INT(10) UNSIGNED NULL DEFAULT '0' COMMENT 'Involved account Id (if any)',
-	`sus_character` INT(10) UNSIGNED NULL DEFAULT '0' COMMENT 'Involved character Id (if any)',
-	`zone_group` INT UNSIGNED NULL DEFAULT '0',
-	`x` FLOAT NULL DEFAULT '0',
-	`y` FLOAT NULL DEFAULT '0',
-	`z` FLOAT NULL DEFAULT '0',
-	`description` TEXT NULL COMMENT 'Description of the incident' COLLATE 'utf8mb4_general_ci',
-	PRIMARY KEY (`id`) USING BTREE,
-	INDEX `sus_date` (`sus_date`),
-	INDEX `sus_account` (`sus_account`),
-	INDEX `sus_character` (`sus_character`),
-	INDEX `sus_category` (`sus_category`)
+    `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `sus_date` DATETIME NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Time of incident',
+    `sus_category` VARCHAR(64) NULL DEFAULT 'None' COMMENT 'Category name for the activity' COLLATE 'utf8mb4_general_ci',
+    `sus_account` INT(10) UNSIGNED NULL DEFAULT '0' COMMENT 'Involved account Id (if any)',
+    `sus_character` INT(10) UNSIGNED NULL DEFAULT '0' COMMENT 'Involved character Id (if any)',
+    `zone_group` INT UNSIGNED NULL DEFAULT '0',
+    `x` FLOAT NULL DEFAULT '0',
+    `y` FLOAT NULL DEFAULT '0',
+    `z` FLOAT NULL DEFAULT '0',
+    `description` TEXT NULL COMMENT 'Description of the incident' COLLATE 'utf8mb4_general_ci',
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX `sus_date` (`sus_date`),
+    INDEX `sus_account` (`sus_account`),
+    INDEX `sus_character` (`sus_character`),
+    INDEX `sus_category` (`sus_category`)
 )
 COLLATE='utf8mb4_general_ci'
 ENGINE=InnoDB
@@ -306,6 +306,30 @@ CREATE TABLE `doodads`  (
   `farm_type` int NOT NULL DEFAULT 0 COMMENT 'farm type for Public Farm',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'Persistent doodads (e.g. tradepacks, furniture)' ROW_FORMAT = Dynamic;
+
+-- -------------------------------------------------
+-- Persist static/world doodad state by source template and world position
+-- -------------------------------------------------
+CREATE TABLE `world_doodads` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `source_template_id` int unsigned NOT NULL COMMENT 'Original static doodad template used to match spawn data',
+  `template_id` int unsigned NOT NULL COMMENT 'Current doodad template to restore',
+  `x` decimal(13,3) NOT NULL,
+  `y` decimal(13,3) NOT NULL,
+  `z` decimal(13,3) NOT NULL,
+  `roll` float NOT NULL DEFAULT '0',
+  `pitch` float NOT NULL DEFAULT '0',
+  `yaw` float NOT NULL DEFAULT '0',
+  `current_phase_id` int unsigned NOT NULL,
+  `plant_time` datetime NOT NULL,
+  `growth_time` datetime NOT NULL,
+  `phase_time` datetime NOT NULL,
+  `freshness_time` datetime NOT NULL DEFAULT '0001-01-01 00:00:00',
+  `scale` float NOT NULL DEFAULT '1',
+  `data` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_world_doodads_anchor` (`source_template_id`, `x`, `y`, `z`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Persistent state overrides for static world doodads';
 
 -- ----------------------------
 -- Table structure for expedition_applicants
@@ -820,6 +844,47 @@ CREATE TABLE character_stats (
     ApplyExtendCount INT,
     ExtendMaxStats INT
 );
+
+-- ----------------------------
+-- Table structure for character_achievement_records
+-- ----------------------------
+DROP TABLE IF EXISTS `character_achievement_records`;
+CREATE TABLE `character_achievement_records` (
+  `owner` int UNSIGNED NOT NULL,
+  `record_id` int UNSIGNED NOT NULL,
+  `amount` bigint UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`owner`, `record_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Table structure for character_achievements
+-- ----------------------------
+DROP TABLE IF EXISTS `character_achievements`;
+CREATE TABLE `character_achievements` (
+  `owner` int UNSIGNED NOT NULL,
+  `id` int UNSIGNED NOT NULL,
+  `amount` int UNSIGNED NOT NULL DEFAULT 0,
+  `completed_at` datetime NULL DEFAULT NULL,
+  PRIMARY KEY (`owner`, `id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Table structure for character_today_assignments
+-- ----------------------------
+DROP TABLE IF EXISTS `character_today_assignments`;
+CREATE TABLE `character_today_assignments` (
+  `owner` int UNSIGNED NOT NULL,
+  `real_step` int NOT NULL,
+  `step_id` int NOT NULL,
+  `group_id` int NOT NULL,
+  `quest_context_id` int NOT NULL,
+  `quest_id` bigint UNSIGNED NOT NULL DEFAULT 0,
+  `quest_data` tinyblob NULL,
+  `quest_status` tinyint UNSIGNED NOT NULL DEFAULT 0,
+  `status` tinyint UNSIGNED NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`owner`, `real_step`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------
 -- Table structure for navigation_mesh_raw

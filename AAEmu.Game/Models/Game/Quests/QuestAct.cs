@@ -182,6 +182,11 @@ public class QuestAct : IComparable<QuestAct>, IQuestAct
         Template.OnCraft(this, sender, args);
     }
 
+    public virtual void OnLaborPowerChanged(object sender, OnLaborPowerChangedArgs args)
+    {
+        Template.OnLaborPowerChanged(this, sender, args);
+    }
+
     /// <summary>
     /// OnExpressFire 
     /// </summary>

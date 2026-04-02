@@ -11,6 +11,7 @@ using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Expeditions;
 using AAEmu.Game.Models.Game.Gimmicks;
@@ -943,7 +944,13 @@ public class Unit : BaseUnit, IUnit
         var sct = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
         sct.ObjId = target.ObjId;
 
-        return skill.Use(this, caster, sct, null, true, out _);
+        var result = skill.Use(this, caster, sct, null, true, out _);
+        if (result == SkillResult.Success && this is Character character)
+        {
+            character.Achievements?.TrackRecordProgress(CharRecordKind.UseSkill, skillId);
+        }
+
+        return result;
     }
 
     public static void ModelPosture(PacketStream stream, Unit unit, uint animActionId, bool activateAnimation)

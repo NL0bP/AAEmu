@@ -1,5 +1,6 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 
@@ -19,6 +20,12 @@ public class CSExpressEmotionPacket : GamePacket
 
         Logger.Warn("ExpressEmotion, ObjId: {0}, Obj2Id: {1}, EmotionId: {2}", characterObjId, npcObjId, emotionId);
         Connection?.ActiveChar?.BroadcastPacket(new SCEmotionExpressedPacket(characterObjId, npcObjId, emotionId), true);
+
+        var npc = WorldManager.Instance.GetNpc(npcObjId);
+        if (npc != null)
+        {
+            Connection?.ActiveChar?.Achievements?.TrackNpcEmotion(npc.TemplateId, emotionId);
+        }
 
         //Connection?.ActiveChar?.Quests?.OnExpressFire(emotionId, characterObjId, npcObjId);
         // инициируем событие

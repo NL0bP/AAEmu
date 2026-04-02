@@ -30,5 +30,7 @@ public class CSRequestGameEventInfoPacket() : GamePacket(CSOffsets.CSRequestGame
         var isFavorite = false;
         Connection.SendPacket(new SCCharacterBoundPacket(unitObjId, returnDistrict, resurrectionDistrict, returnDistrictChanged, id, name, zoneKey, pos, zRot, isFavorite));
 
+        Connection.ActiveChar?.TodayAssignments?.Send();
+
     }
 }

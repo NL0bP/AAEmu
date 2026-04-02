@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
@@ -203,6 +204,8 @@ public class ItemEvolving : SpecialEffectAction
                 beforeItemGrade
             )
         );
+
+        character.Achievements?.TrackHiramGrade(item.TemplateId, item.Grade);
 
         // Log the action
         Logger.Debug($"MagicalEnchant executed by {character.Name} on item {item.Id} with skill item {item.TemplateId}");

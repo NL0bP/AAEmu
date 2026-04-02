@@ -5,6 +5,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Units;
 using MySql.Data.MySqlClient;
 
 namespace AAEmu.Game.Models.Game.Char;
@@ -47,8 +48,17 @@ public class CharacterAbilities
     public void AddExp(AbilityType type, int exp)
     {
         // TODO SCAbilityExpChangedPacket
-        if (type != AbilityType.None)
-            Abilities[type].Exp += exp;
+        if (type == AbilityType.None)
+            return;
+
+        var oldLevel = GetAbilityLevel(type);
+        Abilities[type].Exp += exp;
+        var newLevel = GetAbilityLevel(type);
+        if (newLevel > oldLevel)
+        {
+            Owner.Events?.OnAbilityLevelUp(Owner, new OnAbilityLevelUpArgs());
+            Owner.Achievements?.TrackAbilityLevel(type, newLevel);
+        }
     }
 
     public void AddActiveExp(int exp)

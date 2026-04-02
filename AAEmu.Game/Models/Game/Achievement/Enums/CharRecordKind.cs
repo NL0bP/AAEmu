@@ -77,5 +77,11 @@ public enum CharRecordKind
     BattleFieldDraw = 73,
     BattleFieldKill = 74,
     BattleFieldDeath = 75,
-    BattleFieldAssist = 76
+    BattleFieldAssist = 76,
+    AbyssalSkillsetLevel = 77,
+    AncestralLevel = 78,
+    EquipmentPoints = 79,
+    HiramGrade = 80,
+    CollectionCategory = 81,
+    CollectionItem = 83
 }

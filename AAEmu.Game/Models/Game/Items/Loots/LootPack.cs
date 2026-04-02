@@ -5,6 +5,7 @@ using System.Linq;
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Items.Actions;
@@ -544,6 +545,17 @@ public class LootPack
             //We have coins to give out.
             // Logger.Debug("{Category} - {Character} got {Amount} from lootpack {Lootpack}");
             character.AddMoney(SlotType.Bag, coinCount, taskType);
+        }
+
+        character.Achievements?.TrackRecordProgress(CharRecordKind.GetLootpack, Id);
+        foreach (var (itemTemplateId, count, _, _) in generatedList)
+        {
+            if (itemTemplateId == (uint)ItemConstants.Coins || count <= 0)
+            {
+                continue;
+            }
+
+            character.Achievements?.TrackRecordProgress(CharRecordKind.GetLootitem, itemTemplateId, amount: (uint)count);
         }
 
         return true;

@@ -3,19 +3,18 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
 using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.Id;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Auction;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Mails;
-
 using MySql.Data.MySqlClient;
-
 using NLog;
 
 namespace AAEmu.Game.Core.Managers;
@@ -208,6 +207,8 @@ public class AuctionManager : Singleton<AuctionManager>
 
             auctionLot.BidMoney = bid.Money;
             auctionLot.Extra = bid.StackSize;
+            player.Achievements?.TrackRecordProgress(CharRecordKind.AuctionBuy);
+            WorldManager.Instance.GetCharacterById(auctionLot.ClientId)?.Achievements?.TrackRecordProgress(CharRecordKind.AuctionSold);
         }
         else if (bid.Money >= auctionLot.DirectMoney && auctionLot.DirectMoney != 0) // Buy now
         {
@@ -223,6 +224,8 @@ public class AuctionManager : Singleton<AuctionManager>
 
             auctionLot.BidMoney = bid.Money;
             auctionLot.Extra = bid.StackSize;
+            player.Achievements?.TrackRecordProgress(CharRecordKind.AuctionBuy);
+            WorldManager.Instance.GetCharacterById(auctionLot.ClientId)?.Achievements?.TrackRecordProgress(CharRecordKind.AuctionSold);
         }
         else if (bid.Money > auctionLot.BidMoney) // Bid
         {
@@ -1065,4 +1068,3 @@ public class AuctionManager : Singleton<AuctionManager>
         command.ExecuteNonQuery();
     }
 }
-

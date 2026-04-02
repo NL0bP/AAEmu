@@ -36,7 +36,10 @@ public class ImpulseEffect : EffectTemplate
         var impulse = new Vector3(ImpulseX, ImpulseY, ImpulseZ);
         var angImpulse = new Vector3(AngImpulseX, AngImpulseY, AngImpulseZ);
 
-        caster.BroadcastPacket(new SCImpulseUnitPacket(caster.ObjId, casterObj, vel, angVel, impulse, angImpulse), true);
+        if (target is not Unit targetUnit)
+            return;
+
+        targetUnit.BroadcastPacket(new SCImpulseUnitPacket(targetUnit.ObjId, casterObj, vel, angVel, impulse, angImpulse), true);
 
     }
 }

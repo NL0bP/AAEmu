@@ -66,6 +66,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSBlessUthstinApplyStatsPacket, 5, typeof(CSBlessUthstinApplyStatsPacket));
         RegisterPacket(CSOffsets.CSExpandBlessUthstinPagePacket, 5, typeof(CSExpandBlessUthstinPagePacket));
         RegisterPacket(CSOffsets.CSCopyBlessUthstinPagePacket, 5, typeof(CSCopyBlessUthstinPagePacket));
+        RegisterPacket(CSOffsets.CSSkillReplaceSyncPacket, 5, typeof(CSSkillReplaceSyncPacket));
         RegisterPacket(CSOffsets.CSEventCenterAddAttendancePacket, 5, typeof(CSEventCenterAddAttendancePacket));
         RegisterPacket(CSOffsets.CSRequestGameEventInfoPacket, 5, typeof(CSRequestGameEventInfoPacket));
         RegisterPacket(CSOffsets.CSGameEventPacket, 5, typeof(CSGameEventPacket));

@@ -3,5 +3,6 @@
 public enum AreaShapeType
 {
     Sphere = 1,
-    Cuboid = 2
+    Cuboid = 2,
+    Line = 3
 }

@@ -7,6 +7,7 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Items.Templates;
@@ -226,10 +227,16 @@ public class CSStartSkillPacket : GamePacket
             skill = new Skill(template, Connection.ActiveChar);
             skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
         }
+        else if (skillId > 0 && player.Skills.TryCreateTemporaryReplacementSkill(skillId, out var replacementSkill))
+        {
+            // Temporary replacement synced by the client while a source buff is active.
+            skill = replacementSkill;
+            skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
+        }
         else if (skillId > 0 && player.Skills.IsVariantOfSkill(skillId))
         {
             // Variant of learned skill?
-            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
+            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId), Connection.ActiveChar);
             skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
         }
         else
@@ -249,6 +256,11 @@ public class CSStartSkillPacket : GamePacket
             {
                 SlaveManager.Instance.UnbindSlave(Connection.ActiveChar, slave.TlId, AttachUnitReason.SlaveUnbinding);
             }
+        }
+
+        if (skillResult == SkillResult.Success)
+        {
+            player.Achievements?.TrackRecordProgress(CharRecordKind.UseSkill, skillId);
         }
 
         if (skillResult != SkillResult.Success)

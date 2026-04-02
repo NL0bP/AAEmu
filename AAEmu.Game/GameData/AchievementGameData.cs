@@ -21,6 +21,11 @@ public class AchievementGameData : Singleton<AchievementGameData>, IGameDataLoad
     private Dictionary<uint, Achievements> _achievements;
     private Dictionary<uint, List<AchievementObjectives>> _achievementObjectives;
     private Dictionary<uint, List<PreCompletedAchievements>> _preCompletedAchievements;
+    private Dictionary<uint, List<AchievementObjectives>> _achievementObjectivesByRecordId;
+    private Dictionary<CharRecordKind, List<CharRecords>> _charRecordsByKind;
+    private Dictionary<uint, List<PreCompletedAchievements>> _requiredAchievements;
+
+    public IReadOnlyDictionary<uint, Achievements> Achievements => _achievements;
 
     public void Load(SqliteConnection connection, SqliteConnection connection2)
     {
@@ -28,6 +33,9 @@ public class AchievementGameData : Singleton<AchievementGameData>, IGameDataLoad
         _achievements = new Dictionary<uint, Achievements>();
         _achievementObjectives = new Dictionary<uint, List<AchievementObjectives>>();
         _preCompletedAchievements = new Dictionary<uint, List<PreCompletedAchievements>>();
+        _achievementObjectivesByRecordId = new Dictionary<uint, List<AchievementObjectives>>();
+        _charRecordsByKind = new Dictionary<CharRecordKind, List<CharRecords>>();
+        _requiredAchievements = new Dictionary<uint, List<PreCompletedAchievements>>();
 
         using (var command = connection.CreateCommand())
         {
@@ -81,6 +89,12 @@ public class AchievementGameData : Singleton<AchievementGameData>, IGameDataLoad
                         _achievementObjectives.Add(template.AchievementId, new List<AchievementObjectives>());
                     }
                     _achievementObjectives[template.AchievementId].Add(template);
+
+                    if (!_achievementObjectivesByRecordId.ContainsKey(template.RecordId))
+                    {
+                        _achievementObjectivesByRecordId.Add(template.RecordId, new List<AchievementObjectives>());
+                    }
+                    _achievementObjectivesByRecordId[template.RecordId].Add(template);
                 }
             }
         }
@@ -104,6 +118,12 @@ public class AchievementGameData : Singleton<AchievementGameData>, IGameDataLoad
                         _preCompletedAchievements.Add(template.CompletedAchievementId, new List<PreCompletedAchievements>());
                     }
                     _preCompletedAchievements[template.CompletedAchievementId].Add(template);
+
+                    if (!_requiredAchievements.ContainsKey(template.MyAchievementId))
+                    {
+                        _requiredAchievements.Add(template.MyAchievementId, new List<PreCompletedAchievements>());
+                    }
+                    _requiredAchievements[template.MyAchievementId].Add(template);
                 }
             }
         }
@@ -124,6 +144,12 @@ public class AchievementGameData : Singleton<AchievementGameData>, IGameDataLoad
                     template.Value2 = reader.GetUInt32("value2");
 
                     _charRecords.Add(template.Id, template);
+
+                    if (!_charRecordsByKind.ContainsKey(template.KindId))
+                    {
+                        _charRecordsByKind.Add(template.KindId, new List<CharRecords>());
+                    }
+                    _charRecordsByKind[template.KindId].Add(template);
                 }
             }
         }
@@ -131,5 +157,35 @@ public class AchievementGameData : Singleton<AchievementGameData>, IGameDataLoad
 
     public void PostLoad()
     {
+    }
+
+    public Achievements GetAchievement(uint achievementId)
+    {
+        return _achievements.GetValueOrDefault(achievementId);
+    }
+
+    public CharRecords GetCharRecord(uint recordId)
+    {
+        return _charRecords.GetValueOrDefault(recordId);
+    }
+
+    public IReadOnlyList<AchievementObjectives> GetAchievementObjectives(uint achievementId)
+    {
+        return _achievementObjectives.GetValueOrDefault(achievementId) ?? [];
+    }
+
+    public IReadOnlyList<AchievementObjectives> GetAchievementObjectivesByRecordId(uint recordId)
+    {
+        return _achievementObjectivesByRecordId.GetValueOrDefault(recordId) ?? [];
+    }
+
+    public IReadOnlyList<PreCompletedAchievements> GetAchievementRequirements(uint achievementId)
+    {
+        return _requiredAchievements.GetValueOrDefault(achievementId) ?? [];
+    }
+
+    public IReadOnlyList<CharRecords> GetCharRecordsByKind(CharRecordKind kind)
+    {
+        return _charRecordsByKind.GetValueOrDefault(kind) ?? [];
     }
 }

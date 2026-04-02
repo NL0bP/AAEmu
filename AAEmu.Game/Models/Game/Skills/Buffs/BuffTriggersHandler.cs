@@ -29,14 +29,14 @@ public class BuffTriggersHandler
             switch (triggerTemplate.Kind)
             {
                 case Buffs.BuffEventTriggerKind.Attack:
-                    trigger = new BuffTrigger(_owner, triggerTemplate);
+                    trigger = new AttackBuffTrigger(_owner, triggerTemplate);
                     _owner.Caster.Events.OnAttack += trigger.Execute;
                     _triggers.Add(trigger);
                     break;
                 case Buffs.BuffEventTriggerKind.Attacked:
                     break;
                 case Buffs.BuffEventTriggerKind.Damage:
-                    trigger = new BuffTrigger(_owner, triggerTemplate);
+                    trigger = new DamageBuffTrigger(_owner, triggerTemplate);
                     _owner.Caster.Events.OnDamage += trigger.Execute;
                     _triggers.Add(trigger);
                     break;
@@ -46,7 +46,7 @@ public class BuffTriggersHandler
                     _triggers.Add(trigger);
                     break;
                 case Buffs.BuffEventTriggerKind.Dispelled:
-                    trigger = new BuffTrigger(_owner, triggerTemplate);
+                    trigger = new DispelledBuffTrigger(_owner, triggerTemplate);
                     _owner.Events.OnDispelled += trigger.Execute;
                     _triggers.Add(trigger);
                     break;
@@ -78,7 +78,7 @@ public class BuffTriggersHandler
                 case Buffs.BuffEventTriggerKind.Landing:
                     break;
                 case Buffs.BuffEventTriggerKind.Started:
-                    trigger = new BuffTrigger(_owner, triggerTemplate);
+                    trigger = new StartedBuffTrigger(_owner, triggerTemplate);
                     _owner.Events.OnBuffStarted += trigger.Execute;
                     _triggers.Add(trigger);
                     break;

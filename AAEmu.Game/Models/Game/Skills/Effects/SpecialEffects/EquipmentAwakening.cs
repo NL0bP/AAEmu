@@ -122,6 +122,7 @@ public class EquipmentAwakening : SpecialEffectAction
             ], []));
 
             character.SendPacket(new SCItemChangeMappingResultPacket(sourceItem, targetItem, (uint)mappingGroupId, (byte)result));
+            character.Achievements?.TrackHiramGrade(targetItem.TemplateId, targetItem.Grade);
             Logger.Debug("Success!");
         }
 

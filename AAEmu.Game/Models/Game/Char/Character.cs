@@ -15,6 +15,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Attendance;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
@@ -29,6 +30,7 @@ using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Team;
+using AAEmu.Game.Models.Game.TodayAssignments;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
@@ -161,6 +163,8 @@ public partial class Character : Unit, ICharacter
     public CharacterBlocked Blocked { get; set; }
     public CharacterMates Mates { get; set; }
     public CharacterAttendance Attendances { get; set; }
+    public CharacterAchievements Achievements { get; set; }
+    public CharacterTodayAssignments TodayAssignments { get; set; }
 
     public byte ExpandedExpert { get; set; }
     public CharacterActability Actability { get; set; }
@@ -1296,6 +1300,7 @@ public partial class Character : Unit, ICharacter
         if (change)
         {
             BroadcastPacket(new SCLevelChangedPacket(ObjId, Level), true);
+            Achievements?.TrackSnapshot(CharRecordKind.CharLevel, 0, 0, Level);
             //StartRegen();
             ResidentManager.Instance.AddResidenMemberInfo(this);
         }
@@ -1316,6 +1321,7 @@ public partial class Character : Unit, ICharacter
         var step = ExperienceManager.Instance.GetStepForHeirLevel(HeirLevel);
         HeirLevel = ExperienceManager.Instance.GetHeirLevelFromExp(HeirExp);
         Inventory.Bag.ConsumeItem(ItemTaskType.FamilyJoin, (uint)reqItemId, reqItemCount, null);
+        Achievements?.TrackAncestralLevel(HeirLevel);
         BroadcastPacket(new SCHeirLevelUpPacket(ObjId), true);
         ResidentManager.Instance.AddResidenMemberInfo(this);
     }
@@ -1338,6 +1344,9 @@ public partial class Character : Unit, ICharacter
 
     public bool ChangeMoney(SlotType typeFrom, SlotType typeTo, int amount, ItemTaskType itemTaskType = ItemTaskType.DepositMoney)
     {
+        var oldMoney = Money;
+        var oldMoneyBank = Money2;
+
         var itemTasks = new List<ItemTask>();
         switch (typeFrom)
         {
@@ -1372,6 +1381,19 @@ public partial class Character : Unit, ICharacter
                 break;
         }
         SendPacket(new SCItemTaskSuccessPacket(itemTaskType, itemTasks, new List<ulong>()));
+
+        var totalBefore = oldMoney + oldMoneyBank;
+        var totalAfter = Money + Money2;
+        if (totalAfter < totalBefore)
+        {
+            Achievements?.TrackGoldSpent(totalBefore - totalAfter);
+        }
+
+        if (Money != oldMoney)
+        {
+            Achievements?.TrackMoneySnapshot();
+        }
+
         return true;
     }
 
@@ -1416,6 +1438,17 @@ public partial class Character : Unit, ICharacter
             var formula = FormulaManager.Instance.GetFormula((uint)FormulaKind.ExpByLaborPower);
             var xpToAdd = (int)(formula.Evaluate(parameters) * expMultiplier);
             AddExp(xpToAdd, true);
+            Achievements?.TrackRecordProgress(CharRecordKind.SpendLabor, amount: (uint)(-change));
+            Events?.OnLaborPowerChanged(this, new OnLaborPowerChangedArgs
+            {
+                AmountSpent = -change,
+                ActabilityGroupId = actabilityId
+            });
+        }
+
+        if (actabilityId > 0 && Actability.Actabilities.TryGetValue((uint)actabilityId, out var actability))
+        {
+            Achievements?.TrackActability((uint)actabilityId, actability.Point);
         }
 
         SendPacket(new SCCharacterLaborPowerChangedPacket(change, actabilityId, actabilityChange, actabilityStep));
@@ -1449,6 +1482,11 @@ public partial class Character : Unit, ICharacter
             var formula = FormulaManager.Instance.GetFormula((uint)FormulaKind.ExpByLaborPower);
             var xpToAdd = (int)(formula.Evaluate(parameters) * expMultiplier);
             AddExp(xpToAdd, true);
+            Events?.OnLaborPowerChanged(this, new OnLaborPowerChangedArgs
+            {
+                AmountSpent = -change,
+                ActabilityGroupId = actabilityId
+            });
         }
 
         SendPacket(new SCCharacterLaborPowerChangedPacket(change, actabilityId, actabilityChange, actabilityStep));
@@ -1460,6 +1498,10 @@ public partial class Character : Unit, ICharacter
         {
             case GamePointKind.Honor:
                 HonorPoint += change;
+                if (change > 0)
+                {
+                    Achievements?.TrackHonorPoints(change);
+                }
                 break;
             case GamePointKind.Vocation:
                 var vocAdd = GetAttribute(UnitAttribute.LivingPointGain, 0f);
@@ -1467,6 +1509,10 @@ public partial class Character : Unit, ICharacter
                 var vocMul = GetAttribute(UnitAttribute.LivingPointGainMul, 0f) + 100f;
                 change = (int)Math.Round(change * (vocMul / 100f));
                 VocationPoint += change;
+                if (change > 0)
+                {
+                    Achievements?.TrackLifePoints(change);
+                }
                 break;
             default:
                 Logger.Error($"ChangeGamePoints - Unknown Game Point Type {kind}");
@@ -1641,6 +1687,7 @@ public partial class Character : Unit, ICharacter
             {
                 ItemId = item.TemplateId
             });
+            Achievements?.TrackRecordProgress(CharRecordKind.UseItem, item.TemplateId);
         }
     }
 
@@ -1657,6 +1704,7 @@ public partial class Character : Unit, ICharacter
             {
                 ItemId = item.TemplateId
             });
+            Achievements?.TrackRecordProgress(CharRecordKind.UseItem, item.TemplateId);
         }
     }
 
@@ -1673,6 +1721,7 @@ public partial class Character : Unit, ICharacter
             {
                 ItemId = itemTemplate
             });
+            Achievements?.TrackRecordProgress(CharRecordKind.UseItem, itemTemplate);
         }
     }
 
@@ -1817,6 +1866,7 @@ public partial class Character : Unit, ICharacter
     {
         var tasks = new List<ItemTask>();
         var repairCost = 0;
+        uint repairedItems = 0;
 
         var isPremium = Buffs.CheckBuff((uint)SkillConstants.PatronStatus);
 
@@ -1877,6 +1927,7 @@ public partial class Character : Unit, ICharacter
             equipItem.Durability = equipItem.MaxDurability;
             equipItem.IsDirty = true;
             repairCost += currentRepairCost;
+            repairedItems++;
             // добавил 4 байта перед Durability для нормальной работы починки предметов и трансформации
             tasks.Add(new ItemUpdate(item));
             //tasks.Add(new ItemUpdate(item));
@@ -1891,6 +1942,10 @@ public partial class Character : Unit, ICharacter
         if (tasks is { Count: > 0 })
         {
             Connection.SendPacket(new SCItemTaskSuccessPacket(ItemTaskType.Repair, tasks, []));
+            if (repairedItems > 0)
+            {
+                Achievements?.TrackRecordProgress(CharRecordKind.ItemFix, amount: repairedItems);
+            }
         }
     }
 
@@ -2368,10 +2423,15 @@ public partial class Character : Unit, ICharacter
             Quests = new CharacterQuests(this);
             Quests.Load(connection);
             Quests.CheckDailyResetAtLogin();
+            TodayAssignments = new CharacterTodayAssignments(this);
+            TodayAssignments.Load(connection);
+            TodayAssignments.CheckDailyResetAtLogin();
             Mates = new CharacterMates(this);
             Mates.Load(connection);
             Attendances = new CharacterAttendance(this);
             Attendances.Load(connection);
+            Achievements = new CharacterAchievements(this);
+            Achievements.Load(connection);
             Stats.Load(connection);
             LoadActionSlots(connection);
         }
@@ -2535,8 +2595,10 @@ public partial class Character : Unit, ICharacter
             Blocked?.Save(connection, transaction);
             Skills?.Save(connection, transaction);
             Quests?.Save(connection, transaction);
+            TodayAssignments?.Save(connection, transaction);
             Mates?.Save(connection, transaction);
             Attendances?.Save(connection, transaction);
+            Achievements?.Save(connection, transaction);
             Stats?.Save(connection, transaction);
 
             result = true;

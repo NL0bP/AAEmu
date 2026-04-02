@@ -29,7 +29,6 @@ using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.Game.World.Xml;
 using AAEmu.Game.Models.Game.World.Zones;
 using AAEmu.Game.Models.StaticValues;
-using AAEmu.Game.Scripts.Commands;
 using AAEmu.Game.Utils.DB;
 
 using NLog;
@@ -201,9 +200,9 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             Logger.Error($"File {spawnPositionFile} doesn't exists or is empty.");
         else
             if (!JsonHelper.TryDeserializeObject(contents, out List<WorldSpawnLocation> worldSpawnLookupFromJson, out _))
-            Logger.Error($"Error in {spawnPositionFile}.");
-        else
-            worldSpawnLookup = worldSpawnLookupFromJson;
+                Logger.Error($"Error in {spawnPositionFile}.");
+            else
+                worldSpawnLookup = worldSpawnLookupFromJson;
 
         foreach (var worldXmlPath in worldXmlPaths)
         {
@@ -1255,6 +1254,12 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
 
     public static List<T> GetAroundByShape<T>(GameObject obj, AreaShape shape) where T : GameObject
     {
+        if (shape == null)
+        {
+            Logger.Error("AreaShape was null");
+            return new List<T>();
+        }
+
         switch (shape.Type)
         {
             case AreaShapeType.Sphere:
@@ -1263,6 +1268,7 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
                     return GetAround<T>(obj, radius, true);
                 }
             case AreaShapeType.Cuboid:
+            case AreaShapeType.Line:
                 {
                     var diagonal = Math.Sqrt(shape.Value1 * shape.Value1 + shape.Value2 * shape.Value2);
                     var res = GetAround<T>(obj, (float)diagonal, true);
@@ -1272,12 +1278,9 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
             default:
                 {
                     Logger.Error("AreaShape had impossible type");
-                    //throw new ArgumentNullException(nameof(shape), "AreaShape type does not exist!");
-                    break;
+                    return new List<T>();
                 }
         }
-
-        return null;
     }
 
     public List<T> GetInCell<T>(uint worldId, int x, int y) where T : class

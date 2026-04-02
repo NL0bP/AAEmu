@@ -314,6 +314,19 @@ public class BuffTemplate
         if (!buff.Passive)
             owner.BroadcastPacket(new SCBuffCreatedPacket(buff), true);
 
+        if (SkillControllerId > 0 && owner is Unit ownerUnit)
+        {
+            var scTemplate = SkillManager.Instance.GetEffectTemplate(SkillControllerId, "SkillController") as SkillControllerTemplate;
+            var scTarget = caster ?? owner;
+            var controller = SkillControllers.SkillController.CreateSkillController(scTemplate, owner, scTarget);
+            if (controller != null)
+            {
+                ownerUnit.ActiveSkillController?.End();
+                ownerUnit.ActiveSkillController = controller;
+                controller.Execute();
+            }
+        }
+
         // Special properties handling
         if (owner is Character character)
         {
@@ -428,6 +441,13 @@ public class BuffTemplate
 
         if (!buff.Passive && !replaced)
             owner.BroadcastPacket(new SCBuffRemovedPacket(owner.ObjId, buff.Index), true);
+
+        if (SkillControllerId > 0 && owner is Unit ownerUnit &&
+            ownerUnit.ActiveSkillController?.Template?.Id == SkillControllerId)
+        {
+            ownerUnit.ActiveSkillController.End();
+            ownerUnit.ActiveSkillController = null;
+        }
 
         // Special properties handling
         if (owner is Character character)

@@ -1,12 +1,17 @@
 ﻿using System;
 using AAEmu.Commons.Utils;
+using System.Linq;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.Id;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills.Effects.Enums;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.Static;
+using AAEmu.Game.Models.Tasks;
 using AAEmu.Game.Utils;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects;
@@ -123,7 +128,110 @@ public class SpawnEffect : EffectTemplate
                     break;
                 }
             case BaseUnitType.Mate:
-                break;
+                {
+                    if (caster is not Character owner)
+                        break;
+
+                    var activeMates = MateManager.Instance.GetActiveMates(owner.ObjId);
+                    if (activeMates is { Count: > 0 })
+                    {
+                        foreach (var activeMate in activeMates
+                                     .Where(m => m != null && m.MateType == MateType.Battle && m.ItemId == 0)
+                                     .ToArray())
+                        {
+                            MateManager.Instance.RemoveActiveMateAndDespawn(owner, activeMate);
+                        }
+                    }
+
+                    var template = NpcManager.Instance.GetTemplate(SubType);
+                    if (template == null)
+                    {
+                        Logger.Info($"SpawnEffect: Mate SubType={SubType} not found...");
+                        return;
+                    }
+
+                    var mate = new global::AAEmu.Game.Models.Game.Units.Mate
+                    {
+                        ObjId = ObjectIdManager.Instance.GetNextId(),
+                        TlId = (ushort)TlIdManager.Instance.GetNextId(),
+                        OwnerId = owner.Id,
+                        OwnerObjId = owner.ObjId,
+                        Id = MateIdManager.Instance.GetNextId(),
+                        ItemId = 0,
+                        Name = template.Name,
+                        TemplateId = template.Id,
+                        Template = template,
+                        ModelId = template.ModelId,
+                        Faction = owner.Faction,
+                        Level = template.Level,
+                        Hp = 100,
+                        Mp = 100,
+                        UserState = (byte)MateStateId,
+                        Experience = ExperienceManager.Instance.GetExpForLevel(template.Level, true),
+                        Mileage = 0,
+                        SpawnDelayTime = 0,
+                        MateType = MateType.Battle
+                    };
+
+                    mate.Transform = positionRelativeToUnit.Transform.CloneDetached(mate);
+                    if (targetObj is SkillCastPositionTarget positionTarget)
+                    {
+                        mate.Transform.Local.SetPosition(positionTarget.PosX, positionTarget.PosY, positionTarget.PosZ);
+                        mate.Transform.Local.SetZRotation(positionTarget.PosRot.DegToRad());
+                    }
+                    else if (targetObj is SkillCastPosition2Target position2Target)
+                    {
+                        mate.Transform.Local.SetPosition(position2Target.PosX, position2Target.PosY, position2Target.PosZ);
+                    }
+                    else if (targetObj is SkillCastPosition3Target position3Target)
+                    {
+                        mate.Transform.Local.SetPosition(position3Target.PosX, position3Target.PosY, position3Target.PosZ);
+                    }
+                    else
+                    {
+                        mate.Transform.World.AddDistanceToFront(PosDistance);
+                        mate.Transform.World.Rotate(mate.Transform.World.Rotation with { Z = orientationRelativeToUnit.Transform.World.Rotation.Z + OriAngle.DegToRad() });
+                    }
+
+                    var mateSkills = MateManager.Instance.GetMateSkills(template.Id);
+                    if (mateSkills is { Count: > 0 })
+                        mate.Skills.AddRange(mateSkills);
+
+                    foreach (var buffId in template.Buffs)
+                    {
+                        var buff = SkillManager.Instance.GetBuffTemplate(buffId);
+                        if (buff == null)
+                            continue;
+
+                        var obj = new SkillCasterUnit(mate.ObjId);
+                        buff.Apply(mate, obj, mate, null, null, new EffectSource(), null, DateTime.UtcNow);
+                    }
+
+                    mate.Hp = mate.MaxHp;
+                    mate.Mp = mate.MaxMp;
+
+                    Logger.Info($"SpawnEffect: creating mate summon npcId={template.Id}, objId={mate.ObjId}, tlId={mate.TlId}, owner={owner.Name} ({owner.ObjId})");
+                    mate.Events.OnDeath += (_, _) =>
+                    {
+                        var currentMate = MateManager.Instance.GetActiveMateByMateObjId(owner.ObjId, mate.ObjId);
+                        if (currentMate != null)
+                            MateManager.Instance.RemoveActiveMateAndDespawn(owner, currentMate);
+                    };
+                    MateManager.Instance.AddActiveMateAndSpawn(owner, mate);
+                    Logger.Info($"SpawnEffect: mate summon spawned npcId={template.Id}, objId={mate.ObjId}, tlId={mate.TlId}");
+                    mate.PostUpdateCurrentHp(mate, 0, mate.Hp, KillReason.Unknown);
+
+                    if (LifeTime > 0)
+                    {
+                        TaskManager.Instance.Schedule(new ResetAttemptsTask(() =>
+                        {
+                            var currentMate = MateManager.Instance.GetActiveMateByTlId(owner.ObjId, mate.TlId);
+                            if (currentMate != null)
+                                MateManager.Instance.RemoveActiveMateAndDespawn(owner, currentMate);
+                        }), TimeSpan.FromSeconds(LifeTime));
+                    }
+                    break;
+                }
             case BaseUnitType.Character:
                 break;
             case BaseUnitType.Housing:

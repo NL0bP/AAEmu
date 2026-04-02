@@ -2,7 +2,9 @@
 using System.Drawing;
 using System.Linq;
 
+using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
@@ -179,8 +181,20 @@ public class QuestCommandUtil
                 }
                 break;
             case "resetdaily":
-                character.Quests.ResetDailyQuests(true);
-                CommandManager.SendNormalText(command, messageOutput, $"Your daily quests have been reset");
+                foreach (var onlineCharacter in WorldManager.Instance.GetAllCharacters())
+                {
+                    onlineCharacter.Quests.ResetDailyQuests(true);
+                    onlineCharacter.TodayAssignments?.Reset(true);
+                }
+
+                using (var connection = MySQL.CreateConnection())
+                using (var deleteCommand = connection.CreateCommand())
+                {
+                    deleteCommand.CommandText = "DELETE FROM character_today_assignments";
+                    deleteCommand.ExecuteNonQuery();
+                }
+
+                CommandManager.SendNormalText(command, messageOutput, "Daily quests reset for online characters, and today-assignment storage cleared for all characters");
                 break;
             case "objective":
                 if (args.Length >= 8)

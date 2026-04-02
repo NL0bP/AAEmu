@@ -43,8 +43,18 @@ public class CharacterQuests
         return ActiveQuests.ContainsKey(questId);
     }
 
+    public bool TryGetActiveQuest(uint questId, out Quest quest)
+    {
+        return ActiveQuests.TryGetValue(questId, out quest);
+    }
+
     public bool HasQuestCompleted(uint questId)
     {
+        if (TodayAssignmentGameData.Instance.IsTodayAssignmentQuest(questId))
+        {
+            return false;
+        }
+
         var questBlockId = (ushort)(questId / 64);
         var questBlockIndex = (int)(questId % 64);
         return CompletedQuests.TryGetValue(questBlockId, out var questBlock) && questBlock.Body.Get(questBlockIndex);
@@ -69,7 +79,7 @@ public class CharacterQuests
             }
             else
             {
-                Logger.Info($"Duplicate quest {questId}, not added!");
+                Logger.Info($"Quest start rejected for {Owner.Name} ({Owner.Id}), quest {questId}: duplicate active quest");
                 return false;
             }
         }
@@ -77,7 +87,7 @@ public class CharacterQuests
         var template = QuestManager.Instance.GetTemplate(questId);
         if (template == null)
         {
-            Logger.Error($"Failed to start new Quest {questId}, invalid Id");
+            Logger.Error($"Quest start rejected for {Owner.Name} ({Owner.Id}), quest {questId}: invalid template id");
             return false;
         }
         
@@ -87,7 +97,7 @@ public class CharacterQuests
         {
             if (!UnitRequirementsGameData.Instance.CanComponentRun(questComponentTemplate, Owner))
             {
-                Logger.Debug($"User {Owner.Name} ({Owner.Id}) does not meet requirements to start new Quest {questId}, ComponentId {questComponentTemplate.Id}");
+                Logger.Info($"Quest start rejected for {Owner.Name} ({Owner.Id}), quest {questId}: start component requirements failed, componentId {questComponentTemplate.Id}");
                 if (!forcibly)
                     return false;
             }
@@ -102,7 +112,7 @@ public class CharacterQuests
             }
             else if (template.Repeatable == false)
             {
-                Logger.Warn($"Quest {questId} already completed for {Owner.Name}, not added!");
+                Logger.Warn($"Quest start rejected for {Owner.Name} ({Owner.Id}), quest {questId}: already completed and not repeatable");
                 Owner.SendErrorMessage(ErrorMessageType.QuestDailyLimit);
                 return false;
             }
@@ -129,6 +139,7 @@ public class CharacterQuests
         var res = quest.StartQuest();
         if (!res)
         {
+            Logger.Warn($"Quest start rejected for {Owner.Name} ({Owner.Id}), quest {questId}: StartQuest() returned false");
             // If it failed to start, drop the quest here
             DropQuest(questId, true);
             return false;
@@ -242,6 +253,29 @@ public class CharacterQuests
         QuestManager.Instance.RemoveQuestTimer(Owner.Id, questId);
 
         QuestIdManager.Instance.ReleaseId((uint)quest.Id);
+    }
+
+    public void AttachQuest(Quest quest, bool requestEvaluation = true)
+    {
+        if (quest == null)
+        {
+            return;
+        }
+
+        ActiveQuests[quest.TemplateId] = quest;
+        quest.QuestInitialized();
+        if (requestEvaluation)
+        {
+            quest.RequestEvaluation();
+        }
+    }
+
+    public void MarkQuestRemovedFromPersistence(uint questId)
+    {
+        if (!_removed.Contains(questId))
+        {
+            _removed.Add(questId);
+        }
     }
 
     /// <summary>
@@ -369,6 +403,18 @@ public class CharacterQuests
     /// <returns>Returns the CompletedQuest block that was changed</returns>
     public CompletedQuest SetCompletedQuestFlag(uint questId, bool isCompleted)
     {
+        if (TodayAssignmentGameData.Instance.IsTodayAssignmentQuest(questId))
+        {
+            var existingBlockId = (ushort)(questId / 64);
+            if (CompletedQuests.TryGetValue(existingBlockId, out var existingBlock))
+            {
+                existingBlock.Body.Set((int)(questId % 64), false);
+                return existingBlock;
+            }
+
+            return new CompletedQuest(existingBlockId);
+        }
+
         // Calculate block and index
         var completedQuestBlockId = (ushort)(questId / 64);
         var completedQuestBlockIndex = (ushort)(questId % 64);
@@ -390,6 +436,11 @@ public class CharacterQuests
     /// <returns></returns>
     public bool IsQuestComplete(uint questId)
     {
+        if (TodayAssignmentGameData.Instance.IsTodayAssignmentQuest(questId))
+        {
+            return false;
+        }
+
         var completeId = (ushort)(questId / 64);
         if (!CompletedQuests.TryGetValue(completeId, out var completedQuest))
             return false;
@@ -500,6 +551,8 @@ public class CharacterQuests
             }
         }
 
+        StripTodayAssignmentCompletionFlags();
+
         using (var command = connection.CreateCommand())
         {
             command.CommandText = "SELECT * FROM quests WHERE `owner` = @owner";
@@ -540,6 +593,8 @@ public class CharacterQuests
     /// <param name="transaction"></param>
     public void Save(MySqlConnection connection, MySqlTransaction transaction)
     {
+        StripTodayAssignmentCompletionFlags();
+
         if (_removed.Count > 0)
         {
             using (var command = connection.CreateCommand())
@@ -586,6 +641,12 @@ public class CharacterQuests
 
             foreach (var quest in ActiveQuests.Values)
             {
+                if (Owner.TodayAssignments?.OwnsQuest(quest.TemplateId) ?? false)
+                {
+                    MarkQuestRemovedFromPersistence(quest.TemplateId);
+                    continue;
+                }
+
                 command.Parameters.AddWithValue("@id", quest.Id);
                 command.Parameters.AddWithValue("@template_id", quest.TemplateId);
                 command.Parameters.AddWithValue("@data", quest.WriteData());
@@ -594,6 +655,19 @@ public class CharacterQuests
                 command.ExecuteNonQuery();
 
                 command.Parameters.Clear();
+            }
+        }
+    }
+
+    private void StripTodayAssignmentCompletionFlags()
+    {
+        foreach (var questId in TodayAssignmentGameData.Instance.GetAllQuestContextIds())
+        {
+            var completedQuestBlockId = (ushort)(questId / 64);
+            var completedQuestBlockIndex = questId % 64;
+            if (CompletedQuests.TryGetValue(completedQuestBlockId, out var completedBlock))
+            {
+                completedBlock.Body.Set(completedQuestBlockIndex, false);
             }
         }
     }

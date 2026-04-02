@@ -559,6 +559,14 @@ public class Skill
             case SkillTargetType.ChildSlave:
                 break;
             case SkillTargetType.AnyUnitAlways:
+                if (targetCaster.Type is SkillCastTargetType.Unit or SkillCastTargetType.Doodad)
+                {
+                    target = targetCaster.ObjId > 0 ? WorldManager.Instance.GetBaseUnit(targetCaster.ObjId) : caster;
+                    if (target != null)
+                    {
+                        targetCaster.ObjId = target.ObjId;
+                    }
+                }
                 break;
             case SkillTargetType.CommanderPos:
                 break;
@@ -846,7 +854,7 @@ public class Skill
         // TODO: added since there is no OnItemUse event for quest 3469 and other quests that require the use on non-consuming items
         if (Cancelled == false && casterCaster is SkillItem { ItemTemplateId: > 0 } item && caster is Character player)
         {
-            player.ItemUse(item.ItemId);
+            player.ItemUseByTemplate(item.ItemTemplateId);
         }
 
         unit.Events.OnChannelingCancel(this, new OnChannelingCancelArgs());
@@ -1278,13 +1286,14 @@ public class Skill
                 Logger.Error($"Template not found for Skill[{Template.Id}] Effect[{effect.EffectId}]");
         }
 
-        // TODO Call OnItemUse() moved to the ApplyEffects() method from the effects and add trigger ConditionChance;
-        // If the probability of passing the effect is greater than the chance, then run the check on the use of the item for the quest
-        if (casterCaster is SkillItem skillItem && unit.ConditionChance)
+        // Successful skill-item usage should always count as using the source item.
+        // Tying this to ConditionChance breaks repeatable consumables such as potions,
+        // because some effects toggle that flag even when the item use itself succeeded.
+        if (casterCaster is SkillItem skillItem && !Cancelled)
         {
             if (player == null) { return; }
 
-            player.ItemUse(skillItem.ItemId);
+            player.ItemUseByTemplate(skillItem.ItemTemplateId);
 
             // This fixes the issue where "dropping" a Portable Harpoon Cannon (item 23836) would not consume the cannon
             // Related skill Discard Portable Harpoon Cannon (skill 17735) has no reagents attached
@@ -1617,8 +1626,9 @@ AlwaysHit:
             return SkillResult.TooCloseRange;
 
         // TODO: Убрать исключение для doodads
+        // TODO: Убрать исключения для housing rebuild, where the client targets the house object itself
         // TODO: Убрать исключения для slave, инициированных Doodads (нужно для исправления точек ремонта на кораблях)
-        if (targetDist > maxRange && target is not DoodadObj.Doodad && target is not Units.slaves.Slave)
+        if (targetDist > maxRange && target is not DoodadObj.Doodad && target is not Units.slaves.Slave && target is not Housing.House)
             return SkillResult.TooFarRange;
 
         return SkillResult.Success;

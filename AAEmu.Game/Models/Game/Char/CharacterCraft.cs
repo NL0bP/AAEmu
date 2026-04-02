@@ -4,6 +4,7 @@ using System.Linq;
 
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Crafts;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
@@ -167,6 +168,13 @@ public class CharacterCraft
                     CancelCraft();
                     return;
                 }
+            }
+
+            Owner.Achievements?.TrackRecordProgress(CharRecordKind.MakeItemType, product.ItemId, amount: (uint)product.Amount);
+            var productTemplate = ItemManager.Instance.GetTemplate(product.ItemId);
+            if (productTemplate != null)
+            {
+                Owner.Achievements?.TrackRecordProgress(CharRecordKind.MakeItemImpl, (uint)productTemplate.ImplId, amount: (uint)product.Amount);
             }
         }
 

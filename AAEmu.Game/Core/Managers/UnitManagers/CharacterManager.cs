@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-
+using System.Linq;
 using AAEmu.Commons.Exceptions;
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Models;
@@ -11,7 +11,9 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.GameData;
 using AAEmu.Game.Models;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Attendance;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Char.Templates;
@@ -25,9 +27,7 @@ using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Tasks.Characters;
 using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
-
 using MySql.Data.MySqlClient;
-
 using NLog;
 
 namespace AAEmu.Game.Core.Managers.UnitManagers;
@@ -581,6 +581,7 @@ public class CharacterManager : Singleton<CharacterManager>
         character.Portals = new CharacterPortals(character);
         character.Friends = new CharacterFriends(character);
         character.Attendances = new CharacterAttendance(character);
+        character.Achievements = new CharacterAchievements(character);
 
         character.Hp = character.MaxHp;
         character.Mp = character.MaxMp;
@@ -655,6 +656,47 @@ public class CharacterManager : Singleton<CharacterManager>
         // TODO: Wipe all items/gold (this also deletes all pets/vehicles)
     }
 
+    private static void DeleteCharacterProgressData(Character character, MySqlConnection dbConnection)
+    {
+        using (var command = dbConnection.CreateCommand())
+        {
+            command.Connection = dbConnection;
+            command.CommandText = "DELETE FROM character_achievement_records WHERE owner = @owner";
+            command.Parameters.AddWithValue("@owner", character.Id);
+            command.ExecuteNonQuery();
+        }
+
+        using (var command = dbConnection.CreateCommand())
+        {
+            command.Connection = dbConnection;
+            command.CommandText = "DELETE FROM character_achievements WHERE owner = @owner";
+            command.Parameters.AddWithValue("@owner", character.Id);
+            command.ExecuteNonQuery();
+        }
+
+        using (var command = dbConnection.CreateCommand())
+        {
+            command.Connection = dbConnection;
+            command.CommandText = "DELETE FROM character_today_assignments WHERE owner = @owner";
+            command.Parameters.AddWithValue("@owner", character.Id);
+            command.ExecuteNonQuery();
+        }
+
+        var todayQuestIds = TodayAssignmentGameData.Instance.GetAllQuestContextIds().ToList();
+        if (todayQuestIds.Count <= 0)
+        {
+            return;
+        }
+
+        using (var command = dbConnection.CreateCommand())
+        {
+            command.Connection = dbConnection;
+            command.CommandText = $"DELETE FROM quests WHERE owner = @owner AND template_id IN({string.Join(",", todayQuestIds)})";
+            command.Parameters.AddWithValue("@owner", character.Id);
+            command.ExecuteNonQuery();
+        }
+    }
+
     /// <summary>
     /// Mark characters marked for deletion as deleted after their time is finished
     /// </summary>
@@ -689,6 +731,7 @@ public class CharacterManager : Singleton<CharacterManager>
                 if (res > 0)
                 {
                     DeleteCharacterAssets(character, false);
+                    DeleteCharacterProgressData(character, dbConnection);
 
                     // Send delete packet to the player if online
                     if (gameConnection != null)
@@ -702,10 +745,10 @@ public class CharacterManager : Singleton<CharacterManager>
             }
         }
         else
-        if (character.DeleteRequestTime > DateTime.MinValue)
-        {
-            Logger.Warn("CheckForDeletedCharactersDeletion - Delete request for Account:{0} Id:{1} Name:{2}, but character is no longer marked for deletion (possibly cancelled delete)", character.AccountId, character.Id, character.Name);
-        }
+            if (character.DeleteRequestTime > DateTime.MinValue)
+            {
+                Logger.Warn("CheckForDeletedCharactersDeletion - Delete request for Account:{0} Id:{1} Name:{2}, but character is no longer marked for deletion (possibly cancelled delete)", character.AccountId, character.Id, character.Name);
+            }
         return false;
     }
 
@@ -734,10 +777,10 @@ public class CharacterManager : Singleton<CharacterManager>
                             deleteList.Add((charId, accountId));
                         }
                         else
-                        if ((deleteTime > DateTime.MinValue) && (deleteTime < nextCheckTime))
-                        {
-                            nextCheckTime = deleteTime;
-                        }
+                            if ((deleteTime > DateTime.MinValue) && (deleteTime < nextCheckTime))
+                            {
+                                nextCheckTime = deleteTime;
+                            }
                     }
                 }
             }
@@ -928,7 +971,13 @@ public class CharacterManager : Singleton<CharacterManager>
         character.BroadcastPacket(new SCCharacterGenderAndModelModifiedPacket(character), true);
 
         if (character.Inventory.Bag.ConsumeItem(ItemTaskType.EditCosmetic, (uint)ItemConstants.SalonCertificate, 1, null) <= 0)
+        {
             Logger.Error($"Could not consume salon certificate for player {character.Name} ({character.Id})!");
+        }
+        else
+        {
+            character.Achievements?.TrackRecordProgress(CharRecordKind.ChangeLook);
+        }
 
         // The client will do a salon leave request after it gets the SCCharacterGenderAndModelModifiedPacket
     }

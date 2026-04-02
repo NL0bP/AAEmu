@@ -1,4 +1,4 @@
-using AAEmu.Game.Core.Managers;
+﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Quests.Templates;
@@ -38,7 +38,6 @@ public class QuestActObjZoneKill(QuestComponentTemplate parentComponent) : Quest
     /// <returns></returns>
     public override bool RunAct(Quest quest, QuestAct questAct, int currentObjectiveCount)
     {
-        Logger.Debug($"{QuestActTemplateName}({DetailId}).RunAct: Quest: {quest.TemplateId}, Owner {quest.Owner.Name} ({quest.Owner.Id}), Zone {ZoneId}, Npc kills x {CountNpc} (Faction {NpcFactionId} Ex {NpcFactionExclusive}, Lv{LvlMinNpc}~{LvlMaxNpc}), PK x {CountPlayerKill} (Faction {PcFactionId} Ex {PcFactionExclusive}, Lv{LvlMin}~{LvlMax}), TeamShare {TeamShare}, IsParty {IsParty}");
         return (CountNpc > 0 && currentObjectiveCount >= CountNpc) || (CountPlayerKill > 0 && currentObjectiveCount >= CountPlayerKill);
     }
 
@@ -60,24 +59,33 @@ public class QuestActObjZoneKill(QuestComponentTemplate parentComponent) : Quest
             return;
 
         var player = questAct.QuestComponent.Parent.Parent.Owner;
+        var victimPc = args.Victim as Character;
+        var victimNpc = args.Victim as Npc;
+
+        if ((ZoneId > 0) && (args.ZoneGroupId != ZoneId))
+        {
+            return;
+        }
         
         // If Party kills is not allowed, only allow kills from self
-        if (!IsParty && (args.Killer.Id == player.Id))
+        if (!IsParty && (args.Killer.Id != player.Id))
+        {
             return;
+        }
         
         // Ignore if victim is the killer (e.g. death from fall-damage)
         // TODO: Verify if DoT debuff effects apply the killer setting correctly
         if (args.Killer.ObjId == args.Victim.ObjId)
+        {
             return;
-
-        var victimPc = args.Victim as Character;
-        var victimNpc = args.Victim as Npc;
+        }
 
         var valid = false;
         
         if ((CountNpc > 0) && (victimNpc != null))
         {
             // NPC kills
+            valid = NpcFactionId == 0;
             if (NpcFactionId > 0)
             {
                 if (NpcFactionExclusive && (victimNpc.Faction.Id != NpcFactionId))
@@ -86,12 +94,14 @@ public class QuestActObjZoneKill(QuestComponentTemplate parentComponent) : Quest
                     valid = true;
             }
 
-            if ((victimNpc.Level < LvlMinNpc) || (victimNpc.Level > LvlMaxNpc))
+            var hasNpcLevelFilter = (LvlMinNpc > 0) || (LvlMaxNpc > 0);
+            if (hasNpcLevelFilter && ((victimNpc.Level < LvlMinNpc) || (victimNpc.Level > LvlMaxNpc)))
                 valid = false;
         }
         
         if ((CountPlayerKill > 0) && (victimPc != null))
         {
+            valid = PcFactionId == 0;
             if (PcFactionId > 0)
             {
                 // Player kills
@@ -101,7 +111,8 @@ public class QuestActObjZoneKill(QuestComponentTemplate parentComponent) : Quest
                     valid = true;
             }
 
-            if ((victimPc.Level < LvlMin) || (victimPc.Level > LvlMax))
+            var hasPcLevelFilter = (LvlMin > 0) || (LvlMax > 0);
+            if (hasPcLevelFilter && ((victimPc.Level < LvlMin) || (victimPc.Level > LvlMax)))
                 valid = false;
         }
 

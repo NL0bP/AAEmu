@@ -6,7 +6,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
@@ -17,6 +16,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
@@ -32,9 +32,7 @@ using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Tasks.Housing;
 using AAEmu.Game.Utils;
 using AAEmu.Game.Utils.DB;
-
 using MySql.Data.MySqlClient;
-
 using NLog;
 
 namespace AAEmu.Game.Core.Managers;
@@ -1062,6 +1060,7 @@ public class HousingManager : Singleton<HousingManager>
         house.Spawn();
         UpdateTaxInfo(house, true);
         ResidentManager.Instance.AddResidenMemberInfo(connection.ActiveChar);
+        connection.ActiveChar.Achievements?.TrackRecordProgress(CharRecordKind.MakeHousing, designId);
     }
 
     /// <summary>
@@ -1169,6 +1168,7 @@ public class HousingManager : Singleton<HousingManager>
         ReturnHouseRefundToOwner(house, false, false, null, oldHouseName);
 
         ResidentManager.Instance.AddResidenMemberInfo(connection.ActiveChar);
+        connection.ActiveChar.Achievements?.TrackRecordProgress(CharRecordKind.RebuildHousing, designId);
 
         return house;
     }
@@ -1818,7 +1818,7 @@ public class HousingManager : Singleton<HousingManager>
             $"PayWeeklyTax; tlId:{house.TlId}, tax:{totalTax}, protectEnd:{house.ProtectionEndDate}, " +
             $"paid:{!status.RequiresPayment}, weeksWithoutPay:{status.WeeksWithoutPay}");
     }
-    
+
     #endregion
 
     /// <summary>
@@ -2043,32 +2043,32 @@ public class HousingManager : Singleton<HousingManager>
                 }
             }
             else
-            if (f.ItemTemplateId > 0)
-            {
-                // try to stack stackable items
-                var oldItem = returnedItems.FirstOrDefault(x => x.TemplateId == f.ItemTemplateId && x.Count < x.Template.MaxCount);
-
-                if (oldItem != null)
+                if (f.ItemTemplateId > 0)
                 {
-                    oldItem.Count++;
+                    // try to stack stackable items
+                    var oldItem = returnedItems.FirstOrDefault(x => x.TemplateId == f.ItemTemplateId && x.Count < x.Template.MaxCount);
+
+                    if (oldItem != null)
+                    {
+                        oldItem.Count++;
+                    }
+                    else
+                    {
+                        // It's a new one, add an item slot
+                        var furnitureItem = ItemManager.Instance.Create(f.ItemTemplateId, 1, 0);
+                        var furnitureTemplate = ItemManager.Instance.GetTemplate(f.ItemTemplateId);
+                        furnitureItem.Grade = furnitureTemplate.FixedGrade >= 0 ? (byte)furnitureTemplate.FixedGrade : (byte)0;
+                        furnitureItem.OwnerId = house.OwnerId;
+                        furnitureItem.SlotType = SlotType.MailAttachment;
+                        returnedItems.Add(furnitureItem);
+                    }
+                    returnedThisItem = true;
                 }
                 else
                 {
-                    // It's a new one, add an item slot
-                    var furnitureItem = ItemManager.Instance.Create(f.ItemTemplateId, 1, 0);
-                    var furnitureTemplate = ItemManager.Instance.GetTemplate(f.ItemTemplateId);
-                    furnitureItem.Grade = furnitureTemplate.FixedGrade >= 0 ? (byte)furnitureTemplate.FixedGrade : (byte)0;
-                    furnitureItem.OwnerId = house.OwnerId;
-                    furnitureItem.SlotType = SlotType.MailAttachment;
-                    returnedItems.Add(furnitureItem);
+                    // Not sure what happened here, just ignore it
+                    continue;
                 }
-                returnedThisItem = true;
-            }
-            else
-            {
-                // Not sure what happened here, just ignore it
-                continue;
-            }
 
             // Set new doodad owner if needed
             if (newOwner != null)
@@ -2287,32 +2287,32 @@ public class HousingManager : Singleton<HousingManager>
                 }
             }
             else
-            if (f.ItemTemplateId > 0)
-            {
-                // try to stack stackable items
-                var oldItem = returnedItems.FirstOrDefault(x => x.TemplateId == f.ItemTemplateId && x.Count < x.Template.MaxCount);
-
-                if (oldItem != null)
+                if (f.ItemTemplateId > 0)
                 {
-                    oldItem.Count++;
+                    // try to stack stackable items
+                    var oldItem = returnedItems.FirstOrDefault(x => x.TemplateId == f.ItemTemplateId && x.Count < x.Template.MaxCount);
+
+                    if (oldItem != null)
+                    {
+                        oldItem.Count++;
+                    }
+                    else
+                    {
+                        // It's a new one, add an item slot
+                        var furnitureItem = ItemManager.Instance.Create(f.ItemTemplateId, 1, 0);
+                        var furnitureTemplate = ItemManager.Instance.GetTemplate(f.ItemTemplateId);
+                        furnitureItem.Grade = furnitureTemplate.FixedGrade >= 0 ? (byte)furnitureTemplate.FixedGrade : (byte)0;
+                        furnitureItem.OwnerId = house.OwnerId;
+                        furnitureItem.SlotType = SlotType.MailAttachment;
+                        returnedItems.Add(furnitureItem);
+                    }
+                    returnedThisItem = true;
                 }
                 else
                 {
-                    // It's a new one, add an item slot
-                    var furnitureItem = ItemManager.Instance.Create(f.ItemTemplateId, 1, 0);
-                    var furnitureTemplate = ItemManager.Instance.GetTemplate(f.ItemTemplateId);
-                    furnitureItem.Grade = furnitureTemplate.FixedGrade >= 0 ? (byte)furnitureTemplate.FixedGrade : (byte)0;
-                    furnitureItem.OwnerId = house.OwnerId;
-                    furnitureItem.SlotType = SlotType.MailAttachment;
-                    returnedItems.Add(furnitureItem);
+                    // Not sure what happened here, just ignore it
+                    continue;
                 }
-                returnedThisItem = true;
-            }
-            else
-            {
-                // Not sure what happened here, just ignore it
-                continue;
-            }
 
             // Set new doodad owner if needed
             if (newOwner != null)

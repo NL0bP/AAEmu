@@ -42,7 +42,11 @@ public class SkillUse : SpecialEffectAction
         var useSkill = new Skill(SkillManager.Instance.GetSkillTemplate((uint)skillId));
         targetObj = new SkillCastUnitTarget(target?.ObjId ?? 0);
         caster.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.UseSkill);//Not sure if it belongs here.
-        TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, casterObj, target, targetObj, skillObject), TimeSpan.FromMilliseconds(delay));
+
+        // Secondary skill triggers from buffs/food should behave like a unit skill cast.
+        // Reusing SkillItem here makes achievement/item-use hooks fire on every buff tick.
+        var effectiveCasterObj = casterObj is SkillItem ? new SkillCasterUnit(caster.ObjId) : casterObj;
+        TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, effectiveCasterObj, target, targetObj, skillObject), TimeSpan.FromMilliseconds(delay));
         //useSkill.ApplyEffects(caster, casterObj, target, targetObj, skillObject);
     }
 }

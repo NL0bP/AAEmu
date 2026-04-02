@@ -301,6 +301,7 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
         _effects.Add("CraftEffect", new Dictionary<uint, EffectTemplate>());
         _effects.Add("DamageEffect", new Dictionary<uint, EffectTemplate>());
         _effects.Add("DispelEffect", new Dictionary<uint, EffectTemplate>());
+        _effects.Add("ExtendChargeEffect", new Dictionary<uint, EffectTemplate>());
         _effects.Add("FlyingStateChangeEffect", new Dictionary<uint, EffectTemplate>());
         _effects.Add("GainLootPackItemEffect", new Dictionary<uint, EffectTemplate>());
         _effects.Add("HealEffect", new Dictionary<uint, EffectTemplate>());
@@ -1280,6 +1281,40 @@ public class SkillManager : Singleton<SkillManager>, ISkillManager
                         template.CureCount = reader.GetInt32("cure_count");
                         template.BuffTagId = reader.GetUInt32("buff_tag_id", 0);
                         _effects["DispelEffect"].Add(template.Id, template);
+                    }
+                }
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM extend_charge_effects";
+                command.Prepare();
+                using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+                {
+                    while (reader.Read())
+                    {
+                        var template = new ExtendChargeEffect();
+                        template.Id = reader.GetUInt32("id");
+                        template.ChargeBuffId = reader.GetUInt32("charge_buff_id", 0);
+                        template.DamageType = (DamageType)reader.GetInt32("damage_type_id");
+                        template.DpsIncMultiplier = reader.GetFloat("dps_inc_multiplier");
+                        template.DpsMultiplier = reader.GetFloat("dps_multiplier");
+                        template.FixedMax = reader.GetInt32("fixed_max");
+                        template.FixedMin = reader.GetInt32("fixed_min");
+                        template.LevelMd = reader.GetFloat("level_md");
+                        template.LevelVaEnd = reader.GetInt32("level_va_end");
+                        template.LevelVaStart = reader.GetInt32("level_va_start");
+                        template.PercentMax = reader.GetInt32("percent_max");
+                        template.PercentMin = reader.GetInt32("percent_min");
+                        template.UseCurrentHealth = reader.GetBoolean("use_current_health", true);
+                        template.UseDpsCharge = reader.GetBoolean("use_dps_charge", true);
+                        template.UseFixedCharge = reader.GetBoolean("use_fixed_charge", true);
+                        template.UseLevelCharge = reader.GetBoolean("use_level_charge", true);
+                        template.UseMainhandWeapon = reader.GetBoolean("use_mainhand_weapon", true);
+                        template.UseOffhandWeapon = reader.GetBoolean("use_offhand_weapon", true);
+                        template.UsePercentCharge = reader.GetBoolean("use_percent_charge", true);
+                        template.UseRangedWeapon = reader.GetBoolean("use_ranged_weapon", true);
+                        _effects["ExtendChargeEffect"].Add(template.Id, template);
                     }
                 }
             }

@@ -168,25 +168,38 @@ public class PlotCondition
     }
 
     // 9
-    private static bool ConditionCombatDiceResult(BaseUnit caster, SkillCaster casterCaster, BaseUnit target, SkillCastTarget targetCaster, SkillObject skillObject, int unused1, int unused2, int unused3, int unused4, Skill skill)
+    private static bool ConditionCombatDiceResult(BaseUnit caster, SkillCaster casterCaster, BaseUnit target, SkillCastTarget targetCaster, SkillObject skillObject, int expectedResult, int unused2, int unused3, int unused4, Skill skill)
     {
-        // NOTE: unknown1 kind of looks like it could be a bit mask of some sorts, but no idea what it actually is
         if (target is Unit targetUnit)
         {
-            // Super hacky way to do combat dice....
-            var hitType = skill.RollCombatDice(caster, targetUnit);
-            if (!skill.HitTypes.TryAdd(targetUnit.ObjId, hitType))
+            if (!skill.HitTypes.TryGetValue(targetUnit.ObjId, out var hitType))
+            {
+                hitType = skill.RollCombatDice(caster, targetUnit);
                 skill.HitTypes[targetUnit.ObjId] = hitType;
+            }
 
-            return hitType == SkillHitType.MeleeDodge
-                || hitType == SkillHitType.MeleeParry
-                || hitType == SkillHitType.MeleeBlock
-                || hitType == SkillHitType.MeleeMiss
-                || hitType == SkillHitType.RangedDodge
-                || hitType == SkillHitType.RangedParry
-                || hitType == SkillHitType.RangedBlock
-                || hitType == SkillHitType.RangedMiss
-                || hitType == SkillHitType.Immune;
+            var missed = skill.SkillMissed(targetUnit.ObjId);
+            Logger.Debug(
+                "PlotConditionCombatDiceResult Params : Expected: {0} | HitType: {1} ({2}) | Missed: {3}",
+                expectedResult,
+                hitType,
+                (int)hitType,
+                missed);
+
+            return expectedResult switch
+            {
+                51 => !missed,
+                204 => missed,
+                _ => hitType == SkillHitType.MeleeDodge
+                    || hitType == SkillHitType.MeleeParry
+                    || hitType == SkillHitType.MeleeBlock
+                    || hitType == SkillHitType.MeleeMiss
+                    || hitType == SkillHitType.RangedDodge
+                    || hitType == SkillHitType.RangedParry
+                    || hitType == SkillHitType.RangedBlock
+                    || hitType == SkillHitType.RangedMiss
+                    || hitType == SkillHitType.Immune
+            };
         }
         return true; // Almost Every CombatDiceResult is a NotCondition -> false makes it true.
     }
@@ -231,7 +244,24 @@ public class PlotCondition
             return false;
         }
 
-        var variableValue = casterUnit.ActivePlotState.Variables[variableIndex];
+        if (casterUnit.ActivePlotState?.Variables == null)
+        {
+            Logger.Warn("PlotConditionVariable missing active plot state for caster {0} ({1})", casterUnit.Name, casterUnit.ObjId);
+            return false;
+        }
+
+        if (variableIndex < 0)
+        {
+            Logger.Warn(
+                "PlotConditionVariable index out of range for caster {0} ({1}): index={2}, variables={3}",
+                casterUnit.Name,
+                casterUnit.ObjId,
+                variableIndex,
+                casterUnit.ActivePlotState.Variables.Length);
+            return false;
+        }
+
+        var variableValue = casterUnit.ActivePlotState.GetVariable(variableIndex);
         Logger.Debug($"PlotConditionVariable Params : Index: {variableIndex}, Operation: {operation}, compareValue: {compareValue} | Index Value: {variableValue}");
         // There is a high chance this is not implemented correctly ...
         // If refactoring. See SpecialEffect -> SetVariable as well

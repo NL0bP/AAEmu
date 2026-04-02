@@ -6,7 +6,6 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models;
-using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Duels;
@@ -239,11 +238,13 @@ public class DuelManager : Singleton<DuelManager>
                 if (loseId == duel.Challenger.Id)
                 {
                     duel.SendPacketsBoth(new SCDuelEndedPacket(duel.Challenged.Id, duel.Challenger.Id, duel.Challenged.ObjId, duel.Challenger.ObjId, det));
+                    duel.Challenged.Achievements?.TrackDuelWin();
                     Logger.Warn($"DuelStop: Challenger:{duel.Challenger.Name} Lose, Challenged:{duel.Challenged.Name} Win!");
                 }
                 else if (loseId == duel.Challenged.Id)
                 {
                     duel.SendPacketsBoth(new SCDuelEndedPacket(duel.Challenger.Id, duel.Challenged.Id, duel.Challenger.ObjId, duel.Challenged.ObjId, det));
+                    duel.Challenger.Achievements?.TrackDuelWin();
                     Logger.Warn($"DuelStop: Challenger:{duel.Challenger.Name} Win, Challenged:{duel.Challenged.Name} Lose!");
                 }
             }

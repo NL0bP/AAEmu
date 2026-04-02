@@ -85,11 +85,13 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
 
             character.Quests.Send();
             character.Quests.SendCompleted();
+            character.TodayAssignments.Send();
 
             character.Actability.Send();
             character.Mails.SendUnreadMailCount();
             // removed in 5.0.7.0
             character.Appellations.Send();
+            character.Achievements.Send();
             character.Portals.Send();
 
             character.Friends.Send();

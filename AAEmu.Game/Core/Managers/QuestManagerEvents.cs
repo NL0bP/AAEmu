@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Quests.Acts;
@@ -101,7 +102,7 @@ public partial class QuestManager
         var itemGroupsForThisItem = _groupItems.Where(x => x.Value.Contains(templateId)).Select(x => x.Key);
         foreach (var itemGroup in itemGroupsForThisItem)
         {
-            owner?.Events?.OnItemGroupGather(owner, new OnItemGroupGatherArgs { ItemId = templateId, Count = count, ItemGroupId = itemGroup});
+            owner?.Events?.OnItemGroupGather(owner, new OnItemGroupGatherArgs { ItemId = templateId, Count = count, ItemGroupId = itemGroup });
         }
     }
 
@@ -174,7 +175,11 @@ public partial class QuestManager
         if (npc == null)
             return;
 
+        (owner as Character)?.Achievements?.TrackRecordProgress(CharRecordKind.KillNpc, npc.TemplateId);
+
         var npcZoneGroupId = ZoneManager.Instance.GetZoneByKey(npc.Transform.ZoneId)?.GroupId ?? 0;
+        Logger.Debug("DoOnMonsterHuntEvents: owner={0} ({1}), npcTemplateId={2}, npcObjId={3}, zoneId={4}, zoneGroupId={5}, npcLevel={6}, npcFactionId={7}",
+            owner?.Name, owner?.Id, npc.TemplateId, npc.ObjId, npc.Transform.ZoneId, npcZoneGroupId, npc.Level, npc.Faction?.Id ?? 0);
 
         // Individual monster kill
         owner.Events?.OnMonsterHunt(owner, new OnMonsterHuntArgs

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Xml.Linq;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
@@ -13,12 +12,7 @@ using AAEmu.Game.Models.Game.Family;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Skills;
 
-using Mysqlx.Crud;
-using Mysqlx.Expr;
-
 using NLog;
-
-using static Mysqlx.Notice.Warning.Types;
 
 namespace AAEmu.Game.Core.Managers;
 
@@ -194,6 +188,7 @@ public class FamilyManager : Singleton<FamilyManager>
         character.Family = family.Id;
         ChatManager.Instance.GetFamilyChat(family.Id)?.JoinChannel(character);
         character.ApplyFamilyEffects();
+        character.Achievements?.TrackFamilyEnrollment();
     }
 
     /// <summary>

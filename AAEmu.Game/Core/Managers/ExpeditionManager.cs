@@ -332,6 +332,7 @@ public class ExpeditionManager : Singleton<ExpeditionManager>
         owner.Expedition = expedition;
         owner.Expedition.ProtectTime = DateTime.UtcNow + TimeSpan.FromDays(30); // TODO вставить правильное количество дней
         SetExpeditionBuff(owner);
+        owner.Achievements?.TrackExpeditionEnrollment();
 
         var membersList = new List<(uint memberObjId, uint memberId, string name)>(validMembers.Count);
         foreach (var tm in validMembers)
@@ -365,6 +366,7 @@ public class ExpeditionManager : Singleton<ExpeditionManager>
 
             invited.Expedition = expedition;
             expedition.Members.Add(newMember);
+            invited.Achievements?.TrackExpeditionEnrollment();
 
             invited.BroadcastPacket(new SCUnitExpeditionChangedPacket(invited.ObjId, invited.Id, "", invited.Name, 0, expedition.Id, false), true);
             SendMyExpeditionInfo(invited);

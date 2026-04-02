@@ -2,6 +2,7 @@
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
@@ -148,6 +149,15 @@ public class GradeEnchant : SpecialEffectAction
         }
 
         character.SendPacket(new SCItemGradeEnchantResultPacket((byte)result, item, initialGrade, item.Grade, 0u, 0, false));
+
+        if (result is GradeEnchantResult.Success or GradeEnchantResult.GreatSuccess)
+        {
+            character.Achievements?.TrackRecordProgress(CharRecordKind.EnchantItem, (uint)item.Grade);
+        }
+        else
+        {
+            character.Achievements?.TrackRecordProgress(CharRecordKind.EnchantFailure);
+        }
 
         // Let the world know if we got lucky enough
         if (item.Grade >= 8 && result is GradeEnchantResult.Success or GradeEnchantResult.GreatSuccess)

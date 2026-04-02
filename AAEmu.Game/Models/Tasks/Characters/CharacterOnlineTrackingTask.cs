@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.Game.Models.Tasks.Characters;
@@ -15,6 +16,7 @@ public class CharacterOnlineTrackingTask : Task
     private readonly object _lock = new();
     private bool Busy { get; set; }
     private Dictionary<ulong, DateTime> last60SecondCheck = new();
+    private Dictionary<uint, DateTime> lastDailyResetCheck = new();
 
     public CharacterOnlineTrackingTask()
     {
@@ -38,11 +40,17 @@ public class CharacterOnlineTrackingTask : Task
         // Loop all online players
         foreach (var character in WorldManager.Instance.GetAllCharacters())
         {
+            CheckDailyReset(character);
+
             // Update character time
             var lastSeconds = Math.Floor(character.OnlineTime.TotalSeconds);
             character.OnlineTime += delta;
             var newSeconds = Math.Floor(character.OnlineTime.TotalSeconds);
             var deltaSeconds = (uint)(newSeconds - lastSeconds);
+            if (deltaSeconds > 0)
+            {
+                character.Achievements?.TrackRecordProgress(CharRecordKind.PlayTime, amount: deltaSeconds, sendPackets: false);
+            }
             // TODO: Use lastSeconds and newSeconds as a comparison for triggering time played achievements
             // TODO: Add divine clock feedback packets
             // Check if 60 seconds have passed since the last 60-second check
@@ -76,6 +84,27 @@ public class CharacterOnlineTrackingTask : Task
         {
             Busy = false;
         }
+    }
+
+    private void CheckDailyReset(Character character)
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+        if (!lastDailyResetCheck.TryGetValue(character.Id, out var lastResetDate))
+        {
+            lastDailyResetCheck[character.Id] = character.LeaveTime.Date > DateTime.MinValue.Date
+                ? character.LeaveTime.Date
+                : todayUtc;
+            return;
+        }
+
+        if (lastResetDate >= todayUtc)
+        {
+            return;
+        }
+
+        character.Quests?.ResetDailyQuests(true);
+        character.TodayAssignments?.Reset(true);
+        lastDailyResetCheck[character.Id] = todayUtc;
     }
 
     private void Perform60SecondCalculations(Character character, uint deltaSeconds)

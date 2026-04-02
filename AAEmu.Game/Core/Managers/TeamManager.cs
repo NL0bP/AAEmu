@@ -179,6 +179,7 @@ public class TeamManager : Singleton<TeamManager>
             {
                 target.SendPacket(new SCJoinedTeamPacket(activeTeam));
                 target.InParty = true;
+                target.Achievements?.TrackTeamEnrollment(activeTeam.IsParty);
                 target.SendPacket(new SCTeamPingPosPacket(activeTeam.PingPosition));
                 activeTeam.BroadcastPacket(new SCTeamMemberJoinedPacket(activeTeam.Id, newTeamMember, party), target.Id);
             }
@@ -267,8 +268,10 @@ public class TeamManager : Singleton<TeamManager>
 
         activeInvitation.Owner.SendPacket(new SCJoinedTeamPacket(newTeam));
         activeInvitation.Owner.InParty = true;
+        activeInvitation.Owner.Achievements?.TrackTeamEnrollment(newTeam.IsParty);
         activeInvitation.Target.SendPacket(new SCJoinedTeamPacket(newTeam));
         activeInvitation.Target.InParty = true;
+        activeInvitation.Target.Achievements?.TrackTeamEnrollment(newTeam.IsParty);
         newTeam.BroadcastPacket(new SCTeamPingPosPacket(activeInvitation.Owner.LocalPingPosition));
         if (!newTeam.IsParty)
         {
@@ -299,6 +302,7 @@ public class TeamManager : Singleton<TeamManager>
 
         character.SendPacket(new SCJoinedTeamPacket(newTeam));
         character.InParty = asParty;
+        character.Achievements?.TrackTeamEnrollment(newTeam.IsParty);
         newTeam.BroadcastPacket(new SCTeamPingPosPacket(character.LocalPingPosition));
 
         if (!newTeam.IsParty)

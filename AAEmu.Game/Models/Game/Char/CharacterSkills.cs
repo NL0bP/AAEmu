@@ -14,6 +14,14 @@ namespace AAEmu.Game.Models.Game.Char;
 
 public class CharacterSkills(Character owner)
 {
+    public sealed class TemporarySkillReplacement
+    {
+        public uint OriginalSkillId { get; init; }
+        public uint ReplacementSkillId { get; init; }
+        public uint BuffId { get; init; }
+        public byte Slot { get; init; }
+    }
+
     private enum SkillType : byte
     {
         Skill = 1,
@@ -21,6 +29,7 @@ public class CharacterSkills(Character owner)
     }
 
     private readonly List<uint> _removed = new();
+    private readonly Dictionary<uint, TemporarySkillReplacement> _temporaryReplacementsByNewSkill = new();
     public Dictionary<uint, Skill> Skills { get; } = new();
     public Dictionary<uint, PassiveBuff> PassiveBuffs { get; } = new();
     private Character Owner { get; } = owner;
@@ -193,9 +202,67 @@ public class CharacterSkills(Character owner)
     {
         var skillTemplate = SkillManager.Instance.GetSkillTemplate(skillId);
 
+        if (skillTemplate == null)
+            return false;
+
         return Skills.Values.Any(skill =>
             skill.Template.AbilityId == skillTemplate.AbilityId &&
             skill.Template.AbilityLevel == skillTemplate.AbilityLevel);
+    }
+
+    public void RegisterTemporarySkillReplacement(uint originalSkillId, uint replacementSkillId, uint buffId, byte slot)
+    {
+        if (originalSkillId == 0 || replacementSkillId == 0 || buffId == 0)
+            return;
+
+        if (!Skills.ContainsKey(originalSkillId) && !IsVariantOfSkill(originalSkillId))
+            return;
+
+        var replacementTemplate = SkillManager.Instance.GetSkillTemplate(replacementSkillId);
+        if (replacementTemplate == null)
+            return;
+
+        _temporaryReplacementsByNewSkill[replacementSkillId] = new TemporarySkillReplacement
+        {
+            OriginalSkillId = originalSkillId,
+            ReplacementSkillId = replacementSkillId,
+            BuffId = buffId,
+            Slot = slot
+        };
+    }
+
+    public bool TryCreateTemporaryReplacementSkill(uint replacementSkillId, out Skill skill)
+    {
+        skill = null;
+        CleanupExpiredTemporaryReplacements();
+
+        if (!_temporaryReplacementsByNewSkill.TryGetValue(replacementSkillId, out var replacement))
+            return false;
+
+        if (!Owner.Buffs.CheckBuff(replacement.BuffId))
+        {
+            _temporaryReplacementsByNewSkill.Remove(replacementSkillId);
+            return false;
+        }
+
+        var template = SkillManager.Instance.GetSkillTemplate(replacementSkillId);
+        if (template == null)
+            return false;
+
+        skill = new Skill(template, Owner);
+        return true;
+    }
+
+    public void CleanupExpiredTemporaryReplacements()
+    {
+        if (_temporaryReplacementsByNewSkill.Count == 0)
+            return;
+
+        foreach (var replacement in _temporaryReplacementsByNewSkill.Values.ToList())
+        {
+            if (!Owner.Buffs.CheckBuff(replacement.BuffId))
+                _temporaryReplacementsByNewSkill.Remove(replacement.ReplacementSkillId);
+        }
     }
 
     public List<HeirSkill> GetHeroSkillsFromSkills()

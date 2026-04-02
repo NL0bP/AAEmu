@@ -571,7 +571,10 @@ public sealed class Mate : Unit
                 // Notify owner of the level up event
                 var owner = WorldManager.Instance.GetCharacterByObjId(OwnerObjId);
                 if (owner != null)
+                {
+                    owner.Achievements?.TrackMateLevel(TemplateId, Level);
                     owner.Events.OnMateLevelUp(this, new OnMateLevelUpArgs());
+                }
             }
             //StartRegen();
         }

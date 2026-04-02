@@ -311,7 +311,9 @@ public class Buffs : IBuffs
                     break;
                 case BuffStackRule.ChargeRefresh:
                     foreach (var e in new List<Buff>(_effects))
-                        if (e != null)
+                        if (e != null && e.InUse &&
+                            (e.Template.BuffId == buff.Template.BuffId ||
+                             (buff.Template.GroupId > 0 && e.Template.GroupId == buff.Template.GroupId)))
                             if (buff.Charge < e.Charge)
                                 return;
                             else

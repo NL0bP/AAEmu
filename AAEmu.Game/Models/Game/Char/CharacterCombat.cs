@@ -8,9 +8,11 @@ using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Templates;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Static;
+using AAEmu.Game.Models.Game.Units.slaves;
 
 namespace AAEmu.Game.Models.Game.Char;
 
@@ -26,8 +28,21 @@ public partial class Character
     {
         base.DoDie(killer, killReason);
 
-        if (killer is Character enemy && enemy.Faction.MotherId != Faction.MotherId)
-            enemy.HostileFactionKills++;
+        if (killer is Character enemy)
+        {
+            var sameMotherFaction = enemy.Faction.MotherId == Faction.MotherId;
+            if (!sameMotherFaction)
+            {
+                enemy.HostileFactionKills++;
+            }
+
+            enemy.Achievements?.TrackPvpKill(sameMotherFaction);
+            Achievements?.TrackPvpDeath(sameMotherFaction);
+        }
+        else if (killer is Npc or Slave)
+        {
+            Achievements?.TrackNpcDeath();
+        }
 
         DropTradePackToFloor();
     }

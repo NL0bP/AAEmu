@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
@@ -7,6 +8,7 @@ namespace AAEmu.Game.Models.Game.Skills.Plots.Tree;
 
 public class PlotState
 {
+    private const int DefaultVariableCapacity = 16;
     private bool _cancellationRequest;
     private bool _finishChanneling;
     public Dictionary<uint, int> Tickets { get; set; }
@@ -39,7 +41,53 @@ public class PlotState
         HitObjects = [];
         Tickets = [];
         ChanneledBuffs = [];
-        Variables = new int[12];
+        Variables = new int[DefaultVariableCapacity];
+    }
+
+    public int GetVariable(int index)
+    {
+        if (index < 0)
+            return 0;
+
+        EnsureVariableCapacity(index);
+        return Variables[index];
+    }
+
+    public void SetVariable(int index, int value)
+    {
+        if (index < 0)
+            return;
+
+        EnsureVariableCapacity(index);
+        Variables[index] = value;
+    }
+
+    public void AddVariable(int index, int value)
+    {
+        if (index < 0)
+            return;
+
+        EnsureVariableCapacity(index);
+        Variables[index] += value;
+    }
+
+    public void EnsureVariableCapacity(int index)
+    {
+        if (index < 0)
+            return;
+
+        if (Variables == null)
+        {
+            Variables = new int[Math.Max(DefaultVariableCapacity, index + 1)];
+            return;
+        }
+
+        if (index < Variables.Length)
+            return;
+
+        var variables = Variables;
+        Array.Resize(ref variables, Math.Max(variables.Length * 2, index + 1));
+        Variables = variables;
     }
 
     public bool CancellationRequested() => _cancellationRequest;

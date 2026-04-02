@@ -36,9 +36,9 @@ public class SetVariable : SpecialEffectAction
         if (skill.ActivePlotState != null)
         {
             if (operation == 1)
-                skill.ActivePlotState.Variables[index] += value;
+                skill.ActivePlotState.AddVariable(index, value);
             else if (operation == 11)
-                skill.ActivePlotState.Variables[index] = value;
+                skill.ActivePlotState.SetVariable(index, value);
             else
                 Logger.Error("Invalid Plot Variable Operation Kind.");
         }

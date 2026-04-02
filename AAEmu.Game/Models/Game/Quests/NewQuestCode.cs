@@ -152,6 +152,8 @@ public partial class Quest
                     var body = new byte[8];
                     completedBlock.Body.CopyTo(body, 0);
 
+                    Owner.Events?.OnQuestComplete(Owner, new OnQuestCompleteArgs { QuestId = TemplateId, Selected = 0 });
+                    (Owner as AAEmu.Game.Models.Game.Char.Character)?.Achievements?.TrackQuestCompleted(TemplateId);
                     Owner.Quests.DropQuest(TemplateId, false, false);
                     Owner.SendPacket(new SCQuestContextCompletedPacket(TemplateId, body, 0));
 

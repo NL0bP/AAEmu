@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using AAEmu.Commons.Utils;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
@@ -426,21 +427,40 @@ public class DamageEffect : EffectTemplate
         //Invoke even if damage is 0
         ((Unit)caster).Events.OnAttack(this, new OnAttackArgs
         {
-            Attacker = (Unit)caster
+            Attacker = (Unit)caster,
+            Target = trg
         });
         trg.Events.OnAttacked(this, new OnAttackedArgs { });
 
         if (value > 0)
         {
+            // Temporary narrow fix for Poison Application (10481):
+            // self-buff 22266 prepares the next successful melee/ranged hit to apply poison 21999.
+            if ((DamageType == DamageType.Melee || DamageType == DamageType.Ranged) &&
+                caster is Unit casterUnit &&
+                target is Unit struckUnit &&
+                casterUnit.Buffs.CheckBuff(22266))
+            {
+                var poisonBuff = SkillManager.Instance.GetBuffTemplate(21999);
+                if (poisonBuff != null && !struckUnit.Buffs.CheckBuffImmune(poisonBuff.Id))
+                {
+                    struckUnit.Buffs.AddBuff(new Buff(struckUnit, casterUnit, casterObj, poisonBuff, source?.Skill, DateTime.UtcNow));
+                }
+
+                casterUnit.Buffs.RemoveBuff(22266);
+            }
+
             ((Unit)caster).Events.OnDamage(this, new OnDamageArgs
             {
                 Attacker = (Unit)caster,
+                Target = trg,
                 Amount = value
             });
             caster.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.DamageEtc);
             trg.Events.OnDamaged(this, new OnDamagedArgs
             {
                 Attacker = (Unit)caster,
+                Target = trg,
                 Amount = value
             });
 
@@ -450,6 +470,7 @@ public class DamageEffect : EffectTemplate
                     trg.Events.OnDamagedMelee(this, new OnDamagedArgs()
                     {
                         Attacker = (Unit)caster,
+                        Target = trg,
                         Amount = value
                     });
                     break;
@@ -457,6 +478,7 @@ public class DamageEffect : EffectTemplate
                     trg.Events.OnDamagedRanged(this, new OnDamagedArgs()
                     {
                         Attacker = (Unit)caster,
+                        Target = trg,
                         Amount = value
                     });
                     break;
@@ -464,6 +486,7 @@ public class DamageEffect : EffectTemplate
                     trg.Events.OnDamagedSpell(this, new OnDamagedArgs()
                     {
                         Attacker = (Unit)caster,
+                        Target = trg,
                         Amount = value
                     });
                     break;
@@ -471,6 +494,7 @@ public class DamageEffect : EffectTemplate
                     trg.Events.OnDamagedSiege(this, new OnDamagedArgs()
                     {
                         Attacker = (Unit)caster,
+                        Target = trg,
                         Amount = value
                     });
                     break;

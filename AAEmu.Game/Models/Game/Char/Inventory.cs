@@ -7,6 +7,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Achievement.Enums;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
@@ -925,6 +926,11 @@ public class Inventory
         //if ((item?.Template.LootQuestId > 0) && (count != 0))
         if (count > 0 && item != null)
         {
+        if (Owner is Character character)
+        {
+            character.Achievements?.TrackRecordProgress(CharRecordKind.GetItemType, item.TemplateId, amount: (uint)count);
+            character.Achievements?.TrackRecordProgress(CharRecordKind.GetItemImpl, (uint)item.Template.ImplId, amount: (uint)count);
+        }
             //Owner?.Quests?.OnItemGather(item, count);
             // инициируем событие
             //Task.Run(() => QuestManager.Instance.DoAcquiredEvents((Character)Owner, item.TemplateId, item.Count));

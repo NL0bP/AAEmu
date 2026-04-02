@@ -41,6 +41,7 @@ public class PlotTargetInfo
 
     public void UpdateTargetInfo(PlotEventTemplate template, PlotState state)
     {
+        EffectedTargets.Clear();
         UpdateSource(template, state);
         UpdateTargets(template, state);
     }

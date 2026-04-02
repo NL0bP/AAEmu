@@ -58,6 +58,7 @@ public class UnitEvents
     public EventHandler<OnEnterSphereArgs> OnEnterSphere = delegate { };
     public EventHandler<OnExitSphereArgs> OnExitSphere = delegate { };
     public EventHandler<OnCraftArgs> OnCraft = delegate { };
+    public EventHandler<OnLaborPowerChangedArgs> OnLaborPowerChanged = delegate { };
     public EventHandler<OnZoneKillArgs> OnZoneKill = delegate { };
     // public EventHandler<OnZoneMonsterHuntArgs> OnZoneMonsterHunt = delegate { }; // Integrated into OnZoneKill
     public EventHandler<OnCinemaStartedArgs> OnCinemaStarted = delegate { };
@@ -157,6 +158,12 @@ public class OnCraftArgs : EventArgs
     public uint CraftId { get; set; }
 }
 
+public class OnLaborPowerChangedArgs : EventArgs
+{
+    public int AmountSpent { get; set; }
+    public int ActabilityGroupId { get; set; }
+}
+
 public class OnExpressFireArgs : EventArgs
 {
     public uint NpcId { get; set; } // Npc.TemplateId
@@ -246,6 +253,7 @@ public class OnQuestCompleteArgs : EventArgs
 public class OnAttackArgs : EventArgs
 {
     public Unit Attacker { get; set; }
+    public Unit Target { get; set; }
 }
 
 public class OnAttackedArgs : EventArgs
@@ -256,12 +264,14 @@ public class OnAttackedArgs : EventArgs
 public class OnDamageArgs : EventArgs
 {
     public Unit Attacker { get; set; }
+    public Unit Target { get; set; }
     public int Amount { get; set; }
 }
 
 public class OnDamagedArgs : EventArgs
 {
     public Unit Attacker { get; set; }
+    public Unit Target { get; set; }
     public int Amount { get; set; }
 }
 

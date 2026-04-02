@@ -1,5 +1,6 @@
 ﻿using System;
 
+using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Units;
 
@@ -14,75 +15,70 @@ public class BuffTrigger
     protected Buff _buff;
     protected readonly BaseUnit _owner;
     public BuffTriggerTemplate Template { get; set; }
-    public virtual void Execute(object sender, EventArgs eventArgs)
+
+    protected virtual BaseUnit ResolveAgent(uint agentId, Unit eventSource, BaseUnit eventTarget)
     {
-        var args = eventArgs as OnTimeoutArgs;
-        Logger.Trace("Buff[{0}] {1} executed. Applying {2}[{3}]!", _buff?.Template?.BuffId, GetType().Name, Template.Effect.GetType().Name, Template.Effect.Id);
-        //Template.Effect.Apply()
-
-        if (_owner is not Unit) // if doodads
+        return agentId switch
         {
-            //Logger.Warn("Owner is a Doodad");
-            var target0 = _buff?.Owner;
-            var source0 = _buff?.Owner;
+            0 => _buff?.Owner,
+            1 => eventSource ?? _buff?.Owner,
+            2 => eventTarget ?? _buff?.Owner,
+            3 => _buff?.Caster ?? _buff?.Owner,
+            _ => _buff?.Owner
+        };
+    }
 
-            if (Template.UseOriginalSource)
-            {
-                source0 = _buff?.Caster;
-            }
+    protected bool TryApply(Unit eventSource, BaseUnit eventTarget, int amount = 0)
+    {
+        var source = ResolveAgent(Template.SourceAgentId, eventSource, eventTarget) ?? _buff?.Owner;
+        var target = ResolveAgent(Template.TargetAgentId, eventSource, eventTarget) ?? _buff?.Owner;
 
-            if (Template.EffectOnSource)
-            {
-                target0 = source0;
-            }
-
-            if (Template.TargetBuffTagId != 0)
-            {
-                if (target0 != null && !target0.Buffs.CheckBuffTag(Template.TargetBuffTagId))
-                    return;
-            }
-            if (Template.TargetNoBuffTagId != 0)
-            {
-                if (target0 != null && target0.Buffs.CheckBuffTag(Template.TargetNoBuffTagId))
-                    return;
-            }
-
-            if (target0 == null) { return; }
-            Template.Effect.Apply(source0, new SkillCasterUnit(_owner.ObjId), target0, new SkillCastUnitTarget(target0.ObjId), new CastBuff(_buff),
-                new EffectSource(_buff?.Skill), // TODO : EffectSource Type trigger 
-                null, DateTime.UtcNow);
-            return;
-        }
-
-        //Logger.Warn("Owner is a Unit");
-        var target = _buff?.Owner;
-        var source = (Unit)_buff?.Owner;
-
-        if (Template.UseOriginalSource)
-        {
-            source = _buff?.Caster;
-        }
+        if (Template.UseOriginalSource && _buff?.Caster != null)
+            source = _buff.Caster;
 
         if (Template.EffectOnSource)
-        {
             target = source;
-        }
 
-        if (Template.TargetBuffTagId != 0)
-        {
-            if (target != null && !target.Buffs.CheckBuffTag(Template.TargetBuffTagId))
-                return;
-        }
-        if (Template.TargetNoBuffTagId != 0)
-        {
-            if (target != null && target.Buffs.CheckBuffTag(Template.TargetNoBuffTagId))
-                return;
-        }
+        if (source == null || target == null)
+            return false;
 
-        if (target == null) { return; }
-        Template.Effect.Apply(source, new SkillCasterUnit(_owner.ObjId), target, new SkillCastUnitTarget(target.ObjId), new CastBuff(_buff),
-            new EffectSource(_buff?.Skill), // TODO : EffectSource Type trigger 
+        if (Template.OwnerBuffTagId != 0 && !_buff.Owner.Buffs.CheckBuffTag(Template.OwnerBuffTagId))
+            return false;
+        if (Template.OwnerNoBuffTagId != 0 && _buff.Owner.Buffs.CheckBuffTag(Template.OwnerNoBuffTagId))
+            return false;
+
+        if (Template.SourceBuffTagId != 0 && !source.Buffs.CheckBuffTag(Template.SourceBuffTagId))
+            return false;
+        if (Template.SourceNoBuffTagId != 0 && source.Buffs.CheckBuffTag(Template.SourceNoBuffTagId))
+            return false;
+
+        if (Template.TargetBuffTagId != 0 && !target.Buffs.CheckBuffTag(Template.TargetBuffTagId))
+            return false;
+        if (Template.TargetNoBuffTagId != 0 && target.Buffs.CheckBuffTag(Template.TargetNoBuffTagId))
+            return false;
+
+        SkillCaster casterObj;
+        if (source is Doodad sourceDoodad)
+            casterObj = new SkillCasterDoodad(sourceDoodad.ObjId);
+        else
+            casterObj = new SkillCasterUnit(source.ObjId);
+
+        SkillCastTarget targetObj;
+        if (target is Doodad targetDoodad)
+            targetObj = new SkillCastDoodadTarget { ObjId = targetDoodad.ObjId };
+        else
+            targetObj = new SkillCastUnitTarget(target.ObjId);
+
+        Template.Effect.Apply(source, casterObj, target, targetObj, new CastBuff(_buff),
+            new EffectSource(_buff?.Template) { Amount = amount, IsTrigger = true },
             null, DateTime.UtcNow);
+        return true;
+    }
+
+    public virtual void Execute(object sender, EventArgs eventArgs)
+    {
+        Logger.Trace("Buff[{0}] {1} executed. Applying {2}[{3}]!", _buff?.Template?.BuffId, GetType().Name, Template.Effect.GetType().Name, Template.Effect.Id);
+        TryApply(null, null);
     }
 
     public BuffTrigger(Buff buff, BuffTriggerTemplate template)

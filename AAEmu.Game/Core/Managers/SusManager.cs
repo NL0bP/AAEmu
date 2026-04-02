@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -18,10 +18,10 @@ public class SusManager : Singleton<SusManager>
     public static string CategoryBot => "Bot";
     public static string CategoryCheating => "Cheat";
     public static string CategoryRmt => "RMT";
-    
+
     private Dictionary<uint, (Vector3 pos, float skipTime)> LastPlayerPositions { get; } = [];
     private Dictionary<uint, (Vector3 pos, float skipTime)> LastPetPositions { get; } = [];
-    
+
     // ReSharper disable once MemberCanBePrivate.Global
     public bool LogActivity(string category, ulong accountId, uint playerId, uint zoneGroup, Vector3 position, string description)
     {
@@ -60,7 +60,7 @@ public class SusManager : Singleton<SusManager>
     {
         return LogActivity(category, player?.AccountId ?? 0, player?.Id ?? 0, player?.Transform?.ZoneId ?? 0, player?.Transform?.World?.Position ?? Vector3.Zero, description);
     }
-    
+
     public bool LogActivity(string category, string description)
     {
         return LogActivity(category, 0, 0, 0, Vector3.Zero, description);
@@ -79,7 +79,7 @@ public class SusManager : Singleton<SusManager>
             LastPlayerPositions.Add(player.Id, (player.Transform.World.ClonePosition(), 0f));
             return;
         }
-        
+
         var deltaPos = player.Transform.World.ClonePosition() - last.pos;
         var deltaFlatPos = deltaPos with { Z = 0 };
 
@@ -128,7 +128,7 @@ public class SusManager : Singleton<SusManager>
             LastPetPositions.Add(pet.Id, (pet.Transform.World.ClonePosition(), 0f));
             return;
         }
-        
+
         var deltaPos = pet.Transform.World.ClonePosition() - last.pos;
         var deltaFlatPos = deltaPos with { Z = 0 };
 
@@ -156,7 +156,7 @@ public class SusManager : Singleton<SusManager>
         last.skipTime -= deltaTime;
         LastPetPositions[pet.Id] = (pet.Transform.World.ClonePosition(), last.skipTime);
     }
-    
+
     /// <summary>
     /// Resets current analysis of movement, call after things like teleport to prevent false positives
     /// </summary>

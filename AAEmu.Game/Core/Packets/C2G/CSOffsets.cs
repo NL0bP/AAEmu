@@ -1,6 +1,4 @@
-﻿using AAEmu.Game.Models.Game.Skills;
-
-namespace AAEmu.Game.Core.Packets.C2G
+﻿namespace AAEmu.Game.Core.Packets.C2G
 {
     public static class CSOffsets
     {
@@ -53,6 +51,7 @@ namespace AAEmu.Game.Core.Packets.C2G
         public const ushort CSExpandBlessUthstinPagePacket = 0x030;
         public const ushort CSCopyBlessUthstinPagePacket = 0x0EC;
         public const ushort off_39E81EF4 = 0x002; // CSStartReinforceLevelup_0x002
+        public const ushort CSSkillReplaceSyncPacket = 0x004; // temporary skill replacement sync from client
         public const ushort CSEventCenterAddAttendancePacket = 0x16C;
         public const ushort CSRequestGameEventInfoPacket = 0x05B;
         public const ushort CSGameEventPacket = 0x18A; //off_39E822E0

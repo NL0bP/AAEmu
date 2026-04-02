@@ -22,6 +22,7 @@ public class QuestActSupplyJuryPoint(QuestComponentTemplate parentComponent) : Q
         {
             player.JuryPoint += Point;
             player.SendPacket(new SCJuryPointChangedPacket(player.JuryPoint));
+            player.Achievements?.TrackJuryPoints(Point);
         }
         return true;
     }

@@ -1208,6 +1208,29 @@ public partial class QuestManager : Singleton<QuestManager>, IQuestManager
 
         using (var command = connection.CreateCommand())
         {
+            command.CommandText = "SELECT * FROM quest_act_obj_labor_powers";
+            command.Prepare();
+            using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+            {
+                while (reader.Read())
+                {
+                    var actId = reader.GetUInt32("id");
+                    var parentComponent = GetComponentByActTemplate("QuestActObjLaborPower", actId);
+                    if (parentComponent == null)
+                        continue;
+                    var template = new QuestActObjLaborPower(parentComponent);
+                    template.DetailId = actId;
+                    template.ActabilityGroupId = reader.GetInt32("actability_group_id");
+                    template.Count = reader.GetInt32("count");
+                    template.UseAlias = reader.GetBoolean("use_alias", true);
+                    template.QuestActObjAliasId = reader.GetUInt32("quest_act_obj_alias_id", 0);
+                    AddActTemplate(template);
+                }
+            }
+        }
+
+        using (var command = connection.CreateCommand())
+        {
             command.CommandText = "SELECT * FROM quest_act_obj_distances";
             command.Prepare();
             using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))

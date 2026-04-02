@@ -46,10 +46,12 @@ public class SpawnManager : Singleton<SpawnManager>
     private readonly ConcurrentDictionary<byte, ConcurrentDictionary<uint, TransferSpawner>> _transferSpawners = new();
     private readonly ConcurrentDictionary<byte, ConcurrentDictionary<uint, GimmickSpawner>> _gimmickSpawners = new();
     private readonly ConcurrentDictionary<byte, ConcurrentDictionary<uint, SlaveSpawner>> _slaveSpawners = new();
+    private readonly ConcurrentDictionary<uint, ZoneNpcLevelRange> _zoneNpcLevelRanges = new();
     private readonly ConcurrentBag<Doodad> _playerDoodads = [];
     private readonly HashSet<WorldDoodadKey> _persistedWorldDoodadKeys = new();
 
     private readonly record struct WorldDoodadKey(uint SourceTemplateId, long X, long Y, long Z);
+    private readonly record struct ZoneNpcLevelRange(int MinLevel, int MaxLevel, int SampleCount);
 
     private uint _nextId = 1u;
     private uint _fakeSpawnerId = 9000001u;
@@ -100,10 +102,25 @@ public class SpawnManager : Singleton<SpawnManager>
 
         InitializeCollections();
         LoadWorldSpawns();
+        BuildZoneNpcLevelRanges();
         LoadPersistentDoodads();
         StartRespawnThread();
 
         _loaded = true;
+    }
+
+    public bool TryGetZoneGroupNpcLevelRange(uint zoneGroupId, out int minLevel, out int maxLevel)
+    {
+        if (_zoneNpcLevelRanges.TryGetValue(zoneGroupId, out var range))
+        {
+            minLevel = range.MinLevel;
+            maxLevel = range.MaxLevel;
+            return true;
+        }
+
+        minLevel = 0;
+        maxLevel = 0;
+        return false;
     }
 
     /// <summary>
@@ -137,6 +154,87 @@ public class SpawnManager : Singleton<SpawnManager>
             _gimmickSpawners[(byte)world.Id] = LoadGimmickSpawns(world, worldPath);
             _slaveSpawners[(byte)world.Id] = LoadSlaveSpawns(world, worldPath);
         }
+    }
+
+    private void BuildZoneNpcLevelRanges()
+    {
+        _zoneNpcLevelRanges.Clear();
+        var levelsByZoneGroup = new Dictionary<uint, List<int>>();
+
+        foreach (var worldSpawners in _npcSpawners.Values)
+        {
+            foreach (var spawners in worldSpawners.Values)
+            {
+                foreach (var spawner in spawners)
+                {
+                    var zoneGroupId = ZoneManager.Instance.GetZoneByKey(spawner.Position.ZoneId)?.GroupId ?? 0;
+                    if (zoneGroupId == 0)
+                    {
+                        continue;
+                    }
+
+                    var template = NpcManager.Instance.GetTemplate(spawner.UnitId);
+                    if (!IsCombatNpcTemplate(template))
+                    {
+                        continue;
+                    }
+
+                    if (!levelsByZoneGroup.TryGetValue(zoneGroupId, out var levels))
+                    {
+                        levels = [];
+                        levelsByZoneGroup[zoneGroupId] = levels;
+                    }
+
+                    levels.Add(template.Level);
+                }
+            }
+        }
+
+        foreach (var (zoneGroupId, levels) in levelsByZoneGroup)
+        {
+            if (levels.Count == 0)
+            {
+                continue;
+            }
+
+            levels.Sort();
+            var minIndex = Math.Max(0, (int)Math.Floor((levels.Count - 1) * 0.20));
+            var maxIndex = Math.Max(minIndex, (int)Math.Ceiling((levels.Count - 1) * 0.80));
+            _zoneNpcLevelRanges[zoneGroupId] = new ZoneNpcLevelRange(levels[minIndex], levels[maxIndex], levels.Count);
+        }
+    }
+
+    private static bool IsCombatNpcTemplate(NpcTemplate template)
+    {
+        if (template == null || template.Level <= 0)
+        {
+            return false;
+        }
+
+        if (template.Merchant ||
+            template.Priest ||
+            template.Teleporter ||
+            template.SkillTrainer ||
+            template.Auctioneer ||
+            template.Banker ||
+            template.Stabler ||
+            template.Trader ||
+            template.Blacksmith ||
+            template.Repairman ||
+            template.Specialty)
+        {
+            return false;
+        }
+
+        return template.Aggression || template.NpcKindId is
+            NpcKindType.Beast or
+            NpcKindType.Undead or
+            NpcKindType.Devil or
+            NpcKindType.Spirit or
+            NpcKindType.Dragon or
+            NpcKindType.Fantastic or
+            NpcKindType.Machine or
+            NpcKindType.Unknown;
     }
 
     /// <summary>

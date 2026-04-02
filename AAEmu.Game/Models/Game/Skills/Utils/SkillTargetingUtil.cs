@@ -26,19 +26,20 @@ public static class SkillTargetingUtil
                 var mates = MateManager.Instance.GetActiveMates(caster.ObjId);
                 if (team == null)
                 {
+                    var allowedIds = new HashSet<uint> { caster.ObjId };
                     if (mates != null)
                     {
                         foreach (var mate in mates)
                         {
-                            units = units.Where(o => o.ObjId == mate?.ObjId);
+                            if (mate != null)
+                                allowedIds.Add(mate.ObjId);
                         }
                     }
+
+                    return units.Where(o => allowedIds.Contains(o.ObjId));
                 }
-                else
-                {
-                    units = units.Where(o => team.IsObjMember(o.ObjId));
-                }
-                return units.Append(caster);
+
+                return units.Where(o => o.ObjId == caster.ObjId || team.IsObjMember(o.ObjId));
             case SkillTargetRelation.Others:
                 return units.Where(o => caster.GetRelationStateTo(o) == RelationState.Neutral);
             default:

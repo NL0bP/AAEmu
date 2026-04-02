@@ -383,6 +383,21 @@ public class MateManager : Singleton<MateManager>
         Logger.Debug($"Mount spawned: ownerObjId={owner.ObjId}, tlId={mate.TlId}, mateObjId={mate.ObjId}");
     }
 
+    public void AddActiveMateAndSpawn(Character owner, Mate mate)
+    {
+        var mates = GetActiveMates(owner.ObjId);
+        if (mates == null)
+            _activeMates.Add(owner.ObjId, new List<Mate> { mate });
+        else if (mates.Count < 2)
+            _activeMates[owner.ObjId].Add(mate);
+
+        owner.SendPacket(new SCMateSpawnedPacket(mate));
+        Thread.Sleep(50);
+        mate.Spawn();
+
+        Logger.Debug($"Mount spawned: ownerObjId={owner.ObjId}, tlId={mate.TlId}, mateObjId={mate.ObjId}");
+    }
+
     public void RemoveActiveMateAndDespawn(Character owner, uint tlId)
     {
         var mateInfo = GetActiveMateByTlId(owner.ObjId, tlId);

@@ -24,8 +24,8 @@ public class LeapSkillController : SkillController
     public enum LeapDirection
     {
         Both = 0,
-        ForwardOnly = 1,
-        BackwardOnly = 2
+        FromOwner = 1,
+        Unknown = 2
     }
     public LeapDirection Direction { get; set; }
 
@@ -41,9 +41,21 @@ public class LeapSkillController : SkillController
         DistanceOffset = template.Value[3];
         Direction = (LeapDirection)template.Value[6];
 
-        var angle = (float)MathUtil.CalculateAngleFrom(owner.Transform.World.Position, target.Transform.World.Position);
-        (_endPosition.X, _endPosition.Y) = MathUtil.AddDistanceToFront(DistanceOffset / 1000f, target.Transform.World.Position.X, target.Transform.World.Position.Y, angle);
-        _endPosition.Z = target.Transform.World.Position.Z;
+        var angleDeg = (float)MathUtil.CalculateAngleFrom(owner.Transform.World.Position, target.Transform.World.Position);
+        var leapDistance = DistanceOffset / 1000f;
+        switch (Direction)
+        {
+            case LeapDirection.FromOwner:
+                (_endPosition.X, _endPosition.Y) = MathUtil.AddDistanceToFrontDeg(leapDistance,
+                    owner.Transform.World.Position.X, owner.Transform.World.Position.Y, angleDeg);
+                _endPosition.Z = target.Transform.World.Position.Z;
+                break;
+            default:
+                (_endPosition.X, _endPosition.Y) = MathUtil.AddDistanceToFrontDeg(leapDistance,
+                    target.Transform.World.Position.X, target.Transform.World.Position.Y, angleDeg);
+                _endPosition.Z = target.Transform.World.Position.Z;
+                break;
+        }
 
         var distance = MathUtil.CalculateDistance(owner.Transform.World.Position, _endPosition, true);
         _calculatedSpeed = distance / (Duration / 1000f);
@@ -51,7 +63,7 @@ public class LeapSkillController : SkillController
 
     public void Tick(TimeSpan delta)
     {
-        if (Owner.Buffs.HasEffectsMatchingCondition(e => e.Template.Stun || e.Template.Sleep) || Owner.IsDead)
+        if (Owner.IsDead)
         {
             End();
             return;
@@ -73,7 +85,6 @@ public class LeapSkillController : SkillController
 
     public void MoveTowards(float distance, byte actorFlags = 4)
     {
-        distance *= Owner.MoveSpeedMul; // Apply speed modifier
         if (distance < 0.01f)
         {
             //TODO End Skill Controller
@@ -81,20 +92,7 @@ public class LeapSkillController : SkillController
             return;
         }
 
-        if (Owner.Buffs.HasEffectsMatchingCondition(e =>
-                e.Template.Stun
-                || e.Template.Sleep
-                || e.Template.Root
-                || e.Template.Knockdown
-                || e.Template.Fastened)
-            || Owner.IsDead)
-        {
-            //Logger.Debug($"{ObjId} @NPC_NAME({TemplateId}); is stuck in place");
-            return;
-        }
-
-        if (Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Shackle)) ||
-            Owner.Buffs.CheckBuffs(SkillManager.Instance.GetBuffsByTagId((uint)SkillConstants.Snare)))
+        if (Owner.IsDead)
         {
             return;
         }
