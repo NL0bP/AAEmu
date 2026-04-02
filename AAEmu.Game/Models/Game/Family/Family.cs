@@ -1,12 +1,12 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Family;
 using MySql.Data.MySqlClient;
-using System.Collections.Generic;
-using System;
-using System.Linq;
 
 public class Family : PacketMarshaler
 {
@@ -63,7 +63,7 @@ public class Family : PacketMarshaler
     {
         if (member == null)
             return;
-            
+
         Members.Remove(member);
         _removedMembers.Add(member.Id);
         member.Character?.ApplyFamilyEffects();
@@ -73,7 +73,7 @@ public class Family : PacketMarshaler
     {
         if (character == null)
             return;
-            
+
         var member = GetMember(character);
         if (member != null)
         {
