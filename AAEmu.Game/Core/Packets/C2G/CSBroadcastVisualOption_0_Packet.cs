@@ -42,7 +42,8 @@ public class CSBroadcastVisualOption_0_Packet() : GamePacket(CSOffsets.CSBroadca
 
         Connection.SendPacket(new SCUnitStatePacket(Connection.ActiveChar));
         Connection.SendPacket(new SCCooldownsPacket(Connection.ActiveChar));
-        Connection.SendPacket(new SCListSkillActiveTypsPacket([]));
+        // List packet alone is not enough - need per-skill SCUpdateSkillActiveTypePacket to activate in UI
+        character.SkillActiveTypes.SendOnLogin();
 
         var heirSkills = character.Skills.GetHeroSkillsFromSkills();
         Connection.SendPacket(new SCHeirSkillListPacket(heirSkills));

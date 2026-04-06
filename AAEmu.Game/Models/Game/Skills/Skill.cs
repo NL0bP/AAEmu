@@ -326,10 +326,13 @@ public class Skill
         if (castTime > 0)
         {
             // Has casting time, schedule a task for it
-            caster.BroadcastPacket(new SCSkillStartedPacket(Id, TlId, casterCaster, targetCaster, this, skillObject)
+            // Live server always sends Unit target (self) in SCSkillStarted for cast-time skills
+            // regardless of what the client sent (e.g. Doodad target for item skills)
+            var startedTarget = targetCaster is SkillCastUnitTarget ? targetCaster : new SkillCastUnitTarget(caster.ObjId);
+            caster.BroadcastPacket(new SCSkillStartedPacket(Id, TlId, casterCaster, startedTarget, this, skillObject)
             {
-                BaseCastTimeDiv10 = (ushort)(castTime / 10),
-                RealCastTimeDiv10 = (ushort)(castTime / 10), // calculate with adjustments
+                BaseCastTimeDiv10 = (ushort)(Template.CastingTime / 10),
+                RealCastTimeDiv10 = (ushort)(castTime / 10),
             }, true);
 
             unit.SkillTask = new CastTask(this, caster, casterCaster, target, targetCaster, skillObject);
@@ -828,7 +831,9 @@ public class Skill
             doodad.Spawn();
         }
 
-        caster.BroadcastPacket(new SCSkillFiredPacket(Id, TlId, casterCaster, targetCaster, this, skillObject, caster), true);
+        // Live server sends Unit(self) as target in SCSkillFired for item skills, not Doodad
+        var firedTarget = targetCaster is SkillCastUnitTarget ? targetCaster : new SkillCastUnitTarget(caster.ObjId);
+        caster.BroadcastPacket(new SCSkillFiredPacket(Id, TlId, casterCaster, firedTarget, this, skillObject, caster), true);
         unit.SkillTask = new EndChannelingTask(this, caster, casterCaster, target, targetCaster, skillObject, doodad);
         TaskManager.Instance.Schedule(unit.SkillTask, TimeSpan.FromMilliseconds(Template.ChannelingTime));
     }
@@ -877,7 +882,9 @@ public class Skill
         if (Template.FireAnim != null && Template.UseAnimTime)
             totalDelay += (int)(Template.FireAnim.CombatSyncTime * (unit.GlobalCooldownMul / 100));
 
-        caster.BroadcastPacket(new SCSkillFiredPacket(Id, TlId, casterCaster, targetCaster, this, skillObject, caster)
+        // Live server sends Unit(self) as target in SCSkillFired for item skills, not Doodad
+        var firedTarget = targetCaster is SkillCastUnitTarget ? targetCaster : new SkillCastUnitTarget(caster.ObjId);
+        caster.BroadcastPacket(new SCSkillFiredPacket(Id, TlId, casterCaster, firedTarget, this, skillObject, caster)
         {
             ComputedDelay = (short)totalDelay
         }, true);

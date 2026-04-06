@@ -7,6 +7,8 @@ namespace AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects;
 
 public class ChangeSkillActiveType : SpecialEffectAction
 {
+    protected override SpecialType SpecialEffectActionType => SpecialType.ChangeSkillActiveType;
+
     public override void Execute(BaseUnit caster,
         SkillCaster casterObj,
         BaseUnit target,
@@ -20,7 +22,17 @@ public class ChangeSkillActiveType : SpecialEffectAction
         int value3,
         int value4, int value5, int value6, int value7)
     {
-        // TODO ...
-        if (caster is Character) { Logger.Debug("Special effects: ChangeSkillActiveType value1 {0}, value2 {1}, value3 {2}, value4 {3}", value1, value2, value3, value4); }
+        if (caster is not Character character)
+            return;
+
+        // value1 = skillId to unlock (e.g. 33599 = /Sextant emote)
+        // value2 = activeType variant (1=all, 2=female, 3=male)
+        var skillId = (uint)value1;
+        var activeType = (byte)(value2 > 0 ? value2 : 1);
+
+        Logger.Debug("ChangeSkillActiveType: caster={0} teachingSkill={1} unlocking skillId={2} activeType={3}",
+            character.Name, skill.Id, skillId, activeType);
+
+        character.SkillActiveTypes.Unlock(skillId, activeType);
     }
 }

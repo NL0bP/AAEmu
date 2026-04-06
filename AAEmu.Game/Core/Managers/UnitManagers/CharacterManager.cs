@@ -682,6 +682,14 @@ public class CharacterManager : Singleton<CharacterManager>
             command.ExecuteNonQuery();
         }
 
+        using (var command = dbConnection.CreateCommand())
+        {
+            command.Connection = dbConnection;
+            command.CommandText = "DELETE FROM skill_active_types WHERE owner = @owner";
+            command.Parameters.AddWithValue("@owner", character.Id);
+            command.ExecuteNonQuery();
+        }
+
         var todayQuestIds = TodayAssignmentGameData.Instance.GetAllQuestContextIds().ToList();
         if (todayQuestIds.Count <= 0)
         {

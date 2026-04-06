@@ -55,7 +55,7 @@ public class SCSkillStartedPacket : GamePacket
         stream.Write(_target);
         stream.Write(_skillObject);
 
-        stream.Write((ushort)(RealCastTimeDiv10 < 500 ? RealCastTimeDiv10 : RealCastTimeDiv10 - 56));
+        stream.Write(RealCastTimeDiv10);
         stream.Write(BaseCastTimeDiv10);
 
         stream.Write(CastSynergy); // castSynergy (bool) // (short)0

@@ -1,6 +1,7 @@
 -- -------------------------------------------------
 -- Persist static/world doodad state by source template and world position
 -- -------------------------------------------------
+DROP TABLE IF EXISTS `world_doodads`;
 CREATE TABLE `world_doodads` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `source_template_id` int unsigned NOT NULL COMMENT 'Original static doodad template used to match spawn data',

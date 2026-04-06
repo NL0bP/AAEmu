@@ -5,7 +5,6 @@ using System.Data;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
@@ -14,8 +13,8 @@ using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
-using AAEmu.Game.Models.Game.Attendance;
 using AAEmu.Game.Models.Game.Achievement.Enums;
+using AAEmu.Game.Models.Game.Attendance;
 using AAEmu.Game.Models.Game.Chat;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
@@ -30,14 +29,12 @@ using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Team;
-using AAEmu.Game.Models.Game.TodayAssignments;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.slaves;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Utils;
-
 using MySql.Data.MySqlClient;
 
 namespace AAEmu.Game.Models.Game.Char;
@@ -170,6 +167,7 @@ public partial class Character : Unit, ICharacter
     public CharacterActability Actability { get; set; }
 
     public CharacterSkills Skills { get; set; }
+    public CharacterSkillActiveTypes SkillActiveTypes { get; set; }
     public CharacterCraft Craft { get; set; }
     public CharacterStats Stats { get; set; }
     public uint SubZoneId { get; set; } // понадобилось хранить для составления точек Memory Tome (Recall)
@@ -1773,7 +1771,7 @@ public partial class Character : Unit, ICharacter
 
         SendPacket(new SCChatMessagePacket(type, message));
     }
-    
+
     public void SendMessage(string message) => SendMessage(ChatType.System, message, null);
 
     /// <summary>
@@ -1785,7 +1783,7 @@ public partial class Character : Unit, ICharacter
         if (AppConfiguration.Instance.DebugInfo && CharacterManager.GetEffectiveAccessLevel(this) >= AppConfiguration.Instance.DebugInfoLevel)
             SendMessage(ChatType.System, message, null);
     }
-    
+
     /// <summary>
     /// Sends an error message to the player
     /// </summary>
@@ -2412,6 +2410,8 @@ public partial class Character : Unit, ICharacter
             Actability.Load(connection);
             Skills = new CharacterSkills(this);
             Skills.Load(connection);
+            SkillActiveTypes = new CharacterSkillActiveTypes(this);
+            SkillActiveTypes.Load(connection);
             Appellations = new CharacterAppellations(this);
             Appellations.Load(connection);
             Portals = new CharacterPortals(this);
@@ -2594,6 +2594,7 @@ public partial class Character : Unit, ICharacter
             Friends?.Save(connection, transaction);
             Blocked?.Save(connection, transaction);
             Skills?.Save(connection, transaction);
+            SkillActiveTypes?.Save(connection, transaction);
             Quests?.Save(connection, transaction);
             TodayAssignments?.Save(connection, transaction);
             Mates?.Save(connection, transaction);

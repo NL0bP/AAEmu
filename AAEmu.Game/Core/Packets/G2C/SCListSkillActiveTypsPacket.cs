@@ -1,14 +1,13 @@
-﻿using AAEmu.Commons.Network;
+using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
-using AAEmu.Game.Models.Game.Skills;
 
 namespace AAEmu.Game.Core.Packets.G2C;
 
 public class SCListSkillActiveTypsPacket : GamePacket
 {
-    private readonly (uint _skillId, AbilityType _ability)[] _skillActiveTyps;
+    private readonly (uint _skillId, byte _activeType)[] _skillActiveTyps;
 
-    public SCListSkillActiveTypsPacket((uint skillId, AbilityType ability)[] skillActiveTyps) : base(SCOffsets.SCListSkillActiveTypsPacket, 5)
+    public SCListSkillActiveTypsPacket((uint skillId, byte activeType)[] skillActiveTyps) : base(SCOffsets.SCListSkillActiveTypsPacket, 5)
     {
         _skillActiveTyps = skillActiveTyps;
     }
@@ -19,8 +18,8 @@ public class SCListSkillActiveTypsPacket : GamePacket
         stream.Write(count);
         for (var i = 0; i < count; i++) // max 100
         {
-            stream.Write(_skillActiveTyps[i]._skillId);       // skillType (type)
-            stream.Write((byte)_skillActiveTyps[i]._ability); // activeType
+            stream.Write(_skillActiveTyps[i]._skillId);    // skillType (type)
+            stream.Write(_skillActiveTyps[i]._activeType); // activeType (1=all, 2=female, 3=male)
         }
         return stream;
     }
