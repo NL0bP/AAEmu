@@ -60,10 +60,17 @@ public class SpawnManager : Singleton<SpawnManager>
     {
         foreach (var (worldId, worldSpawners) in _npcSpawners)
         {
+            // Фильтрация спавнеров
+            //Logger.Debug($"Processed in world {worldId} {worldSpawners.Values.Count} spawners...");
             var activeSpawners = worldSpawners.Values.SelectMany(x => x)
                 .Where(spawner => spawner.Template != null && IsSpawnerActive(spawner))
                 .ToList();
 
+            //// Последовательная обработка спавнеров
+            //if (worldId == 0)
+            //{
+            //    Logger.Debug($"Processed {activeSpawners.Count} active spawners...");
+            //}
             foreach (var npcSpawner in activeSpawners)
             {
                 npcSpawner.Update();
@@ -77,9 +84,17 @@ public class SpawnManager : Singleton<SpawnManager>
         {
             return true;
         }
+
+        //Logger.Debug($"[SpawnerId={spawner.SpawnerId}, UnitId={spawner.UnitId}] Despawning NPCs...");
+        //spawner.DespawnNpcsNow();
+
+        //return spawner.IsThereSpawningSchedule();
         return false;
     }
 
+    /// <summary>
+    /// Initializes the SpawnManager and loads all spawn data.
+    /// </summary>
     public void Load()
     {
         if (_loaded)
@@ -108,6 +123,9 @@ public class SpawnManager : Singleton<SpawnManager>
         return false;
     }
 
+    /// <summary>
+    /// Initializes all collections used by the SpawnManager.
+    /// </summary>
     private void InitializeCollections()
     {
         foreach (var world in WorldManager.Instance.GetWorlds())
@@ -121,6 +139,9 @@ public class SpawnManager : Singleton<SpawnManager>
         }
     }
 
+    /// <summary>
+    /// Loads spawn data for all worlds.
+    /// </summary>
     private void LoadWorldSpawns()
     {
         Logger.Info("Loading spawns...");
@@ -216,6 +237,9 @@ public class SpawnManager : Singleton<SpawnManager>
             NpcKindType.Unknown;
     }
 
+    /// <summary>
+    /// Loads persistent doodads from the database.
+    /// </summary>
     private void LoadPersistentDoodads()
     {
         Logger.Info("Loading persistent doodads...");
@@ -226,12 +250,18 @@ public class SpawnManager : Singleton<SpawnManager>
         Logger.Info($"{doodadsSpawned} doodads loaded.");
     }
 
+    /// <summary>
+    /// Starts the respawn thread to handle respawning and despawning of objects.
+    /// </summary>
     private void StartRespawnThread()
     {
         var respawnThread = new Thread(CheckRespawns) { Name = "RespawnThread" };
         respawnThread.Start();
     }
 
+    /// <summary>
+    /// Loads NPC spawns for a specific world.
+    /// </summary>
     private void LoadNpcSpawns(Models.Game.World.World world, string worldPath)
     {
         var npcFiles = GetSpawnFiles(worldPath, "npc_spawns*.json");
@@ -264,12 +294,18 @@ public class SpawnManager : Singleton<SpawnManager>
         }
     }
 
+    /// <summary>
+    /// Processes NPC spawners from a file.
+    /// </summary>
     private void ProcessNpcSpawners(Models.Game.World.World world, string jsonFileName, List<NpcSpawner> npcSpawnersFromFile)
     {
         var entry = 0;
         foreach (var npcSpawnerFromFile in npcSpawnersFromFile)
         {
             entry++;
+
+            //if (IsDuplicateNpcSpawner(world, npcSpawnerFromFile))
+            //    continue;
 
             if (!NpcManager.Instance.Exist(npcSpawnerFromFile.UnitId))
             {
@@ -282,6 +318,9 @@ public class SpawnManager : Singleton<SpawnManager>
         }
     }
 
+    /// <summary>
+    /// Checks if an NPC spawner is a duplicate.
+    /// </summary>
     private bool IsDuplicateNpcSpawner(Models.Game.World.World world, NpcSpawner npcSpawner)
     {
         foreach (var spawners in _npcSpawners[(byte)world.Id].Values)
@@ -300,6 +339,9 @@ public class SpawnManager : Singleton<SpawnManager>
         return false;
     }
 
+    /// <summary>
+    /// Sets up the position for an NPC spawner.
+    /// </summary>
     private static void SetupNpcSpawnerPosition(Models.Game.World.World world, NpcSpawner npcSpawner)
     {
         npcSpawner.Position.WorldId = world.Id;
@@ -309,6 +351,9 @@ public class SpawnManager : Singleton<SpawnManager>
         npcSpawner.Position.Roll = npcSpawner.Position.Roll.DegToRad();
     }
 
+    /// <summary>
+    /// Gets spawn files from a directory.
+    /// </summary>
     public static string[] GetSpawnFiles(string worldPath, string searchPattern)
     {
         try
@@ -322,6 +367,9 @@ public class SpawnManager : Singleton<SpawnManager>
         }
     }
 
+    /// <summary>
+    /// Adds an NPC spawner to the manager.
+    /// </summary>
     public void AddNpcSpawner(NpcSpawner npcSpawner)
     {
         if (npcSpawner == null)
@@ -333,6 +381,7 @@ public class SpawnManager : Singleton<SpawnManager>
         if (npcSpawner.NpcSpawnerIds is [0])
             npcSpawner.NpcSpawnerIds = [];
 
+        // check for manually entered NpcSpawnerId
         if (npcSpawner.NpcSpawnerIds.Count == 0)
         {
             var npcSpawnerIds = NpcGameData.Instance.GetSpawnerIds(npcSpawner.UnitId);
@@ -345,7 +394,7 @@ public class SpawnManager : Singleton<SpawnManager>
                 npcSpawner.NpcSpawnerIds.Add(id);
                 npcSpawner.Id = id;
                 npcSpawner.SpawnerId = id;
-                var tmpTemplate = NpcGameData.Instance.GetNpcSpawnerTemplate(1);
+                var tmpTemplate = NpcGameData.Instance.GetNpcSpawnerTemplate(1); // id=1 Test Warrior
                 npcSpawner.Template = Helpers.Clone(tmpTemplate);
                 npcSpawner.Template.Id = id;
 
@@ -408,6 +457,9 @@ public class SpawnManager : Singleton<SpawnManager>
         Logger.Trace($"Added NPC spawner {npcSpawner.SpawnerId} for unit {npcSpawner.UnitId}.");
     }
 
+    /// <summary>
+    /// Spawns all NPCs in a specific world.
+    /// </summary>
     internal void SpawnAllNpcs(byte worldId)
     {
         Logger.Info($"Spawning {_npcSpawners[worldId].Count} NPC spawners in world {worldId}");
@@ -432,8 +484,16 @@ public class SpawnManager : Singleton<SpawnManager>
             }
         }
         Logger.Info($"{count} NPC spawners spawned in world {worldId}");
+
+        //if (worldId == 0)
+        //{
+        //    TickManager.Instance.OnTick.Subscribe(Update, TimeSpan.FromSeconds(1));
+        //}
     }
 
+    /// <summary>
+    /// Despawns all objects in a specific world.
+    /// </summary>
     public int DeSpawnAll(byte worldId)
     {
         var world = WorldManager.Instance.GetWorlds().FirstOrDefault(x => x.Id == worldId);
@@ -472,15 +532,34 @@ public class SpawnManager : Singleton<SpawnManager>
             res++;
         }
         foreach (var mate in WorldManager.Instance.GetAllMates().ToList())
-            try { mate.Delete(); res++; } catch { }
+            try
+            {
+                mate.Delete();
+                res++;
+            }
+            catch
+            {
+                //
+            }
 
         foreach (var slave in WorldManager.Instance.GetAllSlaves().ToList())
-            try { slave.Delete(); res++; } catch { }
+            try
+            {
+                slave.Delete();
+                res++;
+            }
+            catch
+            {
+                //
+            }
 
         Logger.Info($"Despawned {res} objects in world {worldId}.");
         return res;
     }
 
+    /// <summary>
+    /// Handles timed re-spawning and de-spawning of objects.
+    /// </summary>
     private void CheckRespawns()
     {
         while (_work)
@@ -494,14 +573,18 @@ public class SpawnManager : Singleton<SpawnManager>
                         continue;
                     if (obj is Npc npc)
                     {
-                        npc.Spawner.SetSpawnScheduled(false);
+                        //Logger.Debug($"Respawning NPC {npc.ObjId}");
+                        //npc.Spawner.Respawn(npc);
+                        npc.Spawner.SetSpawnScheduled(false); // in the Update() method, enable spawn
                     }
                     else if (obj is Doodad doodad)
                     {
+                        //Logger.Trace($"Respawning Doodad {doodad.ObjId}");
                         doodad.Spawner.Respawn(doodad);
                     }
                     else if (obj is Transfer transfer)
                     {
+                        //Logger.Trace($"Respawning Transfer {transfer.ObjId}");
                         transfer.Spawner.Respawn(transfer);
                     }
                     else if (obj is Gimmick gimmick)
@@ -523,30 +606,37 @@ public class SpawnManager : Singleton<SpawnManager>
                         continue;
                     if (obj is Npc { Spawner: not null } npc)
                     {
+                        //Logger.Debug($"Despawning NPC {npc.ObjId}");
                         npc.Spawner.Despawn(npc);
                     }
                     else if (obj is Doodad { Spawner: not null } doodadWithSpawner)
                     {
+                        //Logger.Trace($"Despawning Doodad {doodadWithSpawner.ObjId}");
                         doodadWithSpawner.Spawner.Despawn(doodadWithSpawner);
                     }
                     else if (obj is Transfer { Spawner: not null } transfer)
                     {
+                        //Logger.Trace($"Despawning Transfer {transfer.ObjId}");
                         transfer.Spawner.Despawn(transfer);
                     }
                     else if (obj is Gimmick { Spawner: not null } gimmick)
                     {
+                        //Logger.Trace($"Despawning Gimmick {gimmick.ObjId}");
                         gimmick.Spawner.Despawn(gimmick);
                     }
-                    else if (obj is Slave slave)
+                    else if (obj is Slave slave) // slaves don't have a spawner, but this is used for delayed despawn of un-summoned boats
                     {
+                        //Logger.Trace($"Deleting Slave {slave.ObjId}");
                         slave.Delete();
                     }
                     else if (obj is Doodad doodadWithNoSpawner)
                     {
+                        //Logger.Trace($"Deleting Doodad {doodadWithNoSpawner.ObjId}");
                         doodadWithNoSpawner.Delete();
                     }
                     else
                     {
+                        //Logger.Trace($"Deleting GameObject {obj.ObjId}");
                         obj.Delete();
                     }
 
@@ -559,6 +649,9 @@ public class SpawnManager : Singleton<SpawnManager>
         }
     }
 
+    /// <summary>
+    /// Gets a list of objects ready to respawn.
+    /// </summary>
     private HashSet<GameObject> GetRespawnsReady()
     {
         var res = new HashSet<GameObject>();
@@ -572,6 +665,9 @@ public class SpawnManager : Singleton<SpawnManager>
         return res;
     }
 
+    /// <summary>
+    /// Gets a list of objects ready to despawn.
+    /// </summary>
     private HashSet<GameObject> GetDespawnsReady()
     {
         var res = new HashSet<GameObject>();
@@ -582,56 +678,133 @@ public class SpawnManager : Singleton<SpawnManager>
                 res.Add(obj);
             }
         }
+
         return res;
     }
 
+    /// <summary>
+    /// Adds an object to the respawn list.
+    /// </summary>
     public void AddRespawn(GameObject obj)
     {
-        if (obj == null) return;
+        if (obj == null)
+        {
+            Logger.Warn("Attempted to add a null object to respawn list.");
+            return;
+        }
+
         _respawns.Add(obj);
+        Logger.Trace($"Added object {obj.ObjId} to respawn list.");
     }
 
+    /// <summary>
+    /// Removes an object from the respawn list.
+    /// </summary>
     public void RemoveRespawn(GameObject obj)
     {
-        if (obj == null) return;
+        if (obj == null)
+        {
+            Logger.Warn("Attempted to remove a null object from respawn list.");
+            return;
+        }
+
         var tempList = new List<GameObject>();
         var removed = false;
 
         while (_respawns.TryTake(out var item))
         {
-            if (!removed && item == obj) removed = true;
-            else tempList.Add(item);
+            if (!removed && item == obj)
+            {
+                removed = true;
+            }
+            else
+            {
+                tempList.Add(item);
+            }
         }
 
-        foreach (var item in tempList) _respawns.Add(item);
+        foreach (var item in tempList)
+        {
+            _respawns.Add(item);
+        }
+
+        if (!removed)
+        {
+            Logger.Warn($"Failed to remove object {obj.ObjId} from respawn list.");
+        }
+        else
+        {
+            Logger.Trace($"Removed object {obj.ObjId} from respawn list.");
+        }
     }
 
+    /// <summary>
+    /// Adds an object to the despawn list.
+    /// </summary>
     public void AddDespawn(GameObject obj)
     {
-        if (obj == null) return;
+        if (obj == null)
+        {
+            Logger.Warn("Attempted to add a null object to despawn list.");
+            return;
+        }
+
         _despawns.Add(obj);
+        Logger.Trace($"Added object {obj.ObjId} to despawn list.");
     }
 
+    /// <summary>
+    /// Removes an object from the despawn list.
+    /// </summary>
     public void RemoveDespawn(GameObject obj)
     {
-        if (obj == null) return;
+        if (obj == null)
+        {
+            Logger.Warn("Attempted to remove a null object from despawn list.");
+            return;
+        }
+
         var tempList = new List<GameObject>();
         var removed = false;
 
         while (_despawns.TryTake(out var item))
         {
-            if (!removed && item == obj) removed = true;
-            else tempList.Add(item);
+            if (!removed && item == obj)
+            {
+                removed = true;
+            }
+            else
+            {
+                tempList.Add(item);
+            }
         }
 
-        foreach (var item in tempList) _despawns.Add(item);
+        foreach (var item in tempList)
+        {
+            _despawns.Add(item);
+        }
+
+        if (!removed)
+        {
+            Logger.Warn($"Failed to remove object {obj.ObjId} from despawn list.");
+        }
+        else
+        {
+            Logger.Trace($"Removed object {obj.ObjId} from despawn list.");
+        }
     }
 
+    /// <summary>
+    /// Stops the respawn thread.
+    /// </summary>
     public void Stop()
     {
         _work = false;
     }
 
+    /// <summary>
+    /// Loads doodad spawns for a specific world.
+    /// </summary>
     private ConcurrentDictionary<uint, DoodadSpawner> LoadDoodadSpawns(Models.Game.World.World world, string worldPath)
     {
         var count = 0;
@@ -644,10 +817,18 @@ public class SpawnManager : Singleton<SpawnManager>
 
         foreach (var jsonFileName in doodadFiles)
         {
-            if (!File.Exists(jsonFileName)) continue;
+            if (!File.Exists(jsonFileName))
+            {
+                Logger.Info($"World {world.Name} is missing {Path.GetFileName(jsonFileName)}");
+                continue;
+            }
 
             var contents = FileManager.GetFileContents(jsonFileName);
-            if (string.IsNullOrWhiteSpace(contents)) continue;
+            if (string.IsNullOrWhiteSpace(contents))
+            {
+                Logger.Warn($"File {jsonFileName} is empty.");
+                continue;
+            }
 
             if (JsonHelper.TryDeserializeObject(contents, out List<DoodadSpawner> spawners, out _))
             {
@@ -657,10 +838,22 @@ public class SpawnManager : Singleton<SpawnManager>
                 {
                     entry++;
 
-                    if (!DoodadManager.Instance.Exist(spawner.UnitId)) continue;
+                    if (!DoodadManager.Instance.Exist(spawner.UnitId))
+                    {
+                        Logger.Trace($"Doodad Template {spawner.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
+                        continue;
+                    }
 
+                    // TODO спавнить груз из файла спавна не нужно
                     var doodadTemplate = DoodadManager.Instance.GetTemplate(spawner.UnitId);
-                    if (doodadTemplate.GroupId is 38) continue;
+                    if (doodadTemplate.GroupId is 38)
+                    {
+                        Logger.Warn($"Doodad Template {spawner.UnitId} (file entry {entry}) is backpack - {jsonFileName}, Position={spawner.Position}");
+                        continue;
+                    }
+
+                    //if (IsDuplicateDoodadSpawner(spawner, world.Id))
+                    //    continue;
 
                     spawner.Id = _nextId;
                     spawner.Position.WorldId = world.Id;
@@ -677,20 +870,56 @@ public class SpawnManager : Singleton<SpawnManager>
                 throw new GameException($"SpawnManager: Parse {jsonFileName} file");
             }
         }
+
         return doodadSpawners;
+        bool IsDuplicateDoodadSpawner(DoodadSpawner doodadSpawner, uint worldId)
+        {
+            foreach (var existingSpawner in doodadSpawners.Values)
+            {
+                if (existingSpawner.UnitId == doodadSpawner.UnitId &&
+                    Math.Abs(existingSpawner.Position.X - doodadSpawner.Position.X) < 0.1f &&
+                    Math.Abs(existingSpawner.Position.Y - doodadSpawner.Position.Y) < 0.1f)
+                {
+                    Logger.Warn($"Duplicate Doodad spawner found in (UnitId: {existingSpawner.UnitId}, Position: {existingSpawner.Position})\n" +
+                                $"                                                                 (UnitId: {doodadSpawner.UnitId}, Position: {doodadSpawner.Position})");
+                    return true;
+                }
+            }
+
+            count++;
+            if (count % 5000 == 0)
+            {
+                Logger.Debug($"{count}:{countMax} Doodads loaded in world {worldId}");
+            }
+
+            return false;
+        }
     }
 
+    /// <summary>
+    /// Loads transfer spawns for a specific world.
+    /// </summary>
     private ConcurrentDictionary<uint, TransferSpawner> LoadTransferSpawns(Models.Game.World.World world, string worldPath)
     {
         var transferSpawners = new ConcurrentDictionary<uint, TransferSpawner>();
         var transferFiles = GetSpawnFiles(worldPath, "transfer_spawns*.json");
-        if (transferFiles == null || transferFiles.Length == 0) return transferSpawners;
+        if (transferFiles == null || transferFiles.Length == 0)
+            return transferSpawners;
 
         foreach (var jsonFileName in transferFiles)
         {
-            if (!File.Exists(jsonFileName)) continue;
+            if (!File.Exists(jsonFileName))
+            {
+                Logger.Info($"World {world.Name} is missing {Path.GetFileName(jsonFileName)}");
+                continue;
+            }
+
             var contents = FileManager.GetFileContents(jsonFileName);
-            if (string.IsNullOrWhiteSpace(contents)) continue;
+            if (string.IsNullOrWhiteSpace(contents))
+            {
+                Logger.Warn($"File {jsonFileName} is empty.");
+                continue;
+            }
 
             if (JsonHelper.TryDeserializeObject(contents, out List<TransferSpawner> spawners, out _))
             {
@@ -698,7 +927,12 @@ public class SpawnManager : Singleton<SpawnManager>
                 foreach (var spawner in spawners)
                 {
                     entry++;
-                    if (!TransferManager.Instance.Exist(spawner.UnitId)) continue;
+
+                    if (!TransferManager.Instance.Exist(spawner.UnitId))
+                    {
+                        Logger.Warn($"Transfer Template {spawner.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
+                        continue;
+                    }
 
                     spawner.Id = _nextId;
                     spawner.Position.WorldId = world.Id;
@@ -715,20 +949,34 @@ public class SpawnManager : Singleton<SpawnManager>
                 throw new GameException($"SpawnManager: Parse {jsonFileName} file");
             }
         }
+
         return transferSpawners;
     }
 
+    /// <summary>
+    /// Loads gimmick spawns for a specific world.
+    /// </summary>
     private ConcurrentDictionary<uint, GimmickSpawner> LoadGimmickSpawns(Models.Game.World.World world, string worldPath)
     {
         var gimmickSpawners = new ConcurrentDictionary<uint, GimmickSpawner>();
         var gimmickFiles = GetSpawnFiles(worldPath, "gimmick_spawns*.json");
-        if (gimmickFiles == null || gimmickFiles.Length == 0) return gimmickSpawners;
+        if (gimmickFiles == null || gimmickFiles.Length == 0)
+            return gimmickSpawners;
 
         foreach (var jsonFileName in gimmickFiles)
         {
-            if (!File.Exists(jsonFileName)) continue;
+            if (!File.Exists(jsonFileName))
+            {
+                Logger.Info($"World {world.Name} is missing {Path.GetFileName(jsonFileName)}");
+                continue;
+            }
+
             var contents = FileManager.GetFileContents(jsonFileName);
-            if (string.IsNullOrWhiteSpace(contents)) continue;
+            if (string.IsNullOrWhiteSpace(contents))
+            {
+                Logger.Warn($"File {jsonFileName} is empty.");
+                continue;
+            }
 
             if (JsonHelper.TryDeserializeObject(contents, out List<GimmickSpawner> spawners, out _))
             {
@@ -736,7 +984,12 @@ public class SpawnManager : Singleton<SpawnManager>
                 foreach (var spawner in spawners)
                 {
                     entry++;
-                    if (spawner.UnitId != 0 && !GimmickManager.Instance.Exist(spawner.UnitId)) continue;
+
+                    if (spawner.UnitId != 0 && !GimmickManager.Instance.Exist(spawner.UnitId))
+                    {
+                        Logger.Error($"Gimmick Template {spawner.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
+                        continue;
+                    }
 
                     spawner.Id = _nextId;
                     spawner.Position.WorldId = world.Id;
@@ -750,20 +1003,34 @@ public class SpawnManager : Singleton<SpawnManager>
                 throw new GameException($"SpawnManager: Parse {jsonFileName} file");
             }
         }
+
         return gimmickSpawners;
     }
 
+    /// <summary>
+    /// Loads slave spawns for a specific world.
+    /// </summary>
     private ConcurrentDictionary<uint, SlaveSpawner> LoadSlaveSpawns(Models.Game.World.World world, string worldPath)
     {
         var slaveSpawners = new ConcurrentDictionary<uint, SlaveSpawner>();
         var slaveFiles = GetSpawnFiles(worldPath, "slave_spawns*.json");
-        if (slaveFiles == null || slaveFiles.Length == 0) return slaveSpawners;
+        if (slaveFiles == null || slaveFiles.Length == 0)
+            return slaveSpawners;
 
         foreach (var jsonFileName in slaveFiles)
         {
-            if (!File.Exists(jsonFileName)) continue;
+            if (!File.Exists(jsonFileName))
+            {
+                Logger.Info($"World {world.Name} is missing {Path.GetFileName(jsonFileName)}");
+                continue;
+            }
+
             var contents = FileManager.GetFileContents(jsonFileName);
-            if (string.IsNullOrWhiteSpace(contents)) continue;
+            if (string.IsNullOrWhiteSpace(contents))
+            {
+                Logger.Warn($"File {jsonFileName} is empty.");
+                continue;
+            }
 
             if (JsonHelper.TryDeserializeObject(contents, out List<SlaveSpawner> spawners, out _))
             {
@@ -771,7 +1038,12 @@ public class SpawnManager : Singleton<SpawnManager>
                 foreach (var spawner in spawners)
                 {
                     entry++;
-                    if (!SlaveManager.Instance.Exist(spawner.UnitId)) continue;
+
+                    if (!SlaveManager.Instance.Exist(spawner.UnitId))
+                    {
+                        Logger.Warn($"Slave Template {spawner.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
+                        continue;
+                    }
 
                     spawner.Id = _nextId;
                     spawner.Position.WorldId = world.Id;
@@ -788,9 +1060,13 @@ public class SpawnManager : Singleton<SpawnManager>
                 throw new GameException($"SpawnManager: Parse {jsonFileName} file");
             }
         }
+
         return slaveSpawners;
     }
 
+    /// <summary>
+    /// Spawns persistent doodads from the database.
+    /// </summary>
     public int SpawnPersistentDoodads(DoodadOwnerType ownerTypeToSpawn, int ownerToSpawnId = -1, GameObject useParentObject = null, bool doSpawn = false)
     {
         var spawnCount = 0;
@@ -859,11 +1135,30 @@ public class SpawnManager : Singleton<SpawnManager>
                     if (parentDoodad > 0)
                     {
                         var pDoodad = _playerDoodads.FirstOrDefault(d => d.DbId == parentDoodad);
-                        if (pDoodad != null)
+                        if (pDoodad == null)
+                        {
+                            Logger.Warn($"Unable to place doodad {dbId} can't find it's parent doodad {parentDoodad}");
+                        }
+                        else
                         {
                             doodad.Transform.Parent = pDoodad.Transform;
                             doodad.ParentObj = pDoodad;
                             doodad.ParentObjId = pDoodad.ObjId;
+                        }
+                    }
+
+                    if (houseId > 0 && doodad.ParentObjId <= 0)
+                    {
+                        var owningHouse = HousingManager.Instance.GetHouseById(doodad.OwnerDbId);
+                        if (owningHouse == null)
+                        {
+                            Logger.Warn($"Unable to place doodad {dbId} can't find it's owning house {houseId}");
+                        }
+                        else
+                        {
+                            doodad.Transform.Parent = owningHouse.Transform;
+                            doodad.ParentObj = owningHouse;
+                            doodad.ParentObjId = owningHouse.ObjId;
                         }
                     }
 
@@ -884,9 +1179,12 @@ public class SpawnManager : Singleton<SpawnManager>
                             var itemContainer = ItemManager.Instance.GetItemContainerByDbId(itemContainerId);
                             if (itemContainer is CofferContainer cofferContainer)
                                 coffer.ItemContainer = cofferContainer;
+                            else
+                                Logger.Error($"Unable to attach ItemContainer {itemContainerId} to DoodadCoffer, objId: {doodad.ObjId}, DbId: {doodad.DbId}");
                         }
                         else
                         {
+                            Logger.Warn($"DoodadCoffer has no persistent ItemContainer assigned to it, creating new one, objId: {doodad.ObjId}, DbId: {doodad.DbId}");
                             coffer.InitializeCoffer(ownerId);
                             newCoffers.Add(coffer);
                         }
@@ -913,6 +1211,9 @@ public class SpawnManager : Singleton<SpawnManager>
         return spawnCount;
     }
 
+    /// <summary>
+    /// Spawns persistent world doodads from the world_doodads table.
+    /// </summary>
     public int SpawnPersistentWorldDoodads(bool doSpawn = false)
     {
         var spawnCount = 0;
@@ -942,7 +1243,11 @@ public class SpawnManager : Singleton<SpawnManager>
             var freshnessTime = reader.GetDateTimeOrMinValue("freshness_time");
             var data = reader.GetInt32("data");
 
-            if (sourceTemplateId == 0) continue;
+            if (sourceTemplateId == 0)
+            {
+                Logger.Warn($"Skipping world doodad DB row {dbId} with empty source_template_id");
+                continue;
+            }
 
             var doodad = DoodadManager.Instance.Create(0, templateId, null, true);
             doodad.IsPersistent = true;
@@ -997,7 +1302,12 @@ public class SpawnManager : Singleton<SpawnManager>
             if (spawner != null) break;
         }
 
-        if (spawner == null) return false;
+        if (spawner == null)
+        {
+            var pos = doodad.Transform?.Local.Position;
+            Logger.Warn($"Failed to rebind persistent world doodad DbId:{doodad.DbId} TemplateId:{doodad.TemplateId} SourceTemplateId:{doodad.SourceTemplateId} Pos:{pos?.X:F3},{pos?.Y:F3},{pos?.Z:F3}");
+            return false;
+        }
 
         doodad.Transform.ApplyWorldSpawnPosition(spawner.Position);
         spawner.AttachPersistentDoodad(doodad);
@@ -1028,8 +1338,20 @@ public class SpawnManager : Singleton<SpawnManager>
         return decimal.ToInt64(decimal.Round((decimal)value * 1000m, 0, MidpointRounding.AwayFromZero));
     }
 
+    /// <summary>
+    /// Spawns all objects in the world.
+    /// </summary>
     public void SpawnAll()
     {
+        //Logger.Info("Spawning NPCs...");
+        //foreach (var (worldId, worldSpawners) in _npcSpawners)
+        //{
+        //    Task.Run(() =>
+        //    {
+        //        SpawnAllNpcs(worldId);
+        //    });
+        //}
+
         Logger.Info("Spawning Doodads...");
         foreach (var (worldId, worldSpawners) in _doodadSpawners)
         {
@@ -1044,8 +1366,14 @@ public class SpawnManager : Singleton<SpawnManager>
 
                     spawner.Spawn(0);
                     count++;
+                    if (count % 1000 == 0 && worldId == 0)
+                    {
+                        Logger.Debug($"in world {worldId} Doodads spawned: {count}...");
+                    }
                 }
                 Logger.Info($"in world {worldId} Doodads spawned: {count}");
+
+                // необходимо дождаться спавна всех doodads
                 FishSchoolManager.Instance.Load(worldId);
             });
         }
@@ -1061,6 +1389,10 @@ public class SpawnManager : Singleton<SpawnManager>
                 {
                     spawner.SpawnAll();
                     count++;
+                    if (count % 10 == 0 && worldId == 0)
+                    {
+                        Logger.Debug($"in world {worldId} Transfers spawned: {count}...");
+                    }
                 }
                 Logger.Info($"in world {worldId} Transfers spawned: {count}");
             });
@@ -1077,6 +1409,10 @@ public class SpawnManager : Singleton<SpawnManager>
                 {
                     spawner.Spawn(0);
                     count++;
+                    if (count % 5 == 0 && worldId == 0)
+                    {
+                        Logger.Debug($"in world {worldId} Gimmicks spawned: {count}...");
+                    }
                 }
                 Logger.Info($"in world {worldId} Gimmicks spawned: {count}");
             });
@@ -1093,6 +1429,10 @@ public class SpawnManager : Singleton<SpawnManager>
                 {
                     spawner.Spawn(0);
                     count++;
+                    if (count % 5 == 0 && worldId == 0)
+                    {
+                        Logger.Debug($"in world {worldId} Slaves spawned: {count}...");
+                    }
                 }
                 Logger.Info($"in world {worldId} slaves spawned: {count}");
             });
@@ -1107,55 +1447,6 @@ public class SpawnManager : Singleton<SpawnManager>
                 if (doodad.SourceTemplateId > 0 && !TryBindPersistentWorldDoodad(doodad))
                     continue;
 
-                // ИДЕАЛЬНАЯ СИНХРОНИЗАЦИЯ ДОМА
-                if (doodad.OwnerType == DoodadOwnerType.Housing && doodad.ParentObjId <= 0)
-                {
-                    var house = HousingManager.Instance.GetHouseById(doodad.OwnerDbId);
-                    if (house != null)
-                    {
-                        // Если это структурный элемент (дверь, клумба, окно)
-                        if (doodad.AttachPoint != AttachPointKind.None)
-                        {
-                            var dummy = house.AttachedDoodads.FirstOrDefault(d => d.AttachPoint == doodad.AttachPoint);
-                            if (dummy != null)
-                            {
-                                // Крадем у пустышки её идеальную 3D-матрицу
-                                doodad.Transform = dummy.Transform.CloneDetached(doodad);
-                                doodad.Transform.Parent = house.Transform;
-                                doodad.ParentObj = house;
-                                doodad.ParentObjId = house.ObjId;
-
-                                // Заменяем пустышку в списке дома на наш объект из БД
-                                house.AttachedDoodads.Remove(dummy);
-                                house.AttachedDoodads.Add(doodad);
-
-                                // Удаляем пустышку. Так как у неё DbId = 0, она освободит память,
-                                // но НИКАК не затронет настоящие записи в базе данных!
-                                dummy.Delete();
-                            }
-                        }
-                        else
-                        {
-                            // Обычная мебель: просто привязываем без изменения глобальных координат
-                            doodad.Transform.WorldId = house.Transform.WorldId;
-                            doodad.Transform.ZoneId = house.Transform.ZoneId;
-                            doodad.ParentObj = house;
-                            doodad.ParentObjId = house.ObjId;
-                            
-                            if (!house.AttachedDoodads.Contains(doodad))
-                            {
-                                house.AttachedDoodads.Add(doodad);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        doodad.Transform.WorldId = WorldManager.DefaultWorldId;
-                        doodad.Transform.ZoneId = WorldManager.Instance.GetZoneId(doodad.Transform.WorldId, doodad.Transform.Local.Position.X, doodad.Transform.Local.Position.Y);
-                    }
-                }
-
-                // Стандартный спавн
                 if (doodad.Spawner == null || doodad.DbId > 0)
                 {
                     doodad.Spawn();
@@ -1169,11 +1460,16 @@ public class SpawnManager : Singleton<SpawnManager>
         });
     }
 
+    /// <summary>
+    /// Spawns all objects in the world.
+    /// </summary>
     public List<Npc> SpawnAll(uint worldId, uint worldTemplateId)
     {
         var npcList = new List<Npc>();
         if (_npcSpawners.TryGetValue((byte)worldTemplateId, out var npcSpawners))
         {
+            //Task.Run(() =>
+            //{
             foreach (var spawners in npcSpawners.Values)
             {
                 foreach (var spawner in spawners)
@@ -1183,52 +1479,91 @@ public class SpawnManager : Singleton<SpawnManager>
                     spawner.Position.WorldId = worldTemplateId;
                 }
             }
+            //});
         }
         if (_doodadSpawners.TryGetValue((byte)worldTemplateId, out var doodadSpawners))
         {
+            //Task.Run(() =>
+            //{
             foreach (var spawner in doodadSpawners.Values)
             {
                 spawner.Position.WorldId = worldId;
                 spawner.Spawn(0);
                 spawner.Position.WorldId = worldTemplateId;
             }
+            //});
         }
         if (_slaveSpawners.TryGetValue((byte)worldTemplateId, out var slaveSpawners))
         {
+            //Task.Run(() =>
+            //{
             foreach (var spawner in slaveSpawners.Values)
             {
                 spawner.Position.WorldId = worldId;
                 spawner.Spawn(0);
                 spawner.Position.WorldId = worldTemplateId;
             }
+            //});
         }
         if (_gimmickSpawners.TryGetValue((byte)worldTemplateId, out var gimmickSpawners))
         {
+            //Task.Run(() =>
+            //{
             foreach (var spawner in gimmickSpawners.Values)
             {
                 spawner.Position.WorldId = worldId;
                 spawner.Spawn(0);
                 spawner.Position.WorldId = worldTemplateId;
             }
+            //});
         }
         return npcList;
     }
 
+    /// <summary>
+    /// Removes a player doodad from the manager.
+    /// </summary>
     public void RemovePlayerDoodad(Doodad doodad)
     {
-        if (doodad == null) return;
+        if (doodad == null)
+        {
+            Logger.Warn("Attempted to remove a null doodad from player doodads list.");
+            return;
+        }
+
         var tempList = new List<Doodad>();
         var removed = false;
 
         while (_playerDoodads.TryTake(out var item))
         {
-            if (!removed && item == doodad) removed = true;
-            else tempList.Add(item);
+            if (!removed && item == doodad)
+            {
+                removed = true;
+            }
+            else
+            {
+                tempList.Add(item);
+            }
         }
 
-        foreach (var item in tempList) _playerDoodads.Add(item);
+        foreach (var item in tempList)
+        {
+            _playerDoodads.Add(item);
+        }
+
+        if (!removed)
+        {
+            Logger.Trace($"Failed to remove doodad {doodad.ObjId} from player doodads list.");
+        }
+        else
+        {
+            Logger.Debug($"Removed doodad {doodad.ObjId} from player doodads list.");
+        }
     }
 
+    /// <summary>
+    /// Gets an NPC spawner by its ID and world ID.
+    /// </summary>
     public List<NpcSpawner> GetNpcSpawner(uint spawnerId, byte worldId)
     {
         var ret = new List<NpcSpawner>();
@@ -1249,6 +1584,9 @@ public class SpawnManager : Singleton<SpawnManager>
         return ret;
     }
 
+    /// <summary>
+    /// Gets an NPC spawner by its ID and world ID.
+    /// </summary>
     public NpcSpawner GetNpcSpawner(uint unitId, BaseUnit unit)
     {
         var spawner = new NpcSpawner();
@@ -1269,11 +1607,17 @@ public class SpawnManager : Singleton<SpawnManager>
             spawner.Id = npcSpawnersIds[0];
             spawner.NpcSpawnerIds = [spawner.Id];
             spawner.Template = NpcGameData.Instance.GetNpcSpawnerTemplate(spawner.Id);
-            if (spawner.Template == null) return null;
+            if (spawner.Template == null)
+            {
+                return null;
+            }
 
             spawner.Template.Npcs = [];
             var nsn = NpcGameData.Instance.GetNpcSpawnerNpc(spawner.Id);
-            if (nsn == null) return null;
+            if (nsn == null)
+            {
+                return null;
+            }
 
             spawner.Template.Npcs.Add(nsn);
             spawner.Template.Npcs[0].MemberId = spawner.UnitId;
@@ -1293,10 +1637,14 @@ public class SpawnManager : Singleton<SpawnManager>
         return spawner;
     }
 
+    /// <summary>
+    /// Gets a list of all treasure chest doodad spawners.
+    /// </summary>
     public List<DoodadSpawner> GetTreasureChestDoodadSpawners()
     {
         var chestTemplateIds = DoodadManager.Instance.GetTreasureChestTemplateIds();
-        if (chestTemplateIds == null) return [];
+        if (chestTemplateIds == null)
+            return [];
 
         var spawnerList = _doodadSpawners.GetValueOrDefault((byte)WorldManager.DefaultWorldId)?.Values
             .Where(ds => chestTemplateIds.Contains(ds.RespawnDoodadTemplateId) || chestTemplateIds.Contains(ds.UnitId))
@@ -1305,19 +1653,34 @@ public class SpawnManager : Singleton<SpawnManager>
         return spawnerList ?? [];
     }
 
+    /// <summary>
+    /// Gets all player doodads.
+    /// </summary>
     public List<Doodad> GetAllPlayerDoodads()
     {
         return _playerDoodads.ToList();
     }
 
+    /// <summary>
+    /// Gets player doodads by character ID.
+    /// </summary>
     public List<Doodad> GetPlayerDoodads(uint charId)
     {
         return _playerDoodads.Where(d => d.OwnerId == charId).ToList();
     }
 
+    /// <summary>
+    /// Adds a player doodad to the manager.
+    /// </summary>
     public void AddPlayerDoodad(Doodad doodad)
     {
-        if (doodad == null) return;
+        if (doodad == null)
+        {
+            Logger.Warn("Attempted to add a null doodad to player doodads list.");
+            return;
+        }
+
         _playerDoodads.Add(doodad);
+        Logger.Trace($"Added doodad {doodad.ObjId} to player doodads list.");
     }
 }

@@ -26,7 +26,7 @@ using MySql.Data.MySqlClient;
 
 /*
  *-----------------------------------------------------------------------------------------------------------------
- * How doodad works
+ *                        How doodad works
  *-----------------------------------------------------------------------------------------------------------------
  [Doodad] Chain: TemplateId 2336 (water the flowerbed)
  [Doodad] FuncGroupId : 4651 - start
@@ -76,8 +76,6 @@ namespace AAEmu.Game.Models.Game.DoodadObj;
 
 public class Doodad : BaseUnit
 {
-    private const int MaxFastForwardInitialGrowthDelayMs = 2000;
-
     private static readonly WaitCallback s_SaveCallback = obj =>
     {
         var doodad = (Doodad)obj;
@@ -135,6 +133,7 @@ public class Doodad : BaseUnit
     private int _data;
     private uint _funcGroupId;
 
+    //public uint TemplateId { get; set; } // moved to BaseUnit
     public uint DbId { get; set; }
     public bool IsPersistent { get; set; }
     public DoodadTemplate Template { get; set; }
@@ -157,7 +156,6 @@ public class Doodad : BaseUnit
             {
                 _funcGroupId = value;
                 PhaseTime = DateTime.UtcNow; // Save PhaseTime at start of new phase (group)
-                OverridePhaseTime = DateTime.MinValue; // ИСПРАВЛЕНИЕ: Сбрасываем старое время из базы для новых фаз!
                 _timeLeftCacheTick = 0;
                 _cachedTimeLeft = 0;
 
@@ -191,6 +189,7 @@ public class Doodad : BaseUnit
         }
     }
 
+    // public string FuncType { get; set; }
     public ulong ItemId { get; set; }
     public ulong UccId { get; set; }
     public uint ItemTemplateId { get; set; }
@@ -228,11 +227,17 @@ public class Doodad : BaseUnit
     public DoodadFuncTask FuncTask { get; set; }
     public DateTime FreshnessTime { get; set; }
     public bool IsRebuy { get; set; }
+    //public bool IsGoods { get; set; } // указываем, что это бэкпак региональных товаров
     public List<DoodadFunc> CurrentFuncs { get; set; }
     public List<DoodadPhaseFunc> CurrentPhaseFuncs { get; set; }
-    
+    /// <summary>
+    /// ToD, next_phase
+    /// </summary>
     public Dictionary<float, int> CurrentToDTriggers { get; set; }
 
+    /// <summary>
+    /// Time left to show on Doodads in milliseconds
+    /// </summary>
     public uint TimeLeft
     {
         get
@@ -286,8 +291,14 @@ public class Doodad : BaseUnit
     public int PhaseRatio { get; set; }
     public int CumulativePhaseRatio { get; set; }
 
+    /// <summary>
+    /// Used to indicate the starting phase of the doodad should be overriden when loading player doodads
+    /// </summary>
     public int OverridePhase { get; set; }
 
+    /// <summary>
+    /// Used to indicate that the phase starting time should be overriden on timing related funcs
+    /// </summary>
     public DateTime OverridePhaseTime { get; set; } = DateTime.MinValue;
 
     private bool _deleted = false;
@@ -315,11 +326,20 @@ public class Doodad : BaseUnit
         _scale = scale;
     }
 
+    /*
+     * 1. Создание (посадка) Doodad запускает на стартовой фазе PhaseFunc;
+     * 2. Ждем взаимодействия с Doodad;
+     * 3. Непосредствено взаимодействие начинается с выполнения Func с учётом SkillId;
+     * 4. Далее на следующей фазе начинаем выполнение с фазовых функций, а затем сами функции, если перед этим прошли проверки в фазовых функциях;
+     */
     public void SetData(int data)
     {
         _data = data;
     }
 
+    /// <summary>
+    /// Uses the given Doodad with the specified caster and skill.
+    /// </summary>
     public void Use(BaseUnit caster, uint startedSkillId = 0, int funcGroupId = 0)
     {
         if (caster == null)
@@ -748,40 +768,13 @@ public class Doodad : BaseUnit
         }
     }
 
-    public void InitDoodad(bool fastForwardInitialGrowth = false)
+    /// <summary>
+    /// Initialization of the current doodad phase
+    /// </summary>
+    public void InitDoodad()
     {
         ApplyClimateSettings();
-        if (fastForwardInitialGrowth)
-            FastForwardInitialGrowth();
         PerformPhaseChange();
-    }
-
-    private void FastForwardInitialGrowth()
-    {
-        var visitedPhases = new HashSet<uint>();
-        while (visitedPhases.Add(FuncGroupId))
-        {
-            var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(FuncGroupId);
-            if (phaseFuncs.Count != 1)
-                return;
-
-            var phaseFunc = phaseFuncs[0];
-            if (phaseFunc?.FuncType != nameof(DoodadFuncGrowth))
-                return;
-
-            if (DoodadManager.Instance.GetFuncsForGroup(FuncGroupId).Count > 0)
-                return;
-
-            var phaseFuncTemplate = DoodadManager.Instance.GetPhaseFuncTemplate(phaseFunc.FuncId, phaseFunc.FuncType);
-            if (phaseFuncTemplate is not DoodadFuncGrowth { Delay: > 0, NextPhase: > 0 } growth)
-                return;
-
-            if (growth.Delay > MaxFastForwardInitialGrowthDelayMs)
-                return;
-
-            FuncGroupId = (uint)growth.NextPhase;
-            GrowthTime = DateTime.UtcNow;
-        }
     }
 
     private void ApplyClimateSettings()
@@ -793,6 +786,10 @@ public class Doodad : BaseUnit
         GrowthTime = PlantTime.AddMilliseconds(growTime);
     }
 
+    /// <summary>
+    /// Performs the phase change for the doodad.
+    /// FIX: Do not overwrite already loaded FuncGroupId for persisted doodads
+    /// </summary>
     private void PerformPhaseChange()
     {
         var obj = WorldManager.Instance.GetUnit(OwnerObjId);
@@ -978,6 +975,9 @@ public class Doodad : BaseUnit
         }
     }
 
+    /// <summary>
+    /// Планирует фоновое сохранение без блокировки игрового тика.
+    /// </summary>
     private void ScheduleSave()
     {
         if (!IsPersistent)
@@ -1101,6 +1101,9 @@ public class Doodad : BaseUnit
         return stream;
     }
 
+    /// <summary>
+    /// Обработка отложенных пакетов и сохранений
+    /// </summary>
     public static void ProcessPendingOperations(bool forceSave = false)
     {
         while (_pendingBroadcasts.TryDequeue(out var item))
@@ -1111,6 +1114,9 @@ public class Doodad : BaseUnit
         FlushSaves(forceSave);
     }
 
+    /// <summary>
+    /// Сохранение грязных doodad'ов
+    /// </summary>
     private static void FlushSaves(bool forceSave = false)
     {
         var currentTick = Environment.TickCount64;
