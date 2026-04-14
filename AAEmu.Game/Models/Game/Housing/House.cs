@@ -7,6 +7,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
@@ -45,11 +46,7 @@ public sealed class House : Unit
     private int _payMoneyAmount;
     private bool _isPublic;
 
-    /// <summary>
-    /// IsDirty flag for Houses, not all properties are taken into account here as most of the data that needs to be updated will never change
-    /// after it's initial addition to the table, like position/rotation. Therefore it's ok to only set the dirty marker on the other properties
-    /// </summary>
-    public bool IsDirty { get => _isDirty; set => _isDirty = value; }
+    public new bool IsDirty { get => _isDirty; set => _isDirty = value; }
     public new uint Id { get => _id; set { _id = value; _isDirty = true; } }
     public ulong AccountId { get => _accountId; set { _accountId = value; _isDirty = true; } }
     public int Ht { get => _ht; set { _ht = value; _isDirty = true; } }
@@ -58,6 +55,9 @@ public sealed class House : Unit
     public int PayMoneyAmount { get => _payMoneyAmount; set { _payMoneyAmount = value; _isDirty = true; } }
     public bool IsPublic { get => _isPublic; set { _isPublic = value; _isDirty = true; } }
     public new uint TemplateId { get => _templateId; set { _templateId = value; _isDirty = true; } }
+
+    public bool IsBuildingNewHouse { get; set; } = false;
+
     public HousingTemplate Template
     {
         get => _template;
@@ -67,11 +67,14 @@ public sealed class House : Unit
             _allAction = _template.BuildSteps.Values.Sum(step => step.NumActions);
         }
     }
+
     public List<Doodad> AttachedDoodads { get; set; }
+    
     public int AllAction { get => _allAction; set { _allAction = value; _isDirty = true; } }
     private int BaseAction { get => _baseAction; set { _baseAction = value; _isDirty = true; } }
     public int CurrentAction => BaseAction + NumAction;
     public int NumAction { get => _numAction; set { _numAction = value; _isDirty = true; } }
+    
     public int CurrentStep
     {
         get => _currentStep;
@@ -80,19 +83,32 @@ public sealed class House : Unit
             _currentStep = value;
             _isDirty = true;
             ModelId = _currentStep == -1 ? Template.MainModelId : Template.BuildSteps[_currentStep].ModelId;
-            if (_currentStep == -1) // TODO ...
+            if (_currentStep == -1)
             {
                 foreach (var bindingDoodad in Template.HousingBindingDoodad)
                 {
                     var doodad = DoodadManager.Instance.Create(0, bindingDoodad.DoodadId, this, true);
                     doodad.AttachPoint = bindingDoodad.AttachPointId;
                     doodad.ParentObj = this;
+
+                    doodad.ParentObjId = this.ObjId;
+                    doodad.OwnerType = DoodadOwnerType.Housing;
+                    doodad.OwnerDbId = this.Id;
+                    doodad.OwnerId = this.OwnerId; 
+                    doodad.IsPersistent = true;
+
                     doodad.Transform = this.Transform.CloneDetached(doodad);
                     doodad.Transform.Parent = this.Transform;
                     doodad.Transform.Local.ApplyWorldSpawnPositionWithDeg(bindingDoodad.Position);
                     doodad.InitDoodad();
 
                     AttachedDoodads.Add(doodad);
+
+                    // ГАРАНТИЯ СОХРАНЕНИЯ: Принудительно пишем в базу только при постройке нового дома
+                    if (IsBuildingNewHouse)
+                    {
+                        doodad.Save();
+                    }
                 }
             }
             else if (AttachedDoodads.Count > 0)
@@ -112,6 +128,7 @@ public sealed class House : Unit
             }
         }
     }
+    
     public override int MaxHp => Template.Hp;
     public override UnitCustomModelParams ModelParams { get; set; }
 
@@ -121,7 +138,7 @@ public sealed class House : Unit
         set { _permission = _template != null && _template.AlwaysPublic ? HousingPermission.Public : value; _isDirty = true; }
     }
 
-    public int PaidWeeks { get; set; } // оплаченные недели
+    public int PaidWeeks { get; set; }
     public DateTime PlaceDate { get => _placeDate; set { _placeDate = value; _isDirty = true; } }
     public DateTime ProtectionEndDate { get => _protectionEndDate; set { _protectionEndDate = value; _isDirty = true; } }
     public DateTime TaxDueDate { get => _protectionEndDate.AddDays(-7); }
@@ -130,7 +147,6 @@ public sealed class House : Unit
     public uint SellPrice { get => _sellPrice; set { _sellPrice = value; _isDirty = true; } }
     public bool AllowRecover { get => _allowRecover; set { _allowRecover = value; _isDirty = true; } }
 
-    // House always gets its guild from its owner
     public override Expedition Expedition
     {
         get
@@ -138,10 +154,7 @@ public sealed class House : Unit
             var guildId = ExpeditionManager.Instance.GetExpeditionOfCharacter(OwnerId);
             return guildId == 0 ? null : ExpeditionManager.Instance.GetExpedition(guildId);
         }
-        set
-        {
-            // Ignored, we always get the guild from its owner
-        }
+        set { }
     }
 
     public House()
@@ -179,16 +192,17 @@ public sealed class House : Unit
     }
 
     #region Visible
+    
     public override void Spawn()
     {
         base.Spawn();
+        
         foreach (var doodad in AttachedDoodads)
             doodad.Spawn();
     }
 
     public override void Delete()
     {
-        // Detach children that aren't part of the house itself
         foreach (var doodad in AttachedDoodads)
             if (doodad.AttachPoint == AttachPointKind.None)
                 doodad.Transform.Parent = null;
@@ -214,7 +228,6 @@ public sealed class House : Unit
         character.SendPacket(new SCUnitStatePacket(this));
         character.SendPacket(new SCHouseStatePacket(this));
 
-        // TODO: This should be handled in the base.AddVisibleObject
         var doodads = AttachedDoodads.ToArray();
         for (var i = 0; i < doodads.Length; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
         {
@@ -233,7 +246,6 @@ public sealed class House : Unit
 
         character.SendPacket(new SCUnitsRemovedPacket(new[] { ObjId }));
 
-        // TODO: This should be handled in base.RemoveVisibleObject
         var doodadIds = new uint[AttachedDoodads.Count];
         for (var i = 0; i < AttachedDoodads.Count; i++)
             doodadIds[i] = AttachedDoodads[i].ObjId;
@@ -256,7 +268,8 @@ public sealed class House : Unit
         if (!IsDirty)
             return false;
         if (AccountId <= 0 || OwnerId <= 0)
-            return false; // recently destroyed/expired house
+            return false; 
+            
         using var command = connection.CreateCommand();
         command.Connection = connection;
         command.Transaction = transaction;
@@ -303,38 +316,37 @@ public sealed class House : Unit
         var ownerName = NameManager.Instance.GetCharacterName(OwnerId);
         var sellToPlayerName = NameManager.Instance.GetCharacterName(SellToPlayerId);
 
-        stream.Write(TlId);             // tl
-        stream.Write(Id);               // dbId
-        stream.WriteBc(ObjId);          // bc
+        stream.Write(TlId);
+        stream.Write(Id);
+        stream.WriteBc(ObjId);
 
         if (CurrentStep == -1)
             stream.WritePisc(TemplateId, 0, 0, 0);
         else
             stream.WritePisc(TemplateId, AllAction, CurrentAction, PayMoneyAmount);
 
-        stream.Write(Ht);                     // ht
-        stream.Write(CoOwnerId);              // type(id)
-        stream.Write(OwnerId);                // type(id)
+        stream.Write(Ht);
+        stream.Write(CoOwnerId);
+        stream.Write(OwnerId);
         stream.Write(ownerName ?? "");
-        stream.Write(AccountId);              // accountId
-        stream.Write((byte)Permission);       // permission
+        stream.Write(AccountId);
+        stream.Write((byte)Permission);
         stream.Write(Helpers.ConvertLongX(Transform.World.Position.X));
         stream.Write(Helpers.ConvertLongY(Transform.World.Position.Y));
         stream.Write(Transform.World.Position.Z);
-        stream.Write(Name);                   // house // TODO max length 128
-        stream.Write(AllowRecover);           // allowRecover
-        stream.Write(SellToPlayerId);         // type(id)
-        stream.Write(sellToPlayerName ?? ""); // sellToName
-        stream.Write(ExpandedDecoLimit);      // expandedDecoLimit
-        stream.Write(Template.MainModelId);   // model_id (type) не точно!
-        stream.Write(IsPublic);               // isPublic
-        // add in 5+
+        stream.Write(Name);
+        stream.Write(AllowRecover);
+        stream.Write(SellToPlayerId);
+        stream.Write(sellToPlayerName ?? "");
+        stream.Write(ExpandedDecoLimit);
+        stream.Write(Template.MainModelId);
+        stream.Write(IsPublic);
         for (var i = 0; i < 5; i++)
         {
-            stream.Write(0u);                 // houseId
-            stream.Write(0L);                 // type
-            stream.Write(0);                  // ucc_kind
-            stream.Write(0);                  // ucc_positon
+            stream.Write(0u);
+            stream.Write(0L);
+            stream.Write(0);
+            stream.Write(0);
         }
         stream.Write(Helpers.ConvertLongX(Transform.World.Position.X - 10));
         stream.Write(Helpers.ConvertLongY(Transform.World.Position.Y - 10));
@@ -344,21 +356,22 @@ public sealed class House : Unit
         stream.Write(Transform.World.Position.Z);
         return stream;
     }
+    
     public PacketStream WriteInfo(PacketStream stream)
     {
         var ownerName = NameManager.Instance.GetCharacterName(OwnerId);
 
-        stream.Write(TlId);                // tl
-        stream.Write(OwnerId);             // type(id)
-        stream.WriteBc(ObjId);             // bc
-        stream.Write(AccountId);           // accountId
+        stream.Write(TlId);
+        stream.Write(OwnerId);
+        stream.WriteBc(ObjId);
+        stream.Write(AccountId);
         stream.Write(ownerName ?? "");
         stream.Write(Helpers.ConvertLongX(Transform.World.Position.X));
         stream.Write(Helpers.ConvertLongY(Transform.World.Position.Y));
         stream.Write(Transform.World.Position.Z);
-        stream.Write(TemplateId); // model_id (type)
-        stream.Write((byte)Permission);     // permission
-        stream.Write(Name);                 // house // TODO max length 128
+        stream.Write(TemplateId);
+        stream.Write((byte)Permission);
+        stream.Write(Name);
         return stream;
     }
 
@@ -372,7 +385,7 @@ public sealed class House : Unit
     {
         if (Template.AlwaysPublic)
             return base.AllowedToInteract(player);
-        if (CurrentStep != -1) // unfinished houses can't be used to private store, so always true
+        if (CurrentStep != -1)
             return base.AllowedToInteract(player);
         switch (Permission)
         {

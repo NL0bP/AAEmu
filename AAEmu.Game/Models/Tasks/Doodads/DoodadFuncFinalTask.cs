@@ -41,14 +41,15 @@ public class DoodadFuncFinalTask : DoodadFuncTask
 
         if (_respawn && _owner.Spawner != null)
         {
-            if (_respawnTime == null && _owner.FuncTask != null)
+            if (_respawnTime == null && _owner.IsVisible)
             {
-                _owner.Spawner.Despawn(_owner);
                 _respawnTime = DateTime.UtcNow;
-                TaskManager.Instance.Schedule(_owner.FuncTask, TimeSpan.FromMilliseconds(_delay));
+                _owner.Spawner.Despawn(_owner);
+                TaskManager.Instance.Schedule(this, TimeSpan.FromMilliseconds(_delay));
                 return;
             }
 
+            _owner.FuncTask = null;
             var world = WorldManager.Instance.GetWorld(_owner.Transform.WorldId);
             //_owner.Spawner.DecreaseCount(_owner);
             _owner.Spawner.Position.WorldId = world.Id;
