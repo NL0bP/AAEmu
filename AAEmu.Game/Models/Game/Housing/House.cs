@@ -58,6 +58,9 @@ public sealed class House : Unit
     public int PayMoneyAmount { get => _payMoneyAmount; set { _payMoneyAmount = value; _isDirty = true; } }
     public bool IsPublic { get => _isPublic; set { _isPublic = value; _isDirty = true; } }
     public new uint TemplateId { get => _templateId; set { _templateId = value; _isDirty = true; } }
+
+    public bool IsBuildingNewHouse { get; set; } = false;
+
     public HousingTemplate Template
     {
         get => _template;
@@ -67,11 +70,14 @@ public sealed class House : Unit
             _allAction = _template.BuildSteps.Values.Sum(step => step.NumActions);
         }
     }
+
     public List<Doodad> AttachedDoodads { get; set; }
+
     public int AllAction { get => _allAction; set { _allAction = value; _isDirty = true; } }
     private int BaseAction { get => _baseAction; set { _baseAction = value; _isDirty = true; } }
     public int CurrentAction => BaseAction + NumAction;
     public int NumAction { get => _numAction; set { _numAction = value; _isDirty = true; } }
+
     public int CurrentStep
     {
         get => _currentStep;
@@ -87,12 +93,25 @@ public sealed class House : Unit
                     var doodad = DoodadManager.Instance.Create(0, bindingDoodad.DoodadId, this, true);
                     doodad.AttachPoint = bindingDoodad.AttachPointId;
                     doodad.ParentObj = this;
+
+                    doodad.ParentObjId = this.ObjId;
+                    doodad.OwnerType = DoodadOwnerType.Housing;
+                    doodad.OwnerDbId = this.Id;
+                    doodad.OwnerId = this.OwnerId;
+                    doodad.IsPersistent = true;
+
                     doodad.Transform = this.Transform.CloneDetached(doodad);
                     doodad.Transform.Parent = this.Transform;
                     doodad.Transform.Local.ApplyWorldSpawnPositionWithDeg(bindingDoodad.Position);
                     doodad.InitDoodad();
 
                     AttachedDoodads.Add(doodad);
+
+                    // ГАРАНТИЯ СОХРАНЕНИЯ: Принудительно пишем в базу только при постройке нового дома
+                    if (IsBuildingNewHouse)
+                    {
+                        doodad.Save();
+                    }
                 }
             }
             else if (AttachedDoodads.Count > 0)

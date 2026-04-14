@@ -76,6 +76,8 @@ namespace AAEmu.Game.Models.Game.DoodadObj;
 
 public class Doodad : BaseUnit
 {
+    private const int MaxFastForwardInitialGrowthDelayMs = 2000;
+
     private static readonly WaitCallback s_SaveCallback = obj =>
     {
         var doodad = (Doodad)obj;
@@ -156,6 +158,7 @@ public class Doodad : BaseUnit
             {
                 _funcGroupId = value;
                 PhaseTime = DateTime.UtcNow; // Save PhaseTime at start of new phase (group)
+                OverridePhaseTime = DateTime.MinValue; // ИСПРАВЛЕНИЕ: Сбрасываем старое время из базы для новых фаз!
                 _timeLeftCacheTick = 0;
                 _cachedTimeLeft = 0;
 
@@ -771,10 +774,40 @@ public class Doodad : BaseUnit
     /// <summary>
     /// Initialization of the current doodad phase
     /// </summary>
-    public void InitDoodad()
+    public void InitDoodad(bool fastForwardInitialGrowth = false)
     {
         ApplyClimateSettings();
+        if (fastForwardInitialGrowth)
+            FastForwardInitialGrowth();
         PerformPhaseChange();
+    }
+
+    private void FastForwardInitialGrowth()
+    {
+        var visitedPhases = new HashSet<uint>();
+        while (visitedPhases.Add(FuncGroupId))
+        {
+            var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(FuncGroupId);
+            if (phaseFuncs.Count != 1)
+                return;
+
+            var phaseFunc = phaseFuncs[0];
+            if (phaseFunc?.FuncType != nameof(DoodadFuncGrowth))
+                return;
+
+            if (DoodadManager.Instance.GetFuncsForGroup(FuncGroupId).Count > 0)
+                return;
+
+            var phaseFuncTemplate = DoodadManager.Instance.GetPhaseFuncTemplate(phaseFunc.FuncId, phaseFunc.FuncType);
+            if (phaseFuncTemplate is not DoodadFuncGrowth { Delay: > 0, NextPhase: > 0 } growth)
+                return;
+
+            if (growth.Delay > MaxFastForwardInitialGrowthDelayMs)
+                return;
+
+            FuncGroupId = (uint)growth.NextPhase;
+            GrowthTime = DateTime.UtcNow;
+        }
     }
 
     private void ApplyClimateSettings()

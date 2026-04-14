@@ -641,13 +641,10 @@ public class HousingManager : Singleton<HousingManager>
 
             var caster = new SkillCasterUnit(house.ObjId);
             house.Buffs.AddBuff(new Buff(house, house, caster, template, null, DateTime.UtcNow));
-            house.IsAlreadyPaid = true;
         }
         else
         {
-            // Remove Untouchable if it's enabled
             house.Buffs.RemoveBuff(buffId);
-            house.IsAlreadyPaid = false;
         }
     }
 
@@ -699,7 +696,6 @@ public class HousingManager : Singleton<HousingManager>
             if (house.Buffs.CheckBuff(debuffId))
                 return;
 
-            // Permanent Untouchable buff, should only be removed when failed tax payment, or demolishing by hand
             var template = SkillManager.Instance.GetBuffTemplate(debuffId);
             if (template == null)
             {
@@ -712,7 +708,6 @@ public class HousingManager : Singleton<HousingManager>
         }
         else
         {
-            // Remove Untouchable if it's enabled
             house.Buffs.RemoveBuff(debuffId);
         }
     }
@@ -1037,6 +1032,16 @@ public class HousingManager : Singleton<HousingManager>
         house.Transform.Local.SetPosition(posX, posY, posZ);
         house.Transform.Local.SetZRotation(zRot);
 
+        house.OwnerId = connection.ActiveChar.Id;
+        house.CoOwnerId = connection.ActiveChar.Id;
+        house.AccountId = connection.AccountId;
+        house.Ht = ht;
+        house.Permission = HousingPermission.Private;
+        house.AllowRecover = true;
+        house.PlaceDate = DateTime.UtcNow;
+        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 1);
+        house.IsBuildingNewHouse = true; // <--- ДОБАВИТЬ СЮДА
+
         if (house.Template.BuildSteps.Count > 0)
         {
             house.CurrentStep = 0;
@@ -1046,14 +1051,7 @@ public class HousingManager : Singleton<HousingManager>
             house.CurrentStep = -1;
         }
 
-        house.OwnerId = connection.ActiveChar.Id;
-        house.CoOwnerId = connection.ActiveChar.Id;
-        house.AccountId = connection.AccountId;
-        house.Ht = ht;
-        house.Permission = HousingPermission.Private;
-        house.AllowRecover = true;
-        house.PlaceDate = DateTime.UtcNow;
-        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 2); // 14 days
+        house.IsBuildingNewHouse = false; // <--- И ДОБАВИТЬ СЮДА
         _houses.Add(house.Id, house);
         _housesTl.Add(house.TlId, house);
 
@@ -1141,6 +1139,16 @@ public class HousingManager : Singleton<HousingManager>
         house.Transform.Local.SetPosition(posX, posY, posZ);
         house.Transform.Local.SetZRotation(zRot);
 
+        house.OwnerId = connection.ActiveChar.Id;
+        house.CoOwnerId = connection.ActiveChar.Id;
+        house.AccountId = connection.AccountId;
+        house.Ht = 0;
+        house.Permission = HousingPermission.Private;
+        house.AllowRecover = true;
+        house.PlaceDate = DateTime.UtcNow;
+        house.ProtectionEndDate = house.PlaceDate.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 1);
+        house.IsBuildingNewHouse = true; // <--- ДОБАВИТЬ СЮДА
+
         if (house.Template.BuildSteps.Count > 0)
         {
             house.CurrentStep = 0;
@@ -1150,14 +1158,7 @@ public class HousingManager : Singleton<HousingManager>
             house.CurrentStep = -1;
         }
 
-        house.OwnerId = connection.ActiveChar.Id;
-        house.CoOwnerId = connection.ActiveChar.Id;
-        house.AccountId = connection.AccountId;
-        house.Ht = 0; // ht
-        house.Permission = HousingPermission.Private;
-        house.AllowRecover = true;
-        house.PlaceDate = DateTime.UtcNow;
-        house.ProtectionEndDate = DateTime.UtcNow.AddDays(AppConfiguration.Instance.World.DaysForTaxPayment * 2);
+        house.IsBuildingNewHouse = false; // <--- И ДОБАВИТЬ СЮДА
         _houses.Add(house.Id, house);
         _housesTl.Add(house.TlId, house);
 
@@ -1468,7 +1469,7 @@ public class HousingManager : Singleton<HousingManager>
         // Calculate multiplier
         var heavyEffective = Math.Min(heavyHouseCount, MaxHeavyTaxCounted);
         var multiplier = (heavyHouseCount >= HeavyThreshold && newHouseTemplate.HeavyTax)
-            ? 1f + heavyEffective * HeavyTaxMultiplier
+            ? 1f + (heavyEffective - HeavyThreshold + 1) * HeavyTaxMultiplier
             : 1f;
 
         var baseTax = newHouseTemplate.Taxation?.Tax ?? 0;
