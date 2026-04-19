@@ -110,5 +110,5 @@ public sealed class MailForTax : BaseMail
     }
 
     private static string Escape(string value) =>
-        value.Replace("'", "''");
+        value.Replace("'", "’");
 }
