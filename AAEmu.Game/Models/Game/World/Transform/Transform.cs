@@ -360,10 +360,10 @@ public class Transform : IDisposable
 
         var res = _parentTransform.GetWorldPosition().Clone();
 
-        // Use parent rotation to translate child coordinatesAdd commentMore actions
+        // Use parent rotation to translate child coordinates
         var parentQuatRotation = res.ToQuaternion();
         var localQuatPos = new Quaternion(Local.Position, 0);
-        var localTranslatedPos = Quaternion.Inverse(parentQuatRotation) * localQuatPos * parentQuatRotation;
+        var localTranslatedPos = parentQuatRotation * localQuatPos * Quaternion.Inverse(parentQuatRotation);
         res.Translate(new Vector3(localTranslatedPos.X, localTranslatedPos.Y, localTranslatedPos.Z));
         res.Rotate(Local.Rotation);
 

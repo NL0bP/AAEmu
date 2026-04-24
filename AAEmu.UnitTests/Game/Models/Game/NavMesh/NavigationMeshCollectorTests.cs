@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Numerics;
-
 using AAEmu.Game.Models.Game.NavMesh;
-
 using Xunit;
 
-namespace AAEmu.UnitTests.Game.Models.NavMesh;
+namespace AAEmu.UnitTests.Game.Models.Game.NavMesh;
 
 public class NavigationMeshCollectorTests
 {

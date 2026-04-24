@@ -30,6 +30,8 @@ public class CSRotateHousePacket : GamePacket
             house.Transform.World.Rotation = house.Transform.World.Rotation with { Z = zRot };
             house.Transform.World.Position = house.Transform.World.Position with { Z = height };
             house.IsDirty = true;
+            // Обновляем мировые координаты всех прикрепленных объектов
+            house.Transform.FinalizeTransform();
         }
 
         Connection.ActiveChar.SendPacket(new SCHouseRotatedPacket(objId, zRot));

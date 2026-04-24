@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
-
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
-
 using Moq;
-
 using Xunit;
 
-namespace AAEmu.UnitTests.Game.Models.Buff
+namespace AAEmu.UnitTests.Game.Models.Game.Buff
 {
     public class TestBuffTemplate : BuffTemplate
     {

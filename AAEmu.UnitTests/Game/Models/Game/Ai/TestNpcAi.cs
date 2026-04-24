@@ -1,14 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-
 using AAEmu.Game.Models.Game.AI.Enums;
 using AAEmu.Game.Models.Game.AI.v2.Framework;
 using AAEmu.Game.Models.Game.AI.v2.Params;
 using AAEmu.Game.Models.Game.NPChar;
-
 using Xunit;
 
-namespace AAEmu.UnitTests.Game.Models.Ai
+namespace AAEmu.UnitTests.Game.Models.Game.Ai
 {
     // Минимальная тестовая реализация NpcAi для тестирования EnqueueAiCommands.
     public class TestNpcAi : NpcAi
