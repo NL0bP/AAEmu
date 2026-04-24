@@ -1321,6 +1321,14 @@ public partial class Character : Unit, ICharacter
         Inventory.Bag.ConsumeItem(ItemTaskType.FamilyJoin, (uint)reqItemId, reqItemCount, null);
         Achievements?.TrackAncestralLevel(HeirLevel);
         BroadcastPacket(new SCHeirLevelUpPacket(ObjId), true);
+
+        // play sequence, this is the same sequence played when using the heir skill
+        if (HeirLevel == 1)
+        {
+            var sequenceName = "etc_09_heir";
+            BroadcastPacket(new SCPlaySequencePacket(sequenceName, 0), true);
+        }
+
         ResidentManager.Instance.AddResidenMemberInfo(this);
     }
 
