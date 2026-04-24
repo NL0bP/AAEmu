@@ -1447,45 +1447,33 @@ public class SpawnManager : Singleton<SpawnManager>
                 if (doodad.SourceTemplateId > 0 && !TryBindPersistentWorldDoodad(doodad))
                     continue;
 
-                // ИДЕАЛЬНАЯ СИНХРОНИЗАЦИЯ ДОМА
-                if (doodad.OwnerType == DoodadOwnerType.Housing && doodad.ParentObjId <= 0)
+                if (doodad.OwnerType == DoodadOwnerType.Housing && doodad.AttachPoint != AttachPointKind.None)
                 {
                     var house = HousingManager.Instance.GetHouseById(doodad.OwnerDbId);
                     if (house != null)
                     {
-                        // Если это структурный элемент (дверь, клумба, окно)  
-                        if (doodad.AttachPoint != AttachPointKind.None)
+                        house.ReplaceAttachedDoodadByAttachPoint(doodad);
+                    }
+                    else
+                    {
+                        doodad.Transform.WorldId = WorldManager.DefaultWorldId;
+                        doodad.Transform.ZoneId = WorldManager.Instance.GetZoneId(doodad.Transform.WorldId, doodad.Transform.Local.Position.X, doodad.Transform.Local.Position.Y);
+                    }
+                }
+                else if (doodad.OwnerType == DoodadOwnerType.Housing && doodad.ParentObjId <= 0)
+                {
+                    var house = HousingManager.Instance.GetHouseById(doodad.OwnerDbId);
+                    if (house != null)
+                    {
+                        // Обычная мебель: просто привязываем без изменения глобальных координат
+                        doodad.Transform.WorldId = house.Transform.WorldId;
+                        doodad.Transform.ZoneId = house.Transform.ZoneId;
+                        doodad.ParentObj = house;
+                        doodad.ParentObjId = house.ObjId;
+
+                        if (!house.AttachedDoodads.Contains(doodad))
                         {
-                            var dummy = house.AttachedDoodads.FirstOrDefault(d => d.AttachPoint == doodad.AttachPoint);
-                            if (dummy != null)
-                            {
-                                // Крадем у пустышки её идеальную 3D-матрицу   
-                                doodad.Transform = dummy.Transform.CloneDetached(doodad);
-                                doodad.Transform.Parent = house.Transform;
-                                doodad.ParentObj = house;
-                                doodad.ParentObjId = house.ObjId;
-
-                                // Заменяем пустышку в списке дома на наш объект из БД
-                                house.AttachedDoodads.Remove(dummy);
-                                house.AttachedDoodads.Add(doodad);
-
-                                // Удаляем пустышку. Так как у неё DbId = 0, она освободит память,
-                                // но НИКАК не затронет настоящие записи в базе данных!
-                                dummy.Delete();
-                            }
-                        }
-                        else
-                        {
-                            // Обычная мебель: просто привязываем без изменения глобальных координат
-                            doodad.Transform.WorldId = house.Transform.WorldId;
-                            doodad.Transform.ZoneId = house.Transform.ZoneId;
-                            doodad.ParentObj = house;
-                            doodad.ParentObjId = house.ObjId;
-
-                            if (!house.AttachedDoodads.Contains(doodad))
-                            {
-                                house.AttachedDoodads.Add(doodad);
-                            }
+                            house.AttachedDoodads.Add(doodad);
                         }
                     }
                     else

@@ -304,7 +304,9 @@ CREATE TABLE `doodads`  (
   `item_container_id` int UNSIGNED NOT NULL DEFAULT 0 COMMENT 'ItemContainer Id for Coffers',
   `data` int NOT NULL DEFAULT 0 COMMENT 'Doodad specific data',
   `farm_type` int NOT NULL DEFAULT 0 COMMENT 'farm type for Public Farm',
-  PRIMARY KEY (`id`) USING BTREE
+  `structural_attach_point` int UNSIGNED GENERATED ALWAYS AS (CASE WHEN `owner_type` = 3 AND `house_id` > 0 AND `attach_point` <> 0 THEN `attach_point` ELSE NULL END) STORED COMMENT 'Generated key part used to enforce one structural doodad per house attach point',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `ux_doodads_house_structural_attach_point` (`owner_type`, `house_id`, `structural_attach_point`)
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = 'Persistent doodads (e.g. tradepacks, furniture)' ROW_FORMAT = Dynamic;
 
 -- -------------------------------------------------

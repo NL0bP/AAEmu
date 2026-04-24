@@ -495,7 +495,15 @@ public class HousingManager : Singleton<HousingManager>
                         new Vector3(reader.GetFloat("roll"), reader.GetFloat("pitch"), reader.GetFloat("yaw"))
                     );
                     house.Transform.ZoneId = WorldManager.Instance.GetZoneId(house.Transform.WorldId, house.Transform.World.Position.X, house.Transform.World.Position.Y);
-                    house.CurrentStep = reader.GetInt32("current_step");
+                    try
+                    {
+                        house.IsLoadingFromDatabase = true;
+                        house.CurrentStep = reader.GetInt32("current_step");
+                    }
+                    finally
+                    {
+                        house.IsLoadingFromDatabase = false;
+                    }
                     house.NumAction = reader.GetInt32("current_action");
                     house.Permission = (HousingPermission)reader.GetByte("permission");
                     house.PlaceDate = reader.GetDateTime("place_date");

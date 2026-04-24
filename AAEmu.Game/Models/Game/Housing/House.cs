@@ -60,6 +60,7 @@ public sealed class House : Unit
     public new uint TemplateId { get => _templateId; set { _templateId = value; _isDirty = true; } }
 
     public bool IsBuildingNewHouse { get; set; } = false;
+    public bool IsLoadingFromDatabase { get; set; } = false;
 
     public HousingTemplate Template
     {
@@ -98,7 +99,9 @@ public sealed class House : Unit
                     doodad.OwnerType = DoodadOwnerType.Housing;
                     doodad.OwnerDbId = this.Id;
                     doodad.OwnerId = this.OwnerId;
-                    doodad.IsPersistent = true;
+                    // During server load these are temporary visual placeholders.
+                    // The persisted DB doodads are loaded later and replace them by attach point.
+                    doodad.IsPersistent = !IsLoadingFromDatabase;
 
                     doodad.Transform = this.Transform.CloneDetached(doodad);
                     doodad.Transform.Parent = this.Transform;
@@ -195,6 +198,46 @@ public sealed class House : Unit
                 }
             }
         }
+    }
+
+    public bool ReplaceAttachedDoodadByAttachPoint(Doodad doodad)
+    {
+        if (doodad == null || doodad.AttachPoint == AttachPointKind.None)
+            return false;
+
+        var existing = AttachedDoodads.FirstOrDefault(d => d.AttachPoint == doodad.AttachPoint && !ReferenceEquals(d, doodad));
+        if (existing == null)
+        {
+            if (!AttachedDoodads.Contains(doodad))
+                AttachedDoodads.Add(doodad);
+
+            AttachDoodadToHouse(doodad);
+            return false;
+        }
+
+        doodad.Transform = existing.Transform.CloneDetached(doodad);
+        AttachDoodadToHouse(doodad);
+
+        var index = AttachedDoodads.IndexOf(existing);
+        if (index >= 0)
+            AttachedDoodads[index] = doodad;
+        else if (!AttachedDoodads.Contains(doodad))
+            AttachedDoodads.Add(doodad);
+
+        if (!existing.IsPersistent)
+            existing.Delete();
+
+        return true;
+    }
+
+    private void AttachDoodadToHouse(Doodad doodad)
+    {
+        doodad.Transform.Parent = Transform;
+        doodad.ParentObj = this;
+        doodad.ParentObjId = ObjId;
+        doodad.OwnerType = DoodadOwnerType.Housing;
+        doodad.OwnerDbId = Id;
+        doodad.OwnerId = OwnerId;
     }
 
     #region Visible
