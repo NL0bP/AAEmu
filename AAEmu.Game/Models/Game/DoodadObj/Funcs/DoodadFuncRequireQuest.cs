@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
@@ -10,7 +10,7 @@ public class DoodadFuncRequireQuest : DoodadPhaseFuncTemplate
     public WorldInteractionType WorldInteractionId { get; set; }
     public uint QuestId { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Trace("DoodadFuncRequireQuest QuestId: {0}, WorldIntId {1}", QuestId, WorldInteractionId);
 

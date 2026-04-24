@@ -1,4 +1,4 @@
-п»їusing AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -19,11 +19,11 @@ public class DoodadFuncEnterInstance : DoodadFuncTemplate
         {
             if (character.MainWorldPosition == null)
             {
-                character.MainWorldPosition = character.Transform.CloneDetached(character); // СЃРѕС…СЂР°РЅРёРј РєРѕРѕСЂРґРёРЅР°С‚С‹ РґР»СЏ РІРѕР·РІСЂР°С‚Р° РІ РѕСЃРЅРѕРІРЅРѕР№ РјРёСЂ
+                character.MainWorldPosition = character.Transform.CloneDetached(character); // сохраним координаты для возврата в основной мир
             }
             else if (character.Transform.WorldId == 0)
             {
-                character.MainWorldPosition = character.Transform.CloneDetached(character); // СЃРѕС…СЂР°РЅРёРј РєРѕРѕСЂРґРёРЅР°С‚С‹ РґР»СЏ РІРѕР·РІСЂР°С‚Р° РІ РѕСЃРЅРѕРІРЅРѕР№ РјРёСЂ
+                character.MainWorldPosition = character.Transform.CloneDetached(character); // сохраним координаты для возврата в основной мир
             }
 
             IndunManager.Instance.RequestInstance(character, ZoneId);

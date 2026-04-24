@@ -1,4 +1,4 @@
-п»їusing System;
+using System;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Game.Core.Managers;
@@ -19,7 +19,7 @@ public class DoodadFuncFinal : DoodadPhaseFuncTemplate
     public bool ShowEndTime { get; set; }
     public string Tip { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         if (caster is Character)
             Logger.Debug("DoodadFuncFinal: After {0}, Respawn {1}, MinTime {2}, MaxTime {3}, ShowTip {4}, ShowEndTime {5}, Tip {6}", After, Respawn, MinTime, MaxTime, ShowTip, ShowEndTime, Tip);
@@ -38,7 +38,7 @@ public class DoodadFuncFinal : DoodadPhaseFuncTemplate
                 afterTimerDelay = owner.TimeLeft;
             }
 
-            // РћС‚РјРµРЅСЏРµРј С‚РµРєСѓС‰СѓСЋ Р·Р°РґР°С‡Сѓ, РµСЃР»Рё РѕРЅР° СЃСѓС‰РµСЃС‚РІСѓРµС‚
+            // Отменяем текущую задачу, если она существует
             // Cancel the current task if it exists
             if (owner.FuncTask != null)
             {
@@ -52,7 +52,7 @@ public class DoodadFuncFinal : DoodadPhaseFuncTemplate
                 }
             }
 
-            // РЎРѕР·РґР°РµРј Рё РЅР°Р·РЅР°С‡Р°РµРј РЅРѕРІСѓСЋ Р·Р°РґР°С‡Сѓ
+            // Создаем и назначаем новую задачу
             // Create and assign a new task
             owner.FuncTask = new DoodadFuncFinalTask(caster, owner, 0, Respawn, delay);
             TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(afterTimerDelay)); // After ms remove the object from visibility
@@ -62,7 +62,7 @@ public class DoodadFuncFinal : DoodadPhaseFuncTemplate
             owner.Delete();
             if (!Respawn) { return false; }
 
-            // РћС‚РјРµРЅСЏРµРј С‚РµРєСѓС‰СѓСЋ Р·Р°РґР°С‡Сѓ, РµСЃР»Рё РѕРЅР° СЃСѓС‰РµСЃС‚РІСѓРµС‚
+            // Отменяем текущую задачу, если она существует
             // Cancel the current task if it exists
             if (owner.FuncTask != null)
             {
@@ -76,7 +76,7 @@ public class DoodadFuncFinal : DoodadPhaseFuncTemplate
                 }
             }
 
-            // РЎРѕР·РґР°РµРј Рё РЅР°Р·РЅР°С‡Р°РµРј РЅРѕРІСѓСЋ Р·Р°РґР°С‡Сѓ
+            // Создаем и назначаем новую задачу
             // Create and assign a new task
             owner.FuncTask = new DoodadFuncFinalTask(caster, owner, 0, Respawn, delay);
             TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(delay));

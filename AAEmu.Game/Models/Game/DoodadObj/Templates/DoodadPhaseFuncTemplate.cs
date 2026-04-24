@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units;
 using NLog;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Templates;
@@ -8,5 +8,5 @@ public abstract class DoodadPhaseFuncTemplate
     protected static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
 
     public uint Id { get; set; }
-    public abstract bool Use(BaseUnit caster, Doodad owner);
+    public abstract bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx);
 }

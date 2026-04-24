@@ -18,7 +18,7 @@ public class DoodadFuncBuff : DoodadFuncTemplate
         Logger.Trace("DoodadFuncBuff");
         // TODO: ImplementRelationShipId
         // TODO: Not sure what count is, maximum targets maybe?
-        
+
         if (Radius <= 0f)
         {
             // Caster only

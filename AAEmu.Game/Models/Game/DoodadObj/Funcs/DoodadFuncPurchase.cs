@@ -1,4 +1,4 @@
-п»їusing AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Items;
@@ -26,11 +26,11 @@ public class DoodadFuncPurchase : DoodadFuncTemplate
             return;
         }
 
-        // РѕР±СЂР°Р±Р°С‚С‹РІР°С‚СЊ РІР°Р»СЋС‚РЅС‹Рµ С‚СЂР°РЅР·Р°РєС†РёРё (РєРѕРіРґР° CoinItemId Рё CoinCount == 0)
+        // обрабатывать валютные транзакции (когда CoinItemId и CoinCount == 0)
         // process currency transactions (when CoinItemId and CoinCount == 0)
         if (CoinItemId == 0 && CoinCount == 0)
         {
-            // РџРѕР»СѓС‡РёС‚СЊ С€Р°Р±Р»РѕРЅ С‚РѕРІР°СЂР°, С‡С‚РѕР±С‹ РѕРїСЂРµРґРµР»РёС‚СЊ С†РµРЅСѓ
+            // Получить шаблон товара, чтобы определить цену
             // Get the product template to determine the price
             var itemTemplate = ItemManager.Instance.GetTemplate(ItemId);
             if (itemTemplate == null)
@@ -38,8 +38,8 @@ public class DoodadFuncPurchase : DoodadFuncTemplate
                 Logger.Warn($"DoodadFuncPurchase: id={ItemId}");
                 return;
             }
-            // РџРѕР»СѓС‡РёС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С†РµРЅРµ РёР· С€Р°Р±Р»РѕРЅР° С‚РѕРІР°СЂР°
-            // РџСЂРёРјРµС‡Р°РЅРёРµ. Р—РґРµСЃСЊ РїСЂРµРґРїРѕР»Р°РіР°РµС‚СЃСЏ, С‡С‚Рѕ С€Р°Р±Р»РѕРЅ РїСЂРµРґРјРµС‚Р° РёРјРµРµС‚ Р°С‚СЂРёР±СѓС‚ С†РµРЅС‹ РёР»Рё С†РµРЅР° РјРѕР¶РµС‚ Р±С‹С‚СЊ РїРѕР»СѓС‡РµРЅР° СЃ РїРѕРјРѕС‰СЊСЋ РґСЂСѓРіРёС… РјРµС‚РѕРґРѕРІ
+            // Получить информацию о цене из шаблона товара
+            // Примечание. Здесь предполагается, что шаблон предмета имеет атрибут цены или цена может быть получена с помощью других методов
             // Get price information from the product template
             // Note. Here it is assumed that the item template has a price attribute or the price can be obtained using other methods
             var itemPrice = itemTemplate.Price;
@@ -48,12 +48,12 @@ public class DoodadFuncPurchase : DoodadFuncTemplate
                 character.SendErrorMessage(ErrorMessageType.NotEnoughMoney);
                 return;
             }
-            // РЎС‡РёС‚Р°Р№С‚Рµ Р·РѕР»РѕС‚С‹Рµ РјРѕРЅРµС‚С‹
+            // Считайте золотые монеты
             character.ChangeMoney(SlotType.Bag, -itemPrice);
         }
         else
         {
-            // РћР±СЂР°Р±РѕС‚РєР° С‚СЂР°РЅР·Р°РєС†РёР№ РЅР° РѕСЃРЅРѕРІРµ CoinItemId, CoinCount
+            // Обработка транзакций на основе CoinItemId, CoinCount
             // Item-based transaction processing
             if (character.Inventory.Bag.ConsumeItem(ItemTaskType.DoodadInteraction, CoinItemId, CoinCount, null) <= 0)
             {

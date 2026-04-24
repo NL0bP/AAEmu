@@ -1,4 +1,4 @@
-п»їusing System;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using AAEmu.Game.Core.Managers;
@@ -12,7 +12,7 @@ using AAEmu.Game.Models.Tasks.Skills;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Funcs;
 
-// РЎРїРµС†РёР°Р»СЊРЅР°СЏ Р·Р°РґР°С‡Р° РґР»СЏ РѕС‚Р»РѕР¶РµРЅРЅРѕР№ РІРёР·СѓР°Р»СЊРЅРѕР№ СЃРјРµРЅС‹ С„Р°Р·С‹ РґСѓРґР°РґР°
+// Специальная задача для отложенной визуальной смены фазы дудада
 public class DelayedPhaseChangeTask : DoodadFuncTask
 {
     private readonly BaseUnit _caster;
@@ -28,7 +28,7 @@ public class DelayedPhaseChangeTask : DoodadFuncTask
 
     public override void Execute()
     {
-        // РРЎРџР РђР’Р›Р•РќРР•: РСЃРїРѕР»СЊР·СѓРµРј IsVisible РІРјРµСЃС‚Рѕ РїСЂРёРІР°С‚РЅРѕРіРѕ IsDeleted
+        // ИСПРАВЛЕНИЕ: Используем IsVisible вместо приватного IsDeleted
         if (_owner != null && _owner.IsVisible)
         {
             _owner.DoChangePhase(_caster, _nextPhase);
@@ -44,7 +44,7 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
     public int NextPhase { get; set; }
     public int SkillId { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         if (caster is not Character character)
         {
@@ -54,7 +54,7 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
 
         Logger.Debug($"DoodadFuncItemChanger: Id={Id}, ItemCount={ItemCount}, ItemId={ItemId}, NextPhase={NextPhase}, SkillId={SkillId}");
 
-        // Р Р•РЁР•РќРР• 1: Р‘Р»РѕРєРёСЂСѓРµРј Р°РІС‚Рѕ-РїРѕСЃР°РґРєСѓ РґР»СЏ РєР»СѓРјР± СЃ РІС‹Р±РѕСЂРѕРј СЃРµРјСЏРЅ
+        // РЕШЕНИЕ 1: Блокируем авто-посадку для клумб с выбором семян
         var isAutomaticLoop = new StackTrace().GetFrames().Any(f => f.GetMethod().Name == "DoPhaseFuncs");
         if (isAutomaticLoop)
         {
@@ -66,7 +66,7 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
             }
         }
 
-        // 2. РЎС‚Р°РЅРґР°СЂС‚РЅР°СЏ РїСЂРѕРІРµСЂРєР° Рё СЃРїРёСЃР°РЅРёРµ СЃРµРјСЏРЅ
+        // 2. Стандартная проверка и списание семян
         if (ItemId > 0 && ItemCount > 0)
         {
             character.Inventory.Bag.GetAllItemsByTemplate((uint)ItemId, -1, out _, out var availableItemCount);
@@ -82,7 +82,7 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
             }
         }
 
-        // Р Р•РЁР•РќРР• 2: Р—Р°РїСѓСЃРє Р°РЅРёРјР°С†РёРё Рё РѕС‚Р»РѕР¶РµРЅРЅР°СЏ СЃРјРµРЅР° РІРёР·СѓР°Р»СЊРЅРѕР№ С„Р°Р·С‹
+        // РЕШЕНИЕ 2: Запуск анимации и отложенная смена визуальной фазы
         if (SkillId > 0)
         {
             var skillTemplate = SkillManager.Instance.GetSkillTemplate((uint)SkillId);
@@ -90,11 +90,11 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
             {
                 var useSkill = new Skill(skillTemplate);
 
-                // РњРіРЅРѕРІРµРЅРЅРѕ Р·Р°РїСѓСЃРєР°РµРј Р°РЅРёРјР°С†РёСЋ РєР°СЃС‚Р° Сѓ РїРµСЂСЃРѕРЅР°Р¶Р°
+                // Мгновенно запускаем анимацию каста у персонажа
                 TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, new SkillCasterUnit(caster.ObjId), owner, new SkillCastDoodadTarget { ObjId = owner.ObjId }, null), TimeSpan.Zero);
 
-                // Р—Р”Р•РЎР¬ РњР•РќРЇР•РўРЎРЇ Р’Р Р•РњРЇ Р—РђР”Р•Р Р–РљР:
-                // РЎРµР№С‡Р°СЃ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ 3500 РјРёР»Р»РёСЃРµРєСѓРЅРґ (3,5 СЃРµРєСѓРЅРґС‹).
+                // ЗДЕСЬ МЕНЯЕТСЯ ВРЕМЯ ЗАДЕРЖКИ:
+                // Сейчас установлено 3500 миллисекунд (3,5 секунды).
                 TaskManager.Instance.Schedule(new DelayedPhaseChangeTask(caster, owner, NextPhase), TimeSpan.FromMilliseconds(3500));
 
                 owner.ToNextPhase = false;
@@ -102,7 +102,7 @@ public class DoodadFuncItemChanger : DoodadPhaseFuncTemplate
             }
         }
 
-        // Р РµР·РµСЂРІРЅС‹Р№ РІР°СЂРёР°РЅС‚: РµСЃР»Рё Сѓ РґРµР№СЃС‚РІРёСЏ РЅРµС‚ Р°РЅРёРјР°С†РёРё
+        // Резервный вариант: если у действия нет анимации
         owner.ToNextPhase = true;
         owner.OverridePhase = NextPhase;
         return true;

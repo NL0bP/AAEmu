@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
@@ -11,7 +11,7 @@ public class DoodadFuncPulse : DoodadPhaseFuncTemplate
 {
     public bool Flag { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Debug($"DoodadFuncPulse: Flag {Flag}");
 

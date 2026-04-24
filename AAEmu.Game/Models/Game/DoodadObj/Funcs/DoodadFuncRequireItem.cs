@@ -1,4 +1,4 @@
-п»їusing AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
@@ -10,17 +10,17 @@ public class DoodadFuncRequireItem : DoodadPhaseFuncTemplate
     public WorldInteractionType WorldInteractionId { get; set; }
     public uint ItemId { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Trace("DoodadFuncRequireItem");
         if (caster is Character character)
         {
             //character.Quests.OnInteraction(WorldInteractionId, character.CurrentTarget);
             if (character.Inventory.GetItemsCount(ItemId) > 0)
-                return false; // РїСЂРѕРґРѕР»Р¶РёРј РІС‹РїРѕР»РЅРµРЅРёРµ, РїРѕРґС…РѕРґСЏС‰РёР№ РєРІРµСЃС‚ Рё РµСЃС‚СЊ РЅСѓР¶РЅС‹Р№ РїСЂРµРґРјРµС‚
+                return false; // продолжим выполнение, подходящий квест и есть нужный предмет
             else
-                return true; // РїСЂРµСЂС‹РІР°РµРј, РЅРµ РїРѕРґС…РѕРґСЏС‰РёР№ РєРІРµСЃС‚ Рё РЅРµС‚ РЅСѓР¶РЅРѕРіРѕ РїСЂРµРґРјРµС‚Р°
+                return true; // прерываем, не подходящий квест и нет нужного предмета
         }
-        return true; // РїСЂРµСЂС‹РІР°РµРј, РЅРµ РїРѕРґС…РѕРґСЏС‰РёР№ РєРІРµСЃС‚ Рё РЅРµС‚ РЅСѓР¶РЅРѕРіРѕ РїСЂРµРґРјРµС‚Р°
+        return true; // прерываем, не подходящий квест и нет нужного предмета
     }
 }

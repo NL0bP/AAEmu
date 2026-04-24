@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Funcs;
@@ -9,7 +9,7 @@ public class DoodadFuncReactDevote : DoodadPhaseFuncTemplate
     public int NextPhase { get; set; }
     public uint SkillId { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Debug($"DoodadFuncReactDevote: Count={Count}, NextPhase={NextPhase}, SkillId={SkillId}");
         return false;

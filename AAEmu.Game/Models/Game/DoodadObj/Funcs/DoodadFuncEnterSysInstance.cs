@@ -14,19 +14,19 @@ public class DoodadFuncEnterSysInstance : DoodadFuncTemplate
 
     public override void Use(BaseUnit caster, Doodad owner, uint skillId, int nextPhase = 0)
     {
-            Logger.Info($"DoodadFuncEnterSysInstance, ZoneId: {ZoneId}, FactionId: {FactionId}");
-            if (caster is Character character)
+        Logger.Info($"DoodadFuncEnterSysInstance, ZoneId: {ZoneId}, FactionId: {FactionId}");
+        if (caster is Character character)
+        {
+            if (character.MainWorldPosition == null)
             {
-                if (character.MainWorldPosition == null)
-                {
-                    character.MainWorldPosition = character.Transform.CloneDetached(character); // сохраним координаты для возврата в основной мир
-                }
-                else if (character.Transform.WorldId == 0)
-                {
-                    character.MainWorldPosition = character.Transform.CloneDetached(character); // сохраним координаты для возврата в основной мир
-                }
-
-                IndunManager.Instance.RequestSysInstance(character, ZoneId);
+                character.MainWorldPosition = character.Transform.CloneDetached(character); // сохраним координаты для возврата в основной мир
             }
+            else if (character.Transform.WorldId == 0)
+            {
+                character.MainWorldPosition = character.Transform.CloneDetached(character); // сохраним координаты для возврата в основной мир
+            }
+
+            IndunManager.Instance.RequestSysInstance(character, ZoneId);
         }
+    }
 }

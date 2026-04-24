@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
@@ -11,7 +11,7 @@ public class DoodadFuncPulseTrigger : DoodadPhaseFuncTemplate
     public bool Flag { get; set; }
     public int NextPhase { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         if (caster is not Character)
         {

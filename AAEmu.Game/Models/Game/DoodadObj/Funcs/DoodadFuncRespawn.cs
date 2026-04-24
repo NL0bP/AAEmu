@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -10,7 +10,7 @@ public class DoodadFuncRespawn : DoodadPhaseFuncTemplate
     public int MinTime { get; set; }
     public int MaxTime { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Trace("DoodadFuncRespawn: MinTime {0}, MaxTime {1}", MinTime, MaxTime);
 

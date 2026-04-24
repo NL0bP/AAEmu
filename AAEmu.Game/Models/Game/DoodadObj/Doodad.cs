@@ -135,7 +135,6 @@ public class Doodad : BaseUnit
     private int _data;
     private uint _funcGroupId;
 
-    //public uint TemplateId { get; set; } // moved to BaseUnit
     public uint DbId { get; set; }
     public bool IsPersistent { get; set; }
     public DoodadTemplate Template { get; set; }
@@ -291,8 +290,6 @@ public class Doodad : BaseUnit
     }
 
     public bool ToNextPhase { get; set; }
-    public int PhaseRatio { get; set; }
-    public int CumulativePhaseRatio { get; set; }
 
     /// <summary>
     /// Used to indicate the starting phase of the doodad should be overriden when loading player doodads
@@ -561,6 +558,12 @@ public class Doodad : BaseUnit
             Delete();
     }
 
+    public struct PhaseRollContext
+    {
+        public int Roll;        // 0–10000
+        public int Cumulative;  // текущая верхняя граница
+    }
+
     private bool DoPhaseFuncs(BaseUnit caster, ref int nextPhase)
     {
         int maxIterations = 10;
@@ -569,20 +572,17 @@ public class Doodad : BaseUnit
         while (iteration++ < maxIterations)
         {
             if (nextPhase <= 0)
-            {
                 return true;
-            }
 
             if (FuncGroupId != (uint)nextPhase)
-            {
                 FuncGroupId = (uint)nextPhase;
-            }
 
             if (ListGroupId.Contains((uint)nextPhase))
             {
                 ListGroupId.Clear();
                 return true;
             }
+
             ListGroupId.Add((uint)nextPhase);
 
             TryCancelFuncTask();
@@ -590,20 +590,24 @@ public class Doodad : BaseUnit
             var phaseFuncs = DoodadManager.Instance.GetPhaseFunc(FuncGroupId);
 
             if (phaseFuncs.Count == 0)
-            {
                 return false;
-            }
 
             bool stop = false;
             bool phaseChanged = false;
+
+            // ✅ один roll на весь проход
+            var ctx = new PhaseRollContext
+            {
+                Roll = Random.Shared.Next(0, 10000),
+                Cumulative = 0
+            };
 
             foreach (var phaseFunc in phaseFuncs)
             {
                 if (phaseFunc == null)
                     continue;
 
-                PhaseRatio = Random.Shared.Next(0, 10000);
-                stop = phaseFunc.Use(caster, this);
+                stop = phaseFunc.Use(caster, this, ref ctx);
 
                 if (OverridePhase == -1)
                 {
@@ -651,7 +655,13 @@ public class Doodad : BaseUnit
 
         TryCancelFuncTask();
 
-        var stop = phaseFunc.Use(caster, this);
+        var ctx = new PhaseRollContext
+        {
+            Roll = Random.Shared.Next(0, 10000),
+            Cumulative = 0
+        };
+
+        var stop = phaseFunc.Use(caster, this, ref ctx);
 
         if (OverridePhase != 0 && stop && FuncGroupId != OverridePhase)
         {

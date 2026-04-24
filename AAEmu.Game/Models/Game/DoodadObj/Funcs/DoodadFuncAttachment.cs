@@ -1,4 +1,4 @@
-п»їusing AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
@@ -20,7 +20,7 @@ public class DoodadFuncAttachment : DoodadFuncTemplate
         Logger.Trace("DoodadFuncAttachment");
         if (caster is Character character)
         {
-            //if (BondKindId > BondKind.BondInvalid || BondKindId == BondKind.None) // Р›РѕРјР°РµС‚СЃСЏ СѓРїСЂР°РІР»РµРЅРёРµ РєРѕСЂР°Р±Р»РµРј, РЅРѕ РјРѕР¶РЅРѕ СЃРїР°С‚СЊ РЅР° РєСЂРѕРІР°С‚Рё РІ РћР±С‰РµСЃС‚РІРµРЅРЅРѕРј Р¦РµРЅС‚СЂРµ.
+            //if (BondKindId > BondKind.BondInvalid || BondKindId == BondKind.None) // Ломается управление кораблем, но можно спать на кровати в Общественном Центре.
             if (BondKindId > BondKind.BondInvalid || AttachPointId != AttachPointKind.Driver) // && owner.ParentObjId == 0))
             {
                 var spot = owner.Seat.LoadPassenger(character, owner.ObjId, Space); // ask for a free meta number for landing
@@ -30,7 +30,7 @@ public class DoodadFuncAttachment : DoodadFuncTemplate
                 }
 
                 // Chairs, beds etc.
-                // spot = 0 sit left, = 1 sit right on the bench, spot = -1 РЅРµС‚ СЃРІРѕР±РѕРґРЅРѕРіРѕ РјРµСЃС‚Р°
+                // spot = 0 sit left, = 1 sit right on the bench, spot = -1 нет свободного места
                 // Space = 1-means that there is one place (a chair), Space = 2-means that there are two places to sit (a bench on transport)
                 character.Bonding = new BondDoodad(owner, AttachPointId, BondKindId, Space, spot, AnimActionId);
                 character.BroadcastPacket(new SCAttachToDoodadPacket(caster.ObjId, character.Bonding), true);

@@ -1,5 +1,4 @@
 ﻿using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -17,7 +16,7 @@ public class DoodadFuncTod : DoodadPhaseFuncTemplate
     /// </summary>
     public float TodAsHours { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         // I think this is used to reschedule anything that needs triggered at a specific gametime
         // По моему, здесь должна быть проверка на время дня.

@@ -1,4 +1,4 @@
-﻿using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -10,7 +10,7 @@ public class DoodadFuncChangeOtherDoodadPhase : DoodadPhaseFuncTemplate
     public uint TargetDoodadId { get; set; }
     public int TargetPhase { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Debug($"DoodadFuncChangeOtherDoodadPhase: NextPhase={NextPhase}, TargetDoodadId={TargetDoodadId}, TargetPhase={TargetPhase}");
 

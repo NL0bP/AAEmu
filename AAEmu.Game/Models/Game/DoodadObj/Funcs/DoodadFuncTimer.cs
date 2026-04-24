@@ -1,4 +1,4 @@
-п»їusing System;
+using System;
 
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
@@ -17,7 +17,7 @@ public class DoodadFuncTimer : DoodadPhaseFuncTemplate
     public bool ShowEndTime { get; set; }
     public string Tip { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         if (NextPhase > 0)
         {
@@ -44,7 +44,7 @@ public class DoodadFuncTimer : DoodadPhaseFuncTemplate
 
             owner.GrowthTime = DateTime.UtcNow.AddMilliseconds(timeLeft);
 
-            // РћС‚РјРµРЅСЏРµРј С‚РµРєСѓС‰СѓСЋ Р·Р°РґР°С‡Сѓ, РµСЃР»Рё РѕРЅР° СЃСѓС‰РµСЃС‚РІСѓРµС‚
+            // Отменяем текущую задачу, если она существует
             // Cancel the current task if it exists
             if (owner.FuncTask != null)
             {
@@ -58,13 +58,13 @@ public class DoodadFuncTimer : DoodadPhaseFuncTemplate
                 }
             }
 
-            // РЎРѕР·РґР°РµРј Рё РЅР°Р·РЅР°С‡Р°РµРј РЅРѕРІСѓСЋ Р·Р°РґР°С‡Сѓ
+            // Создаем и назначаем новую задачу
             // Create and assign a new task
             owner.FuncTask = new DoodadFuncTimerTask(caster, owner, 0, NextPhase);
             TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(timeLeft));
         }
 
-        // РЅРёРєРѕРіРґР° РЅРµ РїСЂРµСЂС‹РІР°РµРј РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ С„Р°Р·РѕРІС‹С… С„СѓРЅРєС†РёР№
+        // никогда не прерываем последовательность фазовых функций
         // we never interrupt the sequence of phase functions
         return false;
     }

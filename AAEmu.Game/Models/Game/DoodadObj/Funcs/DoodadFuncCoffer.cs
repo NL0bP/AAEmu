@@ -1,4 +1,4 @@
-п»їusing AAEmu.Game.Core.Managers.UnitManagers;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -8,20 +8,20 @@ namespace AAEmu.Game.Models.Game.DoodadObj.Funcs;
 public class DoodadFuncCoffer : DoodadPhaseFuncTemplate
 {
     // doodad_phase_funcs
-    // РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ РІРјРµСЃС‚РёРјРѕСЃС‚СЊ Coffer
+    // Максимальная вместимость Coffer
     public int Capacity { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         Logger.Debug("Entering DoodadFuncCoffer");
 
-        // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј, С‡С‚Рѕ Coffer РЅРµ РїРµСЂРµС…РѕРґРёС‚ РІ СЃР»РµРґСѓСЋС‰СѓСЋ С„Р°Р·Сѓ
+        // Устанавливаем, что Coffer не переходит в следующую фазу
         owner.ToNextPhase = false;
 
-        // РџСЂРѕРІРµСЂСЏРµРј, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РєР°СЃС‚РµСЂ РїРµСЂСЃРѕРЅР°Р¶РµРј Рё owner СЌС‚Рѕ Coffer
+        // Проверяем, является ли кастер персонажем и owner это Coffer
         if (caster is Character character && owner is DoodadCoffer coffer)
         {
-            // Р•СЃР»Рё Coffer СѓР¶Рµ РѕС‚РєСЂС‹С‚ РґР°РЅРЅС‹Рј РїРµСЂСЃРѕРЅР°Р¶РµРј, Р·Р°РєСЂС‹РІР°РµРј РµРіРѕ
+            // Если Coffer уже открыт данным персонажем, закрываем его
             if (coffer.OpenedBy?.Id == character.Id)
             {
                 DoodadManager.CloseCofferDoodad(character, owner.ObjId);
@@ -29,7 +29,7 @@ public class DoodadFuncCoffer : DoodadPhaseFuncTemplate
             }
             else
             {
-                // РРЅР°С‡Рµ РѕС‚РєСЂС‹РІР°РµРј Coffer
+                // Иначе открываем Coffer
                 DoodadManager.OpenCofferDoodad(character, owner.ObjId);
                 Logger.Debug($"Coffer {owner.ObjId} opened by {character.Name}.");
             }
@@ -39,6 +39,6 @@ public class DoodadFuncCoffer : DoodadPhaseFuncTemplate
             Logger.Warn("Invalid caster or owner type in DoodadFuncCoffer.");
         }
 
-        return false; // Р’РѕР·РІСЂР°С‰Р°РµРј false, РµСЃР»Рё РґРµР№СЃС‚РІРёРµ РЅРµ Р±С‹Р»Рѕ СѓСЃРїРµС€РЅС‹Рј
+        return false; // Возвращаем false, если действие не было успешным
     }
 }

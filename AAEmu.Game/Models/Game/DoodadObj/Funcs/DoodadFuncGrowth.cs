@@ -1,4 +1,4 @@
-п»їusing System;
+using System;
 
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
@@ -16,7 +16,7 @@ public class DoodadFuncGrowth : DoodadPhaseFuncTemplate
     public int EndScale { get; set; }
     public int NextPhase { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         // TODO: Add doodad scaling transformation
         owner.Scale = StartScale / 1000f;
@@ -45,7 +45,7 @@ public class DoodadFuncGrowth : DoodadPhaseFuncTemplate
         else
             Logger.Trace("DoodadFuncGrowth: Delay {0}, StartScale {1}, EndScale {2}, NextPhase {3}", Delay, StartScale, EndScale, NextPhase);
 
-        // РћС‚РјРµРЅСЏРµРј С‚РµРєСѓС‰СѓСЋ Р·Р°РґР°С‡Сѓ, РµСЃР»Рё РѕРЅР° СЃСѓС‰РµСЃС‚РІСѓРµС‚
+        // Отменяем текущую задачу, если она существует
         // Cancel the current task if it exists
         if (owner.FuncTask != null)
         {
@@ -59,7 +59,7 @@ public class DoodadFuncGrowth : DoodadPhaseFuncTemplate
             }
         }
 
-        // РЎРѕР·РґР°РµРј Рё РЅР°Р·РЅР°С‡Р°РµРј РЅРѕРІСѓСЋ Р·Р°РґР°С‡Сѓ
+        // Создаем и назначаем новую задачу
         // Create and assign a new task
         owner.FuncTask = new DoodadFuncGrowthTask(caster, owner, 0, NextPhase, EndScale / 1000f);
         TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(timeLeft));

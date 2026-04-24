@@ -1,4 +1,5 @@
-﻿using AAEmu.Game.Models.Game.Char;
+﻿using System;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 
@@ -10,23 +11,25 @@ public class DoodadFuncRatioChange : DoodadPhaseFuncTemplate
     public int Ratio { get; set; }
     public int NextPhase { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
-        if (owner.PhaseRatio + owner.CumulativePhaseRatio <= Ratio)
+        // защита от мусора
+        int ratio = Math.Max(0, Ratio);
+
+        ctx.Cumulative += ratio;
+
+        if (ctx.Roll <= ctx.Cumulative)
         {
-            owner.OverridePhase = NextPhase; // Since phases trigger all at once let the doodad know its okay to stop here if the roll succeeded
             if (caster is Character)
-                Logger.Debug($"DoodadFuncRatioChange : Ratio {Ratio}, PhaseRatio {owner.PhaseRatio + owner.CumulativePhaseRatio}, OverridePhase {NextPhase}", Ratio, NextPhase);
+                Logger.Debug($"DoodadFuncRatioChange: Ratio={Ratio}, Cumulative={ctx.Cumulative}, Roll={ctx.Roll}, NextPhase={NextPhase}");
             else
-                Logger.Trace($"DoodadFuncRatioChange : Ratio {Ratio}, PhaseRatio {owner.PhaseRatio + owner.CumulativePhaseRatio}, OverridePhase {NextPhase}", Ratio, NextPhase);
+                Logger.Trace($"DoodadFuncRatioChange: Ratio={Ratio}, Cumulative={ctx.Cumulative}, Roll={ctx.Roll}, NextPhase={NextPhase}");
+
+            owner.OverridePhase = NextPhase;
             return true; // it is necessary to interrupt the phase functions and switch to NextPhase
         }
-        if (caster is Character)
-            Logger.Debug($"DoodadFuncRatioChange : Ratio {Ratio}, PhaseRatio {owner.PhaseRatio + owner.CumulativePhaseRatio}, NextPhase {NextPhase}", Ratio, owner.FuncGroupId);
-        else
-            Logger.Trace($"DoodadFuncRatioChange : Ratio {Ratio}, PhaseRatio {owner.PhaseRatio + owner.CumulativePhaseRatio}, NextPhase {NextPhase}", Ratio, owner.FuncGroupId);
 
-        //owner.CumulativePhaseRatio += Ratio;
         return false; // let's continue with the phase functions
     }
 }
+

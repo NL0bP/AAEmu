@@ -1,4 +1,4 @@
-п»їusing AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.DoodadObj.Funcs;
@@ -28,6 +28,6 @@ public class DoodadFuncCofferPerm : DoodadFuncTemplate
 
         Logger.Debug($"DoodadFuncCofferPerm used by {caster.Name} on {owner.Name} with SkillId: {skillId}, NextPhase: {nextPhase}");
 
-        // Р—РґРµСЃСЊ РІС‹ РјРѕР¶РµС‚Рµ РґРѕР±Р°РІРёС‚СЊ Р»РѕРіРёРєСѓ РґР»СЏ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅРѕСЃС‚Рё РґСѓРґР°РґР°
+        // Здесь вы можете добавить логику для использования функциональности дудада
     }
 }

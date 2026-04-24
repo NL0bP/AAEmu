@@ -1,4 +1,4 @@
-ï»¿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
@@ -31,10 +31,10 @@ public class DoodadFuncDevote : DoodadFuncTemplate
             return;
         }
 
-        // ÑĞ¾Ñ…Ñ€Ğ°Ğ½Ğ¸Ğ¼ Ğ¸Ğ½Ñ„Ñƒ Ğ¾ doodad.Data Ğ² Ğ±Ğ°Ğ·Ğµ
+        // ñîõğàíèì èíôó î doodad.Data â áàçå
         owner.Data += ItemCount;
 
-        // ĞµÑĞ»Ğ¸ ÑÑ‚Ğ¾ Ğ±Ğ°Ğ·Ğ° Ğ½Ğ° o_shining_shore_1 Ğ¸Ğ»Ğ¸ o_shining_shore_2
+        // åñëè ıòî áàçà íà o_shining_shore_1 èëè o_shining_shore_2
         if (character.Transform.ZoneId == 282 || character.Transform.ZoneId == 301)
         {
             character.Inventory.Bag.AcquireDefaultItem(ItemTaskType.CraftActSaved, AxisMundiPioneerToken, 1);
@@ -49,7 +49,7 @@ public class DoodadFuncDevote : DoodadFuncTemplate
         }
         else
         {
-            // ĞµÑĞ»Ğ¸ ÑÑ‚Ğ¾ Residents
+            // åñëè ıòî Residents
             ResidentManager.Instance.UpdateResidentTokenCount(character, owner.Data);
             if (owner.Data >= Count)
             {

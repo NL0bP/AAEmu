@@ -1,4 +1,4 @@
-п»їusing System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -30,7 +30,7 @@ public class DoodadFuncClout : DoodadPhaseFuncTemplate
     public bool UseOriginSource { get; set; }
     public List<uint> Effects { get; set; }
 
-    public override bool Use(BaseUnit caster, Doodad owner)
+    public override bool Use(BaseUnit caster, Doodad owner, ref Doodad.PhaseRollContext ctx)
     {
         if (caster is Character)
             Logger.Debug("DoodadFuncClout : Duration {0}, Tick {1}, TargetRelationId {2}, BuffId {3}, ProjectileId {4}, ShowToFriendlyOnly {5}, NextPhase {6}, AoeShapeId {7}, TargetBuffTagId {8}, TargetNoBuffTagId {9}, UseOriginSource {10}", Duration, Tick, TargetRelation, BuffId, ProjectileId, ShowToFriendlyOnly, NextPhase, AoeShapeId, TargetBuffTagId, TargetNoBuffTagId, UseOriginSource);
@@ -42,11 +42,11 @@ public class DoodadFuncClout : DoodadPhaseFuncTemplate
 
         if (UseOriginSource)
         {
-            // Р±СѓРґРµРј РїСЂРѕРІРµСЂСЏС‚СЊ РЅР° РґРёСЃС‚Р°РЅС†РёРё 4 Рј РѕС‚ РїРµСЂСЃРѕРЅР°Р¶Р°
+            // будем проверять на дистанции 4 м от персонажа
             var doodads = WorldManager.GetAround<Doodad>(caster, 4f);
             foreach (var d in doodads)
             {
-                areaTrigger.Owner = d; // РЅР°Рј РіР»Р°РІРЅРѕРµ, С‡С‚РѕР±С‹ СЂСЏРґРѕРј Р±С‹Р» doodad РѕС‚ РєРѕС‚РѕСЂРѕРіРѕ Р±СѓРґРµС‚ РёСЃРєР°С‚СЊСЃСЏ РЅР° РєРѕРіРѕ РЅР°Р»РѕР¶РёС‚СЊ Р±Р°С„С„
+                areaTrigger.Owner = d; // нам главное, чтобы рядом был doodad от которого будет искаться на кого наложить бафф
                 break;
             }
             areaTrigger.Owner ??= owner;
@@ -68,7 +68,7 @@ public class DoodadFuncClout : DoodadPhaseFuncTemplate
         if (Duration > 0)
         {
             // TODO : Add a proper delay in here
-            // РћС‚РјРµРЅСЏРµРј С‚РµРєСѓС‰СѓСЋ Р·Р°РґР°С‡Сѓ, РµСЃР»Рё РѕРЅР° СЃСѓС‰РµСЃС‚РІСѓРµС‚
+            // Отменяем текущую задачу, если она существует
             // Cancel the current task if it exists
             if (owner.FuncTask != null)
             {
@@ -82,7 +82,7 @@ public class DoodadFuncClout : DoodadPhaseFuncTemplate
                 }
             }
 
-            // РЎРѕР·РґР°РµРј Рё РЅР°Р·РЅР°С‡Р°РµРј РЅРѕРІСѓСЋ Р·Р°РґР°С‡Сѓ
+            // Создаем и назначаем новую задачу
             // Create and assign a new task
             owner.FuncTask = new DoodadFuncCloutTask(areaTrigger.Caster, areaTrigger.Owner, 0, NextPhase, areaTrigger);
             TaskManager.Instance.Schedule(owner.FuncTask, TimeSpan.FromMilliseconds(Duration));
