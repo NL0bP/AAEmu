@@ -12,7 +12,9 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Resolvers;
 using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.slaves;
 
@@ -20,259 +22,492 @@ namespace AAEmu.Game.Core.Packets.C2G;
 
 public class CSStartSkillPacket : GamePacket
 {
+    private enum SkillExecutionMode
+    {
+        Mounted,
+        Pet,
+        AutoAttack,
+        Common,
+        Item,
+        Learned,
+        TemporaryReplacement,
+        Variant,
+        Unknown
+    }
+
+    private sealed class SkillStartRequest
+    {
+        public uint SkillId { get; init; }
+        public SkillCaster SkillCaster { get; set; }
+        public SkillCastTarget SkillCastTarget { get; set; }
+        public SkillObject SkillObject { get; init; }
+        public byte Flag { get; init; }
+    }
+
+    private sealed class SkillExecutionResult
+    {
+        public SkillResult Result { get; init; }
+        public uint ErrorValue { get; init; }
+        public Skill Skill { get; init; }
+        public bool SuppressResponse { get; init; }
+
+        public static SkillExecutionResult Success(Skill skill = null)
+        {
+            return new SkillExecutionResult { Result = SkillResult.Success, Skill = skill };
+        }
+
+        public static SkillExecutionResult Error(SkillResult result, uint errorValue = 0, Skill skill = null)
+        {
+            return new SkillExecutionResult { Result = result, ErrorValue = errorValue, Skill = skill };
+        }
+
+        public static SkillExecutionResult Silent()
+        {
+            return new SkillExecutionResult { Result = SkillResult.Failure, SuppressResponse = true };
+        }
+    }
+
     public CSStartSkillPacket() : base(CSOffsets.CSStartSkillPacket, 5)
     {
     }
 
     public override void Read(PacketStream stream)
     {
-        // Ignore if there is no active character set
-        if (Connection.ActiveChar == null)
+        var player = Connection?.ActiveChar;
+        if (player == null)
+        {
             return;
+        }
 
-        var player = Connection.ActiveChar;
+        DelaySkillStart();
 
-        // Will delay for 150 Milliseconds to eliminate the hanging of the skill
+        if (!TryReadRequest(stream, out var request))
+        {
+            return;
+        }
+
+        var skillTemplate = SkillManager.Instance.GetSkillTemplate(request.SkillId);
+        var skillCaster = request.SkillCaster;
+        var skillCastTarget = request.SkillCastTarget;
+        var effectiveCaster = SkillContextResolver.AuthoritativeResolve(player, skillTemplate, ref skillCaster, ref skillCastTarget);
+        request.SkillCaster = skillCaster;
+        request.SkillCastTarget = skillCastTarget;
+
+        Logger.Info($"StartSkill: Id {request.SkillId}, flag {request.Flag}, caster={request.SkillCaster.ObjId}, target={request.SkillCastTarget.ObjId}");
+        LogCharacterSkillUsage(request.SkillCaster, request.SkillId);
+
+        var result = skillTemplate == null
+            ? SkillExecutionResult.Error(SkillResult.InvalidSkill)
+            : ExecuteSkill(player, request, skillTemplate, effectiveCaster);
+
+        HandleDismountSkill(player, request.SkillId, request.SkillCastTarget);
+        HandleSkillResult(player, request, result);
+    }
+
+    private static void DelaySkillStart()
+    {
+        // Preserve the legacy packet throttle used to avoid client-side stuck skill starts.
         using var source = new CancellationTokenSource();
-        var t = Task.Run(async delegate
+        var delayTask = Task.Run(async delegate
         {
             await Task.Delay(TimeSpan.FromMilliseconds(150), source.Token);
             return 0;
         });
+
         try
         {
-            t.Wait();
+            delayTask.Wait();
         }
         catch (AggregateException ae)
         {
             foreach (var e in ae.InnerExceptions)
+            {
                 Logger.Trace("{0}: {1}", e.GetType().Name, e.Message);
+            }
+        }
+    }
+
+    private static bool TryReadRequest(PacketStream stream, out SkillStartRequest request)
+    {
+        request = null;
+        if (stream?.LeftBytes < 8)
+        {
+            return false;
         }
 
         var skillId = stream.ReadUInt32();
+        if (skillId == 0)
+        {
+            return false;
+        }
 
-        var skillCasterType = stream.ReadByte(); // кто применяет
-        var skillCaster = SkillCaster.GetByType((SkillCasterType)skillCasterType);
+        if (!TryReadCaster(stream, out var skillCaster))
+        {
+            return false;
+        }
+
+        if (!TryReadTarget(stream, out var skillCastTarget))
+        {
+            return false;
+        }
+
+        if (!TryReadObject(stream, out var skillObject, out var flag))
+        {
+            return false;
+        }
+
+        request = new SkillStartRequest
+        {
+            SkillId = skillId,
+            SkillCaster = skillCaster,
+            SkillCastTarget = skillCastTarget,
+            SkillObject = skillObject,
+            Flag = flag
+        };
+        return true;
+    }
+
+    private static bool TryReadCaster(PacketStream stream, out SkillCaster skillCaster)
+    {
+        skillCaster = null;
+        if (stream.LeftBytes < 1)
+        {
+            return false;
+        }
+
+        var type = (SkillCasterType)stream.ReadByte();
+        skillCaster = SkillCaster.GetByType(type);
+        if (skillCaster == null)
+        {
+            return false;
+        }
+
         skillCaster.Read(stream);
+        return true;
+    }
 
-        var skillCastTargetType = stream.ReadByte(); // на кого применяют
-        var skillCastTarget = SkillCastTarget.GetByType((SkillCastTargetType)skillCastTargetType);
+    private static bool TryReadTarget(PacketStream stream, out SkillCastTarget skillCastTarget)
+    {
+        skillCastTarget = null;
+        if (stream.LeftBytes < 1)
+        {
+            return false;
+        }
+
+        var type = (SkillCastTargetType)stream.ReadByte();
+        skillCastTarget = SkillCastTarget.GetByType(type);
+        if (skillCastTarget == null)
+        {
+            return false;
+        }
+
         skillCastTarget.Read(stream);
+        return true;
+    }
 
-        var flag = stream.ReadByte();
-        var flagType = flag & 63; // in 1.2 = 15, in 3+ = 63
-        var skillObject = SkillObject.GetByType((SkillObjectType)flagType);
-        if (flagType > 0) skillObject.Read(stream);
-
-        Logger.Info($"StartSkill: Id {skillId}, flag {flag}, caster={skillCaster.ObjId}, target={skillCastTarget.ObjId}");
-
-        var skillResult = SkillResult.Success;
-        var skillResultErrorValue = 0u;
-        Skill skill = null;
-
-        if (skillCaster is SkillCasterUnit scu)
+    private static bool TryReadObject(PacketStream stream, out SkillObject skillObject, out byte flag)
+    {
+        skillObject = null;
+        flag = 0;
+        if (stream.LeftBytes < 1)
         {
-            var unit = WorldManager.Instance.GetUnit(scu.ObjId);
-            if (unit is Character character)
-                Logger.Info($"{character.Name}:{character.ObjId} is using skill={skillId}");
+            return false;
         }
 
-        // Check if player is mounted/riding and handle mount/pet skills
-        if (Connection.ActiveChar?.AttachedPoint != AttachPointKind.None)
+        flag = stream.ReadByte();
+        var flagType = flag & 63;
+        skillObject = SkillObject.GetByType((SkillObjectType)flagType);
+        if (skillObject == null)
         {
-            // Player is on a mount/pet - handle mount skills
-            Logger.Info($"MOUNT SKILL: Player {player.Name} is mounted at {player.AttachedPoint}, skillId={skillId}, caster={skillCaster.ObjId}, casterType={skillCaster.Type}");
+            return false;
+        }
 
-            var caster = WorldManager.Instance.GetBaseUnit(skillCaster.ObjId);
-            var mate = caster as Mate;
-            var slave = caster as Slave;
-            var mountAttachedSkill = 0u;
+        if (flagType > 0)
+        {
+            skillObject.Read(stream);
+        }
 
-            if ((mate != null) || (slave != null))
+        return true;
+    }
+
+    private static void LogCharacterSkillUsage(SkillCaster skillCaster, uint skillId)
+    {
+        if (skillCaster is not SkillCasterUnit skillCasterUnit)
+        {
+            return;
+        }
+
+        var unit = WorldManager.Instance.GetUnit(skillCasterUnit.ObjId);
+        if (unit is Character character)
+        {
+            Logger.Info($"{character.Name}:{character.ObjId} is using skill={skillId}");
+        }
+    }
+
+    private static SkillExecutionResult ExecuteSkill(Character player, SkillStartRequest request, SkillTemplate skillTemplate, BaseUnit effectiveCaster)
+    {
+        return ResolveExecutionMode(player, request, skillTemplate) switch
+        {
+            SkillExecutionMode.Mounted => HandleMountedSkill(player, request, skillTemplate, effectiveCaster),
+            SkillExecutionMode.Pet => HandlePetSkill(player, request, skillTemplate),
+            SkillExecutionMode.AutoAttack => SkillExecutionResult.Success(player.AutoAttackTask.Skill),
+            SkillExecutionMode.Common => HandleCommonSkill(player, request, skillTemplate),
+            SkillExecutionMode.Item => HandleItemSkill(player, request, skillTemplate),
+            SkillExecutionMode.Learned => HandleLearnedSkill(player, request, skillTemplate),
+            SkillExecutionMode.TemporaryReplacement => HandleTemporaryReplacementSkill(player, request),
+            SkillExecutionMode.Variant => HandleVariantSkill(player, request, skillTemplate),
+            _ => HandleUnknownSkill(player, request, skillTemplate)
+        };
+    }
+
+    private static SkillExecutionMode ResolveExecutionMode(Character player, SkillStartRequest request, SkillTemplate skillTemplate)
+    {
+        if (player.AttachedPoint != AttachPointKind.None && (skillTemplate.SourceMount || request.SkillCaster is SkillCasterMount))
+        {
+            return SkillExecutionMode.Mounted;
+        }
+
+        if (player.AttachedPoint == AttachPointKind.None && request.SkillCaster.ObjId != player.ObjId)
+        {
+            return SkillExecutionMode.Pet;
+        }
+
+        if (player.IsAutoAttack && request.SkillId == player.AutoAttackTask?.Skill?.Template?.Id)
+        {
+            return SkillExecutionMode.AutoAttack;
+        }
+
+        if (IsDefaultOrCommonSkill(request.SkillId, request.SkillCaster))
+        {
+            return SkillExecutionMode.Common;
+        }
+
+        if (request.SkillCaster is SkillItem)
+        {
+            return SkillExecutionMode.Item;
+        }
+
+        if (player.Skills.Skills.ContainsKey(request.SkillId))
+        {
+            return SkillExecutionMode.Learned;
+        }
+
+        if (request.SkillId > 0 && player.Skills.TryCreateTemporaryReplacementSkill(request.SkillId, out _))
+        {
+            return SkillExecutionMode.TemporaryReplacement;
+        }
+
+        return request.SkillId > 0 && player.Skills.IsVariantOfSkill(request.SkillId)
+            ? SkillExecutionMode.Variant
+            : SkillExecutionMode.Unknown;
+    }
+
+    private static bool IsDefaultOrCommonSkill(uint skillId, SkillCaster skillCaster)
+    {
+        return SkillManager.Instance.IsDefaultSkill(skillId) ||
+               (SkillManager.Instance.IsCommonSkill(skillId) && skillCaster is not SkillItem);
+    }
+
+    private static SkillExecutionResult HandleMountedSkill(Character player, SkillStartRequest request, SkillTemplate template, BaseUnit effectiveCaster)
+    {
+        Logger.Info($"MOUNT SKILL: Player {player.Name} is mounted at {player.AttachedPoint}, skillId={request.SkillId}, caster={request.SkillCaster.ObjId}, casterType={request.SkillCaster.Type}");
+
+        var caster = effectiveCaster ?? SkillContextResolver.ResolveEffectiveCaster(player, template, request.SkillCaster);
+        if (caster == null || !SkillContextResolver.IsControlledBy(player, caster))
+        {
+            return SkillExecutionResult.Error(SkillResult.NoPerm, request.SkillCaster.ObjId);
+        }
+
+        var mountAttachedSkill = ResolveMountAttachedSkill(request.SkillId, player.AttachedPoint, caster);
+        var mountCaster = request.SkillCaster as SkillCasterMount;
+        var directResult = SkillExecutionResult.Success();
+
+        if (mountCaster != null || template.SourceMount)
+        {
+            Logger.Trace($"SkillCasterMount - MountSkillTemplateId {mountCaster?.MountSkillTemplateId ?? 0}");
+            var skill = new Skill(template);
+            var skillResult = skill.Use(caster, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+            directResult = skillResult == SkillResult.Success
+                ? SkillExecutionResult.Success(skill)
+                : SkillExecutionResult.Error(skillResult, errorValue, skill);
+
+            if (directResult.Result != SkillResult.Success)
             {
-                // check if it's a mate or slave skill and return its rider/operator related skill
-                mountAttachedSkill = MateManager.Instance.GetMountAttachedSkills(skillId, player.AttachedPoint);
-            }
-
-            // Use the main skill on the mate/slave
-            if (skillCaster is SkillCasterMount scm)
-            {
-                // Direct mount skill
-                Logger.Trace($"SkillCasterMount - MountSkillTemplateId {scm.MountSkillTemplateId}");
-                skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
-                if (skill.Use(caster, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue) != SkillResult.Success)
-                {
-                    // skill.Stop(caster, null, skillCaster);
-                }
-            }
-
-            // HACKFIX: dismount from slave
-            if (skillId == (uint)SkillConstants.Dismount)
-            {
-                slave = (Slave)WorldManager.Instance.GetBaseUnit(skillCastTarget.ObjId);
-                if (slave != null)
-                {
-                    SlaveManager.Instance.UnbindSlave(Connection.ActiveChar, slave.TlId, AttachUnitReason.SlaveUnbinding);
-                }
-            }
-
-            // If no rider/operator skill is linked, we can stop here
-            if (mountAttachedSkill == 0)
-                return;
-
-            // Use player's currently selected for the rider/operator skill
-            var riderTarget = player.CurrentTarget as Unit;
-
-            // Get the actual mount/pet unit for proper range calculation
-            var petCaster = WorldManager.Instance.GetBaseUnit(skillCaster.ObjId);
-            if (petCaster == null)
-            {
-                Logger.Warn($"Mount/pet with ObjId {skillCaster.ObjId} not found in world");
-                return;
-            }
-
-            // Create skill for rider/operator with correct caster (the mount/pet, not the player)
-            var riderSkill = new Skill(SkillManager.Instance.GetSkillTemplate(mountAttachedSkill));
-            var riderCaster = SkillCaster.GetByType(SkillCasterType.Unit);
-            riderCaster.ObjId = skillCaster.ObjId; // Use the mount/pet's ObjId as caster
-
-            var riderTargetCaster = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
-            riderTargetCaster.ObjId = (riderTarget ?? player).ObjId;
-
-            // Execute the rider/operator skill with mount/pet as caster for proper range calculation
-            skillResult = riderSkill.Use(petCaster, riderCaster, riderTargetCaster, null, false, out skillResultErrorValue);
-        }
-        else if (player?.AttachedPoint == AttachPointKind.None && skillCaster.ObjId != player?.ObjId)
-        {
-            // Player is not mounted but caster is not the player - this is a pet/mount skill
-            Logger.Info($"PET SKILL: Player {player?.Name} not mounted, but caster {skillCaster.ObjId} != player {player?.ObjId}, skillId={skillId}");
-
-            var caster = WorldManager.Instance.GetBaseUnit(skillCaster.ObjId);
-            if (caster == null)
-            {
-                Logger.Warn($"Caster with ObjId {skillCaster.ObjId} not found in world");
-                return;
-            }
-
-            // Use the pet/mount as caster for proper range calculation
-            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
-            skillResult = skill.Use(caster, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-
-            // IMPORTANT: Update player's combat activity when pet attacks
-            // This ensures player's combat state is properly managed
-            if (player != null)
-            {
-                player.LastCombatActivity = DateTime.UtcNow;
-                player.IsInBattle = true;
-                Logger.Trace($"Updated player {player.Name} combat state due to pet attack");
-            }
-        }
-        else if (player.IsAutoAttack && skillId == player.AutoAttackTask?.Skill?.Template?.Id)
-        {
-            // Same as already executing auto-skill, just send the success result.
-            skill = player.AutoAttackTask.Skill;
-            skillResult = SkillResult.Success;
-        }
-        else if (SkillManager.Instance.IsDefaultSkill(skillId) || SkillManager.Instance.IsCommonSkill(skillId) && !(skillCaster is SkillItem))
-        {
-            // Is it a common skill?
-            Logger.Trace($"Using common skill {skillId}, caster={skillCaster.ObjId}, player={player?.Name}:{player?.ObjId}, attached={player?.AttachedPoint}");
-            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId)); // TODO: переделать / rewrite ...
-
-            // Check if player is mounted and use pet as caster for proper range calculation
-            BaseUnit casterUnit = player;
-            if (player?.AttachedPoint != AttachPointKind.None)
-            {
-                // Player is mounted, use the mount/pet as caster for proper range calculation
-                var petCaster = WorldManager.Instance.GetBaseUnit(skillCaster.ObjId);
-                if (petCaster != null)
-                {
-                    casterUnit = petCaster;
-                    Logger.Trace($"Using mounted skill with pet caster {skillCaster.ObjId} for player {player.Name}");
-                }
-                else
-                {
-                    Logger.Warn($"Mount/pet with ObjId {skillCaster.ObjId} not found in world for common skill");
-                }
-            }
-
-            skillResult = skill.Use(casterUnit, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-
-            // Убрана автоматическая активация автоатаки для базовых навыков ближнего боя
-            // Автоатака должна запускаться только явно игроком (например, через удержание кнопки или специальный флаг)
-            // Это позволяет использовать базовые навыки (ID=2,3,4) как одиночные атаки без автоматического продолжения
-            // Check if this is a basic combat skill and player is the direct caster (not mounted)
-            //if ((skillResult == SkillResult.Success) && (skillId < 5000) && (skillCaster.ObjId == player.ObjId) && (player?.AttachedPoint == AttachPointKind.None))
-            //{
-            //    // All basic combat skills are below ID 5000, only 2 (melee),3 (offhand) and 4 (ranged) exist, next actual skill used is 5001
-            //    player.IsAutoAttack = true;
-            //    player.StartAutoSkill(skill);
-            //}
-        }
-        else if (skillCaster is SkillItem si)
-        {
-            // A skill triggered by a item
-            // var item = player.Inventory.GetItemById(si.ItemId);
-            // добавил проверку на ItemBindType.BindOnPickup для записи портала с помощью камина в доме
-            if (si.SkillSourceItem == null || skillId != si.SkillSourceItem.Template.UseSkillId && si.SkillSourceItem.Template.BindType != ItemBindType.BindOnPickup)
-                return;
-            // si.ItemTemplateId = item.TemplateId;
-            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
-            skillResult = skill.Use(player, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-        }
-        else if (player.Skills.Skills.ContainsKey(skillId))
-        {
-            // Is it one of our learned character skills?
-            var template = SkillManager.Instance.GetSkillTemplate(skillId);
-            skill = new Skill(template, Connection.ActiveChar);
-            skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-        }
-        else if (skillId > 0 && player.Skills.TryCreateTemporaryReplacementSkill(skillId, out var replacementSkill))
-        {
-            // Temporary replacement synced by the client while a source buff is active.
-            skill = replacementSkill;
-            skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-        }
-        else if (skillId > 0 && player.Skills.IsVariantOfSkill(skillId))
-        {
-            // Variant of learned skill?
-            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId), Connection.ActiveChar);
-            skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-        }
-        else
-        {
-            // No idea what this is
-            Logger.Warn($"StartSkill: Id {skillId}, undefined use type");
-            // If it's a valid skill cast it. This fixes interactions with quest items/doodads.
-            skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
-            skillResult = skill.Use(Connection.ActiveChar, skillCaster, skillCastTarget, skillObject, false, out skillResultErrorValue);
-        }
-
-        // HACKFIX: dismount from slave
-        if (skillId == (uint)SkillConstants.Dismount)
-        {
-            var slave = (Slave)WorldManager.Instance.GetBaseUnit(skillCastTarget.ObjId);
-            if (slave != null)
-            {
-                SlaveManager.Instance.UnbindSlave(Connection.ActiveChar, slave.TlId, AttachUnitReason.SlaveUnbinding);
+                return directResult;
             }
         }
 
-        if (skillResult == SkillResult.Success)
+        if (mountAttachedSkill == 0)
         {
-            player.Achievements?.TrackRecordProgress(CharRecordKind.UseSkill, skillId);
+            return directResult;
         }
 
-        if (skillResult != SkillResult.Success)
+        return ExecuteRiderSkill(player, mountAttachedSkill, request.SkillCastTarget, request.SkillObject);
+    }
+
+    private static uint ResolveMountAttachedSkill(uint skillId, AttachPointKind attachPoint, BaseUnit caster)
+    {
+        return caster is Mate or Slave
+            ? MateManager.Instance.GetMountAttachedSkills(skillId, attachPoint)
+            : 0;
+    }
+
+    private static SkillExecutionResult ExecuteRiderSkill(Character player, uint riderSkillId, SkillCastTarget originalTarget, SkillObject skillObject)
+    {
+        var riderTemplate = SkillManager.Instance.GetSkillTemplate(riderSkillId);
+        if (riderTemplate == null)
         {
-            // It actually sends a skill started packet, but not a skill fired or stopped
-            var scSkillStartedPacket = new SCSkillStartedPacket(skillId, 0, skillCaster, skillCastTarget, skill, skillObject);
-            scSkillStartedPacket.RealCastTimeDiv10 = 0;
-            scSkillStartedPacket.BaseCastTimeDiv10 = 0;
-            // ExtraData at the end of the packet is used to mark a use error
-            scSkillStartedPacket.SetSkillResult(skillResult);
-            scSkillStartedPacket.SetResultUInt(skillResultErrorValue);
-            player.SendPacket(scSkillStartedPacket);
+            return SkillExecutionResult.Error(SkillResult.InvalidSkill);
         }
+
+        var riderSkill = new Skill(riderTemplate);
+        var riderCaster = SkillCaster.GetByType(SkillCasterType.Unit);
+        riderCaster.ObjId = player.ObjId;
+        var riderTarget = SkillContextResolver.BuildRiderTarget(riderTemplate, player, originalTarget);
+
+        Logger.Info($"RIDER SKILL: Player {player.Name} is mounted at {player.AttachedPoint}, skillId={riderSkillId}, caster={player.ObjId}, casterType={riderCaster.Type}");
+
+        var result = riderSkill.Use(player, riderCaster, riderTarget, skillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(riderSkill)
+            : SkillExecutionResult.Error(result, errorValue, riderSkill);
+    }
+
+    private static SkillExecutionResult HandlePetSkill(Character player, SkillStartRequest request, SkillTemplate template)
+    {
+        Logger.Info($"PET SKILL: Player {player?.Name} not mounted, but caster {request.SkillCaster.ObjId} != player {player?.ObjId}, skillId={request.SkillId}");
+
+        var caster = WorldManager.Instance.GetBaseUnit(request.SkillCaster.ObjId);
+        if (caster == null)
+        {
+            Logger.Warn($"Caster with ObjId {request.SkillCaster.ObjId} not found in world");
+            return SkillExecutionResult.Silent();
+        }
+
+        if (!SkillContextResolver.IsControlledBy(player, caster))
+        {
+            Logger.Warn($"Player {player?.Name}:{player?.ObjId} tried to use uncontrolled caster {caster.ObjId} for skillId={request.SkillId}");
+            return SkillExecutionResult.Error(SkillResult.NoPerm, caster.ObjId);
+        }
+
+        var skill = new Skill(template);
+        var result = skill.Use(caster, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+
+        player.LastCombatActivity = DateTime.UtcNow;
+        player.IsInBattle = true;
+        Logger.Trace($"Updated player {player.Name} combat state due to pet attack");
+
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static SkillExecutionResult HandleCommonSkill(Character player, SkillStartRequest request, SkillTemplate template)
+    {
+        Logger.Trace($"Using common skill {request.SkillId}, caster={request.SkillCaster.ObjId}, player={player?.Name}:{player?.ObjId}, attached={player?.AttachedPoint}");
+
+        var skill = new Skill(template);
+        var result = skill.Use(player, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static SkillExecutionResult HandleItemSkill(Character player, SkillStartRequest request, SkillTemplate template)
+    {
+        if (request.SkillCaster is not SkillItem skillItem)
+        {
+            return SkillExecutionResult.Error(SkillResult.InvalidSource);
+        }
+
+        if (skillItem.SkillSourceItem == null ||
+            request.SkillId != skillItem.SkillSourceItem.Template.UseSkillId &&
+            skillItem.SkillSourceItem.Template.BindType != ItemBindType.BindOnPickup)
+        {
+            return SkillExecutionResult.Silent();
+        }
+
+        var skill = new Skill(template);
+        var result = skill.Use(player, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static SkillExecutionResult HandleLearnedSkill(Character player, SkillStartRequest request, SkillTemplate template)
+    {
+        var skill = new Skill(template, player);
+        var result = skill.Use(player, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static SkillExecutionResult HandleTemporaryReplacementSkill(Character player, SkillStartRequest request)
+    {
+        if (!player.Skills.TryCreateTemporaryReplacementSkill(request.SkillId, out var skill))
+        {
+            return SkillExecutionResult.Error(SkillResult.InvalidSkill);
+        }
+
+        var result = skill.Use(player, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static SkillExecutionResult HandleVariantSkill(Character player, SkillStartRequest request, SkillTemplate template)
+    {
+        var skill = new Skill(template, player);
+        var result = skill.Use(player, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static SkillExecutionResult HandleUnknownSkill(Character player, SkillStartRequest request, SkillTemplate template)
+    {
+        Logger.Warn($"StartSkill: Id {request.SkillId}, undefined use type");
+
+        var skill = new Skill(template);
+        var result = skill.Use(player, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+        return result == SkillResult.Success
+            ? SkillExecutionResult.Success(skill)
+            : SkillExecutionResult.Error(result, errorValue, skill);
+    }
+
+    private static void HandleDismountSkill(Character player, uint skillId, SkillCastTarget skillCastTarget)
+    {
+        if (skillId != (uint)SkillConstants.Dismount)
+        {
+            return;
+        }
+
+        var slave = WorldManager.Instance.GetBaseUnit(skillCastTarget.ObjId) as Slave;
+        if (slave != null)
+        {
+            SlaveManager.Instance.UnbindSlave(player, slave.TlId, AttachUnitReason.SlaveUnbinding);
+        }
+    }
+
+    private static void HandleSkillResult(Character player, SkillStartRequest request, SkillExecutionResult result)
+    {
+        if (result.Result == SkillResult.Success)
+        {
+            player.Achievements?.TrackRecordProgress(CharRecordKind.UseSkill, request.SkillId);
+            return;
+        }
+
+        if (result.SuppressResponse)
+        {
+            return;
+        }
+
+        var scSkillStartedPacket = new SCSkillStartedPacket(request.SkillId, 0, request.SkillCaster, request.SkillCastTarget, result.Skill, request.SkillObject);
+        scSkillStartedPacket.RealCastTimeDiv10 = 0;
+        scSkillStartedPacket.BaseCastTimeDiv10 = 0;
+        scSkillStartedPacket.SetSkillResult(result.Result);
+        scSkillStartedPacket.SetResultUInt(result.ErrorValue);
+        player.SendPacket(scSkillStartedPacket);
     }
 }
