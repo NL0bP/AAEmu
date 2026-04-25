@@ -831,8 +831,7 @@ public class Skill
             doodad.Spawn();
         }
 
-        // Live server sends Unit(self) as target in SCSkillFired for item skills, not Doodad
-        var firedTarget = targetCaster is SkillCastUnitTarget ? targetCaster : new SkillCastUnitTarget(caster.ObjId);
+        var firedTarget = CreateFiredTarget(caster, targetCaster);
         caster.BroadcastPacket(new SCSkillFiredPacket(Id, TlId, casterCaster, firedTarget, this, skillObject, caster), true);
         unit.SkillTask = new EndChannelingTask(this, caster, casterCaster, target, targetCaster, skillObject, doodad);
         TaskManager.Instance.Schedule(unit.SkillTask, TimeSpan.FromMilliseconds(Template.ChannelingTime));
@@ -882,8 +881,7 @@ public class Skill
         if (Template.FireAnim != null && Template.UseAnimTime)
             totalDelay += (int)(Template.FireAnim.CombatSyncTime * (unit.GlobalCooldownMul / 100));
 
-        // Live server sends Unit(self) as target in SCSkillFired for item skills, not Doodad
-        var firedTarget = targetCaster is SkillCastUnitTarget ? targetCaster : new SkillCastUnitTarget(caster.ObjId);
+        var firedTarget = CreateFiredTarget(caster, targetCaster);
         caster.BroadcastPacket(new SCSkillFiredPacket(Id, TlId, casterCaster, firedTarget, this, skillObject, caster)
         {
             ComputedDelay = (short)totalDelay
@@ -896,16 +894,52 @@ public class Skill
         }
         else
         {
-            // скилл завершается до создания эффектов
-            EndSkill(caster);
+            if (ShouldDelayEndSkillForRepeatFired())
+            {
+                ScheduleRepeatFiredPackets(caster, casterCaster, firedTarget, skillObject, (short)totalDelay);
+            }
+            else
+            {
+                // скилл завершается до создания эффектов
+                EndSkill(caster);
+            }
+
             ApplyEffects(caster, casterCaster, target, targetCaster, skillObject);
         }
+    }
+
+    private bool ShouldDelayEndSkillForRepeatFired()
+    {
+        return (Template.SourceMount || Template.SourceMountMate) &&
+               Template.RepeatCount > 1 &&
+               Template.RepeatTick > 0;
+    }
+
+    private void ScheduleRepeatFiredPackets(BaseUnit caster, SkillCaster casterCaster, SkillCastTarget firedTarget, SkillObject skillObject, short computedDelay)
+    {
+        var repeatTask = new RepeatSkillFiredTask(this, caster, casterCaster, firedTarget, skillObject, computedDelay);
+        TaskManager.Instance.Schedule(
+            repeatTask,
+            TimeSpan.FromMilliseconds(Template.RepeatTick),
+            TimeSpan.FromMilliseconds(Template.RepeatTick),
+            Template.RepeatCount - 1);
     }
 
     private IEnumerable<BaseUnit> FilterAoeUnits(BaseUnit caster, IEnumerable<BaseUnit> units)
     {
         units = SkillTargetingUtil.FilterWithRelation(Template.TargetRelation, caster, units);
         return units;
+    }
+
+    private static SkillCastTarget CreateFiredTarget(BaseUnit caster, SkillCastTarget targetCaster)
+    {
+        if (targetCaster is SkillCastUnitTarget or SkillCastPositionTarget or SkillCastPosition2Target or SkillCastPosition3Target)
+        {
+            return targetCaster;
+        }
+
+        // Live server sends Unit(self) as target in SCSkillFired for item/doodad skills.
+        return new SkillCastUnitTarget(caster.ObjId);
     }
 
     public void ApplyEffects(BaseUnit caster, SkillCaster casterCaster, BaseUnit targetSelf, SkillCastTarget targetCaster, SkillObject skillObject)

@@ -326,7 +326,9 @@ public class CSStartSkillPacket : GamePacket
         {
             Logger.Trace($"SkillCasterMount - MountSkillTemplateId {mountCaster?.MountSkillTemplateId ?? 0}");
             var skill = new Skill(template);
-            var skillResult = skill.Use(caster, request.SkillCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
+            var serverCaster = new SkillCasterUnit(caster.ObjId);
+            Logger.Trace($"MOUNT SKILL SERVER CASTER: skillId={request.SkillId}, requestCasterType={request.SkillCaster.Type}, requestCaster={request.SkillCaster.ObjId}, serverCasterType={serverCaster.Type}, serverCaster={serverCaster.ObjId}, targetType={request.SkillCastTarget.Type}, target={request.SkillCastTarget.ObjId}");
+            var skillResult = skill.Use(caster, serverCaster, request.SkillCastTarget, request.SkillObject, false, out var errorValue);
             directResult = skillResult == SkillResult.Success
                 ? SkillExecutionResult.Success(skill)
                 : SkillExecutionResult.Error(skillResult, errorValue, skill);

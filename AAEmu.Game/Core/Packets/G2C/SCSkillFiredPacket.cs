@@ -63,6 +63,7 @@ public class SCSkillFiredPacket : GamePacket
     private static Queue<int> NpcFireAnimQueue;
 
     public short ComputedDelay { get; set; }
+    public byte FiredFlag { get; set; }
     private ExtraDataFlags ExtraDataFlag { get; set; }
     private byte ExtraDataByte { get; set; }
     private ushort ExtraDataUShort { get; set; }
@@ -154,6 +155,8 @@ public class SCSkillFiredPacket : GamePacket
 
     public override PacketStream Write(PacketStream stream)
     {
+        Logger.Trace($"SCSkillFiredPacket.Write: id={_id}, tl={_tl}, casterType={_caster?.Type}, caster={_caster?.ObjId ?? 0}, target={DescribeTarget(_target)}, skillTemplate={_skill?.Template?.Id ?? 0}, sourceMount={_skill?.Template?.SourceMount ?? false}, sourceMountMate={_skill?.Template?.SourceMountMate ?? false}, computedDelay={ComputedDelay}, channeling={_skill?.Template?.ChannelingTime ?? 0}, fireAnim={_skill?.Template?.FireAnim?.Id ?? 0}, firedFlag={FiredFlag}, skillObjectFlag={_skillObject?.Flag}");
+
         //stream.Write(_id);      // st - skill type  removed in 3.0.3.0
         stream.Write(_tl);       // sid - skill id
 
@@ -245,6 +248,11 @@ public class SCSkillFiredPacket : GamePacket
         }
     }
 
+    private bool UseMountedSkillZeroDelayFields()
+    {
+        return _skill?.Template != null && (_skill.Template.SourceMount || _skill.Template.SourceMountMate);
+    }
+
     private void WriteCharacterSkillData(PacketStream stream)
     {
         if (_skill.Template.Id == 2)
@@ -264,7 +272,7 @@ public class SCSkillFiredPacket : GamePacket
                 WriteExtraData(stream);
 
                 stream.WritePisc(_id, 0); // added skill type here in 3.0.3.0
-                stream.Write((byte)0); // flag
+                stream.Write(FiredFlag); // flag
             }
             else
             {
@@ -276,20 +284,24 @@ public class SCSkillFiredPacket : GamePacket
                 WriteExtraData(stream);
 
                 stream.WritePisc(_id, _fireAnimId); // added skill type here in 3.0.3.0
-                stream.Write((byte)0); // flag
+                stream.Write(FiredFlag); // flag
             }
         }
         else
         {
             // дальняя атака
-            stream.Write((short)(ComputedDelay / 10 + 10)); // TODO  +10 It became visible flying arrows 
-            stream.Write((short)(_skill.Template.ChannelingTime / 10 + 10));
+            var useZeroDelayBase = UseMountedSkillZeroDelayFields();
+            var delayField = (short)(ComputedDelay / 10 + (useZeroDelayBase ? 0 : 10));
+            var channelingField = (short)(_skill.Template.ChannelingTime / 10 + (useZeroDelayBase ? 0 : 10));
+            Logger.Trace($"SCSkillFiredPacket.SkillData(Character): id={_id}, tl={_tl}, zeroDelayBase={useZeroDelayBase}, delayField={delayField}, channelingField={channelingField}, fireAnim={_skill.Template.FireAnim?.Id ?? 0}, firedFlag={FiredFlag}, extraFlags={ExtraDataFlag}");
+            stream.Write(delayField); // TODO  +10 It became visible flying arrows
+            stream.Write(channelingField);
 
             //stream.Write((byte)0); // f - When changed to 1 when firing an auto-casting skill, will make the little blue arrow.
             WriteExtraData(stream);
 
             stream.WritePisc(_id, _skill.Template.FireAnim?.Id ?? 0); // added skill type here in 3.0.3.0
-            stream.Write((byte)0); // flag
+            stream.Write(FiredFlag); // flag
         }
     }
 
@@ -305,19 +317,23 @@ public class SCSkillFiredPacket : GamePacket
             WriteExtraData(stream);
 
             stream.WritePisc(_id, _fireAnimId); // added skill type here in 3.0.3.0
-            stream.Write((byte)0); // flag
+            stream.Write(FiredFlag); // flag
         }
         else
         {
             // дальняя атака
-            stream.Write((short)(ComputedDelay / 10 + 10)); // TODO  +10 It became visible flying arrows 
-            stream.Write((short)(_skill.Template.ChannelingTime / 10 + 10));
+            var useZeroDelayBase = UseMountedSkillZeroDelayFields();
+            var delayField = (short)(ComputedDelay / 10 + (useZeroDelayBase ? 0 : 10));
+            var channelingField = (short)(_skill.Template.ChannelingTime / 10 + (useZeroDelayBase ? 0 : 10));
+            Logger.Trace($"SCSkillFiredPacket.SkillData(Npc): id={_id}, tl={_tl}, zeroDelayBase={useZeroDelayBase}, delayField={delayField}, channelingField={channelingField}, fireAnim={_skill.Template.FireAnim?.Id ?? 0}, firedFlag={FiredFlag}, extraFlags={ExtraDataFlag}");
+            stream.Write(delayField); // TODO  +10 It became visible flying arrows
+            stream.Write(channelingField);
 
             //stream.Write((byte)0); // f - When changed to 1 when firing an auto-casting skill, will make the little blue arrow.
             WriteExtraData(stream);
 
             stream.WritePisc(_id, _skill.Template.FireAnim?.Id ?? 0); // added skill type here in 3.0.3.0
-            stream.Write((byte)0); // flag
+            stream.Write(FiredFlag); // flag
         }
     }
 
@@ -332,6 +348,18 @@ public class SCSkillFiredPacket : GamePacket
             stream.Write(ExtraDataUInt);   // p
         if (ExtraDataFlag.HasFlag(ExtraDataFlags.HasBool))
             stream.Write(ExtraDataBool);   // d
+    }
+
+    private static string DescribeTarget(SkillCastTarget target)
+    {
+        return target switch
+        {
+            SkillCastPositionTarget position => $"Position(obj1={position.ObjId1}, obj2={position.ObjId2}, obj3={position.ObjId3}, x={position.PosX:F3}, y={position.PosY:F3}, z={position.PosZ:F3}, rot={position.PosRot:F3})",
+            SkillCastUnitTarget unit => $"Unit(obj={unit.ObjId})",
+            SkillCastDoodadTarget doodad => $"Doodad(obj={doodad.ObjId})",
+            null => "null",
+            _ => $"{target.Type}(obj={target.ObjId})"
+        };
     }
 
     public SCSkillFiredPacket SetSkillResult(SkillResult skillResult)
