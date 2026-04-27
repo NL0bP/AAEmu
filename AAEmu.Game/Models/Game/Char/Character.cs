@@ -1326,7 +1326,7 @@ public partial class Character : Unit, ICharacter
         if (HeirLevel == 1)
         {
             var sequenceName = "etc_09_heir";
-            BroadcastPacket(new SCPlaySequencePacket(sequenceName, 0), true);
+            SendPacket(new SCPlaySequencePacket(sequenceName, 0));
         }
 
         ResidentManager.Instance.AddResidenMemberInfo(this);
