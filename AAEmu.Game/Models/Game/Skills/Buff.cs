@@ -36,6 +36,7 @@ public class Buff
     public EffectState State { get; set; }
     public bool InUse { get; set; }
     public int Duration { get; set; }
+    public int BaseDuration { get; set; }
     public double Tick { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
@@ -164,6 +165,7 @@ public class Buff
             AbLevel = newBuff.AbLevel;
             Caster = newBuff.Caster;
             SkillCaster = newBuff.SkillCaster;
+            BaseDuration = newBuff.BaseDuration;
             var now = DateTime.UtcNow;
             StartTime = now;
 
@@ -263,7 +265,12 @@ public class Buff
 
     public void WriteData(PacketStream stream)
     {
-        stream.WritePisc(Charge, Duration / 10, 0 / 10, (long)(Template.Tick / 10));
+        var tickMs = Tick > 0 ? (long)(Tick / 10) : 0;
+        var durationDiv10 = Template.StackRule is BuffStackRule.Extend or BuffStackRule.ChargeExtend
+            ? BaseDuration / 10
+            : Duration / 10;
+        var elapsedDiv10 = (long)(GetTimeElapsed() / 10);
+        stream.WritePisc(Charge, durationDiv10, elapsedDiv10, tickMs);
     }
 
     /// <summary>
