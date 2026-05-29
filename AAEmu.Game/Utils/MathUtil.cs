@@ -8,6 +8,8 @@ namespace AAEmu.Game.Utils;
 
 public class MathUtil
 {
+    public const float HalfPi = MathF.PI / 2f;
+
     /*www.demo2s.c o m*/
     private static readonly Vector3 UnitXAxis = new(1, 0, 0);
     private static readonly Vector3 UnitYAxis = new(0, 1, 0);

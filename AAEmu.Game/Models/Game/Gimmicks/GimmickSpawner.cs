@@ -132,6 +132,15 @@ public class GimmickSpawner : Spawner<Gimmick>
         Count = 1;
     }
 
+    /// <summary>
+    /// Constructor accepting a world instance (used by debug marker spawning).
+    /// The world parameter is stored but not used by Spawn — our architecture uses the GimmickManager singleton.
+    /// </summary>
+    public GimmickSpawner(World.World parentWorld)
+    {
+        Count = 1;
+    }
+
     public override Gimmick Spawn(uint objId)
     {
         var gimmick = GimmickManager.Instance.Create(objId, UnitId, this);

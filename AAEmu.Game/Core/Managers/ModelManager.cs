@@ -7,10 +7,8 @@ using AAEmu.Game.Utils.DB;
 
 namespace AAEmu.Game.Core.Managers
 {
-    namespace AAEmu.Game.Core.Managers
+    public class ModelManager : Singleton<ModelManager>
     {
-        public class ModelManager : Singleton<ModelManager>
-        {
 
             private Dictionary<string, Dictionary<uint, Model>> _models;
             private Dictionary<uint, ModelType> _modelTypes;
@@ -296,4 +294,4 @@ namespace AAEmu.Game.Core.Managers
             }
         }
     }
-}
+

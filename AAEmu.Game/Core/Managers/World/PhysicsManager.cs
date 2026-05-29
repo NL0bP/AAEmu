@@ -5,11 +5,15 @@ using System.Numerics;
 using System.Threading;
 
 using AAEmu.Commons.Utils;
-using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.SkillControllers;
+using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Models.Game.Units.slaves;
@@ -52,6 +56,13 @@ namespace AAEmu.Game.Core.Managers.World
         private readonly ConcurrentQueue<Action> _pendingActions = new();
         private readonly Lock _worldLock = new();
         private readonly List<RigidBody> _bodies = [];
+
+        // Ship interaction resolvers
+        private readonly ShipShoreInteraction _shipShore = new();
+        private readonly ShipShipInteraction _shipShip = new();
+        private readonly ShipCliffInteraction _shipCliff = new();
+        private readonly ShipDoodadInteraction _shipDoodad = new();
+        private readonly ShipStaticBarrierInteraction _shipBarrier = new();
 
         public void Initialize()
         {
@@ -176,6 +187,9 @@ namespace AAEmu.Game.Core.Managers.World
 
                         lastTick = currentTick;
 
+                        // Total delta for this frame (clamped to max steps)
+                        var physicsTotalDelta = TimeSpan.FromSeconds(steps * fixedStep.TotalSeconds);
+
                         // 4. Sync positions and broadcast outside lock
                         foreach (var (body, velocity, isMoving) in snapshot)
                         {
@@ -183,9 +197,6 @@ namespace AAEmu.Game.Core.Managers.World
                             {
                                 // Update transform
                                 //UpdateNpcTransform(npc, velocity, isMoving);
-
-                                // Update avoidance controller
-                                //npc.AvoidanceController.Update(0.01f);
                             }
 
                             if (body.Tag is not Slave slave) { continue; }
@@ -209,27 +220,51 @@ namespace AAEmu.Game.Core.Managers.World
                                 if (!body.IsActive)
                                     continue;
 
+                                // Cache water surface, floor, and flow for this tick
+                                slave.CreateWaterAndLandSurfaceCache();
+
                                 var underPos = slave.Transform.World.Position + Vector3.UnitZ * -2f;
-                                if (SimulationWorld.Water.IsWater(underPos, out var flowDirection))
+                                if (SimulationWorld.Water.IsWater(underPos, out var flowDirection) && flowDirection.LengthSquared() > 1e-10f)
                                 {
-                                    if (flowDirection.Length() > 0f)
-                                    {
-                                        // We are in moving water, apply force
-                                        var multiplier = slave.RigidBody.Mass * 3.15f;
-                                        slave.RigidBody.AddForce(new JVector(flowDirection.X * multiplier, flowDirection.Z * multiplier, flowDirection.Y * multiplier));
-                                        // slaveRigidBody.LinearVelocity += new JVector(flowDirection.X * 0.1f,flowDirection.Z * 0.1f, flowDirection.Y * 0.1f);
-                                    }
+                                    slave.CachedWaterFlow = flowDirection;
+                                    var multiplier = slave.RigidBody.Mass * 3.15f;
+                                    slave.RigidBody.AddForce(new JVector(flowDirection.X * multiplier, flowDirection.Z * multiplier, flowDirection.Y * multiplier));
                                 }
 
                                 SyncTransformWithRigidBody(slave);
-                                BoatPhysicsTick(slave, body, slave.ShipController.ShipModel);
-                                if (this.CheckInterval(150))
-                                    SendUpdatedMovementData(slave, body);
+                                BoatPhysicsTick(slave, physicsTotalDelta);
+                                slave.ShipController?.ApplyForceAndTorque(slave, physicsTotalDelta);
+                                SendUpdatedMovementData(slave, body, physicsTotalDelta);
                             }
                             catch (Exception slaveException)
                             {
-                                // Put a separate catch here to catch individual errors without it breaking all the physics in this world 
                                 Logger.Error($"PhysicsThread Error on Slave {slave.Id} {slave.Name} ({slave.ObjId}): {slaveException.Message}\n{slaveException.StackTrace}");
+                            }
+                        }
+
+                        // Collect active ships for interaction resolution
+                        var shipsThisTick = new List<Slave>();
+                        foreach (var body2 in _bodies)
+                        {
+                            if (body2?.Tag is Slave s && s.Hp > 0 && body2.IsActive && s.Transform.WorldId == SimulationWorld.Id)
+                                shipsThisTick.Add(s);
+                        }
+
+                        // Ship-to-ship, ship-to-shore, ship-to-cliff interactions
+                        if (shipsThisTick.Count > 0)
+                        {
+                            _shipShore.ResolveAll(SimulationWorld, shipsThisTick, physicsTotalDelta);
+                            _shipShip.ResolveAllPairs(shipsThisTick, physicsTotalDelta);
+                            _shipCliff.ResolveAll(SimulationWorld, shipsThisTick, physicsTotalDelta);
+                            _shipDoodad.ResolveAll(SimulationWorld, shipsThisTick, physicsTotalDelta);
+                            _shipBarrier.ResolveAll(SimulationWorld, shipsThisTick, physicsTotalDelta);
+
+                            // Tick damage accumulators
+                            foreach (var ship in shipsThisTick)
+                            {
+                                ship.TickBeachedHullDamage(physicsTotalDelta);
+                                ship.TickStaticObstacleHullDamage(physicsTotalDelta);
+                                ship.StaticObstacleHullDamageContactActive = false;
                             }
                         }
                     }
@@ -276,7 +311,7 @@ namespace AAEmu.Game.Core.Managers.World
             var rot = JQuaternion.CreateRotationY(slave.Transform.World.Rotation.Z);
             //                                       Width                   Length                  Height
             //var dimensions = new JVector(shipModel.MassBoxSizeX, shipModel.MassBoxSizeY, shipModel.MassBoxSizeZ);
-            var ctrl = new ShipController(world: _physWorld, shipModel: shipModel, waterLevel: DefaultWaterLevel);
+            var ctrl = new ShipController(world: _physWorld, shipModel: shipModel);
 
             ctrl.Build(initialPosition: pos, initialOrientation: rot);
 
@@ -284,6 +319,17 @@ namespace AAEmu.Game.Core.Managers.World
             slave.RigidBody = ctrl.Hull;
             slave.RigidBody.Tag = slave;
             slave.ShipController = ctrl;
+
+            // During PortalTime the physics thread skips ship processing (including transform sync),
+            // so ensure the initial server-side Transform matches the physics spawn position.
+            SyncTransformWithRigidBody(slave);
+            slave.Transform.FinalizeTransform();
+            ctrl.Replication.Reset();
+            slave.WavePitchPhase = 0f;
+            slave.ShipHullCollisionDamageCooldownByOtherShipId.Clear();
+            slave.StaticObstacleHullDamageContactActive = false;
+            slave.StaticObstacleHullDamageSecondsAccumulator = 0f;
+            slave.StaticObstacleHullDamageNoContactSeconds = 0f;
 
             EnqueueAddBody(slave.RigidBody);
             _buoyancy.AddForRectangularParallelepiped(slave.RigidBody, 3);
@@ -336,98 +382,238 @@ namespace AAEmu.Game.Core.Managers.World
             Logger.Debug($"RemoveShip {slave.Name} <- {SimulationWorld.Name}");
         }
 
-        private void BoatPhysicsTick(Slave slave, RigidBody rigidBody, ShipModel shipModel)
+        private void BoatPhysicsTick(Slave slave, TimeSpan deltaTime)
         {
-            slave.ShipController.UpdateControls(slave, rigidBody, shipModel);
-            ApplyCollisions(slave, rigidBody, shipModel);
+            var shipModel = slave.ShipController?.ShipModel;
+            if (shipModel == null) return;
+
+            _shipShore.ApplyOnLandPhysics(slave, deltaTime);
+
+            // Check if the ship has a driver
+            var hasDriver = slave.AttachedCharacters.ContainsKey(AttachPointKind.Driver);
+            if (hasDriver)
+            {
+                // Smooth toward client input in float space, then round — avoids sbyte stair-stepping on rudder animation.
+                const float SmoothingFactor = 0.12f;
+                slave.ThrottleSmoothed += (slave.ThrottleRequest - slave.ThrottleSmoothed) * SmoothingFactor;
+                slave.SteeringSmoothed += (slave.SteeringRequest - slave.SteeringSmoothed) * SmoothingFactor;
+                slave.Throttle = (sbyte)Math.Clamp((int)Math.Round(slave.ThrottleSmoothed), -128, 127);
+                slave.Steering = (sbyte)Math.Clamp((int)Math.Round(slave.SteeringSmoothed), -128, 127);
+            }
+            else
+            {
+                // If there is no driver, we reset the control
+                slave.ThrottleRequest = 0;
+                slave.SteeringRequest = 0;
+                slave.Throttle = 0;
+                slave.Steering = 0;
+                slave.ThrottleSmoothed = 0f;
+                slave.SteeringSmoothed = 0f;
+            }
         }
 
-        private void SendUpdatedMovementData(Slave slave, RigidBody rigidBody)
+        private void SendUpdatedMovementData(Slave slave, RigidBody rigidBody, TimeSpan deltaTime)
         {
             var moveType = (ShipMoveType)MoveType.GetType(MoveTypeEnum.Ship);
             moveType.UseSlaveBase(slave);
 
             // Get current rotation of the ship
             var rpy = PhysicsUtil.GetYawPitchRollFromMatrix(JMatrix.CreateFromQuaternion(rigidBody.Orientation));
-            // Insert new Rotation data into MoveType
-            var (rotZ, rotY, rotX) = MathUtil.GetSlaveRotationFromDegrees(rpy.Item1, rpy.Item2, rpy.Item3);
+
+            // Visual-only bank (ship leans into turns). Applied to replicated rotation, not physics.
+            var maxBankDeg = ComputeVisualMaxBankDegFromShipModel(slave.ShipController?.ShipModel, slave.Scale);
+            const float bankResponse = 7.5f;
+            var dt = Math.Max(0.0001f, (float)deltaTime.TotalSeconds);
+            var maxBankRad = maxBankDeg.DegToRad();
+            var yawRate = rigidBody.AngularVelocity.Y;
+            var horizSpeed = MathF.Sqrt(
+                rigidBody.Velocity.X * rigidBody.Velocity.X +
+                rigidBody.Velocity.Z * rigidBody.Velocity.Z);
+            var speedFactor = Math.Clamp(horizSpeed / 2.5f, 0f, 1f);
+            var targetBank = Math.Clamp(-yawRate * 0.9f, -maxBankRad, maxBankRad) * speedFactor;
+            var a = 1f - MathF.Exp(-bankResponse * dt);
+            slave.BankAngle += (targetBank - slave.BankAngle) * a;
+
+            _shipShore.UpdateVisualGroundPitch(slave, rigidBody, deltaTime);
+
+            var wavePitchRad = ComputeVisualWavePitchOnWater(slave, rigidBody, dt);
+
+            // Replication smoothing for clients
+            const float repLambdaHorizFree = 22f;
+            const float repLambdaHorizContact = 11f;
+            const float repLambdaVertFree = 8f;
+            const float repLambdaVertContact = 4f;
+            const float repLambdaBankFree = 4f;
+            const float repLambdaBankContact = 2f;
+            var rep = slave.ShipController!.Replication;
+            var repLambdaH = rep.ContactHoldTicks > 0 ? repLambdaHorizContact : repLambdaHorizFree;
+            var repLambdaV = rep.ContactHoldTicks > 0 ? repLambdaVertContact : repLambdaVertFree;
+            var repLambdaB = rep.ContactHoldTicks > 0 ? repLambdaBankContact : repLambdaBankFree;
+            var repAlphaH = 1f - MathF.Exp(-repLambdaH * dt);
+            var repAlphaV = 1f - MathF.Exp(-repLambdaV * dt);
+            var repAlphaB = 1f - MathF.Exp(-repLambdaB * dt);
+
+            var tgtX = rigidBody.Position.X;
+            var tgtY = rigidBody.Position.Z;
+            var tgtZ = rigidBody.Position.Y;
+            var tgtVx = rigidBody.Velocity.X;
+            var tgtVy = rigidBody.Velocity.Z;
+            var tgtVz = rigidBody.Velocity.Y;
+
+            if (!rep.Seeded)
+            {
+                rep.PosX = tgtX;
+                rep.PosY = tgtY;
+                rep.PosZ = tgtZ;
+                rep.VelPx = tgtVx;
+                rep.VelPy = tgtVy;
+                rep.VelPz = tgtVz;
+                rep.BankSmoothed = slave.BankAngle;
+                rep.GroundPitchSmoothed = slave.GroundPitchAngle;
+                rep.Seeded = true;
+            }
+            else
+            {
+                rep.PosX += (tgtX - rep.PosX) * repAlphaH;
+                rep.PosY += (tgtY - rep.PosY) * repAlphaH;
+                rep.PosZ += (tgtZ - rep.PosZ) * repAlphaV;
+                rep.VelPx += (tgtVx - rep.VelPx) * repAlphaH;
+                rep.VelPy += (tgtVy - rep.VelPy) * repAlphaH;
+                rep.VelPz += (tgtVz - rep.VelPz) * repAlphaV;
+                rep.BankSmoothed += (slave.BankAngle - rep.BankSmoothed) * repAlphaB;
+                rep.GroundPitchSmoothed += (slave.GroundPitchAngle - rep.GroundPitchSmoothed) * repAlphaV;
+            }
+
+            var bankedRpy = (rpy.Item1, rpy.Item2 + rep.BankSmoothed, rpy.Item3 + rep.GroundPitchSmoothed + wavePitchRad);
+
+            var (rotZ, rotY, rotX) = MathUtil.GetSlaveRotationFromDegrees(bankedRpy.Item1, bankedRpy.Item2, bankedRpy.Item3);
             moveType.RotationX = rotX;
             moveType.RotationY = rotY;
             moveType.RotationZ = rotZ;
 
-            // Fill in the Velocity Data into the MoveType
-            //moveType.Velocity = new Vector3(rigidBody.Velocity.X, rigidBody.Velocity.Z, rigidBody.Velocity.Y);
+            moveType.X = rep.PosX;
+            moveType.Y = rep.PosY;
+            moveType.Z = rep.PosZ;
+
             moveType.AngVelX = rigidBody.AngularVelocity.X;
             moveType.AngVelY = rigidBody.AngularVelocity.Z;
             moveType.AngVelZ = rigidBody.AngularVelocity.Y;
 
-            // Seems display the correct speed this way, but what happens if you go over the bounds ?
-            moveType.VelX = (short)(rigidBody.Velocity.X * 1024);
-            moveType.VelY = (short)(rigidBody.Velocity.Z * 1024);
-            moveType.VelZ = (short)(rigidBody.Velocity.Y * 1024);
-
-            // Do not allow the body to flip
-            //slave.RigidBody.Orientation = Quaternion.CreateFromYawPitchRoll(rpy.Item1, 0, rpy.Item3); // TODO: Fix me with proper physics
+            const int velMultiplier = 2048;
+            moveType.VelX = (short)(rep.VelPx * velMultiplier);
+            moveType.VelY = (short)(rep.VelPy * velMultiplier);
+            moveType.VelZ = (short)(rep.VelPz * velMultiplier);
 
             // Apply new Location/Rotation to GameObject
             slave.Transform.Local.SetPosition(rigidBody.Position.X, rigidBody.Position.Z, rigidBody.Position.Y);
             slave.Transform.Local.ApplyFromQuaternion(rigidBody.Orientation);
+            slave.Transform.Local.SetRotation(
+                slave.Transform.Local.Rotation.X,
+                slave.Transform.Local.Rotation.Y + rep.BankSmoothed,
+                slave.Transform.Local.Rotation.Z + rep.GroundPitchSmoothed + wavePitchRad);
 
             // Send the packet
-            //slave.BroadcastPacket(new SCOneUnitMovementPacket(slave.ObjId, moveType), false);
-            var movements = new (uint, MoveType)[] { (slave.ObjId, moveType) };
-            slave.BroadcastPacket(new SCUnitMovementsPacket(movements), false);
+            slave.BroadcastPacket(new SCOneUnitMovementPacket(slave.ObjId, moveType), false);
 
-            // Call FinalizeTransform only first 5 times per Slave
-            if (_finalizeTransformTracker.TryCall(slave.Id))
-            {
-                // Update all to main Slave and it's children
-                slave.Transform.FinalizeTransform();
-            }
+            // Update all to main Slave and it's children
+            slave.Transform.FinalizeTransform();
+
+            if (rep.ContactHoldTicks > 0)
+                rep.ContactHoldTicks--;
         }
 
-        private bool ApplyCollisions(Slave slave, RigidBody rigidBody, ShipModel shipModel)
+        /// <summary>
+        /// Waterline length = max(X,Y), beam = min(X,Y), height = Z, mass from ship_models.
+        /// </summary>
+        private static bool TryGetShipMassBoxWaterlineExtents(ShipModel model, float scale,
+            out float length, out float beam, out float height, out float mass)
         {
-            var floor = WorldManager.Instance.GetHeight(slave.Transform);
-            var boatBottom = rigidBody.Position.Y;
-            //Logger.Debug($"Slave: {slave.Name}, floor: {floor:F1}, boatBottom: {boatBottom:F1}, boxSize: {boxSize}");
-
-            if (SimulationWorld?.OceanLevel < floor)
+            if (model == null)
             {
-                var penetration = floor - boatBottom;
-                rigidBody.Position += new JVector(0, penetration, 0);
-                var collisionForce = new JVector(0, shipModel.Mass * 9.81f, 0);
-                rigidBody.AddForce(collisionForce);
-
-                // Gradually reduce speed
-                var collisionDamping = 0.9f;
-                rigidBody.Velocity *= collisionDamping;
-                rigidBody.AngularVelocity *= collisionDamping;
-
-                //if (this.CheckInterval(1500))
-                //    Logger.Debug($"Collision detected. Boat adjusted position: {rigidBody.Position}");
-
-                var damageAmount = (floor - SimulationWorld.OceanLevel) * 100f;
-                if (damageAmount < 1f)
-                    damageAmount = 1f;
-
-                if (damageAmount > 0)
-                {
-                    if (slave.Summoner.Buffs.CheckBuff((uint)BuffConstants.PeaceZone))
-                        damageAmount = 1;
-
-                    slave.DoFloorCollisionDamage((int)damageAmount, false, KillReason.Collide);
-                    if (this.CheckInterval(1500))
-                    {
-                        slave.Summoner.BroadcastPacket(new SCEnvDamagePacket(EnvSource.Collision, slave.ObjId, (uint)damageAmount, 0, rigidBody.Position.ToVector(), damageAmount * 0.1f), true);
-                        Logger.Debug($"Slave: {slave.ObjId}, speed: {slave.Speed}, rotSpeed: {slave.RotSpeed}, floor: {floor}, Z: {slave.Transform.World.Position.Z}, damage: {damageAmount}");
-                    }
-                }
-
-                return true; // Collision detected and handled
+                length = beam = height = mass = 0f;
+                return false;
             }
 
-            return false; // No collision detected
+            var s = MathF.Max(scale, 0.01f);
+            var hx = model.MassBoxSizeX * s;
+            var hy = model.MassBoxSizeY * s;
+            length = MathF.Max(MathF.Max(hx, hy), 0.25f);
+            beam = MathF.Max(MathF.Min(hx, hy), 0.25f);
+            height = MathF.Max(model.MassBoxSizeZ * s, 0.15f);
+            mass = MathF.Max(model.Mass, 10f);
+            return true;
+        }
+
+        private static void GetVisualWavePitchModelFactors(ShipModel model, float scale, out float maxAmpRad, out float omega)
+        {
+            const float baseDeg = 3f;
+            const float baseHz = 0.06f;
+            if (!TryGetShipMassBoxWaterlineExtents(model, scale, out var length, out _, out _, out var mass))
+            {
+                maxAmpRad = baseDeg.DegToRad();
+                omega = 2f * MathF.PI * baseHz;
+                return;
+            }
+
+            const float refLength = 14f;
+            const float refMass = 85000f;
+
+            var lenRatio = Math.Clamp(refLength / length, 0.35f, 2.5f);
+            var massRatio = Math.Clamp(MathF.Sqrt(refMass / mass), 0.45f, 2.2f);
+            var ampMul = MathF.Pow(lenRatio, 0.38f) * MathF.Pow(massRatio, 0.28f);
+            var maxDeg = Math.Clamp(baseDeg * ampMul, 1.1f, 5.5f);
+            maxAmpRad = maxDeg.DegToRad();
+
+            var freqMul = MathF.Pow(Math.Clamp(length / refLength, 0.5f, 2.2f), -0.18f);
+            var hz = Math.Clamp(baseHz * freqMul, 0.042f, 0.078f);
+            omega = 2f * MathF.PI * hz;
+        }
+
+        /// <summary>
+        /// Visual-only pitch oscillation on open water. Does not affect rigid body.
+        /// </summary>
+        private static float ComputeVisualWavePitchOnWater(Slave slave, RigidBody rigidBody, float dt)
+        {
+            var grounded = slave.CachedFloorLevel > slave.CachedWaterSurface || slave.GroundContactLatched;
+            if (grounded)
+                return 0f;
+
+            var submerged = MathF.Max(0f, slave.CachedWaterSurface - rigidBody.Position.Y);
+            const float submergedForFullAmp = 0.32f;
+            var depthMul = Math.Clamp(submerged / submergedForFullAmp, 0f, 1f);
+            if (depthMul <= 0f)
+                return 0f;
+
+            GetVisualWavePitchModelFactors(slave.ShipController?.ShipModel, slave.Scale, out var maxAmpRad, out var omega);
+            slave.WavePitchPhase += omega * dt;
+            if (slave.WavePitchPhase > MathF.PI * 4000f)
+                slave.WavePitchPhase -= MathF.PI * 4000f;
+
+            var phaseOff = (slave.ObjId & 511) * 0.211f;
+            return MathF.Sin(slave.WavePitchPhase + phaseOff) * maxAmpRad * depthMul;
+        }
+
+        /// <summary>
+        /// Max visual bank (degrees) for turn lean from ship_models mass box and mass.
+        /// </summary>
+        private static float ComputeVisualMaxBankDegFromShipModel(ShipModel model, float scale)
+        {
+            if (!TryGetShipMassBoxWaterlineExtents(model, scale, out var length, out var beam, out var height, out var mass))
+                return 8f;
+
+            const float refLength = 14f;
+            const float refBeam = 1.5f;
+            const float refHeight = 16f;
+            const float refMass = 85000f;
+            const float baseDeg = 9f;
+
+            var lengthFactor = MathF.Pow(Math.Clamp(length / refLength, 0.35f, 2.8f), 0.22f);
+            var beamFactor = MathF.Pow(Math.Clamp(refBeam / beam, 0.65f, 1.6f), 0.28f);
+            var massFactor = MathF.Pow(Math.Clamp(refMass / mass, 0.2f, 4f), 0.18f);
+            var heightFactor = MathF.Pow(Math.Clamp(refHeight / height, 0.5f, 2f), 0.12f);
+
+            var deg = baseDeg * lengthFactor * beamFactor * massFactor * heightFactor;
+            return Math.Clamp(deg, 5f, 14f);
         }
 
         public void Stop()

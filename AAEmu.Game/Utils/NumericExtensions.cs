@@ -50,4 +50,24 @@ public static class NumericExtensions
     {
         return new JVector(val.X, 0f, val.Z);
     }
+
+    /// <summary>
+    /// Converts a world position into an X Y index for cells
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <returns>(cellX, cellY)</returns>
+    public static (int, int) ToCellIndex(this Vector3 pos)
+    {
+        return ((int)Math.Floor(pos.X / 1024), (int)Math.Floor(pos.Y / 1024));
+    }
+
+    /// <summary>
+    /// Converts a world position into an X Y index for chunks (paths)
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <returns>(pathsX, pathsY)</returns>
+    public static (int, int) ToPathsIndex(this Vector3 pos)
+    {
+        return ((int)Math.Floor(pos.X / 256), (int)Math.Floor(pos.Y / 256));
+    }
 }

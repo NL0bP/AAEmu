@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Units.slaves;
 
 using Jitter2;
@@ -14,11 +13,20 @@ namespace AAEmu.Game.Physics.Forces;
 
 /// <summary>
 /// Simple Helper that adds buoyancy forces to a body if it is within
-/// the FluidVolume. The volume is represented by a axis aligned bounding box or by
+/// the FluidVolume. The volume is represented by an axis aligned bounding box or by
 /// the user.
 /// </summary>
 public class Buoyancy : ForceGenerator
 {
+    public static float BaseWaterDensity = 1.025f;
+
+    /// <summary>
+    /// Hot-reload tuning knob: scales ship buoyancy via an "effective water density" multiplier.
+    /// 1.0 = default, higher floats higher (less draft), lower sits deeper.
+    /// Applied only for ships (bodies tagged with <see cref="Slave"/> that have a <c>ShipController</c>).
+    /// </summary>
+    public static float ShipWaterDensityMul = 3f;
+
 
     /// <summary>
     /// Returns true if the given point is within the area.
@@ -60,7 +68,7 @@ public class Buoyancy : ForceGenerator
     /// <param name="world">The world.</param>
     public Buoyancy(World world) : base(world)
     {
-        Density = 1.025f; // 1025 кг/м³ (seawater density)
+        Density = BaseWaterDensity;
         Damping = 0.1f;
         Flow = JVector.Zero;
     }
@@ -130,9 +138,9 @@ public class Buoyancy : ForceGenerator
                 for (var k = 0; k < subdivisions; k++)
                 {
                     JVector testVector;
-                    testVector.X = body.Shapes[0].WorldBoundingBox.Min.X + (diff.X / (subdivisions - 1)) * i;
-                    testVector.Y = body.Shapes[0].WorldBoundingBox.Min.Y + (diff.Y / (subdivisions - 1)) * e;
-                    testVector.Z = body.Shapes[0].WorldBoundingBox.Min.Z + (diff.Z / (subdivisions - 1)) * k;
+                    testVector.X = body.Shapes[0].WorldBoundingBox.Min.X + diff.X / (subdivisions - 1) * i;
+                    testVector.Y = body.Shapes[0].WorldBoundingBox.Min.Y + diff.Y / (subdivisions - 1) * e;
+                    testVector.Z = body.Shapes[0].WorldBoundingBox.Min.Z + diff.Z / (subdivisions - 1) * k;
 
                     if (NarrowPhase.PointTest(body.Shapes[0], in testVector))
                     {
@@ -201,24 +209,38 @@ public class Buoyancy : ForceGenerator
             if (body.IsStatic || !body.IsActive) continue;
 
             var slave = (Slave)body.Tag;
-            if (slave is not { Hp: > 0 }) continue;
-            
-            // Skip if no controller or mass
-            if (slave.ShipController == null || slave.ShipController.ShipModel.Mass <= 0) continue;
+            if (slave == null) continue;
 
-            var depth = WaterSurfaceLevel - body.Position.Y;
+            // Skip if no controller or mass
+            if (slave.ShipController == null || slave.ShipController.ShipModel.Mass <= 0)
+                continue;
+
+            // Skip simulation if still summoning
+            body.AffectedByGravity = slave.SpawnTime.AddSeconds(slave.Template.PortalTime) <= DateTime.UtcNow;
+            if (!body.AffectedByGravity)
+            {
+                continue;
+            }
+
+            var waterSurfaceLevel = WaterSurfaceLevel;
+            var centerPosition = body.Position;
+            if (_fluidArea != null && _fluidArea(ref centerPosition))
+            {
+                waterSurfaceLevel = slave.CachedWaterSurface;
+            }
+
+            var depth = waterSurfaceLevel - body.Position.Y;
             if (depth <= 0) continue;
 
-            ApplyDrag(body, slave.ShipController.ShipModel.MassBoxSizeX, slave.ShipController.ShipModel.MassBoxSizeZ);
-
+            ApplyDrag(body, slave.ShipController.ShipModel.MassBoxSizeX, slave.ShipController.ShipModel.MassBoxSizeY, slave.ShipController.ShipModel.MassBoxSizeZ);
             // Calculate submerged depth and buoyancy force
-            var submergedDepth = Math.Max(0, WaterSurfaceLevel - body.Position.Y);
+            var submergedDepth = Math.Max(0, waterSurfaceLevel - body.Position.Y);
             var isOnWater = submergedDepth > 0;
 
             if (isOnWater)
             {
                 // Apply buoyancy and drag forces
-                var buoyancyForce = new JVector(0, submergedDepth * body.Mass * Density * 9.81f, 0);
+                var buoyancyForce = new JVector(0, submergedDepth * body.Mass * Density * ShipWaterDensityMul * 9.81f, 0);
                 body.AddForce(buoyancyForce);
 
                 var dragForce = new JVector(-body.Velocity.X * Density, -body.Velocity.Y * Density, -body.Velocity.Z * Density);
@@ -227,17 +249,17 @@ public class Buoyancy : ForceGenerator
         }
     }
 
-    private void ApplyDrag(RigidBody body, float _hullWidth, float _hullHeight)
+    private void ApplyDrag(RigidBody body, float hullWidth, float hullLength, float hullHeight)
     {
         var velocity = body.Velocity;
         var speed = velocity.Length();
         if (speed < 0.1f) return;
 
         const float DragCoefficient = 0.8f;
-        var area = _hullWidth * _hullHeight;
+        var area = hullWidth * hullHeight;
         var drag = 0.5f * Density * DragCoefficient * area * speed * speed;
-        velocity.Normalize();
-        velocity.Negate();
+        JVector.NormalizeInPlace(ref velocity);
+        JVector.NegateInPlace(ref velocity);
         velocity *= drag;
         body.AddForce(velocity);
     }

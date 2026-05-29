@@ -11,9 +11,14 @@
         "GrowthRate": 1.0,
         "DaysForTaxPayment": 7,
         "IgnoreFallDamageAccessLevel": 100,
-        "GodMode": false,            // включает режим бога
-        "GeoDataMode": false,        // разрешает геоданные для подземелий
-        "FirstJourneyEnable": false, // включает показ мультфильма при первом входе персонажа
-        "SaveGeoDataMode": false     // разрешает запись геоданных по высоте персонажа
+        "GodMode": false,
+        "GeoDataMode": false,
+        "PreLoadTerrain": false,
+        "FirstJourneyEnable": false,
+        "SaveGeoDataMode": false,
+        "MaxInstances": 32,
+        "TargetPhysicsTps": 25.0,
+        "WindModel": "Official",
+        "ActabilityRate": 1.0
     }
 }

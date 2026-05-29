@@ -2,7 +2,6 @@
 using System.Linq;
 
 using AAEmu.Game.Core.Managers;
-using AAEmu.Game.Core.Managers.AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Faction;
@@ -32,7 +31,10 @@ public class BaseUnit : GameObject, IBaseUnit
     public BuffModifiers BuffModifiersCache { get; set; }
     public CombatBuffs CombatBuffs { get; set; }
     public object ChargeLock { get; set; }
-    
+
+    /// <summary>Shortcut to the World this unit belongs to (by zone).</summary>
+    public World.World ParentWorld => WorldManager.Instance.GetWorldByZone(Transform.ZoneId);
+
     /// <summary>
     /// The loot container for items dropped by this unit
     /// </summary>

@@ -31,6 +31,14 @@ public class WaterBodyArea
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
     public float Speed { get; set; }
 
+    /// <summary>Unit flow axis in XY (ignored if <see cref="FlowSpeedSigned"/> is 0).</summary>
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+    public Vector2 FlowAxis { get; set; }
+
+    /// <summary>Signed flow speed along <see cref="FlowAxis"/> (downhill sign). Contract: {-1,0,1}.</summary>
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+    public float FlowSpeedSigned { get; set; }
+
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
     public float RiverWidth { get; set; }
     

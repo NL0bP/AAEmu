@@ -50,6 +50,24 @@ public class WorldManager : Singleton<WorldManager>, IWorldManager
     private Dictionary<uint, List<uint>> _zonesByWorldId;
     private Dictionary<uint, WorldInteractionGroup> _worldInteractionGroups;
     public bool IsSnowing { get; set; }
+
+    #region AutoWaterProbe stubs
+
+    /// <summary>Enable auto-probe logging at a specific position. Stub until full nikes water debug pipeline is ported.</summary>
+    public static void AutoWaterProbeEnable(Vector3 pos)
+    {
+        // TODO: port full implementation from nikes WorldManager.AutoWaterProbeEnable
+        Logger.Info($"AutoWaterProbeEnable({pos}) — stub (no-op).");
+    }
+
+    /// <summary>Disable auto-probe logging. Stub until full nikes water debug pipeline is ported.</summary>
+    public static void AutoWaterProbeDisable()
+    {
+        // TODO: port full implementation from nikes WorldManager.AutoWaterProbeDisable
+        Logger.Info("AutoWaterProbeDisable — stub (no-op).");
+    }
+
+    #endregion
     private readonly ConcurrentDictionary<uint, GameObject> _objects = new();
     private readonly ConcurrentDictionary<uint, BaseUnit> _baseUnits = new();
     private readonly ConcurrentDictionary<uint, Unit> _units = new();

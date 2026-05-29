@@ -12,6 +12,14 @@ public class Configurations : PacketMarshaler
 
 public class WorldConfig
 {
+    public enum WindModelType
+    {
+        /// <summary>Retail-like: wind only along N↔S axis. 15 angle bonus for wind in the direction of the ship.</summary>
+        Official,
+        /// <summary>More realistic: wind direction rotates smoothly over the day.</summary>
+        Realistic
+    }
+
     /// <summary>
     /// Message of the Day that gets displayed in player's chat upon login
     /// </summary>
@@ -73,6 +81,21 @@ public class WorldConfig
     /// Enables First Journey
     /// </summary>
     public bool FirstJourneyEnable { get; set; }
+
+    /// <summary>Pre-load terrain heightmap data (for physics)</summary>
+    public bool PreLoadTerrain { get; set; }
+
+    /// <summary>Maximum number of instances that can be created</summary>
+    public uint MaxInstances { get; set; } = 32;
+
+    /// <summary>Target Ticks per Second to use for Physics threads</summary>
+    public float TargetPhysicsTps { get; set; } = 25f;
+
+    /// <summary>Ship wind model: Official (retail N↔S axis +15%) or Realistic (rotates with time of day)</summary>
+    public WindModelType WindModel { get; set; } = WindModelType.Official;
+
+    /// <summary>Server-side Actability Points multiplier (on top of buffs)</summary>
+    public double ActabilityRate { get; set; } = 1.0;
 }
 
 public class AccountDeleteDelayTiming
