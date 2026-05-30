@@ -206,7 +206,7 @@ public class Buoyancy : ForceGenerator
     {
         foreach (var body in _bodies.ToArray())
         {
-            if (body.IsStatic || !body.IsActive) continue;
+            if (body.MotionType == MotionType.Static || !body.IsActive) continue;
 
             var slave = (Slave)body.Tag;
             if (slave == null) continue;

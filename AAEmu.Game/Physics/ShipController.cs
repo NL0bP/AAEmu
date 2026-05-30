@@ -294,7 +294,7 @@ public class ShipController(World world, ShipModel shipModel)
         // Set Mass
         Hull.SetMassInertia(ShipModel.Mass);
         Hull.DeactivationTime = TimeSpan.MaxValue;
-        Hull.IsStatic = false;
+        Hull.MotionType = MotionType.Dynamic;
         Hull.SetActivationState(true);
     }
 
