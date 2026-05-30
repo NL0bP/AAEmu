@@ -2,6 +2,30 @@
 
 ## [5.0.7.0 private] - 30.05.2026
 
+### Refactoring / Рефакторинг
+
+**refactor(physics): заменить проверку IsStatic на MotionType в физических компонентах**
+
+На русском:
+- Обновлены пакеты NuGet (Jitter2, Microsoft.*, NLog, NLua) до последних версий
+- Заменено использование свойства IsStatic на MotionType в файлах:
+  - AAEmu.Game/Physics/Forces/Buoyancy.cs
+  - AAEmu.Game/Physics/Forces/OneShotVelocityKick.cs
+  - AAEmu.Game/Physics/ShipController.cs
+  - AAEmu.Game/Physics/Terrain.cs
+
+English:
+- Updated NuGet packages (Jitter2, Microsoft.*, NLog, NLua) to latest versions
+- Replaced IsStatic property usage with MotionType in files:
+  - AAEmu.Game/Physics/Forces/Buoyancy.cs
+  - AAEmu.Game/Physics/Forces/OneShotVelocityKick.cs
+  - AAEmu.Game/Physics/ShipController.cs
+  - AAEmu.Game/Physics/Terrain.cs
+
+---
+
+## [5.0.7.0 private] - 30.05.2026
+
 ### Features / Особенности
 
 **feat(physics): портировать полную морскую механику кораблей из develop 1.2**
@@ -163,3 +187,23 @@ English:
 **Версия сервера / Server version:** 5.0.7.0 private  
 **Последнее обновление / Last updated:** 30.05.2026  
 **Ветка / Branch:** client_version/5.0_client_(2018-12-25)
+
+---
+
+## Commit History / История коммитов
+
+### 413bb59c3 - docs: обновить CHANGELOG с информацией о рефакторинге физических компонентов
+
+**refactor(physics): заменить проверку IsStatic на MotionType в физических компонентах**
+
+- Обновлены пакеты NuGet (Jitter2, Microsoft.*, NLog, NLua) до последних версий
+- Заменено использование свойства IsStatic на MotionType в файлах физики
+
+### f53d15f05 - refactor: заменить проверку IsStatic на MotionType в физических компонентах
+
+- Обновлены пакеты NuGet (Jitter2, Microsoft.*, NLog, NLua) до последних версий
+- Заменено использование свойства IsStatic на MotionType в файлах:
+  - AAEmu.Game/Physics/Forces/Buoyancy.cs
+  - AAEmu.Game/Physics/Forces/OneShotVelocityKick.cs
+  - AAEmu.Game/Physics/ShipController.cs
+  - AAEmu.Game/Physics/Terrain.cs
