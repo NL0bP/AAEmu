@@ -55,6 +55,7 @@ public class Slave : Unit
     public sbyte SteeringRequest { get; set; }
     public sbyte Steering { get; set; }
     public float SteeringSmoothed { get; set; }
+    public sbyte Rpm { get; set; }
     public float RotSpeed { get; set; }
     /// <summary>Smoothed 0.9..1 multiplier: forward speed loss while turning (see <see cref="ShipController"/>).</summary>
     public float TurnSpeedVelocityMul { get; set; } = 1f;

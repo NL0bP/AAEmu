@@ -1,0 +1,32 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="ddd" Id="{A3C64051-16F0-4675-81D7-ED09525FE986}" Name="AIPath_313_baikal_156" Pos="426.96652,481.48145,382.10001" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="22,8,0"/>
+    <Point Pos="52,23,0"/>
+    <Point Pos="82,8,0"/>
+    <Point Pos="104,1,0"/>
+    <Point Pos="82,10,0"/>
+    <Point Pos="52,21,0"/>
+    <Point Pos="22,10,0"/>
+    <Point Pos="3,0,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="ddd" Id="{3915D051-2575-4DBC-A073-A74FBAEC1B65}" Name="AIPath_313_baikal_157" Pos="531.96655,347.48145,382.10001" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="3" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-20,-11,0"/>
+    <Point Pos="-50,-19,0"/>
+    <Point Pos="-86,-10,0"/>
+    <Point Pos="-106,1,0"/>
+    <Point Pos="-85,-8,0"/>
+    <Point Pos="-50,-20,0"/>
+    <Point Pos="-20,-10,0"/>
+    <Point Pos="-2,0,0"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

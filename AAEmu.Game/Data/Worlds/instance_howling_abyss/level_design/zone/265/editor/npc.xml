@@ -1,0 +1,264 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{A553320A-125F-46D0-BDE6-B5729AE56C7B}" Name="AIPath_265_goliard87_49" Pos="-0.22479248,0.71716309,0.097229004" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-4.3502502,11.977173,-0.013458252"/>
+    <Point Pos="-23.642181,4.3781738,0.013885498"/>
+    <Point Pos="-22.879272,-12.077087,-0.035583496"/>
+    <Point Pos="-18.978851,-13.0401,-0.63238525"/>
+    <Point Pos="-17.682434,-0.82281494,-0.10328674"/>
+    <Point Pos="-2.2932129,-1.4089966,0.0054168701"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{F3F82210-517F-4650-82D3-223339E2F8FB}" Name="howling_aipath_03" Pos="541.02484,481.5744,187.75317" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-3.0210571,-3.566803,0.015365601"/>
+    <Point Pos="-9.2890625,-5.6885071,0.015411377"/>
+    <Point Pos="-9.8079224,-3.5925598,0.021438599"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{4A1FBC21-D9CF-4E07-84C1-BFB60A98C479}" Name="AIPath_265_goliard87_20" Pos="-0.046051025,0.78009033,0.10015869" Rotate="0.80901694,0,0,0.5877853" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="3.2330933,1.1236572,0.00028991699"/>
+    <Point Pos="9.0488281,8.12323,-0.0013275146"/>
+    <Point Pos="9.5202637,19.214661,0.00088500977"/>
+    <Point Pos="8.338501,19.232422,0.0046386719"/>
+    <Point Pos="7.9829712,8.3123169,0.0017242432"/>
+    <Point Pos="2.5469971,1.7824097,0.0028076172"/>
+    <Point Pos="-0.25726318,0.87689209,0.0027618408"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{A8C81C4F-5C2A-4AFA-A6B3-E9E02D11CD5F}" Name="howling_aipath_06" Pos="463.26349,690.41046,167.08794" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.0030517578,2.2411499,-0.010177612"/>
+    <Point Pos="0.012176514,3.2058716,0.54896545"/>
+    <Point Pos="0.026123047,4.4844971,0.52609253"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{B99DA951-EB2B-4D30-898A-1675E447C206}" Name="AIPath_265_goliard87_22" Pos="1.0870667,0.54663086,0.38650513" Rotate="0.59482282,0,0,0.80385685" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0.069824219,-4.5321045,0.83737183"/>
+    <Point Pos="0.10443115,-8.3074951,1.5522614"/>
+    <Point Pos="-0.51654053,-15.026932,2.736557"/>
+    <Point Pos="-1.0665894,-22.523926,2.7698517"/>
+    <Point Pos="12.126282,-17.040161,2.7584686"/>
+    <Point Pos="15.50824,-1.8632813,2.7584839"/>
+    <Point Pos="17.849854,6.4980469,2.5560913"/>
+    <Point Pos="34.344727,6.4198914,1.8712769"/>
+    <Point Pos="34.278076,7.9312744,1.8575134"/>
+    <Point Pos="16.157593,8.2267456,2.7481689"/>
+    <Point Pos="10.981567,-16.29454,2.7584686"/>
+    <Point Pos="0.47296143,-20.314011,2.8113403"/>
+    <Point Pos="1.2938232,-15.130173,2.773468"/>
+    <Point Pos="1.5648193,-7.3562622,1.3194122"/>
+    <Point Pos="1.4128418,0.31555176,-0.090103149"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{83F90856-68D8-4D2A-BA27-272F928F675A}" Name="AIPath_265_goliard87_62" Pos="0.16177368,0.92260742,0.10044861" Rotate="-0.46947077,0,0,0.88294804" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-4.4077759,-1.4637451,0.00086975098"/>
+    <Point Pos="-10.173706,-9.3881226,0.0013885498"/>
+    <Point Pos="-10.712952,-17.557434,-0.031143188"/>
+    <Point Pos="-8.8760986,-17.24353,-0.0078277588"/>
+    <Point Pos="-8.4301147,-9.9276733,0.0066833496"/>
+    <Point Pos="-3.4142456,-2.7311401,0.0053863525"/>
+    <Point Pos="0.42175293,-1.1050415,0.0035858154"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="ai_navi" Id="{804FC957-6563-4DDA-9A8A-28307F534696}" Name="howling_aipath_05" Pos="320.15652,499.52332,170.47359" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="1.0063171,0.38409424,-0.00068664551"/>
+    <Point Pos="2.2755737,0.89440918,-0.0015563965"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{748EE569-7C28-4287-BCF1-1EB67790236E}" Name="howling_aipath_02" Pos="548.46954,483.38449,187.70294" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-3.4967041,0.25463867,0.021728516"/>
+    <Point Pos="-6.5160522,-0.81448364,0.043731689"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{6CF3BE6D-95F5-4F22-833A-332414DC852C}" Name="howling_aipath_01" Pos="551.797,487.21582,187.67918" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-1.4259033,-0.72982788,0.0085754395"/>
+    <Point Pos="-2.2288818,-3.6973572,0.01789856"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{E52BED79-1E38-4B22-911A-8E6A22D5FA1F}" Name="AIPath_265_goliard87_29" Pos="-0.057983398,0.92041016,0.10371399" Rotate="0.16504751,0,0,0.98628563" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="4.2710266,-13.599091,-0.066070557"/>
+    <Point Pos="15.368988,-10.245575,-0.1000061"/>
+    <Point Pos="14.223694,-6.4297485,-0.011520386"/>
+    <Point Pos="4.3099976,-9.7070923,-0.039581299"/>
+    <Point Pos="1.4985657,0.40286255,0.0027770996"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{6C0E937B-7BAD-4AE4-8B33-163F2E1EB380}" Name="howling_aipath_04" Pos="320.80222,505.47549,170.4743" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.62939453,1.7825317,0.026397705"/>
+    <Point Pos="-1.1808777,3.2635193,0.035476685"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{16404780-2F87-4054-8A01-2E550ADE1CAA}" Name="AIPath_265_goliard87_47" Pos="-0.943573,-0.59942627,0.11100769" Rotate="9.6857548e-007,0,0,1" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="13.490173,5.6228333,-0.032943726"/>
+    <Point Pos="13.095917,6.8725586,-0.02897644"/>
+    <Point Pos="-0.39440918,1.195282,-0.0007019043"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{DAD7D283-68AE-4A0C-8740-CC3CCB2FF356}" Name="AIPath_265_goliard87_63" Pos="-0.7250824,1.1967773,0.10140991" Rotate="-0.37460554,0,0,0.92718428" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2.532196,-4.5299683,-0.008895874"/>
+    <Point Pos="-6.2173767,-8.057251,-0.028442383"/>
+    <Point Pos="-10.826721,-8.7901001,-0.034713745"/>
+    <Point Pos="-15.488586,-5.842041,0.14376831"/>
+    <Point Pos="-16.886871,-3.1239014,-0.058944702"/>
+    <Point Pos="-14.524628,-2.2374878,-0.15769958"/>
+    <Point Pos="-13.429779,-4.8898926,0.13957214"/>
+    <Point Pos="-10.745636,-6.6443481,-0.033233643"/>
+    <Point Pos="-6.8094177,-5.7350464,-0.026535034"/>
+    <Point Pos="-3.9906006,-3.8533936,-0.01625061"/>
+    <Point Pos="-1.2481079,0.38018799,-0.015350342"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{596B1287-A0EA-4C73-B68C-3C2887110CCA}" Name="AIPath_265_goliard87_48" Pos="0.0048828125,0.64468384,0.10147095" Rotate="0.97992498,0,0,-0.19936661" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2.812439,7.6394043,0.016708374"/>
+    <Point Pos="-12.221008,3.7421265,-0.15943909"/>
+    <Point Pos="-11.78186,2.6247559,-0.17756653"/>
+    <Point Pos="-3.6632996,6.3324585,-0.070922852"/>
+    <Point Pos="-0.93435669,-0.36083984,-0.028594971"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{3DCC0690-8927-4BE6-8314-77B96E929DE6}" Name="howling_aipath_09" Pos="463.31226,689.72949,167.09103" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.0088806152,1.65802,-0.007522583"/>
+    <Point Pos="0.013519287,3.6801147,0.47573853"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{3BCCD392-BC43-45BF-A900-B4B52FFBE629}" Name="howling_aipath_08" Pos="466.17538,688.19513,167.09816" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.041168213,0.0054321289,-3.0517578e-005"/>
+    <Point Pos="-0.057434082,0.0077514648,-3.0517578e-005"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{CE07BDC1-889E-403C-8FE9-0D8B7FD0615D}" Name="AIPath_265_goliard87_46" Pos="-0.1383667,1.3027954,0.094268799" Rotate="0.819152,0,0,0.57357651" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="14.301636,5.213501,0.019454956"/>
+    <Point Pos="13.944885,6.3884583,0.0097808838"/>
+    <Point Pos="-0.23675537,1.2418213,-0.031173706"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{7CF2C6C2-8BF3-4591-9DE3-2EBFFF7690A7}" Name="AIPath_265_goliard87_18" Pos="0.039245605,0.45257568,0.1003418" Rotate="0.99984771,0,0,-0.017453006" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0.085510254,2.7763062,-0.28225708"/>
+    <Point Pos="0.67175293,11.06958,-3.0765533"/>
+    <Point Pos="-14.924133,11.437561,-3.0406342"/>
+    <Point Pos="-15.070557,2.9837646,0.078979492"/>
+    <Point Pos="-15.240479,0.21276855,0.090805054"/>
+    <Point Pos="-1.4481812,-0.33349609,-0.052215576"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{A6CD39C3-AA65-4C82-BFA2-F424AB5B8CE7}" Name="AIPath_265_goliard87_31" Pos="-0.0017700195,1.2911682,0.0040283203" Rotate="0.98901588,0,0,-0.1478094" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2.5753174,8.6418152,0.091384888"/>
+    <Point Pos="25.344452,17.389679,0.019622803"/>
+    <Point Pos="31.700409,-2.4593201,0.00050354004"/>
+    <Point Pos="30.148102,-2.7455444,0.0081329346"/>
+    <Point Pos="23.916565,15.676331,-0.074371338"/>
+    <Point Pos="-0.0099182129,8.1314087,-0.05456543"/>
+    <Point Pos="1.0506287,0.40606689,-0.00016784668"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{99EF14C5-6FDE-4900-8577-614B3037764E}" Name="howling_aipath_10" Pos="465.88092,688.5224,167.09666" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-1.4912415,2.2974243,-0.010513306"/>
+    <Point Pos="-2.4577637,4.8904419,0.47270203"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9FB0A0CB-27F9-4897-8B0D-DD00AF88D7CB}" Name="howling_aipath_11" Pos="460.06741,688.3689,167.09697" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="2.3974304,2.1867065,-0.0097503662"/>
+    <Point Pos="3.0979614,5.0384521,0.46803284"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{E703AECE-277C-431E-BE54-734A03A8A379}" Name="AIPath_265_goliard87_10" Pos="0.95379639,0.12744141,0.10224915" Rotate="0.68835318,0,0,0.72537571" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0.20269775,-5.8307495,0.059661865"/>
+    <Point Pos="23.879883,-6.6149902,0.01713562"/>
+    <Point Pos="23.968506,4.1977539,0.025680542"/>
+    <Point Pos="19.059631,4.1707764,0.018600464"/>
+    <Point Pos="18.751526,-3.5599365,0.029052734"/>
+    <Point Pos="3.9221191,-3.1639404,0.10848999"/>
+    <Point Pos="3.967041,-0.26428223,0.1104126"/>
+    <Point Pos="1.0684204,-0.23431396,0.024551392"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{172CDFDC-2785-487D-94FC-221D113C1C8F}" Name="AIPath_265_goliard87_99" Pos="0.045257568,1.0466309,0.10046387" Rotate="0.57357651,0,0,-0.819152" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-20.620728,-7.4304199,0.52877808"/>
+    <Point Pos="-30.90329,-11.264221,0.71208191"/>
+    <Point Pos="-30.445038,-12.668793,0.73944092"/>
+    <Point Pos="-19.982605,-8.9011841,0.64878845"/>
+    <Point Pos="-0.26416016,-1.7904053,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{43C2FCE1-FE87-4CA5-B14D-6FBDF2A5DBC9}" Name="AIPath_265_goliard87_30" Pos="0.085723877,1.4194336,0.092803955" Rotate="0.58778518,0,0,-0.80901706" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-18.92334,-5.9569397,0.048156738"/>
+    <Point Pos="-23.579956,-2.8337097,-0.026367188"/>
+    <Point Pos="-27.208008,7.7373657,-0.043670654"/>
+    <Point Pos="-25.539886,8.0916443,-0.04473877"/>
+    <Point Pos="-22.151489,-2.2783508,-0.035095215"/>
+    <Point Pos="-18.518433,-4.8248901,0.022796631"/>
+    <Point Pos="0.53533936,1.6487427,-0.016586304"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{A445B9F1-EA61-4AD2-A17F-688447639028}" Name="howling_aipath_07" Pos="463.23035,695.04419,167.61134" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0.0063171387,-0.53356934,0.009552002"/>
+    <Point Pos="0.0083007813,-1.1972656,0.02142334"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{7F4CAAF4-A8F4-419C-ACF6-617BF54CA023}" Name="AIPath_265_goliard87_61" Pos="0.58670044,1.3293457,0.10301208" Rotate="0.89879411,0,0,0.43837106" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="7.5413208,2.3649292,0.00035095215"/>
+    <Point Pos="13.86554,10.167419,-0.00036621094"/>
+    <Point Pos="14.301819,18.932312,-0.0010375977"/>
+    <Point Pos="10.643005,25.546265,-0.002746582"/>
+    <Point Pos="9.1036377,24.465027,0.0030975342"/>
+    <Point Pos="12.204712,18.177979,0.0052337646"/>
+    <Point Pos="12.121521,10.25238,0.0084838867"/>
+    <Point Pos="6.3034058,3.4899292,0.0046691895"/>
+    <Point Pos="-0.25024414,1.0240479,0.0031738281"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

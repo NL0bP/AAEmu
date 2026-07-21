@@ -365,6 +365,24 @@ public sealed class House : Unit
         return stream;
     }
 
+    public PacketStream WriteAddHouse(PacketStream stream)
+    {
+        var ownerName = NameManager.Instance.GetCharacterName(OwnerId);
+
+        stream.Write(TlId);             // tl
+        stream.Write(TemplateId);       // type
+        stream.WriteBc(ObjId);          // bc
+        stream.Write(AccountId);        // accountId
+        stream.Write(ownerName ?? "");  // owner
+        stream.Write(Helpers.ConvertLongX(Transform.World.Position.X));
+        stream.Write(Helpers.ConvertLongY(Transform.World.Position.Y));
+        stream.Write(Transform.World.Position.Z);
+        stream.Write(OwnerId);          // type(id)
+        stream.Write((byte)Permission); // permission
+        stream.Write(Name);             // house
+        return stream;
+    }
+
     public void OnDeath(object sender, EventArgs args)
     {
         Logger.Debug("House died ObjId:{0} - TemplateId:{1} - {2}", ObjId, TemplateId, Name);

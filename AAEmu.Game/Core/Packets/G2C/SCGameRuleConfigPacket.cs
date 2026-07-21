@@ -7,11 +7,11 @@ public class SCGameRuleConfigPacket : GamePacket
 {
     private readonly uint _indunCount;
     private readonly uint _conflictCount;
-    private readonly uint _type;
+    private readonly ushort _type;
     private readonly byte _pvp;
     private readonly byte _duel;
-    private readonly uint _type2;
-    private readonly short _peaceMin;
+    private readonly ushort _type2;
+    private readonly int _peaceMin;
 
     public SCGameRuleConfigPacket(uint indunCount, uint conflictCount) : base(SCOffsets.SCGameRuleConfigPacket, 5)
     {
@@ -22,6 +22,8 @@ public class SCGameRuleConfigPacket : GamePacket
         _duel = 0;
         _type2 = 0;
         _peaceMin = 0;
+        // 3.5.0.3 client: indunCount:u32, [type:u16, pvp:bool, duel:bool] x indunCount,
+        //                 conflictCount:u32, [type:u16, peaceMin:i32] x conflictCount
     }
 
     public override PacketStream Write(PacketStream stream)

@@ -1,4 +1,4 @@
-﻿using AAEmu.Commons.Network;
+using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
@@ -6,7 +6,7 @@ using AAEmu.Game.Models.Game.Chat;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSNotifyInGamePacket() : GamePacket(CSOffsets.CSNotifyInGamePacket, 1)
+public class CSNotifyInGamePacket() : GamePacket(CSOffsets.CSNotifyInGamePacket, 5)
 {
     public override void Read(PacketStream stream)
     {
@@ -23,16 +23,18 @@ public class CSNotifyInGamePacket() : GamePacket(CSOffsets.CSNotifyInGamePacket,
         // Back in 1.x /trade was zone based, not faction based
         ChatManager.Instance.GetZoneChat(Connection.ActiveChar.Transform.ZoneId).JoinChannel(Connection.ActiveChar); // shout, trade, lfg
         ChatManager.Instance.GetNationChat(Connection.ActiveChar.Race).JoinChannel(Connection.ActiveChar); // nation
-        // ChatManager.Instance.GetTrialChat(Connection.ActiveChar)?.JoinChannel(Connection.ActiveChar); // trial
+        // TODO: Implement crime system, actual jury channel doesn't exist yet
+        Connection.ActiveChar.SendPacket(new SCJoinedChatChannelPacket(ChatType.Judge, 0, Connection.ActiveChar.Faction.MotherId)); //trial
         ChatManager.Instance.GetFactionChat(Connection.ActiveChar.Faction.MotherId).JoinChannel(Connection.ActiveChar); // faction
 
         // TODO: Maybe move to spawn character?
         TeamManager.Instance.UpdateAtLogin(Connection.ActiveChar);
         Connection.ActiveChar.Expedition?.OnCharacterLogin(Connection.ActiveChar);
 
+        TrialManager.Instance.HandlePlayerLogin(Connection.ActiveChar); // dev-specific: trial system hook
+
         Connection.ActiveChar.UpdateGearBonuses(null, null);
 
-        TrialManager.Instance.HandlePlayerLogin(Connection.ActiveChar);
         Logger.Info($"NotifyInGame: {Connection.ActiveChar?.Name} ({Connection.ActiveChar?.Id})");
     }
 }

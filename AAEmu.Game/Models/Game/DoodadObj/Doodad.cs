@@ -6,6 +6,7 @@ using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.CommonFarm.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Funcs;
@@ -14,6 +15,7 @@ using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.StaticValues;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.Doodads;
 
@@ -80,6 +82,7 @@ public class Doodad : BaseUnit
     public static bool IsFuncDrivenLootFunc(string funcType) => FuncDrivenLootFuncTypes.Contains(funcType);
 
     private float _scale;
+    public byte Flag { get; set; }
     private int _data;
     private uint _funcGroupId;
 
@@ -259,6 +262,9 @@ public class Doodad : BaseUnit
     // ReSharper disable once MemberCanBePrivate.Global
     public int PuzzleGroup { get; set; } = -1; // -1 off
 
+    public DateTime FreshnessTime { get; set; }
+    public bool IsRebuy { get; set; }
+
     /// <summary>
     /// This Doodad's Spawner
     /// </summary>
@@ -358,7 +364,8 @@ public class Doodad : BaseUnit
     {
         _scale = 1f;
         PlantTime = DateTime.MinValue;
-        AttachPoint = AttachPointKind.System;
+        // Retail 3.5.0.3 world doodads use attachPoint = 0 (None), verified against packet captures
+        AttachPoint = AttachPointKind.None;
         Seat = new VehicleSeat(this);
         ListGroupId = [];
         CurrentFuncs = [];
@@ -884,50 +891,33 @@ public class Doodad : BaseUnit
     public PacketStream Write(PacketStream stream)
     {
         stream.WriteBc(ObjId); //The object # in the list
-        stream.Write(TemplateId); //The template id needed for that object, the client then uses the template configurations, not the server
-        stream.WriteBc(OwnerObjId); //The creator of the object
-        stream.WriteBc(ParentObjId); //Things like boats or cars,
+        stream.WritePisc(TemplateId, FuncGroupId, ItemTemplateId, QuestGlow);
+        stream.Write(Flag);
+        stream.WriteBc(OwnerObjId);      // The creator of the object
+        stream.WriteBc(ParentObjId);     // Things like boats or cars
         stream.Write((byte)AttachPoint); // attachPoint, relative to the parentObj (Door or window on a house, seats on carriage, etc.)
-        if (AttachPoint > 0 || ParentObjId > 0)
-        {
-            stream.WritePosition(Transform.Local.Position.X, Transform.Local.Position.Y, Transform.Local.Position.Z);
-            var (roll, pitch, yaw) = Transform.Local.ToRollPitchYawShorts();
-            stream.Write(roll);
-            stream.Write(pitch);
-            stream.Write(yaw);
-        }
-        else
-        {
-            stream.WritePosition(Transform.World.Position.X, Transform.World.Position.Y, Transform.World.Position.Z);
-            var (roll, pitch, yaw) = Transform.World.ToRollPitchYawShorts();
-            stream.Write(roll);
-            stream.Write(pitch);
-            stream.Write(yaw);
-        }
-
-        stream.Write(Scale); //The size of the object
-        // Mark doodad as lootable for client UI (gear icon) ONLY when its current phase is exclusively driven by
-        // loot/recover funcs. If the group also contains non-loot interaction funcs (CraftPack, StoreUi, Use, etc.),
-        // the doodad must keep the normal interaction wheel (F/G/H...). Otherwise the client would route every
-        // interaction through CSLootOpenBagPacket -> doodad.Use(skillId=0) and silently break workshops/shops while
-        // accidentally despawning them (RecoverItem with NextPhase=-1 deletes the doodad). This restriction keeps
-        // pickup working for trade packs, chests and crafting tables stored in the world (single-RecoverItem groups)
-        // while preserving multi-action doodads (workshops with CraftPack+StoreUi+RecoverItem).
-        var hasLootItem = CurrentFuncs.Count > 0 && CurrentFuncs.All(func => IsFuncDrivenLootFunc(func.FuncType));
-        stream.Write(hasLootItem); // hasLootItem
-        stream.Write(FuncGroupId); // doodad_func_group_id
-        stream.Write(OwnerId); // characterId (Database relative)
-        stream.Write(UccId);
-        stream.Write(ItemTemplateId);
-        stream.Write(Type2); //??type2
-        stream.Write(TimeLeft); // growing
-        stream.Write(PlantTime); //Time stamp of when it was planted
-        stream.Write(QuestGlow); //When this is higher than 0 it shows a blue orb over the doodad
-        stream.Write(0); // family TODO
-        stream.Write(PuzzleGroup); // puzzleGroup /for instances maybe?
+        stream.WritePosition(Transform.Local.Position.X, Transform.Local.Position.Y, Transform.Local.Position.Z);
+        var (roll, pitch, yaw) = Transform.Local.ToRollPitchYawShorts();
+        stream.Write(roll);
+        stream.Write(pitch);
+        stream.Write(yaw);
+        stream.Write(Scale);           // The size of the object
+        stream.Write(OwnerId);         // characterId
+        stream.Write(UccId);           // type(id)
+        stream.Write(ItemTemplateId);  // type(id)
+        stream.Write(TimeLeft);        // growing
+        stream.Write(PlantTime);       // plantTime
+        stream.Write(0);               // family
+        stream.Write(PuzzleGroup);     // puzzleGroup
         stream.Write((byte)OwnerType); // ownerType
-        stream.Write(OwnerDbId); // dbHouseId
-        stream.Write(Data); // data
+        stream.Write(OwnerDbId);       // dbHouseId
+        stream.Write(Data);            // data - attachPointId для хранения в базе данных
+        stream.Write(FreshnessTime);   // freshnessTime
+
+        // Retail 3.5.0.3 always writes the trailing u32 crafter field (verified against packet capture):
+        // OwnerId for trade-pack chests, 0 otherwise. Missing it desyncs all following entries.
+        var itemCheck = TagsGameData.Instance.GetIdsByTagId(TagsGameData.TagType.Items, (uint)TagsEnum.TradePackStorageChest);
+        stream.Write(itemCheck.Contains(ItemTemplateId) ? OwnerId : 0u); // crafter type
 
         return stream;
     }

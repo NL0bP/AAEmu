@@ -12,9 +12,22 @@ public partial class AppConfiguration
 {
     private static readonly AppConfiguration s_default = new();
 
-    public static AppConfiguration Instance =>
-        SingletonContainer.ServiceProvider?.GetService<IOptions<AppConfiguration>>()?.Value
-        ?? s_default;
+    public static AppConfiguration Instance
+    {
+        get
+        {
+            try
+            {
+                return SingletonContainer.ServiceProvider?.GetService<IOptions<AppConfiguration>>()?.Value
+                       ?? s_default;
+            }
+            catch (ObjectDisposedException)
+            {
+                // ServiceProvider may be disposed while background threads (physics/ticks) still run
+                return s_default;
+            }
+        }
+    }
 
     public byte Id { get; set; }
     public byte[] AdditionalesId { get; set; } = [];

@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Core.Packets.G2C;
+﻿namespace AAEmu.Game.Core.Packets.G2C;
 
 public static class SCOffsets
 {
@@ -768,8 +768,8 @@ public static class SCOffsets
     public const ushort SCHouseBuildPayChangedPacket = 0xfff;
     public const ushort SCTeamBecameRaidTeamPacket = 0xfff;
     public const ushort SCAttachmentTakenPacket = 0xfff;
-    public const ushort SCBondDoodadPacket = 0x205; // SCAttachToDoodadPacket
-    public const ushort SCUnbondDoodadPacket = 0x06a; //SCDetachFromDoodadPacket
+    public const ushort SCBondDoodadPacket = 0x088; // SCAttachToDoodadPacket
+    public const ushort SCUnbondDoodadPacket = 0x27a; //SCDetachFromDoodadPacket
     public const ushort SCTradeOkUpdatePacket = 0xfff; // SCOtherTradeOkPacket
     public const ushort SCChangeJuryOKCountPacket = 0xfff;
     public const ushort SCChangeJuryVerdictCountPacket = 0xfff;

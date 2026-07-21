@@ -1,4 +1,4 @@
-﻿using AAEmu.Commons.Network;
+using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Network.Game;
@@ -8,7 +8,7 @@ using AAEmu.Game.Models.Observers;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSSpawnCharacterPacket() : GamePacket(CSOffsets.CSSpawnCharacterPacket, 1)
+public class CSSpawnCharacterPacket() : GamePacket(CSOffsets.CSSpawnCharacterPacket, 5)
 {
     public override void Read(PacketStream stream)
     {
@@ -26,9 +26,7 @@ public class CSSpawnCharacterPacket() : GamePacket(CSOffsets.CSSpawnCharacterPac
 
         Connection.SendPacket(new SCUnitStatePacket(Connection.ActiveChar));
 
-        Connection.ActiveChar.PushSubscriber(
-            TimeManager.Instance.Subscribe(Connection, new TimeOfDayObserver(Connection.ActiveChar))
-        );
+        Connection.ActiveChar.PushSubscriber(TimeManager.Instance.Subscribe(Connection, new TimeOfDayObserver(Connection.ActiveChar)));
 
         Logger.Info("CSSpawnCharacterPacket");
     }

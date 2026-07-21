@@ -1002,7 +1002,7 @@ public class Buffs : IBuffs
 
                 using var reader = cmd.ExecuteReader();
                 var buffRows = new List<(uint buffId, uint casterId, uint skillId,
-                    uint abLevel, int duration, int timeLeft, int charge,
+                    ushort abLevel, int duration, int timeLeft, int charge,
                     bool realTime, DateTime savedAt)>();
 
                 while (reader.Read())
@@ -1011,7 +1011,7 @@ public class Buffs : IBuffs
                         buffId:   reader.GetUInt32("buff_id"),
                         casterId: reader.GetUInt32("caster_id"),
                         skillId:  reader.GetUInt32("skill_id"),
-                        abLevel:  reader.GetUInt32("ab_level"),
+                        abLevel:  reader.GetUInt16("ab_level"),
                         duration: reader.GetInt32("duration"),
                         timeLeft: reader.GetInt32("time_left"),
                         charge:   reader.GetInt32("charge"),

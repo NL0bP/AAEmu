@@ -143,6 +143,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSLeaveTeamPacket, 5, typeof(CSLeaveTeamPacket));
         RegisterPacket(CSOffsets.CSKickTeamMemberPacket, 5, typeof(CSKickTeamMemberPacket));
         RegisterPacket(CSOffsets.CSMakeTeamOwnerPacket, 5, typeof(CSMakeTeamOwnerPacket));
+        RegisterPacket(CSOffsets.CSRequestGameEventInfoPacket, 5, typeof(CSRequestGameEventInfoPacket));
         //RegisterPacket(0x07e, 1, typeof(CSSetTeamOfficerPacket)); TODO: this packet is not in the offsets 
         RegisterPacket(CSOffsets.CSConvertToRaidTeamPacket, 5, typeof(CSConvertToRaidTeamPacket));
         RegisterPacket(CSOffsets.CSMoveTeamMemberPacket, 5, typeof(CSMoveTeamMemberPacket));
@@ -271,6 +272,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSRequestUIDataPacket, 5, typeof(CSRequestUIDataPacket));
         RegisterPacket(CSOffsets.CSSaveUIDataPacket, 5, typeof(CSSaveUIDataPacket));
         RegisterPacket(CSOffsets.CSBroadcastVisualOptionPacket, 5, typeof(CSBroadcastVisualOptionPacket));
+        RegisterPacket(CSOffsets.CSBroadcastOpenEquipInfoPacket, 5, typeof(CSBroadcastOpenEquipInfoPacket));
         RegisterPacket(CSOffsets.CSRestrictCheckPacket, 5, typeof(CSRestrictCheckPacket));
         RegisterPacket(CSOffsets.CSICSMenuListPacket, 5, typeof(CSICSMenuListPacket));
         RegisterPacket(CSOffsets.CSICSGoodsListPacket, 5, typeof(CSICSGoodsListPacket));
@@ -285,6 +287,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSBeautyshopDataPacket, 5, typeof(CSBeautyshopDataPacket));
         RegisterPacket(CSOffsets.CSEnterBeautySalonPacket, 5, typeof(CSEnterBeautySalonPacket));
 
+        RegisterPacket(CSOffsets.CSHeroRequestRankDataPacket, 5, typeof(CSHeroRequestRankDataPacket));
         RegisterPacket(CSOffsets.CSRankCharacterPacket, 5, typeof(CSRankCharacterPacket));
         RegisterPacket(CSOffsets.CSRequestSecondPasswordKeyTablesPacket, 5, typeof(CSRequestSecondPasswordKeyTablesPacket));
         // 0x130 CSRankSnapshotPacket
@@ -304,6 +307,7 @@ public class GameNetwork : Singleton<GameNetwork>
         // 0x13d unk packet
         // 0x13e unk packet
         RegisterPacket(CSOffsets.CSUnknownInstancePacket, 5, typeof(CSUnknownInstancePacket));
+        RegisterPacket(CSOffsets.CSStoppedCinema, 5, typeof(CSStoppedCinema));
         // 0x13f unk packet
         RegisterPacket(CSOffsets.CSSetupSecondPassword, 5, typeof(CSSetupSecondPassword));
         // 0x141 unk packet

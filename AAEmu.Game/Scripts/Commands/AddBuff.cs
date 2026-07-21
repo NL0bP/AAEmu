@@ -123,12 +123,12 @@ public class AddBuff : ICommand
             return;
         }
 
-        var abLevel = 1u;
+        ushort abLevel = 1;
         if (args.Length > firstArg + 1)
         {
-            if (!uint.TryParse(args[firstArg + 1], out abLevel))
+            if (!ushort.TryParse(args[firstArg + 1], out abLevel))
             {
-                abLevel = 1u;
+                abLevel = 1;
             }
         }
 

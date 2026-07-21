@@ -1,12 +1,15 @@
-﻿using AAEmu.Commons.Network;
+using AAEmu.Commons.Network;
+using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.DoodadObj.Funcs;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.StaticValues;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
-public class CSStartInteractionPacket() : GamePacket(CSOffsets.CSStartInteractionPacket, 1)
+public class CSStartInteractionPacket() : GamePacket(CSOffsets.CSStartInteractionPacket, 5)
 {
     public override void Read(PacketStream stream)
     {
@@ -17,10 +20,9 @@ public class CSStartInteractionPacket() : GamePacket(CSOffsets.CSStartInteractio
         var mouseButton = stream.ReadByte();
         var modifierKeys = stream.ReadInt32();
 
-        Logger.Warn("StartInteraction, NpcObjId: {0}, objId: {1}, extraInfo: {2}, pickId: {3}, mouse: {4}, mods: {5}",
-            npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys);
-
-        var npc = Connection.ActiveChar?.ParentWorld?.GetNpc(npcObjId);
+        Logger.Warn("StartInteraction, NpcObjId: {0}, objId: {1}, extraInfo: {2}, pickId: {3}, mouse: {4}, mods: {5}", npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys);
+        var activeChar = Connection.ActiveChar;
+        var npc = activeChar?.ParentWorld?.GetNpc(npcObjId);
         // TODO: Distance-check
         if (npc != null)
         {
@@ -55,14 +57,62 @@ public class CSStartInteractionPacket() : GamePacket(CSOffsets.CSStartInteractio
             else if (npc.Template.Blacksmith)
                 option = SkillsEnum.ItemFusion; // Open Item Fuse dialog ?
 
-            Connection.ActiveChar.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo,
-                pickId, mouseButton, modifierKeys, [option]));
+            activeChar.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys, [option]));
         }
 
-        var slave = Connection.ActiveChar?.ParentWorld?.GetUnit(npcObjId);
-        if (slave is Mate mate)
+        var slave = activeChar?.ParentWorld?.GetUnit(npcObjId);
+        if (slave is Mate)
         {
-            Connection.ActiveChar.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys, [SkillsEnum.SlaveMounting]));
+            activeChar.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys, [SkillsEnum.SlaveMounting]));
+            return;
         }
+
+        // Handle doodad interaction (port from reference 3.5 server: client shows the F prompt
+        // only after the server answers with an interaction skill list)
+        var doodad = activeChar?.ParentWorld?.GetDoodad(npcObjId);
+        if (doodad == null) { return; }
+
+        var skillId = GetDoodadInteractionSkillId(doodad);
+        if (skillId > 0)
+        {
+            activeChar.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys, [skillId]));
+        }
+        else
+        {
+            // Send 0 to allow client to use first prompted action for non-skill doodads (loot, cutdown, etc.)
+            activeChar.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys, [0]));
+        }
+    }
+
+    /// <summary>
+    /// Gets the interaction skill ID for a doodad based on its current funcs.
+    /// </summary>
+    private static uint GetDoodadInteractionSkillId(Doodad doodad)
+    {
+        if (doodad.CurrentFuncs == null || doodad.CurrentFuncs.Count == 0)
+            return 0;
+
+        foreach (var func in doodad.CurrentFuncs)
+        {
+            // Direct skill ID from doodad_funcs table
+            if (func.SkillId > 0)
+                return func.SkillId;
+
+            // Check func template for skill IDs
+            var template = DoodadManager.Instance.GetFuncTemplate(func.FuncId, func.FuncType);
+            switch (template)
+            {
+                case DoodadFuncFakeUse fakeUse when fakeUse.FakeSkillId > 0:
+                    return fakeUse.FakeSkillId;
+                case DoodadFuncUse use when use.SkillId > 0:
+                    return use.SkillId;
+                case DoodadFuncConditionalUse conditional when conditional.FakeSkillId > 0:
+                    return conditional.FakeSkillId;
+                case DoodadFuncConditionalUse conditional when conditional.SkillId > 0:
+                    return conditional.SkillId;
+            }
+        }
+
+        return 0;
     }
 }

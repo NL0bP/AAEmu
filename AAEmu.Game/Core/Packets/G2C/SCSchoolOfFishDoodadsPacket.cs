@@ -7,7 +7,7 @@ namespace AAEmu.Game.Core.Packets.G2C;
 public class SCSchoolOfFishDoodadsPacket(bool last, Doodad[] transfers)
     : GamePacket(SCOffsets.SCSchoolOfFishDoodadsPacket, 5)
 {
-    public override PacketLogLevel LogLevel => PacketLogLevel.Off;
+    public override PacketLogLevel LogLevel => PacketLogLevel.Debug; // DIAG-3503: was Off, enabled for world-enter diagnostics
 
     public override PacketStream Write(PacketStream stream)
     {

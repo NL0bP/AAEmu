@@ -108,9 +108,8 @@ public class DoodadSpawner : Spawner<Doodad>
         doodad.QuestGlow = 0u; // TODO: make this OOP
         doodad.ItemId = itemId;
 
-        // TODO for test
-        doodad.PlantTime = DateTime.UtcNow;
-
+        // Retail 3.5.0.3 sends plantTime = 0001-01-01 for world doodads (verified against packet capture);
+        // setting UtcNow makes the client treat them as freshly planted (growth) objects and blocks interaction
         if (Scale > 0)
         {
             doodad.SetScale(Scale);
@@ -154,8 +153,7 @@ public class DoodadSpawner : Spawner<Doodad>
 
         doodad.Spawner = this;
         doodad.Transform.ApplyWorldSpawnPosition(Position);
-        // TODO for test
-        doodad.PlantTime = DateTime.UtcNow;
+        // Retail 3.5.0.3 sends plantTime = 0001-01-01 for world doodads (see note above)
         if (Scale > 0)
         {
             doodad.SetScale(Scale);

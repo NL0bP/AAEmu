@@ -1,0 +1,14 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{86BCF85A-2F00-407B-AA45-B0E836047D67}" Name="AIPath_155_wish1_1" Pos="0.0079345703,1.7767334,0.23458862" ColorRGB="11842740" Rec._Speed="0.21" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.21154785,4.8504639,-0.42324829"/>
+    <Point Pos="-2.7883301,13.351074,-3.2496643"/>
+    <Point Pos="-7.6916504,23.368896,-4.694458"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

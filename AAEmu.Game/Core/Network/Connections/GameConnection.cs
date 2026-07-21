@@ -14,6 +14,8 @@ namespace AAEmu.Game.Core.Network.Connections;
 
 public class GameConnection
 {
+    private static NLog.Logger Logger { get; } = NLog.LogManager.GetCurrentClassLogger();
+
     private readonly ISession _session;
 
     public uint Id => _session.SessionId;
@@ -48,6 +50,12 @@ public class GameConnection
     /// <param name="packet"></param>
     public void SendPacket(GamePacket packet)
     {
+        if (packet.TypeId == 0xFFF)
+        {
+            // 0xFFF is a placeholder opcode stub — sending it disconnects the client
+            Logger.Warn($"SendPacket: dropped packet with stub opcode 0xFFF ({packet.GetType().Name})");
+            return;
+        }
         packet.Connection = this;
         SendPacket(packet.Encode());
     }

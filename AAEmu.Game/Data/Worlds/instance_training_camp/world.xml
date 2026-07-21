@@ -1,0 +1,62 @@
+<World name="instance_training_camp" resolution="1024" unitSize="2" cellXCount="2" cellYCount="2" isInstance="1" nextLayerId="0" nextSurfaceId="0" oceanLevel="100" maxTerrainHeight="4096" isReleaseBranch="0">
+ <ZoneList>
+  <Zone name="instance_training_camp" id="198" originX="0" originY="0">
+   <cellList>
+    <cell x="0" y="0">
+     <sectorList>
+      <sector x="14" y="5"/>
+      <sector x="14" y="6"/>
+      <sector x="15" y="4"/>
+      <sector x="15" y="5"/>
+      <sector x="15" y="6"/>
+      <sector x="15" y="7"/>
+     </sectorList>
+    </cell>
+    <cell x="0" y="1">
+     <sectorList />
+    </cell>
+    <cell x="1" y="1">
+     <sectorList />
+    </cell>
+    <cell x="1" y="0">
+     <sectorList>
+      <sector x="0" y="3"/>
+      <sector x="0" y="4"/>
+      <sector x="0" y="5"/>
+      <sector x="0" y="6"/>
+      <sector x="0" y="7"/>
+      <sector x="0" y="8"/>
+      <sector x="1" y="3"/>
+      <sector x="1" y="4"/>
+      <sector x="1" y="5"/>
+      <sector x="1" y="6"/>
+      <sector x="1" y="7"/>
+      <sector x="1" y="8"/>
+      <sector x="1" y="9"/>
+      <sector x="2" y="4"/>
+      <sector x="2" y="5"/>
+      <sector x="2" y="6"/>
+      <sector x="2" y="7"/>
+      <sector x="2" y="8"/>
+      <sector x="2" y="9"/>
+      <sector x="2" y="10"/>
+      <sector x="3" y="5"/>
+      <sector x="3" y="6"/>
+      <sector x="3" y="7"/>
+      <sector x="3" y="8"/>
+      <sector x="3" y="9"/>
+      <sector x="3" y="10"/>
+      <sector x="4" y="6"/>
+      <sector x="4" y="7"/>
+      <sector x="4" y="8"/>
+      <sector x="4" y="9"/>
+      <sector x="4" y="10"/>
+      <sector x="5" y="7"/>
+      <sector x="5" y="8"/>
+      <sector x="5" y="9"/>
+     </sectorList>
+    </cell>
+   </cellList>
+  </Zone>
+ </ZoneList>
+</World>

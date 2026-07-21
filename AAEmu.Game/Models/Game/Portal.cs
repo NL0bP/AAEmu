@@ -14,6 +14,7 @@ public class Portal : PacketMarshaler
     public float Y { get; set; }
     public float Z { get; set; }
     public float ZRot { get; set; }
+    public bool IsFavorite { get; set; } // 3.5.0.3 client reads isFavorite:bool after zRot (sub_397F3F40)
     public float Yaw { get; set; }
 
     public uint SubZoneId { get; set; }
@@ -32,6 +33,7 @@ public class Portal : PacketMarshaler
         stream.Write(offY);
         stream.Write(Z);
         stream.Write(ZRot);
+        stream.Write(IsFavorite); // isFavorite
         return stream;
     }
 }

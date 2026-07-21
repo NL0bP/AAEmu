@@ -55,6 +55,17 @@
     },
     {
 
+        "Name": "instance_feast_garden",
+        "SpawnPosition": {
+            "ZoneId": 321,
+            "X": 1031.3,
+            "Y": 1008.86,
+            "Z": 386.3,
+            "Yaw": -90.0
+        }
+    },
+    {
+
         "Name": "instance_hadir_farm",
         "SpawnPosition": {
             "ZoneId": 241,
@@ -207,10 +218,30 @@
         "Name": "instance_prologue",
         "SpawnPosition": {
             "ZoneId": 300,
-            "X": 431.406, // уточнить координаты
-            "Y": 300.08,
-            "Z": 154.036,
+            "X": 2367.81,
+            "Y": 32006.87,
+            "Z": 457.25,
             "Yaw": -90.0
+        }
+    },
+    {
+        "Name": "instance_prologue",
+        "SpawnPosition": {
+            "ZoneId": 348,
+            "X": 3367.81,
+            "Y": 32006.87,
+            "Z": 457.25,
+            "Yaw": -90.0
+        }
+    },
+    {
+        "Name": "instance_prologue_izuna",
+        "SpawnPosition": {
+            "ZoneId": 327,
+            "X": 1077.0,
+            "Y": 1230.0,
+            "Z": 164.3,
+            "Yaw": 33.0
         }
     },
     {

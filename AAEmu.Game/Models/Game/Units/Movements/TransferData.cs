@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Utils;
@@ -28,10 +28,6 @@ public class TransferData : MoveType
         X = transfer.Transform.World.Position.X;
         Y = transfer.Transform.World.Position.Y;
         Z = transfer.Transform.World.Position.Z;
-        //var (rx, ry, rz) = transfer.Transform.World.ToRollPitchYawSBytes();
-        //RotationX = rx;
-        //RotationY = ry;
-        //RotationZ = rz;
         WorldPos = transfer.Transform.World.ToWorldPos();
         Rot = transfer.Rot;
         RotSpeed = transfer.RotSpeed;
@@ -65,7 +61,6 @@ public class TransferData : MoveType
     {
         base.Write(stream);
         stream.WritePosition(X, Y, Z);
-        //stream.WriteVector3Short(new Vector3(Velocity.X / 50f, Velocity.Y / 50f, Velocity.Z / 50f));
         stream.WriteVector3Short(new Vector3(Velocity.X * 0.02f, Velocity.Y * 0.02f, Velocity.Z * 0.02f));
         stream.WriteQuaternionShort(Rot);
         stream.WriteVector3Single(AngVel);

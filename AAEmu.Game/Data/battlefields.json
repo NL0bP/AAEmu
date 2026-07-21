@@ -1,32 +1,138 @@
 [
 	{
-		"BattlefieldId": 11,
+		"BattlefieldId": 1,
 		"Corps1Spawn": {
-			"ZoneId": 302,
-			"X": 575,
-			"Y": 606,
-			"Z": 266
-		},
-		"Corps2Spawn": {
-			"ZoneId": 302,
-			"X": 575,
-			"Y": 406,
-			"Z": 266
-		}
-	},
-	{
-		"BattlefieldId": 7,
-		"Corps1Spawn": {
-			"ZoneId": 198,
+			"ZoneId": 198, // надо исправить координаты
 			"X": 1101.1,
 			"Y": 401.5,
-			"Z": 199
+			"Z": 199,
+			"RotationZ": 0
 		},
 		"Corps2Spawn": {
 			"ZoneId": 198,
 			"X": 1229,
 			"Y": 530,
-			"Z": 199
+			"Z": 199,
+			"RotationZ": 127
+		}
+	},
+	{ // 1x1
+		"BattlefieldId": 7,
+		"Corps1Spawn": {
+			"ZoneId": 302,
+			"X": 577.27,
+			"Y": 401.1,
+			"Z": 266.0,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 302,
+			"X": 576.8,
+			"Y": 606.8,
+			"Z": 266,
+			"RotationZ": 127
+		}
+	},
+	{ // 3x3
+		"BattlefieldId": 11,
+		"Corps1Spawn": {
+			"ZoneId": 302,
+			"X": 577.27,
+			"Y": 401.1,
+			"Z": 266.0,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 302,
+			"X": 576.8,
+			"Y": 606.8,
+			"Z": 266,
+			"RotationZ": 127
+		}
+	},
+	{ // Арена 1x1
+		"BattlefieldId": 13,
+		"Corps1Spawn": {
+			"ZoneId": 302,
+			"X": 577.27,
+			"Y": 401.1,
+			"Z": 266.0,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 302,
+			"X": 576.8,
+			"Y": 606.8,
+			"Z": 266,
+			"RotationZ": 127
+		}
+	},
+	{ // 5x5
+		"BattlefieldId": 14,
+		"Corps1Spawn": {
+			"ZoneId": 198, // надо исправить координаты
+			"X": 1101.1,
+			"Y": 401.5,
+			"Z": 199,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 198,
+			"X": 1229,
+			"Y": 530,
+			"Z": 199,
+			"RotationZ": 127
+		}
+	},
+	{
+		"BattlefieldId": 15,
+		"Corps1Spawn": {
+			"ZoneId": 323, // надо исправить координаты
+			"X": 1101.1,
+			"Y": 401.5,
+			"Z": 199,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 323,
+			"X": 1229,
+			"Y": 530,
+			"Z": 199,
+			"RotationZ": 127
+		}
+	},
+	{ // Битва Двенадцати
+		"BattlefieldId": 16,
+		"Corps1Spawn": {
+			"ZoneId": 326, // надо исправить координаты
+			"X": 1101.1,
+			"Y": 401.5,
+			"Z": 199,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 326,
+			"X": 1229,
+			"Y": 530,
+			"Z": 199,
+			"RotationZ": 127
+		}
+	},
+	{ // IMHO битва на море
+		"BattlefieldId": 17,
+		"Corps1Spawn": {
+			"ZoneId": 338, // надо исправить координаты
+			"X": 1101.1,
+			"Y": 401.5,
+			"Z": 199,
+			"RotationZ": 0
+		},
+		"Corps2Spawn": {
+			"ZoneId": 338,
+			"X": 1229,
+			"Y": 530,
+			"Z": 199,
+			"RotationZ": 127
 		}
 	}
 ]

@@ -576,7 +576,7 @@ public class SkillManager(IAnimationManager animationManager, IPlotManager plotM
                         var id = reader.GetUInt32("skill_id");
                         if (!_skills.TryGetValue(id, out var skillTemplate))
                         {
-                            Logger.Warn("Default skill {0} references unknown skill id {1}; skipping.", reader.GetUInt32("id"), id);
+                            Logger.Debug("Default skill {0} references unknown skill id {1}; skipping.", reader.GetUInt32("id"), id);
                             continue;
                         }
 
@@ -1908,13 +1908,13 @@ public class SkillManager(IAnimationManager animationManager, IPlotManager plotM
 
                         if (!_types.TryGetValue(effectId, out var type))
                         {
-                            Logger.Warn("Skill effect {0} references unknown effect type id {1}; skipping.", reader.GetUInt32("id"), effectId);
+                            Logger.Debug("Skill effect {0} references unknown effect type id {1}; skipping.", reader.GetUInt32("id"), effectId);
                             continue;
                         }
 
                         if (!_effects.TryGetValue(type.Type, out var value) || !value.TryGetValue(type.ActualId, out var effectTemplate))
                         {
-                            Logger.Warn("Skill effect {0} references missing effect {1} id {2}; skipping.", reader.GetUInt32("id"), type.Type, type.ActualId);
+                            Logger.Debug("Skill effect {0} references missing effect {1} id {2}; skipping.", reader.GetUInt32("id"), type.Type, type.ActualId);
                             continue;
                         }
 

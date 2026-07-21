@@ -1,0 +1,74 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{AB30F01E-BE07-4A3D-B10C-131E945C72EF}" Name="AIPath_racthusha_1" Pos="-37.682739,-35.66272,0.074798584" ColorRGB="11842740" Rec._Speed="0.21" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-36.018616,-65.619995,0.06414032"/>
+    <Point Pos="-54.19989,-137.40271,0.0004234314"/>
+    <Point Pos="-54.302307,-211.92004,-0.097007751"/>
+    <Point Pos="-35.711548,-284.17529,-0.062820435"/>
+    <Point Pos="0.075744629,-348.81567,0.24932861"/>
+    <Point Pos="52.482544,-404.14465,0.16584015"/>
+    <Point Pos="112.26379,-441.63062,1.3984795"/>
+    <Point Pos="183.63617,-464.82196,-0.12392044"/>
+    <Point Pos="261.54468,-469.73688,-0.87389755"/>
+    <Point Pos="331.72034,-454.66516,3.1718979"/>
+    <Point Pos="398.23315,-424.16272,1.0719757"/>
+    <Point Pos="455.4917,-376.53125,2.7165375"/>
+    <Point Pos="498.65442,-317.75293,1.6803131"/>
+    <Point Pos="525.1377,-247.30688,2.3887253"/>
+    <Point Pos="533.93237,-172.8114,3.2369499"/>
+    <Point Pos="525.47278,-101.45764,1.905571"/>
+    <Point Pos="497.2998,-31.734497,-0.12908936"/>
+    <Point Pos="454.34302,27.363403,0.025848389"/>
+    <Point Pos="396.13318,75.559448,-0.18634033"/>
+    <Point Pos="330.8009,106.36096,-0.31143951"/>
+    <Point Pos="258.0531,119.74524,0.063194275"/>
+    <Point Pos="183.04694,115.72498,-0.45030975"/>
+    <Point Pos="112.98853,92.936646,0.063095093"/>
+    <Point Pos="50.44165,52.440918,0.063491821"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{0F2B595B-7CF8-43C0-BBAA-89E27EF4CA26}" Name="AIPath_338_clay02_1" Pos="852.19037,1566.4926,0.1" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-60.62262,-62.288818,0"/>
+    <Point Pos="-101.26544,-132.38269,0"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList>
+  <combatArea Type="NpcCombatArea" Layer="Main" Id="{26BF5B5D-50A5-4FDD-B384-249ACD5E4F41}" Name="NpcCombatArea_338_clay02_1" Pos="-140.28632,-134.88611,-43.945786" ColorRGB="38400" Width="0" Height="0" AreaId="0" Priority="0" Closed="1" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="21.412292,72.540161,4.4835968"/>
+    <Point Pos="59.438049,125.1084,4.1506538"/>
+    <Point Pos="89.870728,145.44543,3.5561943"/>
+    <Point Pos="113.01147,187.55334,4.4118538"/>
+    <Point Pos="143.63794,217.42627,4.8729401"/>
+    <Point Pos="164.61627,248.43921,3.0834045"/>
+    <Point Pos="264.909,273.72876,3.2547722"/>
+    <Point Pos="343.34344,273.27954,4.3673325"/>
+    <Point Pos="414.9046,272.12573,-5.1488075"/>
+    <Point Pos="513.77765,240.75732,0.63332748"/>
+    <Point Pos="568.2348,175.29553,-0.48191071"/>
+    <Point Pos="604.31342,165.53052,4.2227364"/>
+    <Point Pos="632.87018,131.54871,3.4086533"/>
+    <Point Pos="636.42609,110.13306,4.8798637"/>
+    <Point Pos="696.80463,2.2763672,6.8168373"/>
+    <Point Pos="699.43634,-80.984863,9.4946365"/>
+    <Point Pos="679.84149,-148.78284,3.7049866"/>
+    <Point Pos="691.55878,-215.67383,7.9254532"/>
+    <Point Pos="637.45563,-272.43567,7.2901917"/>
+    <Point Pos="575.8515,-339.27557,5.4243736"/>
+    <Point Pos="521.40277,-388.52704,5.5619698"/>
+    <Point Pos="407.1402,-420.23083,4.1107521"/>
+    <Point Pos="244.75366,-425.09161,1.1124954"/>
+    <Point Pos="123.96191,-351.89008,17.830238"/>
+    <Point Pos="26.371704,-238.01233,4.256424"/>
+    <Point Pos="-14.738159,-120.24536,3.7428207"/>
+   </Points>
+  </combatArea>
+ </combatAreaList>
+</ZoneNPCData>

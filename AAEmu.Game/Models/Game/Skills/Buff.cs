@@ -34,12 +34,16 @@ public class Buff
     public EffectState State { get; set; }
     public bool InUse { get; set; }
     public int Duration { get; set; }
+    public int BaseDuration { get; set; }
     public double Tick { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public int Charge { get; set; }
     public bool Passive { get; set; }
-    public uint AbLevel { get; set; }
+    public ushort AbLevel { get; set; }
+    public bool IsRestored { get; set; }
+    public int Stack { get; set; } = 1;
+    public int Count { get; set; } = 1;
     public BuffEvents Events { get; }
     public BuffTriggersHandler Triggers { get; }
     public Dictionary<uint, FactionsEnum> saveFactions { get; set; }
@@ -272,7 +276,18 @@ public class Buff
 
     public void WriteData(PacketStream stream)
     {
-        stream.WritePisc(Charge, Duration / 10, 0, (long)(Template.Tick / 10));
+        if (Template == null)
+        {
+            stream.WritePisc(Charge, Duration / 10, 0, 0);
+            return;
+        }
+
+        var tickMs = Tick > 0 ? (long)(Tick / 10) : 0;
+        var durationDiv10 = Template.StackRule is BuffStackRule.Extend or BuffStackRule.ChargeExtend
+            ? BaseDuration / 10
+            : Duration / 10;
+        var elapsedDiv10 = (long)(GetTimeElapsed() / 10);
+        stream.WritePisc(Charge, durationDiv10, elapsedDiv10, tickMs);
     }
 
     /// <summary>

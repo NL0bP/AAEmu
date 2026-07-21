@@ -1,0 +1,88 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{B6D04D67-AA0B-4C76-8339-54D2211328D2}" Name="AIPath_334_sola58_3" Pos="-17.805176,10.9823,-1.1174011" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-86.477173,-66.183655,3.9847412"/>
+    <Point Pos="-104.27393,-79.213867,3.5467834"/>
+    <Point Pos="-113.94153,-82.786072,3.5819397"/>
+    <Point Pos="-122.46252,-86.278625,2.0811462"/>
+    <Point Pos="-163.96167,-96.075439,0.47802734"/>
+    <Point Pos="-254.32275,-82.056458,1.3034058"/>
+    <Point Pos="-269.44763,-28.809021,2.5589294"/>
+    <Point Pos="-271.70288,42.771057,3.9229736"/>
+    <Point Pos="-291.12891,95.584412,3.2972412"/>
+    <Point Pos="-338.08667,127.11176,3.4925232"/>
+    <Point Pos="-350.96826,111.52301,3.2626953"/>
+    <Point Pos="-298.69922,73.896179,3.3262939"/>
+    <Point Pos="-286.10132,-31.504395,2.5646362"/>
+    <Point Pos="-262.34326,-93.269165,2.3316956"/>
+    <Point Pos="-148.87085,-103.90778,0.74865723"/>
+    <Point Pos="-83.929565,-88.04895,4.4541626"/>
+    <Point Pos="-17.758057,-37.627502,3.5750122"/>
+    <Point Pos="10.29126,-21.903076,3.7512207"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{15D1F470-B160-4E7F-92A8-C5FFCD0EE96F}" Name="AIPath_334_sola58_4" Pos="18.965759,-20.598267,1.0001831" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-31.91449,50.845215,-1.0541382"/>
+    <Point Pos="-47.331665,137.16028,-1.1211853"/>
+    <Point Pos="-43.729858,231.63647,11.246796"/>
+    <Point Pos="-42.773621,250.08948,13.047852"/>
+    <Point Pos="-58.32135,247.97498,13.254822"/>
+    <Point Pos="-69.711731,174.89099,1.7799988"/>
+    <Point Pos="-67.955933,130.05554,-1.1187134"/>
+    <Point Pos="-55.968201,64.883057,-1.054657"/>
+    <Point Pos="-33.43103,8.0172119,-1.0541382"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{B9D9A0CE-47E1-4CEE-B37D-F3AE26DBE796}" Name="AIPath_334_sola58_2" Pos="-12.431763,-10.401184,-0.10992432" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-61.417603,-31.315308,-3.4128113"/>
+    <Point Pos="-141.54077,-22.649658,1.7485657"/>
+    <Point Pos="-172.61743,-17.711853,-2.5857849"/>
+    <Point Pos="-177.67773,-17.550171,-2.0862122"/>
+    <Point Pos="-180.75818,-18.167786,-1.8877258"/>
+    <Point Pos="-183.66809,-20.452209,-1.7381592"/>
+    <Point Pos="-185.42285,-23.500549,-1.6833496"/>
+    <Point Pos="-206.98499,-77,0.65905762"/>
+    <Point Pos="-243.61707,-121.14575,1.0930481"/>
+    <Point Pos="-302.19189,-136.12433,1.4604797"/>
+    <Point Pos="-330.51746,-131.33789,0.33209229"/>
+    <Point Pos="-329.89124,-123.00995,0.8241272"/>
+    <Point Pos="-285.14441,-123.19293,1.9668579"/>
+    <Point Pos="-242.24988,-101.55609,1.9319153"/>
+    <Point Pos="-210.61768,-44.516724,-0.74822998"/>
+    <Point Pos="-200.92981,1.3900146,-1.6530151"/>
+    <Point Pos="-142.98938,-9.7837524,1.2922058"/>
+    <Point Pos="-64.990479,-19.242737,-3.4680481"/>
+    <Point Pos="35.292236,37.484375,-0.033508301"/>
+    <Point Pos="114.25049,98.919495,-8.2574158"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{B4BC4DF4-9507-4A01-8CBD-619292C32730}" Name="AIPath_334_sola58_1" Pos="-17.561401,-17.835876,1.8332825" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-73.727783,-62.981262,8.5780029"/>
+    <Point Pos="-164.39917,-122.48676,6.5826416"/>
+    <Point Pos="-216.34265,-132.42743,5.2174988"/>
+    <Point Pos="-292.95007,-119.17627,5.7615356"/>
+    <Point Pos="-316.32312,-56.308289,7.3808899"/>
+    <Point Pos="-312.06018,16.770569,8.5228882"/>
+    <Point Pos="-330.03174,56.077087,7.8806458"/>
+    <Point Pos="-342.8811,40.185486,7.9003296"/>
+    <Point Pos="-330.14099,-42.353638,9.0899353"/>
+    <Point Pos="-316.6394,-127.40631,7.0552673"/>
+    <Point Pos="-244.93201,-139.60162,9.541748"/>
+    <Point Pos="-165.90308,-141.41656,5.426178"/>
+    <Point Pos="-92.285522,-102.21954,9.5823059"/>
+    <Point Pos="-26.522095,-47.407898,5.5781555"/>
+    <Point Pos="8.9675293,-18.257385,2.8283386"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

@@ -1,0 +1,428 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{C574C908-4119-4707-857F-80984FCFB29E}" Name="AIPath_180_pidesa_29" Pos="1.4875488,1.4868164,-4.5776367e-005" Scale="1.0799999,1.0799999,1.0799999" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{08D4590E-6258-4C87-9E63-C3232B2FEE09}" Name="AIPath_180_pidesa_16" Pos="0.00073242188,0.00036621094,3.0517578e-005" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{AB8EFC15-7B4B-4C6B-A5D5-7DBBC5D1F710}" Name="AIPath_180_pidesa_7" Pos="0.00073242188,0.00036621094,3.0517578e-005" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{78119049-CC2E-409C-8253-D2EB8CA40A8E}" Name="AIPath_180_pidesa_30" Pos="16.582851,1.4875488,-2.7216682" Scale="1.3607998,1.3607998,1.3607998" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="18,6,-3"/>
+    <Point Pos="28,17,-4"/>
+    <Point Pos="30,32,-4"/>
+    <Point Pos="23,46,-2"/>
+    <Point Pos="7,56,4"/>
+    <Point Pos="-9,51,8"/>
+    <Point Pos="-24,34,8"/>
+    <Point Pos="-25,16,7"/>
+    <Point Pos="-10,0,2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{2B97F249-401C-409C-9124-8DDE622D6936}" Name="AIPath_180_pidesa_3" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{36CE8556-78AC-41EE-AE65-ECD82A7CEC6C}" Name="AIPath_180_pidesa_2" Pos="-4,0,-0.15067291" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9791B657-CA4F-49C9-9B8E-28B32B18FCDC}" Name="AIPath_180_pidesa_6" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{D287C55F-659B-414C-BCB0-02CF613CE916}" Name="AIPath_180_pidesa_20" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{0399296D-6713-4A0F-A534-7653F03FEFE9}" Name="AIPath_180_pidesa_10" Pos="0.00073242188,0.00036621094,3.0517578e-005" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{21BC6484-4A95-41B4-A515-37E3ACDFD9DE}" Name="AIPath_180_pidesa_14" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{FFD6BD8F-21EC-4F81-929E-8AD9B235666D}" Name="AIPath_180_pidesa_18" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{BBA67A94-9DF2-4459-8149-A360E12B8699}" Name="AIPath_180_pidesa_28" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{29B3F797-0EC2-4DD2-9A4B-1EB2034C5830}" Name="AIPath_180_pidesa_8" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{B3B60C9B-4252-4654-9556-4CE8B6542DA7}" Name="AIPath_180_pidesa_13" Pos="0.00073242188,0.00036621094,3.0517578e-005" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{73D8D5A6-E638-4262-9613-09FC6A8A1184}" Name="AIPath_180_pidesa_50" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{4FF8E1A9-CF81-404F-8D79-E4A2AA1017A5}" Name="AIPath_180_pidesa_21" Pos="1.4875488,1.4868164,-4.5776367e-005" Scale="1.0799999,1.0799999,1.0799999" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{508786BA-6D1A-4FBC-9A7A-4B36EA5E6AC1}" Name="AIPath_180_ruhasin_3" Pos="0.32421875,-0.84887695,0.033493042" Rotate="-0.49999785,0,0,0.86602664" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="2.4245605,4.6938477,0"/>
+    <Point Pos="4.4537354,10.562012,0"/>
+    <Point Pos="5.8062744,15.848633,0"/>
+    <Point Pos="6.9494629,26.787598,0"/>
+    <Point Pos="6.4127197,34.179565,0"/>
+    <Point Pos="4.7873535,38.884888,0.011474609"/>
+    <Point Pos="2.0532227,43.198364,0.053405762"/>
+    <Point Pos="-3.8238525,48.436035,0.43344116"/>
+    <Point Pos="-7.8997803,51.265869,0.66419983"/>
+    <Point Pos="-11.947388,54.850586,0.71551514"/>
+    <Point Pos="-19.053467,62.192505,0.87911987"/>
+    <Point Pos="-21.029907,64.939697,0.95401001"/>
+    <Point Pos="-22.755493,70.704346,1.7193909"/>
+    <Point Pos="-23.030884,74.369751,2.6419678"/>
+    <Point Pos="-14.234619,84.836304,9.0397339"/>
+    <Point Pos="-11.485718,86.680664,10.309387"/>
+    <Point Pos="-8.3057861,89.270752,11.773575"/>
+    <Point Pos="-5.263916,92.569946,12.868042"/>
+    <Point Pos="-1.5318604,95.624634,13.701691"/>
+    <Point Pos="-1.9973145,96.734619,13.738617"/>
+    <Point Pos="-5.7049561,93.348022,12.90535"/>
+    <Point Pos="-10.007324,91.310059,11.858368"/>
+    <Point Pos="-12.043091,87.377197,10.360672"/>
+    <Point Pos="-14.688476,85.544434,9.1342621"/>
+    <Point Pos="-24.174438,74.255981,2.3001404"/>
+    <Point Pos="-23.771362,70.470215,1.4499664"/>
+    <Point Pos="-21.865356,64.55896,0.71739197"/>
+    <Point Pos="-19.437866,61.422119,0.69320679"/>
+    <Point Pos="-12.488159,53.843384,0.66390991"/>
+    <Point Pos="-8.2476807,50.608887,0.61694336"/>
+    <Point Pos="-4.0498047,47.726196,0.39729309"/>
+    <Point Pos="1.5010986,42.673584,0.072143555"/>
+    <Point Pos="4.4250488,38.531494,0.020675659"/>
+    <Point Pos="5.8015137,33.983398,0"/>
+    <Point Pos="6.3935547,26.785278,0"/>
+    <Point Pos="5.2630615,15.85791,0"/>
+    <Point Pos="3.960083,10.706665,0"/>
+    <Point Pos="1.9384766,4.800415,0"/>
+    <Point Pos="0.16491699,1.4803467,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{5B2CC6C5-011F-4A8B-A6AD-BAE1B476B33E}" Name="AIPath_180_pidesa_9" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{97FC3EC6-D3D0-452C-801D-6523183E041D}" Name="AIPath_180_pidesa_11" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9BBD70C7-E877-421A-A685-75ED72445E01}" Name="AIPath_180_pidesa_52" Pos="16.582851,1.4875488,-2.7216682" Scale="1.3607998,1.3607998,1.3607998" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="18,6,-3"/>
+    <Point Pos="28,17,-4"/>
+    <Point Pos="30,32,-4"/>
+    <Point Pos="23,46,-2"/>
+    <Point Pos="7,56,4"/>
+    <Point Pos="-9,51,8"/>
+    <Point Pos="-24,34,8"/>
+    <Point Pos="-25,16,7"/>
+    <Point Pos="-10,0,2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{EAC22DCB-55BB-4B42-8617-DBA4E0EECB63}" Name="AIPath_180_pidesa_15" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{3137CBD3-8BF1-4D42-B666-86F456E86B08}" Name="AIPath_180_pidesa_5" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{48BD7ED4-2F3D-49E6-BB5A-1559CBDC47F5}" Name="AIPath_180_pidesa_17" Pos="1.4875488,1.4868164,-4.5776367e-005" Scale="1.0799999,1.0799999,1.0799999" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{940C89ED-08D9-4633-8E02-F8A49550772B}" Name="AIPath_180_pidesa_22" Pos="16.582851,1.4875488,-2.7216682" Scale="1.3607998,1.3607998,1.3607998" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="18,6,-3"/>
+    <Point Pos="28,17,-4"/>
+    <Point Pos="30,32,-4"/>
+    <Point Pos="23,46,-2"/>
+    <Point Pos="7,56,4"/>
+    <Point Pos="-9,51,8"/>
+    <Point Pos="-24,34,8"/>
+    <Point Pos="-25,16,7"/>
+    <Point Pos="-10,0,2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9F6456F2-00F4-4C8E-ADB5-490F9BCDB7CC}" Name="AIPath_180_pidesa_19" Pos="16.582851,1.4875488,-2.7216682" Scale="1.3607998,1.3607998,1.3607998" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="18,6,-3"/>
+    <Point Pos="28,17,-4"/>
+    <Point Pos="30,32,-4"/>
+    <Point Pos="23,46,-2"/>
+    <Point Pos="7,56,4"/>
+    <Point Pos="-9,51,8"/>
+    <Point Pos="-24,34,8"/>
+    <Point Pos="-25,16,7"/>
+    <Point Pos="-10,0,2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{CC9EB5F6-CEF2-4B74-8977-13D84915FFE1}" Name="AIPath_180_pidesa_4" Pos="0.00073242188,0.00036621094,3.0517578e-005" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{13BD04FE-2E08-460A-823B-720EADD33012}" Name="AIPath_180_pidesa_12" Pos="0,0,0" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{75D937FE-2095-478A-AB23-B0D1103BF776}" Name="AIPath_180_pidesa_51" Pos="1.4875488,1.4868164,-4.5776367e-005" Scale="1.0799999,1.0799999,1.0799999" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-15,16,5"/>
+    <Point Pos="-14,34,6"/>
+    <Point Pos="1,51,6"/>
+    <Point Pos="17,56,2"/>
+    <Point Pos="33,46,-4"/>
+    <Point Pos="40,32,-6"/>
+    <Point Pos="38,17,-6"/>
+    <Point Pos="28,6,-5"/>
+    <Point Pos="10,0,-2"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

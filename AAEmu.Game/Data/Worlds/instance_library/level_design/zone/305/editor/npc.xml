@@ -1,0 +1,20 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{AAC7C254-4EF2-4F4D-992B-5E384BE7DE1E}" Name="instance_libaray_3_boss_bookpath" Pos="579.89227,531.97107,128.83698" Scale="1,1,0.87" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0.10772705,3.0289307,0.31652832"/>
+    <Point Pos="0.046630859,4.9440308,0.98658752"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{481A12AD-51DF-497D-AFEC-715FDA55D410}" Name="instance_libaray_3_bosspath" Pos="580.31512,534.11224,126.66108" Rotate="1,0,0,-1.5199179e-006" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.44958496,-3.8671265,-0.26799011"/>
+    <Point Pos="-1.5255127,-12.298218,-0.26799011"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

@@ -328,11 +328,11 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         {
             if (_itemLookConverts.TryGetValue(convert, out var result))
                 return result;
-            Logger.Warn($"ItemLookConvert not found for convert {convert} (slotTypeId: {slotTypeId})");
+            Logger.Debug($"ItemLookConvert not found for convert {convert} (slotTypeId: {slotTypeId})");
         }
         else
         {
-            Logger.Warn($"WearableItemLookConvert not found for slotTypeId: {slotTypeId}");
+            Logger.Debug($"WearableItemLookConvert not found for slotTypeId: {slotTypeId}");
         }
         return null;
     }

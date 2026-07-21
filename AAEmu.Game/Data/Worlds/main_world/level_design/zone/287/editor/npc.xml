@@ -1,0 +1,38 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{A3F0E5C6-7FDB-4E04-8D02-12F1E533D4D2}" Name="AIPath_287_wish1_1" Pos="-2.5424805,0.092529297,0.20452881" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-8.510376,4.1912842,0.56266785"/>
+    <Point Pos="-17.696777,15.547607,1.3750916"/>
+    <Point Pos="-21.442139,31.010376,0.74674988"/>
+    <Point Pos="-17.833862,45.015869,-2.3315887"/>
+    <Point Pos="-1.411499,56.04187,-4.9325409"/>
+    <Point Pos="14.649292,58.865234,-3.547226"/>
+    <Point Pos="22.662354,45.9552,-3.9035492"/>
+    <Point Pos="33.185547,30.825562,-2.7007294"/>
+    <Point Pos="31.864014,17.218506,-1.631073"/>
+    <Point Pos="18.702515,8.657959,-1.2397461"/>
+    <Point Pos="4.4544678,1.0418701,-0.18962097"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{32522CF8-3E35-463F-9A3F-A21704C88771}" Name="AIPath_287_wish1_2" Pos="2.2495117,-3.96521,0.85333252" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="11.093628,-19.518066,1.8493347"/>
+    <Point Pos="22.41272,-38.397705,2.7287598"/>
+    <Point Pos="37.636963,-37.883301,3.9240875"/>
+    <Point Pos="58.050415,-40.22583,4.9698029"/>
+    <Point Pos="65.134766,-31.09375,4.4914551"/>
+    <Point Pos="61.583862,-10.136597,3.556015"/>
+    <Point Pos="54.40625,8.4147949,2.3134613"/>
+    <Point Pos="43.574097,15.617676,1.4432983"/>
+    <Point Pos="27.035156,18.359497,-1.016449"/>
+    <Point Pos="12.706543,15.032837,-1.6996155"/>
+    <Point Pos="2.6484375,5.4017334,-0.76167297"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

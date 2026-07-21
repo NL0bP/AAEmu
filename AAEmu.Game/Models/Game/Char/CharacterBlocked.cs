@@ -60,7 +60,7 @@ public class CharacterBlocked(Character owner)
         var allBlocked = GetBlockedInfo([.. BlockedList.Keys]);
         var allBlockedArray = new Blocked[allBlocked.Count];
         allBlocked.CopyTo(allBlockedArray, 0);
-        Owner.SendPacket(new SCBlockedUsersPacket(allBlockedArray.Length, allBlockedArray));
+        Owner.SendPacket(new SCBlockedUsersPacket(allBlockedArray));
     }
 
     public void Load(MySqlConnection connection)

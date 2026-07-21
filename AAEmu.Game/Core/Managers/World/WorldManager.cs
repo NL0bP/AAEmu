@@ -1216,8 +1216,10 @@ public class WorldManager(
 
     public void OnPlayerJoin(Character character)
     {
-        // Turn snow on off 
-        character.SendPacket(new SCSnowingEverywherePacket(IsSnowing));
+        // Turn snow on off
+        // DIAG-3503: disabled for world-enter diagnostics — SCSnowingEverywherePacket was the last
+        // packet received by the client right before its disconnect (possible 3.5 structure mismatch)
+        // character.SendPacket(new SCSnowingEverywherePacket(IsSnowing));
 
         // Family stuff
         if (character.Family > 0)

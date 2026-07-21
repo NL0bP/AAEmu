@@ -42,17 +42,17 @@ public sealed class SqliteExperienceLevelTemplateLoader(ILogger logger) : IExper
 
             if (levelTemplate.Level != expectedLevel)
             {
-                logger.Warn("Experience data is missing level {0}", expectedLevel);
+                logger.Debug("Experience data is missing level {0}", expectedLevel);
             }
 
             if (levelTemplate.TotalExp <= lastExp)
             {
-                logger.Warn("Experience data is not sorted by total_exp");
+                logger.Debug("Experience data is not sorted by total_exp");
             }
 
             if (levelTemplate.TotalMateExp <= lastMateExp)
             {
-                logger.Warn("Experience data is not sorted by total_mate_exp");
+                logger.Debug("Experience data is not sorted by total_mate_exp");
             }
 
             yield return levelTemplate;

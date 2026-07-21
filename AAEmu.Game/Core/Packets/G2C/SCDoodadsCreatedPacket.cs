@@ -16,4 +16,13 @@ public class SCDoodadsCreatedPacket(Doodad[] doodads) : GamePacket(SCOffsets.SCD
 
         return stream;
     }
+
+    public override string Verbose()
+    {
+        // DIAG-3503: list doodad objIds/funcGroups to diagnose client-side interaction issues
+        var sb = new System.Text.StringBuilder();
+        foreach (var d in doodads)
+            sb.Append($" o[{d.ObjId}]t{d.TemplateId}g{d.FuncGroupId}");
+        return sb.ToString();
+    }
 }

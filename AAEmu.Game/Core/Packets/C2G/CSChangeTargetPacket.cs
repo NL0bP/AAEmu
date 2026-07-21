@@ -14,7 +14,7 @@ public class CSChangeTargetPacket() : GamePacket(CSOffsets.CSChangeTargetPacket,
         var targetId = stream.ReadBc();
         Connection
                 .ActiveChar
-                .CurrentTarget = targetId > 0 ? Connection.ActiveChar.ParentWorld.GetUnit(targetId) : null;
+                .CurrentTarget = targetId > 0 ? Connection.ActiveChar.ParentWorld.GetBaseUnit(targetId) : null;
 
         Connection
             .ActiveChar

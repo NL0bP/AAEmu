@@ -11,5 +11,6 @@ public enum TagsEnum : uint
     Back = 1023, //Sports fishing run away
     Fish = 1025, // Sports Fishing fish
     PlaySong = 1155,
+    TradePackStorageChest = 3124,
 
 }

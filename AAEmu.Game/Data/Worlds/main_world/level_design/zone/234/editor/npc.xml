@@ -1,0 +1,84 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{E4B4D12B-A419-4356-9BFB-D08E3051A98F}" Name="AIPath_234_pidesa_2" Pos="0,0,0" Scale="1.24,1.24,1.24" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-10.877747,-9.7960815,-0.76060486"/>
+    <Point Pos="-21.136139,-6.0615234,-1.0498505"/>
+    <Point Pos="-24.781281,1.1065063,-1.51297"/>
+    <Point Pos="-24.045319,9.7532349,-1.9976196"/>
+    <Point Pos="-26.511383,17.111267,-2.0353699"/>
+    <Point Pos="-29.487793,24.356232,-2.0847778"/>
+    <Point Pos="-32.598358,27.877686,-2.1430359"/>
+    <Point Pos="-37.553009,30.987854,-2.1550903"/>
+    <Point Pos="-37.028412,35.895844,-2.133728"/>
+    <Point Pos="-29.706573,37.727081,-2.1316376"/>
+    <Point Pos="-23.587433,33.423096,-2.1221008"/>
+    <Point Pos="-19.763,22.308075,-2.0440674"/>
+    <Point Pos="-9.5979004,15.903259,-1.7766418"/>
+    <Point Pos="-2.8424683,16.004944,-1.5503082"/>
+    <Point Pos="5.3380432,6.5984497,-0.7006073"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{0B0FF564-203F-4C89-AC3A-C1281471640A}" Name="AIPath_234_pidesa_1" Pos="-1.274231,-2.9829102,-4.5852814" Scale="1.24,1.24,1.24" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-10.877747,-9.7960815,-0.76060486"/>
+    <Point Pos="-24.509644,-7.8591309,-1.0498505"/>
+    <Point Pos="-34.408325,2.4934692,-1.51297"/>
+    <Point Pos="-34.793213,16.703308,-1.9976196"/>
+    <Point Pos="-31.38623,23.722046,-2.1430359"/>
+    <Point Pos="-16.397949,26.907349,-2.0440674"/>
+    <Point Pos="-4.5992432,25.426758,-1.7766418"/>
+    <Point Pos="1.5836792,15.584351,-1.5503082"/>
+    <Point Pos="1.562439,8.173584,-0.7006073"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{C6A5CACB-5781-4B65-B5D1-6431D0A9959B}" Name="AIPath_234_pidesa_3" Pos="0,0,0" Scale="1.24,1.24,1.24" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-7.6699219,-8.9240112,-0.76060486"/>
+    <Point Pos="-19.135834,-9.5606689,-1.0498657"/>
+    <Point Pos="-27.569061,0.46286011,1.4487457"/>
+    <Point Pos="-30.623322,13.098785,-1.9976349"/>
+    <Point Pos="-24.959381,22.07663,-2.1430359"/>
+    <Point Pos="-16.397949,26.907349,-2.0440674"/>
+    <Point Pos="-4.5992432,25.426758,-1.7766418"/>
+    <Point Pos="1.5836792,15.584351,-1.5503082"/>
+    <Point Pos="1.562439,8.173584,-0.7006073"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList>
+  <roamingArea Type="NpcRoamingArea" Layer="Main" Id="{FBA92841-0524-40E1-9442-AA7CE891A086}" Name="NpcRoamingArea_234_moang_2" Pos="647.5636,492.72827,191.56543" ColorRGB="65280" Width="0" Height="0" AreaId="0" Priority="0" Closed="1" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-12.060486,7.8031006,-0.96510315"/>
+    <Point Pos="-5.3165894,18.87326,0.33294678"/>
+    <Point Pos="4.2114868,31.799377,0.48672485"/>
+    <Point Pos="6.5026245,36.441284,0.63513184"/>
+    <Point Pos="6.7427368,49.298035,0.7518158"/>
+    <Point Pos="19.112427,55.339966,3.3959808"/>
+    <Point Pos="36.637024,37.647095,4.6911926"/>
+    <Point Pos="27.453369,28.36731,3.4352722"/>
+    <Point Pos="16.418335,13.974792,1.7765503"/>
+    <Point Pos="9.0211792,12.451874,0.62225342"/>
+   </Points>
+  </roamingArea>
+  <roamingArea Type="NpcRoamingArea" Layer="Main" Id="{BF9FC0B7-7E13-4F16-9FEF-8E6414F9F8EC}" Name="NpcRoamingArea_234_moang_1" Pos="635.66046,526.76636,192.69748" ColorRGB="65280" Width="0" Height="0" AreaId="0" Priority="0" Closed="1" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-7.8359985,-14.686462,-0.76345825"/>
+    <Point Pos="-17.083862,-0.96124268,1.0054474"/>
+    <Point Pos="-22.09491,7.4536743,2.0182495"/>
+    <Point Pos="-16.852234,11.817993,1.271347"/>
+    <Point Pos="-15.168152,18.975769,0.75637817"/>
+    <Point Pos="-15.476746,26.905579,0.6862793"/>
+    <Point Pos="-9.3295898,31.343018,-0.045074463"/>
+    <Point Pos="-3.7230835,26.331299,0.70858765"/>
+    <Point Pos="-3.4829102,12.295471,0.4863739"/>
+   </Points>
+  </roamingArea>
+ </roamingAreaList>
+ <combatAreaList />
+</ZoneNPCData>

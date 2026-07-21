@@ -1,0 +1,1639 @@
+<ZoneNPCData>
+ <aiPathList>
+  <aiPath Type="AIPath" Layer="Main" Id="{B3E17702-B016-456F-A2A0-D7A54609B217}" Name="AIPath_236_mycecilia_12" Pos="-1,0,0" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2,0,0"/>
+    <Point Pos="-4,0,0"/>
+    <Point Pos="-5,-1,0"/>
+    <Point Pos="-6,-3,0"/>
+    <Point Pos="-6,-5,0"/>
+    <Point Pos="-6,-7,0"/>
+    <Point Pos="-6,-9,0"/>
+    <Point Pos="-6,-12,0"/>
+    <Point Pos="-6,-15,0"/>
+    <Point Pos="-6,-18,0"/>
+    <Point Pos="-6,-21,0"/>
+    <Point Pos="-7,-23,0"/>
+    <Point Pos="-9,-24,0"/>
+    <Point Pos="-11,-24,0"/>
+    <Point Pos="-13,-24,0"/>
+    <Point Pos="-15,-24,0"/>
+    <Point Pos="-17,-24,0"/>
+    <Point Pos="-20,-24,0"/>
+    <Point Pos="-22,-23,0"/>
+    <Point Pos="-23,-21,0"/>
+    <Point Pos="-23,-19,0"/>
+    <Point Pos="-23,-17,0"/>
+    <Point Pos="-23,-15,0"/>
+    <Point Pos="-23,-13,0"/>
+    <Point Pos="-23,-11,0"/>
+    <Point Pos="-24,-10,0"/>
+    <Point Pos="-26,-9,0"/>
+    <Point Pos="-28,-9,0"/>
+    <Point Pos="-30,-9,0"/>
+    <Point Pos="-33,-9,0"/>
+    <Point Pos="-34,-8,0"/>
+    <Point Pos="-34,-6,0"/>
+    <Point Pos="-33,-5,0"/>
+    <Point Pos="-31,-5,0"/>
+    <Point Pos="-29,-5,0"/>
+    <Point Pos="-27,-5,0"/>
+    <Point Pos="-25,-4,0"/>
+    <Point Pos="-23,-2,0"/>
+    <Point Pos="-22,0,0"/>
+    <Point Pos="-21,2,0"/>
+    <Point Pos="-19,2,0"/>
+    <Point Pos="-17,2,0"/>
+    <Point Pos="-15,2,0"/>
+    <Point Pos="-13,2,0"/>
+    <Point Pos="-11,2,0"/>
+    <Point Pos="-9,2,0"/>
+    <Point Pos="-6,2,0"/>
+    <Point Pos="-4,2,0"/>
+    <Point Pos="-2,2,0"/>
+    <Point Pos="-1,1,0"/>
+    <Point Pos="-1,1,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9E000003-994E-46E9-A3AC-16BF05E7F253}" Name="AIPath_236_mycecilia_47" Pos="0.096374512,0.43157959,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{FC922A09-2DF0-4F06-89C7-8033B2BB1250}" Name="AIPath_236_mycecilia_13" Pos="-1,0,0.10000038" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-1,0,0"/>
+    <Point Pos="-2,1,0"/>
+    <Point Pos="-3,1,0"/>
+    <Point Pos="-4,2,0"/>
+    <Point Pos="-5,2,0"/>
+    <Point Pos="-6,2,0"/>
+    <Point Pos="-7,2,0"/>
+    <Point Pos="-8,2,0"/>
+    <Point Pos="-9,2,0"/>
+    <Point Pos="-10,2,0"/>
+    <Point Pos="-11,2,0"/>
+    <Point Pos="-12,2,0"/>
+    <Point Pos="-13,2,0"/>
+    <Point Pos="-14,2,0"/>
+    <Point Pos="-15,2,0"/>
+    <Point Pos="-15.934601,1.9976959,-0.00072097778"/>
+    <Point Pos="-16.804443,1.9910736,-0.013576508"/>
+    <Point Pos="-17.720551,2.0075378,-0.019773483"/>
+    <Point Pos="-18.896545,1.9692078,-0.046289444"/>
+    <Point Pos="-19.601105,2.0217133,-0.038579941"/>
+    <Point Pos="-20.560593,2.1077118,-0.022842407"/>
+    <Point Pos="-21.430359,2.1001282,-0.035898209"/>
+    <Point Pos="-22.39502,2.0740204,-0.056154251"/>
+    <Point Pos="-23.151245,1.9956512,-0.091213226"/>
+    <Point Pos="-24,2,-0.10000038"/>
+    <Point Pos="-25,2,-0.10000038"/>
+    <Point Pos="-26,2,-0.10000038"/>
+    <Point Pos="-27,2,-0.10000038"/>
+    <Point Pos="-28,2,-0.10000038"/>
+    <Point Pos="-29,2,-0.10000038"/>
+    <Point Pos="-30,2,-0.10000038"/>
+    <Point Pos="-31,2,-0.10000038"/>
+    <Point Pos="-32,2,-0.10000038"/>
+    <Point Pos="-33,2,-0.10000038"/>
+    <Point Pos="-34,3,-0.10000038"/>
+    <Point Pos="-35,4,-0.10000038"/>
+    <Point Pos="-36.284378,5.2326355,-0.099721909"/>
+    <Point Pos="-37.331467,6.2026672,-0.099462509"/>
+    <Point Pos="-38,5,-0.10000038"/>
+    <Point Pos="-37.220459,4.1073914,-0.091249466"/>
+    <Point Pos="-35.919601,2.8624115,-0.095636368"/>
+    <Point Pos="-34.863464,1.8650818,-0.10026169"/>
+    <Point Pos="-34,1,-0.10000038"/>
+    <Point Pos="-33,0,-0.10000038"/>
+    <Point Pos="-31,-1,-0.10000038"/>
+    <Point Pos="-29.184296,-1.0023041,-0.10060501"/>
+    <Point Pos="-27.485336,-1.0222473,-0.10578918"/>
+    <Point Pos="-27,-2,-0.10000038"/>
+    <Point Pos="-25.955856,-3.3348083,-0.097291946"/>
+    <Point Pos="-25.989914,-4.4700317,-0.081783295"/>
+    <Point Pos="-26.046539,-5.7160187,-0.05125618"/>
+    <Point Pos="-26.037338,-6.8554688,-0.065843582"/>
+    <Point Pos="-24.75885,-8.2259979,-0.10590553"/>
+    <Point Pos="-23.229492,-8.4592285,-0.099218369"/>
+    <Point Pos="-21.743637,-8.7233124,-0.10429573"/>
+    <Point Pos="-19.842422,-8.6907043,-0.092460632"/>
+    <Point Pos="-17.9487,-8.7605743,-0.099611282"/>
+    <Point Pos="-16.144623,-8.7133789,-0.085494995"/>
+    <Point Pos="-13.948456,-8.7371979,-0.083276749"/>
+    <Point Pos="-12.160797,-8.6893616,-0.067985535"/>
+    <Point Pos="-9.6941528,-8.7661896,-0.075214386"/>
+    <Point Pos="-7.7087097,-8.8247375,-0.080348969"/>
+    <Point Pos="-6.0756836,-8.8948669,-0.088127136"/>
+    <Point Pos="-4.0986328,-8.9102173,-0.090270996"/>
+    <Point Pos="-2,-8,-0.10000038"/>
+    <Point Pos="-1,-6,-0.10000038"/>
+    <Point Pos="0,-4,-0.10000038"/>
+    <Point Pos="0,-1,-0.10000038"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{43A93D15-A5EB-4602-8F95-4A5F288094EE}" Name="AIPath_236_mycecilia_63" Pos="0.22465515,0.34152222,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.018051147,34.215637,0.0009727478"/>
+    <Point Pos="0.040649414,35.396881,0.0029468536"/>
+    <Point Pos="0.06187439,36.334778,0.0051803589"/>
+    <Point Pos="0.058151245,37.078583,0.002746582"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="NPC" Id="{D6FD8019-6A2E-47E4-B469-39D2E60B7711}" Name="AIPath_236_mycecilia_3" Pos="4,0,0.10000038" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="4,-2,0"/>
+    <Point Pos="7,-5,0"/>
+    <Point Pos="11,-7,0"/>
+    <Point Pos="16,-8,0"/>
+    <Point Pos="21,-8,0"/>
+    <Point Pos="26,-7,0"/>
+    <Point Pos="31,-5,0"/>
+    <Point Pos="35,-3,0"/>
+    <Point Pos="39,-1,0"/>
+    <Point Pos="43,-2,0"/>
+    <Point Pos="46,-5,0"/>
+    <Point Pos="45,-9,0"/>
+    <Point Pos="45,-12,0"/>
+    <Point Pos="45,-15,0"/>
+    <Point Pos="45,-18,0"/>
+    <Point Pos="45,-21,0"/>
+    <Point Pos="45,-25,0"/>
+    <Point Pos="45,-28,0"/>
+    <Point Pos="45,-32,0"/>
+    <Point Pos="45,-36,0"/>
+    <Point Pos="45,-40,0"/>
+    <Point Pos="45,-43,0"/>
+    <Point Pos="43,-46,0"/>
+    <Point Pos="41,-48,0"/>
+    <Point Pos="38,-49,0"/>
+    <Point Pos="34,-49,0"/>
+    <Point Pos="30,-49,0"/>
+    <Point Pos="27,-49,0"/>
+    <Point Pos="23,-49,0"/>
+    <Point Pos="19,-49,0"/>
+    <Point Pos="15,-49,0"/>
+    <Point Pos="11,-49,0"/>
+    <Point Pos="7,-49,0"/>
+    <Point Pos="3,-49,0"/>
+    <Point Pos="0,-47,0"/>
+    <Point Pos="-2,-44,0"/>
+    <Point Pos="-2,-41,0"/>
+    <Point Pos="-2,-36,0"/>
+    <Point Pos="-4,-33,0"/>
+    <Point Pos="-5,-28,0"/>
+    <Point Pos="-5,-23,0"/>
+    <Point Pos="-6,-20,-0.10000038"/>
+    <Point Pos="-7,-16,-0.10000038"/>
+    <Point Pos="-6,-11,0"/>
+    <Point Pos="-6,-7,0"/>
+    <Point Pos="-4,-4,0"/>
+    <Point Pos="-1,-1,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="direction" Id="{EBDF8419-F25F-4BA6-A845-AFC1A7FF9FCE}" Name="8960_move_01" Pos="199.99226,177.86623,20.637663" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0.010986328,-1.5457611,0"/>
+    <Point Pos="0.019302368,-2.5482788,0"/>
+    <Point Pos="0.013061523,-3.0222015,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="direction" Id="{4429E720-A10F-434F-B3C1-AE7102D964F5}" Name="10473_move_00" Pos="234.03885,312.68802,20.637663" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2.2494049,0.015716553,0.32278442"/>
+    <Point Pos="-6.1051788,0.039642334,-0.017641068"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{E48B9129-FE93-47F4-B7EA-109DB621E320}" Name="AIPath_236_mycecilia_23" Pos="0.060653687,0.18792725,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{A4948A3B-9F33-4A40-8766-3CC9C11400CF}" Name="10473_1_move_00" Pos="207.54576,105.58434,20.637663" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-1.9017181,-1.1166611,0"/>
+    <Point Pos="-4.52034,-2.5546722,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="direction" Id="{099DD042-111D-4D51-8CD9-DE5619BF8850}" Name="10473_2__move_00" Pos="259.88022,274.54153,20.637663" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-0.098022461,13.306671,0"/>
+    <Point Pos="0.0081481934,25.014008,0"/>
+    <Point Pos="-0.92456055,33.117157,0"/>
+    <Point Pos="-3.8871307,37.016907,0"/>
+    <Point Pos="-7.7569733,38.980713,0"/>
+    <Point Pos="-11.067947,38.635071,0.32566643"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{93540E47-FB4B-4031-96BC-C08D6C0D707B}" Name="AIPath_236_mycecilia_25" Pos="-0.11442566,0.3555603,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{054A374F-57B3-431E-921D-5F361E7FE5A3}" Name="AIPath_236_mycecilia_45" Pos="0.35137939,0.47663879,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{FC0E9156-8C55-4DEE-8259-8AD28195DB95}" Name="AIPath_236_mycecilia_62" Pos="-0.16136169,0.38388062,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+    <Point Pos="-0.0008392334,35.456329,-0.00047302246"/>
+    <Point Pos="0.064453125,37.179871,0.037477493"/>
+    <Point Pos="0.060409546,38.993439,0.0350914"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{4B5D3459-6443-46E1-BA0E-E3C70089B22F}" Name="AIPath_236_mycecilia_59" Pos="-0.23802185,0.37927246,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+    <Point Pos="-0.0008392334,35.456329,-0.00047302246"/>
+    <Point Pos="0.064453125,37.179871,0.037477493"/>
+    <Point Pos="0.060409546,38.993439,0.0350914"/>
+    <Point Pos="0.060958862,40.543671,0.035457611"/>
+    <Point Pos="0.046524048,41.603119,0.027145386"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{A0FF1261-C9CF-4103-A0EF-735EF723C411}" Name="AIPath_236_mycecilia_60" Pos="0.14724731,0.37338257,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+    <Point Pos="-0.0008392334,35.456329,-0.00047302246"/>
+    <Point Pos="0.0011138916,36.811279,0.011003494"/>
+    <Point Pos="0.011734009,38.02655,0.022874832"/>
+    <Point Pos="0.0051269531,39.012146,0.029788971"/>
+    <Point Pos="-0.0032196045,40.127563,0.037477493"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{40664B63-0AED-49CC-8D46-FE231B7387D0}" Name="AIPath_236_mycecilia_42" Pos="-0.29248047,0.48188782,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{98FF1A65-7576-4F16-9064-7ADFB2A1AA11}" Name="AIPath_236_mycecilia_24" Pos="0.33674622,0.21014404,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="direction" Id="{FDF8A467-38D7-4159-B096-7BB5967BE4B9}" Name="8843_move_00" Pos="287.05655,236.67319,23.725025" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2.3328552,0.047607422,-0.29361534"/>
+    <Point Pos="-6.8809204,-0.10585022,-2.4555397"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9F644568-A433-4AA9-BCDE-CB856D59B448}" Name="AIPath_236_mycecilia_49" Pos="0.52575684,0.36256409,-0.44997787" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{9D8E876A-D879-4C85-9A56-8ED6B732F098}" Name="AIPath_236_mycecilia_61" Pos="0.08782959,0.46392822,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+    <Point Pos="0.021789551,35.523865,0.0035190582"/>
+    <Point Pos="0.033203125,36.696808,0.0037536621"/>
+    <Point Pos="0.026672363,37.436096,0.0015716553"/>
+    <Point Pos="0.025604248,38.365021,6.4849854e-005"/>
+    <Point Pos="0.027389526,38.950073,-0.00047302246"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{DBA6D66A-0868-4F68-B490-AE5B68BDEEC2}" Name="AIPath_236_mycecilia_20" Pos="0.18914795,0.30255127,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+    <Point Pos="0,40,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{90DA2A74-7A45-451C-8636-4654A3AF77D4}" Name="AIPath_236_mycecilia_66" Pos="-0.10958862,0.27246094,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{7E02537A-C619-4AA7-90B0-C7A3906AF8CB}" Name="AIPath_236_mycecilia_46" Pos="-0.39144897,0.44903564,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="NPC" Id="{23165381-E384-43D8-ADF6-D75E1E8FA236}" Name="AIPath_236_mycecilia_4" Pos="0,1,0.10000038" Rotate="0.70710665,0,0,-0.70710677" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2,0,0"/>
+    <Point Pos="-4,0,0"/>
+    <Point Pos="-6,0,0"/>
+    <Point Pos="-8,0,0"/>
+    <Point Pos="-9,1,0"/>
+    <Point Pos="-11,1,0"/>
+    <Point Pos="-13,1,0"/>
+    <Point Pos="-15,1,0"/>
+    <Point Pos="-16,1,0"/>
+    <Point Pos="-17,0,0"/>
+    <Point Pos="-17,-2,0"/>
+    <Point Pos="-17,-5,0"/>
+    <Point Pos="-16,-6,0"/>
+    <Point Pos="-16,-9,0"/>
+    <Point Pos="-14,-11,0"/>
+    <Point Pos="-12,-12,0"/>
+    <Point Pos="-10,-13,0"/>
+    <Point Pos="-8,-14,0"/>
+    <Point Pos="-6,-15,0"/>
+    <Point Pos="-3,-16,0"/>
+    <Point Pos="-3,-18,0"/>
+    <Point Pos="-1.000061,-18,-0.099998474"/>
+    <Point Pos="-1.0000305,-16,-0.099998474"/>
+    <Point Pos="-3.0517578e-005,-14.000015,-0.099998474"/>
+    <Point Pos="0.99996948,-11.000015,-0.099998474"/>
+    <Point Pos="1,-8.0000153,-0.099998474"/>
+    <Point Pos="1,-5.0000153,-0.099998474"/>
+    <Point Pos="1,-3.0000153,-0.099998474"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="direction" Id="{38842E8A-441D-44EB-90FF-EC4AACE0DBD4}" Name="bultan_10452_walk" Pos="182.85188,97.290047,20.637663" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-3.1726532,0.064735413,0"/>
+    <Point Pos="-11.264328,0.097740173,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{E60C4195-6C22-4435-8E5D-D43FEFBC9AEB}" Name="AIPath_236_mycecilia_64" Pos="-0.28404236,0.36376953,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+    <Point Pos="-0.0008392334,35.456329,-0.00047302246"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{94558A99-2B07-4B10-81CF-4E11B9DEFA26}" Name="AIPath_236_mycecilia_67" Pos="-0.048110962,0.25332642,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{E5220F9B-D7E8-400E-9629-0518F126BC5A}" Name="AIPath_236_mycecilia_18" Pos="0.25543213,0.2805481,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+    <Point Pos="0,40,0"/>
+    <Point Pos="0,41,0"/>
+    <Point Pos="0,42,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="direction" Id="{C38A1FA0-5F09-495F-ACD8-B7DB0FA81272}" Name="10473_move_01" Pos="226.62006,312.70691,20.620022" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-6.858551,0.12612915,0"/>
+    <Point Pos="-18.88147,0.019744873,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{6B3E86A1-CD08-439F-BD9B-CAF0A7583414}" Name="AIPath_236_mycecilia_26" Pos="0.15193176,0.5267334,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{95C60DA2-F8F4-4914-91E9-3ED40C59148E}" Name="AIPath_236_mycecilia_43" Pos="-0.20837402,0.45803833,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+    <Point Pos="0,40,0"/>
+    <Point Pos="0,41,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{1D83C2A3-EF38-40D5-B41A-5195B72CE210}" Name="AIPath_236_nopeople_88" Pos="-0.6786499,-0.49655151,0.10000038" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-2.4878082,-2.4367371,0"/>
+    <Point Pos="-5.7566376,-3.286377,0"/>
+    <Point Pos="-8.8005981,-3.110321,-1.9073486e-006"/>
+    <Point Pos="-12.940353,-3.9599304,0"/>
+    <Point Pos="-16.662354,-4.7318726,0"/>
+    <Point Pos="-20.415131,-0.81414795,0"/>
+    <Point Pos="-23.503204,2.4963989,0"/>
+    <Point Pos="-23.695435,8.8699036,0"/>
+    <Point Pos="-24.258286,13.714142,0"/>
+    <Point Pos="-22.982483,16.849396,0"/>
+    <Point Pos="-19.77475,20.206787,0"/>
+    <Point Pos="-14.783401,20.528198,0"/>
+    <Point Pos="-10.398911,20.956146,0"/>
+    <Point Pos="-5.2198486,21.121826,0"/>
+    <Point Pos="0.57017517,19.907288,0"/>
+    <Point Pos="5.4598846,15.293091,0"/>
+    <Point Pos="7.4155273,9.7492981,0"/>
+    <Point Pos="4.7441254,3.7929382,0"/>
+    <Point Pos="1.390686,1.3417664,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{C9D61BA4-FA7A-46E6-B68D-24B67A272636}" Name="AIPath_236_mycecilia_40" Pos="-0.12234497,0.37049866,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{6A1248A5-5765-4970-B493-C7295E617C05}" Name="AIPath_236_mycecilia_19" Pos="-0.19392395,0.2293396,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+    <Point Pos="0,40,0"/>
+    <Point Pos="0,41,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{0CB001A6-6BB4-4F3C-99C1-4F4D29401D6E}" Name="AIPath_236_mycecilia_68" Pos="0.012313843,0.16207886,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{5BD91FA7-5B0B-44CB-9086-D6BBBA740EE8}" Name="10455_run_00" Pos="182.73189,103.02992,20.637663" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="-3.0816193,0.065338135,0"/>
+    <Point Pos="-11.106735,-0.076370239,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{725E79B8-F8D2-4315-B36C-3E05DD52539A}" Name="AIPath_236_mycecilia_22" Pos="-0.051544189,0.15911865,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{116120C8-DEAA-495E-9078-782C3AF0523E}" Name="AIPath_236_mycecilia_48" Pos="0.22232056,0.47671509,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+    <Point Pos="0,40,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{76C9AFCA-6B32-47A7-A173-6069BD74C7E1}" Name="AIPath_236_mycecilia_21" Pos="0.098251343,0.24053955,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{0F8520CF-79CF-4760-9080-9ACC98152C4F}" Name="AIPath_236_mycecilia_41" Pos="-0.0011901855,0.36354065,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{1B1567D1-0F57-486B-AF40-A4C2124B1C7F}" Name="8960_move_00" Pos="182.81386,183.7606,20.637663" ColorRGB="11842740" Rec._Speed="0.4" Rec._PathType="0" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="3.5910339,-1.1828461,0"/>
+    <Point Pos="5.95755,-1.8000488,0"/>
+    <Point Pos="9.932663,-2.6115112,0"/>
+    <Point Pos="14.44899,-2.88414,0"/>
+    <Point Pos="16.33429,-3.1472931,0"/>
+    <Point Pos="16.862854,-5.434494,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{884613E9-4EB2-45DD-B46A-69752FF1CC01}" Name="AIPath_236_mycecilia_65" Pos="0.044372559,0.32211304,0" Rotate="0.99999994,0,0,-1.2973931e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0.0047912598,34.068085,0.002746582"/>
+    <Point Pos="-0.0008392334,35.456329,-0.00047302246"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{0AB004F8-5991-4D04-AC33-F2E4A2C0DEB9}" Name="AIPath_236_mycecilia_44" Pos="-0.069702148,0.46652222,0" Rotate="0.99999994,0,0,1.7881392e-006" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+   </Points>
+  </aiPath>
+  <aiPath Type="AIPath" Layer="Main" Id="{6B402DFE-3CB2-44ED-A9CA-6833357A1EEE}" Name="AIPath_236_mycecilia_17" Pos="0,0.58609009,0.10000038" ColorRGB="11842740" Rec._Speed="1" Rec._PathType="1" Road="0" PathNavType="1" AnchorType="" ValidatePath="0" Width="0" Height="0" AreaId="0" Priority="0" Closed="0" ObstructRoof="0" ObstructFloor="0" DisplayFilled="0" value1="0" value2="0" GroupId="0" OccludeZoneEffect="0">
+   <Points>
+    <Point Pos="0,0,0"/>
+    <Point Pos="0,1,0"/>
+    <Point Pos="0,2,0"/>
+    <Point Pos="0,3,0"/>
+    <Point Pos="0,4,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,5,0"/>
+    <Point Pos="0,6,0"/>
+    <Point Pos="0,7,0"/>
+    <Point Pos="0,8,0"/>
+    <Point Pos="0,9,0"/>
+    <Point Pos="0,10,0"/>
+    <Point Pos="0,11,0"/>
+    <Point Pos="0,12,0"/>
+    <Point Pos="0,13,0"/>
+    <Point Pos="0,14,0"/>
+    <Point Pos="0,15,0"/>
+    <Point Pos="0,16,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,17,0"/>
+    <Point Pos="0,18,0"/>
+    <Point Pos="0,19,0"/>
+    <Point Pos="0,20,0"/>
+    <Point Pos="0,21,0"/>
+    <Point Pos="0,22,0"/>
+    <Point Pos="0,23,0"/>
+    <Point Pos="0,24,0"/>
+    <Point Pos="0,25,0"/>
+    <Point Pos="0,26,0"/>
+    <Point Pos="0,27,0"/>
+    <Point Pos="0,28,0"/>
+    <Point Pos="0,29,0"/>
+    <Point Pos="0,30,0"/>
+    <Point Pos="0,31,0"/>
+    <Point Pos="0,32,0"/>
+    <Point Pos="0,33,0"/>
+    <Point Pos="0,34,0"/>
+    <Point Pos="0,35,0"/>
+    <Point Pos="0,36,0"/>
+    <Point Pos="0,37,0"/>
+    <Point Pos="0,38,0"/>
+    <Point Pos="0,39,0"/>
+    <Point Pos="0,40,0"/>
+    <Point Pos="0,41,0"/>
+    <Point Pos="0,42,0"/>
+    <Point Pos="0,43,0"/>
+    <Point Pos="0,43,0"/>
+   </Points>
+  </aiPath>
+ </aiPathList>
+ <roamingAreaList />
+ <combatAreaList />
+</ZoneNPCData>

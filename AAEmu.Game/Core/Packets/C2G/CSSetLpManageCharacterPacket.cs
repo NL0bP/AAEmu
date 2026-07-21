@@ -9,6 +9,7 @@ public class CSSetLpManageCharacterPacket() : GamePacket(CSOffsets.CSSetLpManage
     public override void Read(PacketStream stream)
     {
         var characterId = stream.ReadUInt32();
-        Connection.SendPacket(new SCLpManagedPacket(characterId));
+        // Retail 3.5.0.3 server does not respond to this packet (verified against packet capture)
+        // Connection.SendPacket(new SCCharacterLpManagedPacket(characterId));
     }
 }
