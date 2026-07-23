@@ -20,49 +20,44 @@ public abstract class GamePacket(ushort typeId, byte level) : PacketBase<GameCon
         byte count = 0;
         try
         {
+            // After X2EnterWorldResponse the client rejects plain level-1; auto-upgrade to StoC level 5.
+            var level = Level;
+            if (level == 1 && Connection is { EncryptionActive: true })
+                level = 5;
+
+            // Frame: [u16 len][sig=0xDD][level][body] — client consumes 0xDD then dispatches on level.
             var packet = new PacketStream()
                 .Write((byte)0xdd)
-                .Write(Level);
+                .Write(level);
 
-            switch (Level)
+            switch (level)
             {
-                case 1:
-                    {
-                        packet
-                            .Write((byte)0) // hash
-                            .Write((byte)0) // count
-                            .Write(TypeId)
-                            .Write(this);
-                        break;
-                    }
-                case 2:
-                    {
-                        packet
-                            .Write(TypeId)
-                            .Write(this);
-                        break;
-                    }
-                case 3:
-                case 4:
-                case 6:
-                    break;
                 case 5:
-                    {
-                        count = EncryptionManager.Instance.GetSCMessageCount(Connection.Id, Connection.AccountId);
-                        var bodyCrc = new PacketStream()
-                            .Write(count)
-                            .Write(TypeId)
-                            .Write(this);
-
-                        EncryptionManager.Instance.IncSCMsgCount(Connection.Id, Connection.AccountId);
-                        var crc8 = EncryptionManager.Instance.Crc8(bodyCrc);
-                        var data = new PacketStream()
-                            .Write(crc8)
-                            .Write(bodyCrc, false);
-                        var encrypted = EncryptionManager.Instance.StoCEncrypt(data);
-                        packet.Write(encrypted, false);
-                        break;
-                    }
+                    // StoCEncrypt(crc8 | SCMessageCount | TypeId | body)
+                    count = EncryptionManager.Instance.GetSCMessageCount(Connection.Id, Connection.AccountId);
+                    var bodyCrc = new PacketStream()
+                        .Write(count)
+                        .Write(TypeId)
+                        .Write(this);
+                    EncryptionManager.Instance.IncSCMsgCount(Connection.Id, Connection.AccountId);
+                    var crc8 = EncryptionManager.Instance.Crc8(bodyCrc);
+                    var data = new PacketStream()
+                        .Write(crc8)
+                        .Write(bodyCrc, false);
+                    packet.Write(EncryptionManager.Instance.StoCEncrypt(data), false);
+                    break;
+                case 1:
+                    packet
+                        .Write((byte)0) // hash
+                        .Write((byte)0) // count
+                        .Write(TypeId)
+                        .Write(this);
+                    break;
+                default: // level 2 and others: plaintext
+                    packet
+                        .Write(TypeId)
+                        .Write(this);
+                    break;
             }
 
             ps.Write(packet);

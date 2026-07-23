@@ -72,7 +72,9 @@ public class EnterWorldManager(
 
                 var port = AppConfiguration.Instance.StreamNetwork.Port;
                 var gm = connection.GetAttribute("gmFlag") != null;
+                // X2EnterWorldResponse (level 5, RSA pubKey) — after this the client rejects plain level-1.
                 connection.SendPacket(new X2EnterWorldResponsePacket(0, gm, connection.Id, port, connection));
+                connection.EncryptionActive = true;
                 connection.SendPacket(new ChangeStatePacket(0));
             }
             else

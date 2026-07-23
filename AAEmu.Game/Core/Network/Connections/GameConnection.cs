@@ -33,6 +33,11 @@ public class GameConnection
     public CancellationTokenSource CancelTokenSource { get; set; }
     public DateTime LastPing { get; set; }
 
+    /// <summary>
+    /// True after X2EnterWorldResponse — client rejects plain level-1 S→C; Encode auto-upgrades to level 5.
+    /// </summary>
+    public bool EncryptionActive { get; set; }
+
     public GameConnection(ISession session)
     {
         _session = session;

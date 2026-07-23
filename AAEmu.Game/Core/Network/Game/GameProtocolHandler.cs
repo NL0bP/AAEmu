@@ -24,22 +24,14 @@ public class GameProtocolHandler : BaseProtocolHandler
     public GameProtocolHandler()
     {
         _packets = new ConcurrentDictionary<byte, ConcurrentDictionary<uint, Type>>();
-        // For 1.2 client we only have Level1 and Level2 packets
         _packets.TryAdd(1, new ConcurrentDictionary<uint, Type>());
         _packets.TryAdd(2, new ConcurrentDictionary<uint, Type>());
-        // Level 5/6 for encrypted packets (3.5)
         _packets.TryAdd(3, new ConcurrentDictionary<uint, Type>());
         _packets.TryAdd(4, new ConcurrentDictionary<uint, Type>());
         _packets.TryAdd(5, new ConcurrentDictionary<uint, Type>());
         _packets.TryAdd(6, new ConcurrentDictionary<uint, Type>());
-        EncryptionManager.needNewkey1 = false;
-        EncryptionManager.needNewkey2 = false;
     }
 
-    /// <summary>
-    /// On connect event
-    /// </summary>
-    /// <param name="session"></param>
     public override void OnConnect(ISession session)
     {
         Logger.Info($"Connect from {session.Ip} established, session id: {session.SessionId}");
@@ -56,10 +48,6 @@ public class GameProtocolHandler : BaseProtocolHandler
         }
     }
 
-    /// <summary>
-    /// On Disconnect event
-    /// </summary>
-    /// <param name="session"></param>
     public override void OnDisconnect(ISession session)
     {
         try
@@ -69,9 +57,7 @@ public class GameProtocolHandler : BaseProtocolHandler
             {
                 if (con.ActiveChar != null)
                 {
-                    // On crash, force people out of the chat channels so we don't get phantom or duplicates
                     Managers.ChatManager.Instance.LeaveAllChannels(con.ActiveChar);
-                    // ObjectIdManager.Instance.ReleaseId(con.ActiveChar.BcId);
                 }
                 con.OnDisconnect();
                 StreamManager.Instance.RemoveToken(con.Id);
@@ -91,13 +77,6 @@ public class GameProtocolHandler : BaseProtocolHandler
         Logger.Info($"Client from {session.Ip} disconnected");
     }
 
-    /// <summary>
-    /// Handle incoming data for session
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="buf"></param>
-    /// <param name="offset"></param>
-    /// <param name="bytes"></param>
     public override void OnReceive(ISession session, byte[] buf, int offset, int bytes)
     {
         try
@@ -118,13 +97,6 @@ public class GameProtocolHandler : BaseProtocolHandler
         }
     }
 
-    /// <summary>
-    /// Handle incoming data for GameConnection
-    /// </summary>
-    /// <param name="connection"></param>
-    /// <param name="buf"></param>
-    /// <param name="offset"></param>
-    /// <param name="bytes"></param>
     public void OnReceive(GameConnection connection, byte[] buf, int offset, int bytes)
     {
         try
@@ -145,13 +117,12 @@ public class GameProtocolHandler : BaseProtocolHandler
                 }
                 catch (MarshalException)
                 {
-                    //Logger.Warn("Error on reading type {0}", type);
                     stream.Rollback();
                     connection.LastPacket = stream;
                     stream = null;
-                    EncryptionManager.needNewkey1 = true;
                     continue;
                 }
+
                 var packetLen = len + stream.Pos;
                 if (packetLen <= stream.Count)
                 {
@@ -166,42 +137,68 @@ public class GameProtocolHandler : BaseProtocolHandler
                     }
                     else
                         stream = null;
-                    stream2.ReadUInt16(); //len
-                    stream2.ReadByte(); //unk
+
+                    stream2.ReadUInt16(); // len
+                    stream2.ReadByte();   // sig (0xDD) / unk
                     var level = stream2.ReadByte();
 
-                    //byte crc = 0;
-                    //byte counter = 0;
+                    PacketStream bodyStream;
+                    byte lookupLevel = level;
+                    ushort type;
                     byte[] encryptedInput = null;
-                    if (level == 1)
-                    {
-                        _ = stream2.ReadByte(); // TODO: verify 1.2 crc
-                        _ = stream2.ReadByte(); // TODO: verify 1.2 counter
-                    }
+
                     if (level == 5)
                     {
-                        // packet from the client, decrypt
-                        //------------------------------
-                        var input = new byte[stream2.Count - 2];
-                        Buffer.BlockCopy(stream2, 2, input, 0, stream2.Count - 2);
+                        // Encrypted C->S: [len][sig][level=5][hash][AES cipher]
+                        // Decrypt → [crc8][count][type u16][body] (same shape as S->C body).
+                        var input = new byte[packetLen - 2];
+                        Array.Copy(stream2.Buffer, 2, input, 0, packetLen - 2);
                         encryptedInput = input;
-                        var output = EncryptionManager.Instance.Decode(input, connection.Id, connection.AccountId);
-                        var OutBytes = new byte[output.Length + 5];
-                        Buffer.BlockCopy(stream2, 0, OutBytes, 0, 5);
-                        // create a complete decrypted packet
-                        Buffer.BlockCopy(output, 1, OutBytes, 5, output.Length - 1);
-                        // replace encrypted data with decrypted ones
-                        var strm = new PacketStream();
-                        strm.Write(OutBytes);
-                        stream2.Replace(strm, 0, OutBytes.Length);
-                        stream2.ReadUInt16();
+
+                        var decrypted = EncryptionManager.Instance.TryDecodeLevel5(
+                            input,
+                            connection.Id,
+                            connection.AccountId,
+                            IsAcceptableLevel5Plaintext,
+                            out var plain);
+
+                        if (!decrypted || plain == null || plain.Length < 4)
+                        {
+                            Logger.Warn(
+                                "C2S level-5 decrypt failed (len={0}, plain={1}) from {2}",
+                                packetLen, plain?.Length ?? -1, connection.Ip);
+                            continue;
+                        }
+
+                        bodyStream = new PacketStream();
+                        bodyStream.Insert(0, plain, 0, plain.Length);
+                        bodyStream.ReadByte();          // crc8
+                        bodyStream.ReadByte();          // count
+                        type = bodyStream.ReadUInt16(); // opcode
+
+                        // AAC registers most CS handlers on level 5; fall back to level 1 (pre-keys packets).
+                        lookupLevel = 5;
+                        if (!_packets[5].ContainsKey(type) && _packets[1].ContainsKey(type))
+                            lookupLevel = 1;
+                    }
+                    else
+                    {
+                        if (level == 1)
+                        {
+                            _ = stream2.ReadByte(); // hash/crc
+                            _ = stream2.ReadByte(); // counter
+                        }
+                        type = stream2.ReadUInt16();
+                        bodyStream = stream2;
                     }
 
-                    var type = stream2.ReadUInt16();
-                    _packets[level].TryGetValue(type, out var classType);
+                    Type classType = null;
+                    if (_packets.TryGetValue(lookupLevel, out var levelMap))
+                        levelMap.TryGetValue(type, out classType);
+
                     if (classType == null)
                     {
-                        HandleUnknownPacket(connection, type, level, stream2);
+                        HandleUnknownPacket(connection, type, level, bodyStream);
                     }
                     else
                     {
@@ -210,12 +207,12 @@ public class GameProtocolHandler : BaseProtocolHandler
                         packet.Connection = connection;
                         if (Logger.IsDebugEnabled && type == Packets.C2G.CSOffsets.CSCreateCharacterPacket)
                         {
-                            var raw = new PacketStream().Replace(stream2, stream2.Pos, stream2.Count - stream2.Pos).GetBytes();
+                            var raw = new PacketStream().Replace(bodyStream, bodyStream.Pos, bodyStream.Count - bodyStream.Pos).GetBytes();
                             Logger.Debug($"Raw CSCreateCharacterPacket plaintext ({raw.Length} bytes): {Convert.ToHexString(raw)}");
                             if (encryptedInput != null)
                                 Logger.Debug($"Raw CSCreateCharacterPacket ciphertext ({encryptedInput.Length} bytes): {Convert.ToHexString(encryptedInput)}");
                         }
-                        packet.Decode(stream2);
+                        packet.Decode(bodyStream);
                     }
                 }
                 else
@@ -233,33 +230,31 @@ public class GameProtocolHandler : BaseProtocolHandler
         }
     }
 
-    /// <summary>
-    /// Registers a GamePacket handler by Id and Level
-    /// </summary>
-    /// <param name="type"></param>
-    /// <param name="level"></param>
-    /// <param name="classType"></param>
     public void RegisterPacket(uint type, byte level, Type classType)
     {
         _packets[level][type] = classType;
     }
 
     /// <summary>
-    /// Handle and Log unknown packet data
+    /// Fine-tune validator: plaintext = [crc8][count][type u16][body]. Accept known CS opcodes.
     /// </summary>
-    /// <param name="connection"></param>
-    /// <param name="type"></param>
-    /// <param name="level"></param>
-    /// <param name="stream"></param>
+    private bool IsAcceptableLevel5Plaintext(byte[] plain)
+    {
+        if (plain == null || plain.Length < 4)
+            return false;
+
+        if (!EncryptionManager.Instance.IsAdjustCryptConstantEnable)
+            return true;
+
+        var type = BitConverter.ToUInt16(plain, 2);
+        return _packets[5].ContainsKey(type) || _packets[1].ContainsKey(type);
+    }
+
     private static void HandleUnknownPacket(GameConnection connection, uint type, byte level, PacketStream stream)
     {
         var dump = new StringBuilder();
         for (var i = stream.Pos; i < stream.Count; i++)
             dump.AppendFormat("{0:x2} ", stream.Buffer[i]);
         Logger.Error($"Unknown packet 0x{type:x2}({level}) from {connection.Ip}:\n{dump}");
-        if (type > 0x1ff)
-        {
-            EncryptionManager.needNewkey1 = true;
-        }
     }
 }

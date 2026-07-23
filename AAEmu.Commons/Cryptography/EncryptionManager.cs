@@ -1,10 +1,13 @@
 /*
  * by uranusq https://github.com/NL0bP/aaa_emulator
  * by Nikes
- * by NLObP: оригинальный метод шифрации (как в crynetwork.dll)
+ * by NLObP
+ *
+ * AAC 3.5.x EncryptionManager — structure/state ported from Nikes-cn-10.0.2.13
+ * (HashMap msgKey, SeqOffset, CsSeq/CsMSeq/CsNum, dual XorKey1/2, CSDecrypt flow),
+ * with cry-constant fine-tune kept (C1/C2 hidden by Themida in crynetwork_dump).
  */
 using System.Security.Cryptography;
-using System.Text;
 
 using AAEmu.Commons.IO;
 using AAEmu.Commons.Network;
@@ -12,505 +15,480 @@ using AAEmu.Commons.Utils;
 
 using NLog;
 
-namespace AAEmu.Commons.Cryptography
+namespace AAEmu.Commons.Cryptography;
+
+/// <summary>
+/// Game (world) channel encryption for AAC Classic 3.5.x.
+///  * S->C: keyless length-seeded stream cipher (StoCEncrypt).
+///  * C->S: DecodeXor + AES-128-CBC after CSAesXorKey exchange.
+///  * Cry constants C1/C2 come from Configurations/xorKeyValue.txt and can be fine-tuned live.
+/// </summary>
+public class EncryptionManager : Singleton<EncryptionManager>
 {
-    public class EncryptionManager : Singleton<EncryptionManager>
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    private const int DwKeySize = 1024;
+
+    // Keyed by ConnectionId (unique per session) — AAC multi-session safety.
+    private Dictionary<uint, ConnectionKeychain> _connectionKeys = new();
+
+    private static bool AdjustCryptConstantEnable;
+    private static string XorKeyValueFilePath;
+
+    /// <summary>How many C1 steps to try on one ciphertext before giving up.</summary>
+    private const int FineTuneMaxAttemptsPerPacket = 64;
+    private const uint XorKeyConstant1Min = 0x75A02400;
+    private const uint XorKeyConstant1Max = 0x75A024FF;
+
+    // AAC 3.5.3.0 defaults (commented known-good); overridden by xorKeyValue.txt when present.
+    private const uint DefaultCryConst1 = 0x75A02453;
+    private const uint DefaultCryConst2 = 0xB27645B4;
+
+    // Head→XorKey derivation seeds (AAC 3.5.3.0). Same algebraic form as 10.0, different immediates.
+    private const uint HeadXorA = 0x15351715u;
+    private const uint HeadXorB = 0x070F1F23u;
+    // Optional second key (10.0-style dual derive); kept for diagnostics / alternate try.
+    private const uint HeadXorA2 = 0xFF217A82u;
+    private const uint HeadXorB2 = 0x1F23070Fu;
+
+    public bool IsAdjustCryptConstantEnable => AdjustCryptConstantEnable;
+
+    public void Load()
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private static readonly int DwKeySize = 1024;
-        // Dictionary of valid keys bound to ConnectionId (unique per session)
-        // This prevents encryption mismatches when same account connects from multiple sessions
-        private Dictionary<uint, ConnectionKeychain> ConnectionKeys { get; set; }
-        public static bool needNewkey2;
-        public static bool needNewkey1;
-        private static bool AdjustCryptConstantEnable;
-        private static string XorKeyValueFilePath;
+        _connectionKeys = new Dictionary<uint, ConnectionKeychain>();
+        LoadCryptConfig();
+        Logger.Info("Loaded Encryption Manager. AdjustCryptConstantEnable={0}", AdjustCryptConstantEnable);
+    }
 
-        public void Load()
-        {
-            ConnectionKeys = new Dictionary<uint, ConnectionKeychain>();
-            LoadCryptConfig();
-            Logger.Info("Loaded Encryption Manager.");
-        }
-
-        private ConnectionKeychain GetOrCreateConnectionKeys(uint connectionId, ulong accountId)
-        {
-            // Use ConnectionId as the primary key since it's unique per session
-            if (ConnectionKeys.TryGetValue(connectionId, out var keys))
-            {
-                return keys;
-            }
-
-            return GenerateRsaKeyPair(connectionId, accountId);
-        }
-
-        private ConnectionKeychain GenerateRsaKeyPair(uint connectionId, ulong accountId)
-        {
-            // Always remove old keys for this connection first to prevent encryption mismatches
-            if (ConnectionKeys.TryGetValue(connectionId, out var oldKeys))
-            {
-                Logger.Warn("Replacing old RSA key pair for ConnectionId={0}, AccountId={1}",
-                    connectionId, oldKeys.RsaKeyPair != null ? accountId : 0);
-                ConnectionKeys.Remove(connectionId);
-            }
-
-            var rsaKeyPair = new RSACryptoServiceProvider();
-            var keys = new ConnectionKeychain(connectionId, rsaKeyPair);
-            Logger.Debug("[{0}] Generated new RSA key pair for connection {1}.", accountId, connectionId);
-            ConnectionKeys.Add(connectionId, keys);
+    private ConnectionKeychain GetOrCreateConnectionKeys(uint connectionId, ulong accountId)
+    {
+        if (_connectionKeys.TryGetValue(connectionId, out var keys))
             return keys;
+        return GenerateRsaKeyPair(connectionId, accountId);
+    }
+
+    private ConnectionKeychain GenerateRsaKeyPair(uint connectionId, ulong accountId)
+    {
+        if (_connectionKeys.Remove(connectionId))
+            Logger.Warn("Replacing RSA key pair for ConnectionId={0}, AccountId={1}", connectionId, accountId);
+
+        var rsa = new RSACryptoServiceProvider(DwKeySize);
+        var keys = new ConnectionKeychain(connectionId, rsa);
+        _connectionKeys[connectionId] = keys;
+        Logger.Debug("[{0}] Generated RSA key pair for connection {1}.", accountId, connectionId);
+        return keys;
+    }
+
+    [Obsolete("Use RemoveConnectionKeysByConnectionId instead")]
+    public void RemoveConnectionKeys(ulong accountId) { }
+
+    public void RemoveConnectionKeysByConnectionId(uint connectionId)
+    {
+        if (_connectionKeys.Remove(connectionId))
+            Logger.Trace("Removed connection keychain for ConnectionId={0}.", connectionId);
+    }
+
+    /// <summary>
+    /// Writes RSA pub params for X2EnterWorldResponse (AAC layout: Modulus|125 zero|Exponent).
+    /// </summary>
+    public PacketStream WriteKeyParams(uint connectionId, ulong accountId, PacketStream stream)
+    {
+        var keychain = GetOrCreateConnectionKeys(connectionId, accountId);
+        var p = keychain.RsaKeyPair.ExportParameters(false);
+        stream.Write(p.Modulus);
+        stream.Write(new byte[125]);
+        stream.Write(p.Exponent);
+        return stream;
+    }
+
+    public void StoreClientKeys(byte[] aesKeyEncrypted, byte[] xorKeyEncrypted, ulong accountId, uint connectionId)
+    {
+        if (!_connectionKeys.TryGetValue(connectionId, out var keys))
+        {
+            Logger.Warn("StoreClientKeys: no RSA key for ConnectionId={0}, AccountId={1}", connectionId, accountId);
+            return;
         }
 
-        /// <summary>
-        /// Removes encryption keys by AccountId (legacy method, kept for compatibility)
-        /// In the new architecture, keys are stored by ConnectionId, so this method does nothing
-        /// </summary>
-        [Obsolete("Use RemoveConnectionKeysByConnectionId instead")]
-        public void RemoveConnectionKeys(ulong accountId)
+        try
         {
-            // Legacy method - keys are now stored by ConnectionId, not AccountId
-            // Cleanup happens automatically in GenerateRsaKeyPair when connection is reused
-            Logger.Debug("RemoveConnectionKeys(ulong) is deprecated. Keys are stored by ConnectionId.");
+            var xorRaw = keys.RsaKeyPair.Decrypt(xorKeyEncrypted, false);
+            var aesKey = keys.RsaKeyPair.Decrypt(aesKeyEncrypted, false);
+            keys.XorRaw = xorRaw;
+            keys.AesKey = aesKey;
+
+            var head = BitConverter.ToUInt32(xorRaw, 0);
+            keys.Head = head;
+
+            // Binary key derivation (same shape as 10.0 sub_39573D20; AAC 3.5.3.0 immediates).
+            // XorKey1 = head * (head ^ A) ^ B; working xor = XorKey1² (applied in CsDecodeXor).
+            keys.XorKey1 = unchecked(head * (head ^ HeadXorA) ^ HeadXorB);
+            keys.XorKey2 = unchecked(head * (head ^ HeadXorA2) ^ HeadXorB2);
+            keys.XorKey = unchecked(keys.XorKey1 * keys.XorKey1);
+
+            keys.RecievedKeys = true;
+            keys.CsNum = 0;
+            keys.CsSeq = 0;
+            keys.CsMSeq = 0;
+            keys.IV = new byte[16];
+
+            EnsureCryConstants(keys);
+
+            Logger.Warn(
+                "StoreClientKeys ok acc={0} conn={1} head={2:X8} XorKey1={3:X8} XorKey={4:X8} C1={5:X8} C2={6:X8}",
+                accountId, connectionId, head, keys.XorKey1, keys.XorKey,
+                keys.XorKeyConstant1, keys.XorKeyConstant2);
+        }
+        catch (CryptographicException ex)
+        {
+            Logger.Error(ex, "StoreClientKeys RSA decrypt failed (acc={0}, conn={1})", accountId, connectionId);
+            _connectionKeys.Remove(connectionId);
+        }
+    }
+
+    public byte GetSCMessageCount(uint connectionId, ulong accountId) =>
+        GetOrCreateConnectionKeys(connectionId, accountId).SCMessageCount;
+
+    public void IncSCMsgCount(uint connectionId, ulong accountId) =>
+        GetOrCreateConnectionKeys(connectionId, accountId).SCMessageCount++;
+
+    public byte GetAndIncSCMessageCount(uint connectionId, ulong accountId)
+    {
+        var keys = GetOrCreateConnectionKeys(connectionId, accountId);
+        return keys.SCMessageCount++;
+    }
+
+    /// <summary>Packet checksum: c = c * 0x13 + b.</summary>
+    public byte Crc8(byte[] data)
+    {
+        uint checksum = 0;
+        foreach (var b in data)
+        {
+            checksum *= 0x13;
+            checksum += b;
+        }
+        return (byte)checksum;
+    }
+
+    #region S->C StoC stream cipher
+
+    private static byte Inline(ref uint cry)
+    {
+        cry += 0x2FCBD5u;
+        var n = (byte)((cry >> 16) & 0xF7);
+        return n == 0 ? (byte)0xFE : n;
+    }
+
+    public byte[] StoCEncrypt(byte[] body)
+    {
+        var length = body.Length;
+        var cry = (uint)(length ^ 0x1F2175A0);
+        var array = new byte[length];
+        var n = 4 * (length / 4);
+        for (var i = n - 1; i >= 0; i--)
+            array[i] = (byte)(body[i] ^ Inline(ref cry));
+        for (var i = n; i < length; i++)
+            array[i] = (byte)(body[i] ^ Inline(ref cry));
+        return array;
+    }
+
+    #endregion
+
+    #region C->S decryption (DecodeXor + AES-128-CBC)
+
+    private static readonly int[] HashMap = BuildHashMap();
+
+    private static int[] BuildHashMap()
+    {
+        var m = new int[256];
+        for (var i = 0; i < 16; i++)
+            m[0x30 + i] = i + 1; // 0x30..0x3F -> 1..16  (== hash - 47)
+        return m;
+    }
+
+    private static byte Add(ref uint cry)
+    {
+        cry += 0x2FCBD5u;
+        var n = (byte)((cry >> 16) & 0xF7);
+        return n == 0 ? (byte)0xFE : n;
+    }
+
+    private static byte MakeSeq(ConnectionKeychain k)
+    {
+        k.CsMSeq += 0x2FA245u;
+        var result = (byte)((k.CsMSeq >> 14) & 0x73);
+        return result == 0 ? (byte)0xFE : result;
+    }
+
+    private static int SeqOffset(byte seq)
+    {
+        if (seq == 0) return 9;
+        if (seq % 3 == 0) return 5;
+        if (seq % 5 == 0) return 2;
+        if (seq % 7 == 0) return 11;
+        if (seq % 9 == 0) return 3;
+        if (seq % 11 == 0) return 7;
+        return 4;
+    }
+
+    /// <summary>Legacy entry — decrypt without opcode validation.</summary>
+    public byte[] Decode(byte[] data, uint connectionId, ulong accountId)
+    {
+        TryDecodeLevel5(data, connectionId, accountId, _ => true, out var plaintext);
+        return plaintext ?? Array.Empty<byte>();
+    }
+
+    /// <summary>
+    /// Decrypts one level-5 C->S frame body (<paramref name="data"/> = frame minus length u16,
+    /// i.e. [unk][level][hash][cipher...]). When AdjustCryptConstantEnable, retries the same
+    /// ciphertext with C1++ (restoring IV/seq on each miss) until validator accepts or attempts run out.
+    /// </summary>
+    public bool TryDecodeLevel5(
+        byte[] data,
+        uint connectionId,
+        ulong accountId,
+        Func<byte[], bool> isAcceptablePlaintext,
+        out byte[] plaintext)
+    {
+        plaintext = null;
+
+        if (!_connectionKeys.TryGetValue(connectionId, out var keys) || !keys.RecievedKeys || data.Length < 4)
+            return false;
+
+        var cipherLen = data.Length - 3;
+        if (cipherLen <= 0 || cipherLen % 16 != 0)
+            return false;
+
+        EnsureCryConstants(keys);
+        ClampXorKeyConstant1(keys);
+
+        if (keys.CsNum == 0)
+        {
+            keys.CsSeq = 0;
+            keys.CsMSeq = 0;
+            keys.IV = new byte[16];
         }
 
-        /// <summary>
-        /// Removes encryption keys by ConnectionId (unique per session)
-        /// </summary>
-        public void RemoveConnectionKeysByConnectionId(uint connectionId)
+        var maxAttempts = AdjustCryptConstantEnable ? FineTuneMaxAttemptsPerPacket : 1;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
-            if (ConnectionKeys.Remove(connectionId))
-            {
-                Logger.Trace("Removed connection keychain for ConnectionId={0}.", connectionId);
-            }
-        }
-
-        public PacketStream WriteKeyParams(uint connectionId, ulong accountId, PacketStream stream)
-        {
-            var keychain = GetOrCreateConnectionKeys(connectionId, accountId);
-            var rsaParameters = keychain.RsaKeyPair.ExportParameters(false);
-            stream.Write(rsaParameters.Modulus);
-            stream.Write(new byte[125]);
-            stream.Write(rsaParameters.Exponent);
-            return stream;
-        }
-
-        public void StoreClientKeys(byte[] aesKeyEncrypted, byte[] xorKeyEncrypted, ulong accountId, uint connectionId)
-        {
-            // Use connectionId as the key since it's unique per session
-            if (!ConnectionKeys.TryGetValue((uint)connectionId, out var keys))
-            {
-                Logger.Warn("StoreClientKeys: No RSA key found for ConnectionId={0}, AccountId={1}", connectionId, accountId);
-                return;
-            }
-
-            Logger.Warn("AccountId: {0}, ConnectionId: {1}", accountId, connectionId);
-
+            var snap = SnapshotCryptState(keys);
             try
             {
-                var xorConstRaw = keys.RsaKeyPair.Decrypt(xorKeyEncrypted, false);
-                var head = BitConverter.ToUInt32(xorConstRaw, 0);
-                Logger.Warn("head: {0}", head); // <-- этот сырой XOR записываем в поле xorConst from AAEMU моего OpcodeFinder`a
-                //head = (head ^ 0x15a0248e) * head ^ 0x070f1f23 & 0xffffffff; // 3.0.3.0 archerage.to
-                //head = (head ^ 0x15A314A2) * head ^ 0x070F1F23 & 0xffffffff; // 3.0.4.2 AAClassic
-                head = (head ^ 0x15351715) * head ^ 0x070F1F23 & 0xffffffff; // 3.5.3.0 AAClassic
-                keys.XorKey = head * head & 0xffffffff;
-                keys.AesKey = keys.RsaKeyPair.Decrypt(aesKeyEncrypted, false);
-                keys.RecievedKeys = true;
-                Logger.Warn("AES: {0} XOR: {1}", Helpers.ByteArrayToString(keys.AesKey), keys.XorKey);
-
-                // для автоматического подбора констант
-                if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
-                    LoadXorKeyConstant(keys);
-            }
-            catch (CryptographicException ex)
-            {
-                Logger.Error(ex, "Failed to decrypt client keys for AccountId: {0}, ConnectionId: {1}. Possible causes: wrong RSA key, corrupted data, or client version mismatch.", accountId, connectionId);
-                // Очищаем ключи, чтобы клиент получил новые при следующем подключении
-                ConnectionKeys.Remove((uint)connectionId);
-            }
-        }
-
-        /// <summary>
-        /// Автоматический подбор констант: загрузка из файла
-        /// </summary>
-        /// <param name="keys"></param>
-        private static void LoadXorKeyConstant(ConnectionKeychain keys)
-        {
-            var worldPath = Path.Combine(FileManager.AppPath, "Configurations");
-            XorKeyValueFilePath = Path.Combine(worldPath, "xorKeyValue.txt");
-            using var reader = new StreamReader(XorKeyValueFilePath);
-            while (!reader.EndOfStream)
-            {
-                var xorKeyValueLine1 = reader.ReadLine();
-                var xorKeyValue1 = reader.ReadLine();
-                if (xorKeyValueLine1 == "XorKeyConstant1:")
+                var (xored, _) = CsDecodeXor(data, keys, keys.XorKey1);
+                var plain = CsDecodeAes(xored, keys);
+                if (isAcceptablePlaintext(plain))
                 {
-                    // сохраняем пакеты в список пакетов
-                    keys.XorKeyConstant1 = Convert.ToUInt32(xorKeyValue1, 16);
-                }
-                var xorKeyValueLine2 = reader.ReadLine();
-                var xorKeyValue2 = reader.ReadLine();
-                if (xorKeyValueLine2 == "XorKeyConstant2:")
-                {
-                    // сохраняем пакеты в список пакетов
-                    keys.XorKeyConstant2 = Convert.ToUInt32(xorKeyValue2, 16);
-                }
-                // даже если этого значения нет в файле, установите переменную AdjustCryptConstantEnable
-                // even if this value is not in the file, set the variable AdjustCryptConstantEnable
-                _ = reader.ReadLine();
-                var xorKeyValue3 = reader.ReadLine()?.ToLower();
-                AdjustCryptConstantEnable = xorKeyValue3 == "true";
-            }
-        }
-
-        private static void LoadCryptConfig()
-        {
-            var worldPath = Path.Combine(FileManager.AppPath, "Configurations");
-            XorKeyValueFilePath = Path.Combine(worldPath, "xorKeyValue.txt");
-            using var reader = new StreamReader(XorKeyValueFilePath);
-            while (!reader.EndOfStream)
-            {
-                _ = reader.ReadLine();
-                _ = reader.ReadLine();
-                _ = reader.ReadLine();
-                _ = reader.ReadLine();
-                // даже если этого значения нет в файле, установите переменную AdjustCryptConstantEnable
-                // even if this value is not in the file, set the variable AdjustCryptConstantEnable
-                _ = reader.ReadLine();
-                var xorKeyValue3 = reader.ReadLine()?.ToLower();
-                AdjustCryptConstantEnable = xorKeyValue3 == "true";
-            }
-        }
-
-        public byte GetSCMessageCount(uint connectionId, ulong accountId)
-        {
-            var keys = GetOrCreateConnectionKeys(connectionId, accountId);
-            var mc = keys.SCMessageCount;
-            //Logger.Trace("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
-            return mc;
-        }
-
-        public void IncSCMsgCount(uint connectionId, ulong accountId)
-        {
-            var keys = GetOrCreateConnectionKeys(connectionId, accountId);
-            keys.SCMessageCount++;
-        }
-
-        public byte GetAndIncSCMessageCount(uint connectionId, ulong accountId)
-        {
-            var keys = GetOrCreateConnectionKeys(connectionId, accountId);
-            var mc = keys.SCMessageCount++;
-            //Logger.Warn("SCMessageCount={0}, connectionId={1}, accountId={2}", mc, connectionId, accountId);
-            return mc;
-        }
-
-        #region S->C Encryption
-        // Methods for SC packet Encryption
-        /// <summary>
-        /// Подсчет контрольной суммы пакета, используется в шифровании пакетов DD05 и 0005
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="size"></param>
-        /// <returns>Crc8</returns>
-        private byte Crc8(byte[] data, int size)
-        {
-            uint checksum = 0;
-            for (var i = 0; i < size; i++)
-            {
-                checksum *= 0x13;
-                checksum += data[i];
-            }
-            return (byte)checksum;
-        }
-
-        public byte Crc8(byte[] data)
-        {
-            return Crc8(data, data.Length);
-        }
-        //--------------------------------------------------------------------------------------
-        /// <summary>
-        /// вспомогательная подпрограмма для encode/decode серверных/клиентских пакетов
-        /// </summary>
-        /// <param name="cry"></param>
-        /// <returns></returns>
-        private byte Inline(ref uint cry)
-        {
-            cry += 0x2FCBD5U;
-            var n = (byte)(cry >> 0x10);
-            n = (byte)(n & 0x0F7);
-            return (byte)(n == 0 ? 0x0FE : n);
-        }
-
-        //--------------------------------------------------------------------------------------
-        /// <summary>
-        /// подпрограмма для encode/decode серверных пакетов, правильно шифрует и расшифровывает серверные пакеты DD05 для версии 3.0.3.0
-        /// </summary>
-        /// <param name="bodyPacket">адрес начиная с байта за DD05</param>
-        /// <returns>возвращает адрес на подготовленные данные</returns>
-        public byte[] StoCEncrypt(byte[] bodyPacket)
-        {
-            var length = bodyPacket.Length;
-            var array = new byte[length];
-            var cry = (uint)(length ^ 0x1F2175A0);
-            return ByteXor(bodyPacket, length, array, cry);
-        }
-
-        private byte[] ByteXor(byte[] bodyPacket, int length, byte[] array, uint cry, int offset = 0)
-        {
-            var n = 4 * (length / 4);
-            for (var i = n - 1 - offset; i >= 0; i--)
-            {
-                array[i] = (byte)(bodyPacket[i] ^ Inline(ref cry));
-            }
-            for (var i = n - offset; i < length; i++)
-            {
-                array[i] = (byte)(bodyPacket[i] ^ Inline(ref cry));
-            }
-            return array;
-        }
-        #endregion
-
-        #region C->S Decryption
-        // Methods for CS packet Decryption
-        //------------------------------
-        // здесь распаковка пакетов от клиента 0005
-        // для дешифрации следующих пакетов iv = шифрованный предыдущий пакет
-        //------------------------------
-        public byte[] Decode(byte[] data, uint connectionId, ulong accountId)
-        {
-            var keys = GetOrCreateConnectionKeys(connectionId, accountId);
-            var iv = keys.IV;
-            var xorKey = keys.XorKey;
-            var aesKey = keys.AesKey;
-            var ciphertext = DecodeXor(data, xorKey, keys);
-            var plaintext = DecodeAes(ciphertext, aesKey, iv);
-            keys.CSMessageCount++;
-            return plaintext;
-        }
-        //--------------------------------------------------------------------------------------
-        /// <summary>
-        ///  toClientEncr help function
-        /// </summary>
-        /// <param name="cry"></param>
-        /// <returns></returns>
-        private static byte Add(ref uint cry)
-        {
-            cry += 0x2FCBD5;
-            var n = (byte)(cry >> 0x10);
-            n = (byte)(n & 0x0F7);
-            return (byte)(n == 0 ? 0x0FE : n);
-        }
-        //--------------------------------------------------------------------------------------
-        /// <summary>
-        ///  toClientEncr help function
-        /// </summary>
-        /// <param name="keys"></param>
-        /// <returns></returns>
-        private static byte MakeSeq(ConnectionKeychain keys)
-        {
-            var seq = keys.CSSecondaryOffsetSequence;
-            seq += 0x2FA245;
-            var result = (byte)(seq >> 0xE & 0x73);
-            if (result == 0)
-            {
-                result = 0xFE;
-            }
-            keys.CSSecondaryOffsetSequence = seq;
-            return result;
-        }
-
-        private static string ByteArrayToHexString(byte[] bytes)
-        {
-            var hex = new StringBuilder(bytes.Length * 2);
-            foreach (var b in bytes)
-            {
-                hex.AppendFormat("{0:X2}", b);
-            }
-            return hex.ToString();
-        }
-
-        private static byte[] DecodeXor(byte[] bodyPacket, uint xorKey, ConnectionKeychain keys)
-        {
-            if (AdjustCryptConstantEnable)
-            {
-                /*
-                 * логика подбора такая:
-                 * сначала подбираем первую константу для имеющейся второй
-                 * если первая 0xFF, то меняем вторую на новую и начинаем подбор первой константы с 0x00
-                 */
-                var dirty = false;
-                // подбираем константы шифрации
-                if (keys.XorKeyConstant1 > 0x75A024FF)
-                {
-                    keys.XorKeyConstant1 = 0x75A02400;
-                    dirty = true;
-                    needNewkey2 = true;
-                }
-
-                if (keys.XorKeyConstant1 == 0 || keys.XorKeyConstant2 == 0)
-                {
-                    LoadXorKeyConstant(keys);
-                }
-
-                if (needNewkey1)
-                {
-                    needNewkey1 = false;
-                    // заменим первую константу
-                    keys.XorKeyConstant1++;
-                    if (keys.XorKeyConstant1 > 0x75A024FF)
+                    keys.CsNum++;
+                    keys.CSMessageCount++;
+                    if (AdjustCryptConstantEnable && attempt > 0)
                     {
-                        keys.XorKeyConstant1 = 0x75A02400;
-                        needNewkey2 = true;
+                        Logger.Warn(
+                            "Crypt fine-tune OK after {0} tries: C1={1:X8} C2={2:X8} conn={3}",
+                            attempt + 1, keys.XorKeyConstant1, keys.XorKeyConstant2, connectionId);
+                        SaveXorKeyConstants(keys);
                     }
 
-                    dirty = true;
-                }
-
-                if (needNewkey2)
-                {
-                    needNewkey2 = false;
-                    // заменим вторую константу
-                    var tuneL = (byte)Random.Shared.Next(0x01, 0xFF);
-                    var tuneR = (byte)Random.Shared.Next(0x01, 0xFF);
-                    // Исходное uint число с заполнителями NN
-                    var result = keys.XorKeyConstant2 & 0x00FFFF00;
-                    result |= (uint)tuneL << 24; // Вставляем tuneL в старший байт
-                    result |= tuneR; // Вставляем tuneR в младший байт
-                    keys.XorKeyConstant2 = result; // Заменяем байты на указанные значения
-                    dirty = true;
-                }
-
-                if (dirty)
-                {
-                    using var writer = new StreamWriter(XorKeyValueFilePath, false);
-                    writer.WriteLine("XorKeyConstant1:");
-                    writer.WriteLine(keys.XorKeyConstant1.ToString("X8"));
-                    writer.WriteLine("XorKeyConstant2:");
-                    writer.WriteLine(keys.XorKeyConstant2.ToString("X8"));
-                    writer.WriteLine("AdjustCryptConstantEnable:");
-                    writer.WriteLine(AdjustCryptConstantEnable.ToString());
+                    plaintext = plain;
+                    return true;
                 }
             }
-
-            //          +-Hash начало блока для DecodeXOR, где второе число, в данном случае F(16 байт)-реальная длина данных в пакете, к примеру A(10 байт)-реальная длина данных в пакете
-            //          |  +-начало блока для DecodeAES
-            //          V  V
-            //1300 0005 3F D831012E6DFA489A268BC6AD5BC69263
-            var mBodyPacket = new byte[bodyPacket.Length - 3];
-            Buffer.BlockCopy(bodyPacket, 3, mBodyPacket, 0, bodyPacket.Length - 3);
-            var msgKey = ((uint)(bodyPacket.Length / 16 - 1) << 4) + (uint)(bodyPacket[2] - 47); // это реальная длина данных в пакете
-            var array = new byte[mBodyPacket.Length];
-            var mul = msgKey * xorKey; // <-- ставим бряк здесь и смотрим xorKey, packetBody, aesKey, IV для моего OpcodeFinder`a
-
-            //// расскоментируйте блок кода для записи xorKey, packetBody, aesKey, IV для моего OpcodeFinder`a
-            //using (StreamWriter writer = new StreamWriter("o:/input.txt", true))
-            //{
-            //    writer.WriteLine("xorkey:");
-            //    writer.WriteLine(keys.XorKey.ToString("X8"));
-
-            //    writer.WriteLine("aesKey:");
-            //    writer.WriteLine(ByteArrayToHexString(keys.AesKey));
-
-            //    writer.WriteLine("packetBody:");
-            //    writer.WriteLine(ByteArrayToHexString(bodyPacket));
-            //}
-
-            // считываем константу из файла и подставляем в формулу шифрации, если константа не установлена, то она будет 0 и не повлияет на результат
-            //var cry = mul ^ ((uint)MakeSeq(keys) + 0x75A02453) ^ 0xB27645B4; // 3.5.3.0 AAClassic
-            var cry = mul ^ (MakeSeq(keys) + keys.XorKeyConstant1) ^ keys.XorKeyConstant2;
-
-            var seq = keys.CSOffsetSequence;
-            var offset = 4;
-            if (seq != 0)
+            catch (Exception ex)
             {
-                if (seq % 3 != 0)
-                {
-                    if (seq % 5 != 0)
-                    {
-                        if (seq % 7 != 0)
-                        {
-                            if (seq % 9 != 0)
-                            {
-                                if (seq % 11 == 0) { offset = 7; }
-                            }
-                            else { offset = 3; }
-                        }
-                        else { offset = 11; }
-                    }
-                    else { offset = 2; }
-                }
-                else { offset = 5; }
-            }
-            else { offset = 9; }
-
-            var n = offset * (mBodyPacket.Length / offset);
-            for (var i = n - 1; i >= 0; i--)
-            {
-                array[i] = (byte)(mBodyPacket[i] ^ Add(ref cry));
-            }
-            for (var i = n; i < mBodyPacket.Length; i++)
-            {
-                array[i] = (byte)(mBodyPacket[i] ^ Add(ref cry));
+                Logger.Debug(ex, "Crypt fine-tune decrypt exception on attempt {0}", attempt + 1);
             }
 
-            keys.CSOffsetSequence += MakeSeq(keys);
-            keys.CSOffsetSequence += 1;
-            return array;
+            RestoreCryptState(keys, snap);
+
+            if (!AdjustCryptConstantEnable)
+                break;
+
+            AdvanceXorKeyConstant1(keys);
+            Logger.Warn(
+                "Crypt fine-tune miss #{0}: next C1={1:X8} C2={2:X8} conn={3}",
+                attempt + 1, keys.XorKeyConstant1, keys.XorKeyConstant2, connectionId);
+            SaveXorKeyConstants(keys);
         }
-        //--------------------------------------------------------------------------------------
-        private static Aes CreateAes(byte[] aesKey, byte[] iv)
-        {
-            var aes = Aes.Create();
-            aes.KeySize = 128;
-            aes.BlockSize = 128;
-            aes.Padding = PaddingMode.None;
-            aes.Mode = CipherMode.CBC;
-            aes.Key = aesKey;
-            aes.IV = iv;
-            return aes;
-        }
-        //--------------------------------------------------------------------------------------
-        /// <summary>
-        /// DecodeAes: расшифровка пакета от клиента AES ключом
-        /// </summary>
-        /// <param name="cipherData"></param>
-        /// <param name="aesKey"></param>
-        /// <param name="iv"></param>
-        /// <returns></returns>
-        //--------------------------------------------------------------------------------------
-        private static byte[] DecodeAes(byte[] cipherData, byte[] aesKey, byte[] iv)
-        {
-            var mIv = new byte[16];
-            Buffer.BlockCopy(iv, 0, mIv, 0, 16);
-            var len = cipherData.Length / 16;
-            //Save last 16 bytes in IV
-            Buffer.BlockCopy(cipherData, (len - 1) * 16, iv, 0, 16);
-            // Create a MemoryStream that is going to accept the decrypted bytes
-            using var memoryStream = new MemoryStream();
-            // Create a symmetric algorithm.
-            // We are going to use Aes because it is strong and available on all platforms.
-            using (var alg = CreateAes(aesKey, mIv))
-            {
-                // Create a CryptoStream through which we are going to be pumping our data.
-                // CryptoStreamMode.Write means that we are going to be writing data to the stream
-                // and the output will be written in the MemoryStream we have provided.
-                using (var cs = new CryptoStream(memoryStream, alg.CreateDecryptor(), CryptoStreamMode.Write))
-                {
-                    // Write the data and make it do the decryption
-                    cs.Write(cipherData, 0, cipherData.Length);
 
-                    // Close the crypto stream (or do FlushFinalBlock).
-                    // This will tell it that we have done our decryption and there is no more data coming in,
-                    // and it is now a good time to remove the padding and finalize the decryption process.
-                    cs.FlushFinalBlock();
-                    cs.Close();
-                }
-            }
-            // Now get the decrypted data from the MemoryStream.
-            // Some people make a mistake of using GetBuffer() here, which is not the right way.
-            var decryptedData = memoryStream.ToArray();
-            return decryptedData;
-        }
-        #endregion
+        plaintext = Array.Empty<byte>();
+        return false;
     }
+
+    private (byte[] data, uint realLen) CsDecodeXor(byte[] bodyPacket, ConnectionKeychain k, uint xorKeyBase)
+    {
+        var mBody = new byte[bodyPacket.Length - 3];
+        Array.Copy(bodyPacket, 3, mBody, 0, mBody.Length);
+
+        var msgKey = (uint)(bodyPacket.Length / 16 - 1) << 4;
+        msgKey += (uint)HashMap[bodyPacket[2]];
+
+        var xorKey = unchecked(xorKeyBase * xorKeyBase);
+        k.XorKey = xorKey;
+        var mul = unchecked(msgKey * xorKey);
+        // Known-good comment for 3.5.3.0: mul ^ (MakeSeq + 0x75A02453) ^ 0xB27645B4
+        var cry = unchecked(mul ^ ((uint)MakeSeq(k) + k.XorKeyConstant1) ^ k.XorKeyConstant2);
+
+        var offset = SeqOffset(k.CsSeq);
+        var array = new byte[mBody.Length];
+        var n = offset * (mBody.Length / offset);
+        for (var i = n - 1; i >= 0; i--)
+            array[i] = (byte)(mBody[i] ^ Add(ref cry));
+        for (var i = n; i < mBody.Length; i++)
+            array[i] = (byte)(mBody[i] ^ Add(ref cry));
+
+        k.CsSeq = (byte)(k.CsSeq + MakeSeq(k) + 1);
+        return (array, msgKey);
+    }
+
+    private static byte[] CsDecodeAes(byte[] cipher, ConnectionKeychain k)
+    {
+        var iv = (byte[])k.IV.Clone();
+        var blocks = cipher.Length / 16;
+        if (blocks >= 1)
+        {
+            k.IV = new byte[16];
+            Array.Copy(cipher, (blocks - 1) * 16, k.IV, 0, 16);
+        }
+
+        using var aes = Aes.Create();
+        aes.KeySize = 128;
+        aes.BlockSize = 128;
+        aes.Mode = CipherMode.CBC;
+        aes.Padding = PaddingMode.None;
+        aes.Key = k.AesKey;
+        aes.IV = iv;
+        using var dec = aes.CreateDecryptor();
+        return dec.TransformFinalBlock(cipher, 0, cipher.Length);
+    }
+
+    #endregion
+
+    #region Fine-tune / config
+
+    private void EnsureCryConstants(ConnectionKeychain keys)
+    {
+        if (keys.XorKeyConstant1 != 0 && keys.XorKeyConstant2 != 0)
+            return;
+        LoadXorKeyConstant(keys);
+        if (keys.XorKeyConstant1 == 0)
+            keys.XorKeyConstant1 = DefaultCryConst1;
+        if (keys.XorKeyConstant2 == 0)
+            keys.XorKeyConstant2 = DefaultCryConst2;
+    }
+
+    private static void LoadXorKeyConstant(ConnectionKeychain keys)
+    {
+        XorKeyValueFilePath ??= Path.Combine(FileManager.AppPath, "Configurations", "xorKeyValue.txt");
+        if (!File.Exists(XorKeyValueFilePath))
+            return;
+
+        using var reader = new StreamReader(XorKeyValueFilePath);
+        while (!reader.EndOfStream)
+        {
+            var line1 = reader.ReadLine();
+            var val1 = reader.ReadLine();
+            if (line1 == "XorKeyConstant1:" && !string.IsNullOrWhiteSpace(val1))
+                keys.XorKeyConstant1 = Convert.ToUInt32(val1, 16);
+
+            var line2 = reader.ReadLine();
+            var val2 = reader.ReadLine();
+            if (line2 == "XorKeyConstant2:" && !string.IsNullOrWhiteSpace(val2))
+                keys.XorKeyConstant2 = Convert.ToUInt32(val2, 16);
+
+            _ = reader.ReadLine();
+            var val3 = reader.ReadLine()?.ToLowerInvariant();
+            AdjustCryptConstantEnable = val3 == "true";
+        }
+    }
+
+    private static void LoadCryptConfig()
+    {
+        XorKeyValueFilePath = Path.Combine(FileManager.AppPath, "Configurations", "xorKeyValue.txt");
+        if (!File.Exists(XorKeyValueFilePath))
+        {
+            AdjustCryptConstantEnable = false;
+            return;
+        }
+
+        using var reader = new StreamReader(XorKeyValueFilePath);
+        while (!reader.EndOfStream)
+        {
+            _ = reader.ReadLine();
+            _ = reader.ReadLine();
+            _ = reader.ReadLine();
+            _ = reader.ReadLine();
+            _ = reader.ReadLine();
+            var val3 = reader.ReadLine()?.ToLowerInvariant();
+            AdjustCryptConstantEnable = val3 == "true";
+        }
+    }
+
+    private static CryptStateSnapshot SnapshotCryptState(ConnectionKeychain keys)
+    {
+        var iv = new byte[16];
+        Buffer.BlockCopy(keys.IV, 0, iv, 0, 16);
+        return new CryptStateSnapshot(iv, keys.CsSeq, keys.CsMSeq, keys.CsNum, keys.CSMessageCount);
+    }
+
+    private static void RestoreCryptState(ConnectionKeychain keys, CryptStateSnapshot snap)
+    {
+        Buffer.BlockCopy(snap.IV, 0, keys.IV, 0, 16);
+        keys.CsSeq = snap.CsSeq;
+        keys.CsMSeq = snap.CsMSeq;
+        keys.CsNum = snap.CsNum;
+        keys.CSMessageCount = snap.CSMessageCount;
+    }
+
+    private static void ClampXorKeyConstant1(ConnectionKeychain keys)
+    {
+        if (keys.XorKeyConstant1 < XorKeyConstant1Min || keys.XorKeyConstant1 > XorKeyConstant1Max)
+            keys.XorKeyConstant1 = XorKeyConstant1Min;
+    }
+
+    private void AdvanceXorKeyConstant1(ConnectionKeychain keys)
+    {
+        keys.XorKeyConstant1++;
+        if (keys.XorKeyConstant1 <= XorKeyConstant1Max)
+            return;
+
+        keys.XorKeyConstant1 = XorKeyConstant1Min;
+        var tuneL = (byte)Random.Shared.Next(0x01, 0xFF);
+        var tuneR = (byte)Random.Shared.Next(0x01, 0xFF);
+        var result = keys.XorKeyConstant2 & 0x00FFFF00;
+        result |= (uint)tuneL << 24;
+        result |= tuneR;
+        keys.XorKeyConstant2 = result;
+        Logger.Warn("Crypt fine-tune: C1 wrapped, new C2={0:X8}", keys.XorKeyConstant2);
+    }
+
+    private static void SaveXorKeyConstants(ConnectionKeychain keys)
+    {
+        if (string.IsNullOrEmpty(XorKeyValueFilePath))
+            return;
+        using var writer = new StreamWriter(XorKeyValueFilePath, false);
+        writer.WriteLine("XorKeyConstant1:");
+        writer.WriteLine(keys.XorKeyConstant1.ToString("X8"));
+        writer.WriteLine("XorKeyConstant2:");
+        writer.WriteLine(keys.XorKeyConstant2.ToString("X8"));
+        writer.WriteLine("AdjustCryptConstantEnable:");
+        writer.WriteLine(AdjustCryptConstantEnable.ToString());
+    }
+
+    private readonly struct CryptStateSnapshot
+    {
+        public byte[] IV { get; }
+        public byte CsSeq { get; }
+        public uint CsMSeq { get; }
+        public uint CsNum { get; }
+        public byte CSMessageCount { get; }
+
+        public CryptStateSnapshot(byte[] iv, byte csSeq, uint csMSeq, uint csNum, byte csMessageCount)
+        {
+            IV = iv;
+            CsSeq = csSeq;
+            CsMSeq = csMSeq;
+            CsNum = csNum;
+            CSMessageCount = csMessageCount;
+        }
+    }
+
+    #endregion
 }
